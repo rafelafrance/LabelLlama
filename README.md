@@ -10,6 +10,7 @@ This project
 ![Herbarium Sheet](assets/sheet.jpg)
 ### Find labels on the sheet
 ![Herbarium Labels](assets/show_labels.png)
+
 Labels outlined in orange are considered scientifically interesting and the teal labels can be ignored.
 ### OCR text in the labels
 ![OCRed Text](assets/show_ocr_text.png)
