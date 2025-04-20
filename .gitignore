@@ -48,3 +48,6 @@ experiments/
 
 # External
 external/
+
+# secrets
+*secret*
