@@ -1,5 +1,4 @@
-# Label Llama
-
+# Label Llama![CI](https://github.com/rafelafrance/LabelLlama/workflows/CI/badge.svg)
 ## What the el?
 Extract information from labels on images of herbarium sheets.
 
