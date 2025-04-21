@@ -4,7 +4,7 @@ TOO_SMALL = 20
 COORDS = tuple[int, int, int, int]
 
 CONTENTS = """
-    typewritten handwritten mixed barcode palette stamp ruler qrcode envelope
+    typewritten handwritten mixed barcode qrcode stamp palette ruler envelope
     """.split()
 
 

@@ -4,7 +4,7 @@ from typing import Literal
 import imagesize
 from PIL import Image, ImageTk
 
-from academy.pylib.slice_box import Box
+from llama.pylib.sheet_box import Box
 
 BoxSize = Literal["all", "largest", "smallest"]
 

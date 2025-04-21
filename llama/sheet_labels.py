@@ -8,8 +8,8 @@ from typing import ClassVar
 
 import customtkinter as ctk
 from pylib import const
-from pylib.slice_box import CONTENTS, Box
-from pylib.slice_page import Page
+from pylib.sheet_box import CONTENTS, Box
+from pylib.sheet_page import Page
 from pylib.spin_box import Spinner
 
 COLOR_LIST = """ red blue green black purple orange cyan olive pink gray """.split()
