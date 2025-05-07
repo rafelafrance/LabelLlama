@@ -12,7 +12,8 @@ from pylib.label_box import CONTENTS, Box
 from pylib.label_page import Page
 from pylib.spin_box import Spinner
 
-COLOR_LIST = """ red blue green black purple orange cyan olive pink gray """.split()
+COLOR_LIST = """
+    red blue green black purple orange cyan olive pink gray """.split()
 COLOR = dict(zip(CONTENTS, COLOR_LIST, strict=False))
 
 
@@ -23,8 +24,8 @@ class App(ctk.CTk):
         super().__init__()
 
         self.curr_dir = "."
-        self.image_dir = None
-        self.canvas = None
+        self.image_dir: Path = None
+        self.canvas: ctk.CTkCanvas = None
         self.pages = []
         self.dirty = False
         self.dragging = False
@@ -90,6 +91,14 @@ class App(ctk.CTk):
             value="content",
             font=const.FONT,
         )
+        self.radio_add.grid(row=4, column=1, padx=16, pady=16)
+        self.radio_del.grid(row=5, column=1, padx=16, pady=16)
+        self.radio_content.grid(row=6, column=1, padx=16, pady=16)
+
+        self.bind("A", lambda _: self.action.set("add"))
+        self.bind("C", lambda _: self.action.set("content"))
+        self.bind("D", lambda _: self.action.set("delete"))
+
         self.content_label = ctk.CTkLabel(
             master=self,
             text="Label content type",
@@ -105,13 +114,27 @@ class App(ctk.CTk):
             font=const.FONT,
             dropdown_font=const.FONT,
         )
-        self.radio_add.grid(row=4, column=1, padx=16, pady=16)
-        self.radio_del.grid(row=5, column=1, padx=16, pady=16)
-        self.radio_content.grid(row=6, column=1, padx=16, pady=16)
         self.content_label.grid(row=7, column=1, padx=16, pady=1)
         self.content_combo.grid(row=8, column=1, padx=16, pady=1)
 
+        self.bind("t", lambda _: self.set_content(CONTENTS[0]))
+        self.bind("h", lambda _: self.set_content(CONTENTS[1]))
+        self.bind("w", lambda _: self.set_content(CONTENTS[1]))  # For left hand
+        self.bind("m", lambda _: self.set_content(CONTENTS[2]))
+        self.bind("b", lambda _: self.set_content(CONTENTS[3]))
+        self.bind("q", lambda _: self.set_content(CONTENTS[4]))
+        self.bind("s", lambda _: self.set_content(CONTENTS[5]))
+        self.bind("p", lambda _: self.set_content(CONTENTS[6]))
+        self.bind("r", lambda _: self.set_content(CONTENTS[7]))
+        self.bind("e", lambda _: self.set_content(CONTENTS[8]))
+
         self.protocol("WM_DELETE_WINDOW", self.safe_quit)
+        self.focus()
+        self.unbind_all("<<NextWindow>>")
+
+    def set_content(self, content):
+        self.content_combo.focus()
+        self.content.set(content)
 
     @property
     def index(self):
@@ -131,7 +154,8 @@ class App(ctk.CTk):
         self.canvas.delete("all")
         self.canvas.create_image((0, 0), image=self.page.photo, anchor="nw")
         self.display_page_boxes()
-        self.action.set("add")
+        if self.action.get() == "delete":
+            self.action.set("add")
 
     def display_page_boxes(self):
         self.clear_page_boxes()
@@ -159,7 +183,9 @@ class App(ctk.CTk):
             content = self.content.get()
             color = COLOR[content]
             id_ = self.canvas.create_rectangle(0, 0, 1, 1, outline=color, width=4)
-            self.page.boxes.append(Box(id=id_, x0=x, y0=y, x1=x, y1=y, content=content))
+            self.page.boxes.append(
+                Box(id_=id_, x0=x, y0=y, x1=x, y1=y, content=content)
+            )
             self.dragging = True
         elif self.pages and self.action.get() == "delete":
             self.dirty = True

@@ -43,6 +43,7 @@ class Spinner(ctk.CTkFrame):
             border_width=0,
             justify="center",
             font=const.FONT,
+            takefocus=0,
         )
         self.entry.grid(row=0, column=1, columnspan=1, padx=3, pady=3, sticky="ew")
         if self.command:
@@ -60,21 +61,28 @@ class Spinner(ctk.CTkFrame):
 
         self.entry.insert(0, str(int(start)))
 
-        self.entry.bind("<Tab>", self.next_page)
-
         self.entry.bind("<Right>", self.next_page)
         self.entry.bind("<Left>", self.prev_page)
+        self.entry.bind("f", self.next_page)  # For left hand
+        self.entry.bind("b", self.prev_page)  # For left hand
 
-        self.entry.bind("<Next>", self.next_page)
-        self.entry.bind("<Prior>", self.prev_page)
+        self.add_button.bind("<Right>", self.next_page)
+        self.add_button.bind("<Left>", self.prev_page)
+        self.add_button.bind("f", self.next_page)  # For left hand
+        self.add_button.bind("b", self.prev_page)  # For left hand
+
+        self.subtract_button.bind("<Right>", self.next_page)
+        self.subtract_button.bind("<Left>", self.prev_page)
+        self.subtract_button.bind("f", self.next_page)  # For left hand
+        self.subtract_button.bind("b", self.prev_page)  # For left hand
 
     def next_page(self, _=None):
         try:
             value = int(self.entry.get()) + 1
-            self.set(value)
         except ValueError:
             value = self.high
         self.set(value)
+        self.add_button.focus()
         if self.command is not None:
             self.command()
 
@@ -84,6 +92,7 @@ class Spinner(ctk.CTkFrame):
         except ValueError:
             value = self.low
         self.set(value)
+        self.subtract_button.focus()
         if self.command is not None:
             self.command()
 
@@ -97,7 +106,9 @@ class Spinner(ctk.CTkFrame):
         try:
             value = int(self.entry.get())
             self.set(value)
-        except ValueError:
+            self.add_button.focus()
+        except (ValueError, TypeError):
+            self.add_button.focus()
             return
         if self.command is not None:
             self.command()

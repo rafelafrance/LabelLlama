@@ -14,16 +14,25 @@ class Page:
         self.path = path
         self.canvas_height = canvas_height
         self.photo = None
-        self.image_height = None
         self.boxes = []
 
+        _, image_height = imagesize.get(path)
+        self.image_height = image_height
+
+    def __str__(self) -> str:
+        val = f"{self.path=} {self.canvas_height=} {self.image_height=}"
+        boxes = [str(b) for b in self.boxes]
+        val += "\n" + "\n".join(boxes)
+        return val
+
     def as_dict(self) -> dict:
-        return {
+        dict_ = {
             "path": str(self.path),
             "boxes": [
                 b.as_dict(self.image_height, self.canvas_height) for b in self.boxes
             ],
         }
+        return dict_
 
     def resize(self, canvas_height):
         if not self.photo:

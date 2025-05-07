@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 TOO_SMALL = 20
 COORDS = tuple[int, int, int, int]
 
@@ -8,14 +6,19 @@ CONTENTS = """
     """.split()
 
 
-@dataclass
 class Box:
-    id: int = None  # Needed for tkinter
-    x0: int = None
-    y0: int = None
-    x1: int = None
-    y1: int = None
-    content: str = None
+    def __init__(self, x0, y0, x1, y1, content, id_=None) -> None:
+        if any(a is None for a in (x0, y0, x1, y1, content)):
+            raise ValueError
+        self.x0: int = x0
+        self.y0: int = y0
+        self.x1: int = x1
+        self.y1: int = y1
+        self.content: str = content
+        self.id = id_  # Needed for tkinter
+
+    def __str__(self):
+        return f"{self.x0=} {self.y0=} {self.x1=} {self.y1=} {self.content=} {self.id=}"
 
     def as_dict(self, image_height: int, canvas_height: int) -> dict:
         x0, y0, x1, y1 = self.restore_coords(image_height, canvas_height)

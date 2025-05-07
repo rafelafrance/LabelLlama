@@ -124,6 +124,7 @@ lint.ignore = [
     "N818",    # Exception name {name} should be named with an Error suffix
     "PD901",   # Avoid using the generic variable name df for DataFrames
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+    "PLR0915", # Too many statements
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
     "PLW0603", # Using the global statement to update {name} is discouraged
     "PT009",   # Use a regular assert instead of unittest-style {assertion}
