@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8" />
+<title>Label Llama</title>
+<style>
+{% include 'show_ocr.css' -%}
+</style>
+</head>
+<body>
+<h1>Label Llama <span>{{ now | safe }}</span></h1>
+<header>
+    <div><label>Label Images</label><span>{{ label_dir | safe }}</span></div>
+    <div><label>OCR Output</label><span>{{ jsonl_file | safe }}</span></div>
+</header>
+
+{% for row in rows %}
+<section>
+<div>
+    <div class="header">
+        <div><label>Label Type</label><span>{{ row.type | safe }}</span></div>
+        <div><label>Label Name</label><span>{{ row.name | safe }}</span></div>
+    </div>
+    <div class="image">
+        <img src="data:image/jpeg;base64,{{ row.url | safe }}"/>
+    </div>
+    <div class="text">
+        {{ row.text | safe }}
+    </div>
+</div>
+</section>
+{% endfor %}
+
+</body>
+</html>

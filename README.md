@@ -1,5 +1,5 @@
 # Label Llama![CI](https://github.com/rafelafrance/LabelLlama/workflows/CI/badge.svg)
-## What the el?
+## From 30,000 feet:
 Extract information from labels on images of herbarium sheets.
 
 There are 3 main steps:

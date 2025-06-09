@@ -24,7 +24,7 @@ class App(ctk.CTk):
         super().__init__()
 
         self.curr_dir = "."
-        self.image_dir: Path = None
+        self.image_dir: Path = Path()
         self.canvas: ctk.CTkCanvas = None
         self.pages = []
         self.dirty = False
