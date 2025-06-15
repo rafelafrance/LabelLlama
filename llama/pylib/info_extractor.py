@@ -1,6 +1,4 @@
-import json
 import random
-from pathlib import Path
 
 import dspy
 import Levenshtein
@@ -15,7 +13,7 @@ PROMPT = """
     """
 
 
-class TraitExtractor(dspy.Signature):
+class InfoExtractor(dspy.Signature):
     """Analyze herbarium specimen labels and extract this information."""
 
     # Input fields
@@ -44,7 +42,7 @@ class TraitExtractor(dspy.Signature):
 
 
 INPUT_FIELDS = ("text", "prompt")
-TRAIT_FIELDS = [t for t in vars(TraitExtractor()) if t not in INPUT_FIELDS]
+TRAIT_FIELDS = [t for t in vars(InfoExtractor()) if t not in INPUT_FIELDS]
 
 
 def dict2example(dct: dict[str, str]) -> dspy.Example:
@@ -57,11 +55,11 @@ def dict2example(dct: dict[str, str]) -> dspy.Example:
     return example
 
 
-def read_labels(label_json: Path) -> list[dspy.Example]:
-    with label_json.open() as f:
-        label_data = json.load(f)
-    # labels = [dict2example(d) for d in label_data]
-    return label_data
+# def read_labels(label_jsonl: Path) -> list[dspy.Example]:
+#     with label_jsonl.open() as f:
+#         label_data = json.load(f)
+#     # labels = [dict2example(d) for d in label_data]
+#     return label_data
 
 
 def split_examples(examples: list[dspy.Example], train_split: float, dev_split: float):

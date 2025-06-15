@@ -6,8 +6,8 @@ import textwrap
 from pathlib import Path
 
 import dspy
+from pylib import info_extractor as te
 from pylib import log
-from pylib import trait_extractor as te
 from rich import print as rprint
 
 # from pprint import pp
@@ -17,7 +17,8 @@ from rich import print as rprint
 def main(args):
     log.started()
 
-    labels = te.read_labels(args.labels_json)
+    with args.ocr_jsonl.open() as f:
+        labels = [json.loads(ln) for ln in f]
     labels = labels[: args.limit] if args.limit else labels
 
     lm = dspy.LM(
@@ -25,7 +26,7 @@ def main(args):
     )
     dspy.configure(lm=lm)
 
-    trait_extractor = dspy.Predict(te.TraitExtractor)
+    trait_extractor = dspy.Predict(te.InfoExtractor)
     # trait_extractor = dspy.ChainOfThought(TraitExtractor)
 
     preds = []
@@ -54,9 +55,9 @@ def main(args):
     # ts.TrackScores.summarize_scores(scores)
 
     if args.predictions_jsonl:
-        with args.predictions_json.open("w") as f:
+        with args.predictions_jsonl.open("w") as f:
             for pred in preds:
-                f.write(json.dumps(pred), "\n")
+                f.write(json.dumps(pred) + "\n")
 
     log.finished()
 
@@ -68,7 +69,7 @@ def parse_args():
     )
 
     arg_parser.add_argument(
-        "--labels-jsonl",
+        "--ocr-jsonl",
         type=Path,
         required=True,
         metavar="PATH",

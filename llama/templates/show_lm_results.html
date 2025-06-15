@@ -5,14 +5,14 @@
 <meta charset="utf-8" />
 <title>Label Llama</title>
 <style>
-{% include 'show_ocr.css' -%}
+{% include 'show_lm_results.css' -%}
 </style>
 </head>
 <body>
 <h1>Label Llama <span>{{ now | safe }}</span></h1>
 <header>
     <div><label>Label Images</label><span>{{ label_dir | safe }}</span></div>
-    <div><label>OCR Output</label><span>{{ jsonl_file | safe }}</span></div>
+    <div><label>Predictions</label><span>{{ jsonl_file | safe }}</span></div>
 </header>
 
 {% for row in rows %}
@@ -25,8 +25,20 @@
     <div class="image">
         <img src="data:image/jpeg;base64,{{ row.url | safe }}"/>
     </div>
-    <div class="text">
-        {{ row.text | safe }}
+    <div class="container">
+        <div class="item text">
+            {{ row.text | safe }}
+        </div>
+        <div class="item results">
+            <table>
+                {% for key, value in row.results.items() %}
+                <tr>
+                    <td>{{ key | safe }}</td>
+                    <td>{{ value | safe }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
 </div>
 </section>

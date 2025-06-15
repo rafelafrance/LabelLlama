@@ -37,3 +37,12 @@ img {
     font-weight: bold;
     width: 10rem;
 }
+
+.container {
+    display: flex;
+    align-content: space-between;
+}
+
+.item {
+    margin: 1rem;
+}

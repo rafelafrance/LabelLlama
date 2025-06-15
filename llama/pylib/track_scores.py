@@ -4,7 +4,7 @@ import dspy
 import Levenshtein
 from rich import print as rprint
 
-from llama.pylib.trait_extractor import TRAIT_FIELDS
+from llama.pylib.info_extractor import TRAIT_FIELDS
 
 Traits = make_dataclass(
     "Traits",
