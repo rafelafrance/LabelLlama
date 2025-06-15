@@ -12,8 +12,18 @@ from pylib.label_box import CONTENTS, Box
 from pylib.label_page import Page
 from pylib.spin_box import Spinner
 
-COLOR_LIST = """
-    red blue green black purple orange cyan olive pink gray """.split()
+COLOR_LIST = [
+    "red",
+    "blue",
+    "green",
+    "black",
+    "purple",
+    "orange",
+    "cyan",
+    "olive",
+    "pink",
+    "gray",
+]
 COLOR = dict(zip(CONTENTS, COLOR_LIST, strict=False))
 
 

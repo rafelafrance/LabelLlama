@@ -22,16 +22,16 @@ class Label:
 
 
 def main(args):
-    with args.olmocr_jsonl.open() as f:
+    with args.predictions_jsonl.open() as f:
         ocr = [json.loads(ln) for ln in f]
 
     labels = []
     for label in ocr:
-        ocr_path = Path(label["metadata"]["Source-File"])
-        type_ = ocr_path.stem.split("_")[1]
-        url = encode_label(args.label_dir, ocr_path)
+        path = Path(label["Source-File"])
+        type_ = path.stem.split("_")[1]
+        url = encode_label(args.label_dir, path)
         text = format_text(label["text"])
-        labels.append(Label(type=type_, name=ocr_path.stem, text=text, url=url))
+        labels.append(Label(type=type_, name=path.stem, text=text, url=url))
 
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader("./llama/templates"),
@@ -64,7 +64,7 @@ def encode_label(label_dir, ocr_path):
 def parse_args():
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("""Show OCR results from olmOCR."""),
+        description=textwrap.dedent("""Show language model results."""),
     )
 
     arg_parser.add_argument(
@@ -76,11 +76,11 @@ def parse_args():
     )
 
     arg_parser.add_argument(
-        "--olmocr-jsonl",
+        "--predictions-jsonl",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""olmOCR results JSONL file.""",
+        help="""Language model predictions JSONL file.""",
     )
 
     arg_parser.add_argument(

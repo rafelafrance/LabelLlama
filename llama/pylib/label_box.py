@@ -1,9 +1,17 @@
 TOO_SMALL = 20
 COORDS = tuple[int, int, int, int]
 
-CONTENTS = """
-    typewritten handwritten mixed barcode qrcode stamp palette ruler envelope
-    """.split()
+CONTENTS = [
+    "typewritten",
+    "handwritten",
+    "mixed",
+    "barcode",
+    "qrcode",
+    "stamp",
+    "palette",
+    "ruler",
+    "envelope",
+]
 
 
 class Box:
