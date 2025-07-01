@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 def main(args):
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    args.label_dir.mkdir(parents=True, exist_ok=True)
 
     with args.sheet_labels.open() as f:
         sheets = json.load(f)
@@ -27,7 +27,7 @@ def main(args):
                 y1 = box["y1"]
                 content = box["content"]
                 name = f"{stem}_{content}_{x0}_{y0}_{x1}_{y1}{suffix}"
-                box_path = args.output_dir / name
+                box_path = args.label_dir / name
                 cropped = image.crop((x0, y0, x1, y1))
                 cropped.save(box_path)
 
@@ -47,7 +47,7 @@ def parse_args():
     )
 
     arg_parser.add_argument(
-        "--output-dir",
+        "--label-dir",
         type=Path,
         required=True,
         metavar="PATH",

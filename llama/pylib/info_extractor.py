@@ -6,7 +6,7 @@ import Levenshtein
 PROMPT = """
     What is the scientific name, scientific name authority, family taxon,
     collection date, elevation, latitude and longitude, Township Range Section (TRS),
-    Universal Transverse Mercator (UTM), administrative unit, locality,
+    Universal Transverse Mercator (UTM), administrative unit, locality, habitat
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
     associated taxa, and any other observations?
     If it is not mentioned return an empty value.
@@ -43,6 +43,28 @@ class InfoExtractor(dspy.Signature):
 
 INPUT_FIELDS = ("text", "prompt")
 TRAIT_FIELDS = [t for t in vars(InfoExtractor()) if t not in INPUT_FIELDS]
+
+# Darwin Core garbage is required for output, but it's not helpful elsewhere
+DARWIN_CORE = {
+    "sci_name": "dwc:scientificName",
+    "sci_authority": "dwc:scientificNameAuthority",
+    "family": "dwc:family",
+    "collection_date": "dwc:verbatimEventDate",
+    "locality": "dwc:verbatimLocality",
+    "habitat": "dwc:habitat",
+    "elevation": "dwc:verbatimElevation",
+    "lat_long": "dwc:verbatimCoordinates",
+    "trs": "dwc:dynamicProperties:trs",
+    "utm": "dwc:dynamicProperties:utm",
+    "admin_units": "dwc:dynamicProperties:administrativeUnit",
+    "collector_names": "dwc:recordedBy",
+    "collector_id": "dwc:recordedByID",
+    "determiner_names": "dwc:identifiedBy",
+    "determiner_id": "dwc:identifiedByID",
+    "id_number": "dwc:occurrenceID",
+    "assoc_taxa": "dwc:associatedTaxa",
+    "other_obs": "dwc:occurrenceRemarks",
+}
 
 
 def dict2example(dct: dict[str, str]) -> dspy.Example:

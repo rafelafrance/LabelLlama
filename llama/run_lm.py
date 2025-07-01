@@ -76,43 +76,6 @@ def parse_args():
         help="""Get OCR results from this JSONL file.""",
     )
 
-    arg_parser.add_argument(
-        "--model",
-        default="ollama_chat/gemma3:27b",
-        help="""Use this LLM model. (default: %(default)s)""",
-    )
-
-    arg_parser.add_argument(
-        "--api-base",
-        default="http://localhost:11434",
-        help="""URL for the LM model. (default: %(default)s)""",
-    )
-
-    arg_parser.add_argument(
-        "--api-key",
-        help="""Key for the LM provider.""",
-    )
-
-    arg_parser.add_argument(
-        "--limit",
-        type=int,
-        default=0,
-        help="""Limit to this many input examples.""",
-    )
-
-    arg_parser.add_argument(
-        "--no-cache",
-        action="store_false",
-        help="""Turn off caching for the model.""",
-    )
-
-    arg_parser.add_argument(
-        "--predictions-jsonl",
-        type=Path,
-        metavar="PATH",
-        help="""Output language model predictions to this JSONL file.""",
-    )
-
     args = arg_parser.parse_args()
 
     return args

@@ -10,28 +10,9 @@ from pathlib import Path
 
 import jinja2
 
-# from pprint import pp
+from llama.pylib.info_extractor import DARWIN_CORE
 
-RELABEL = {
-    "sci_name": "Scientific name",
-    "sci_authority": "Scientific authority",
-    "family": "Taxonomic family",
-    "collection_date": "Collection date",
-    "locality": "Collected from this locality",
-    "habitat": "Collected from this habitat",
-    "elevation": "Elevation",
-    "lat_long": "Latitude and longitude",
-    "trs": "Township Range Section (TRS)",
-    "utm": "Universal Transverse Mercator (UTM)",
-    "admin_units": "Administrative units",
-    "collector_names": "Collector names",
-    "collector_id": "Collector ID",
-    "determiner_names": "Determiners names",
-    "determiner_id": "Determiner ID",
-    "id_number": "Specimen ID",
-    "assoc_taxa": "Associated taxa",
-    "other_obs": "Other observations",
-}
+# from pprint import pp
 
 
 @dataclass
@@ -54,7 +35,7 @@ def main(args):
         url = encode_label(args.label_dir, path)
         text = format_text(label["text"])
         results = {
-            RELABEL.get(k, k): format_text(v)
+            DARWIN_CORE.get(k, k): format_text(v)
             for k, v in label.items()
             if k not in ("Source-File", "text")
         }
