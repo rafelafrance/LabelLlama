@@ -42,29 +42,7 @@ class InfoExtractor(dspy.Signature):
 
 
 INPUT_FIELDS = ("text", "prompt")
-TRAIT_FIELDS = [t for t in vars(InfoExtractor()) if t not in INPUT_FIELDS]
-
-# Darwin Core garbage is required for output, but it's not helpful elsewhere
-DARWIN_CORE = {
-    "sci_name": "dwc:scientificName",
-    "sci_authority": "dwc:scientificNameAuthority",
-    "family": "dwc:family",
-    "collection_date": "dwc:verbatimEventDate",
-    "locality": "dwc:verbatimLocality",
-    "habitat": "dwc:habitat",
-    "elevation": "dwc:verbatimElevation",
-    "lat_long": "dwc:verbatimCoordinates",
-    "trs": "dwc:dynamicProperties:trs",
-    "utm": "dwc:dynamicProperties:utm",
-    "admin_units": "dwc:dynamicProperties:administrativeUnit",
-    "collector_names": "dwc:recordedBy",
-    "collector_id": "dwc:recordedByID",
-    "determiner_names": "dwc:identifiedBy",
-    "determiner_id": "dwc:identifiedByID",
-    "id_number": "dwc:occurrenceID",
-    "assoc_taxa": "dwc:associatedTaxa",
-    "other_obs": "dwc:occurrenceRemarks",
-}
+OUTPUT_FIELDS = [t for t in vars(InfoExtractor()) if t not in INPUT_FIELDS]
 
 
 def dict2example(dct: dict[str, str]) -> dspy.Example:
@@ -72,7 +50,7 @@ def dict2example(dct: dict[str, str]) -> dspy.Example:
         "text", "prompt"
     )
 
-    for fld in TRAIT_FIELDS:
+    for fld in OUTPUT_FIELDS:
         setattr(example, fld, dct[fld])
     return example
 
@@ -104,12 +82,12 @@ def score_prediction(example: dspy.Example, prediction: dspy.Prediction, trace=N
     """Score predictions from DSPy."""
     total_score: float = 0.0
 
-    for fld in TRAIT_FIELDS:
+    for fld in OUTPUT_FIELDS:
         true = getattr(example, fld)
         pred = getattr(prediction, fld)
 
         value = Levenshtein.ratio(true, pred)
         total_score += value
 
-    total_score /= len(TRAIT_FIELDS)
+    total_score /= len(OUTPUT_FIELDS)
     return total_score

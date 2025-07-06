@@ -9,8 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 import jinja2
-
-from llama.pylib.info_extractor import DARWIN_CORE
+from pylib import darwin_core as dwc
 
 # from pprint import pp
 
@@ -33,12 +32,8 @@ def main(args):
         path = Path(label["Source-File"])
         type_ = path.stem.split("_")[1]
         url = encode_label(args.label_dir, path)
-        text = format_text(label["text"])
-        results = {
-            DARWIN_CORE.get(k, k): format_text(v)
-            for k, v in label.items()
-            if k not in ("Source-File", "text")
-        }
+        text = dwc.format_text_as_html(label["text"])
+        results = dwc.to_dwc(label)
         labels.append(
             Label(type=type_, name=path.stem, text=text, url=url, results=results)
         )
@@ -57,13 +52,6 @@ def main(args):
 
     with args.output_html.open("w") as html_file:
         html_file.write(template)
-
-
-def format_text(text):
-    if not isinstance(text, str):
-        return text
-    text = text.replace("\n", "<br/>")
-    return text
 
 
 def encode_label(label_dir, ocr_path):
