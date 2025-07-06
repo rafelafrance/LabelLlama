@@ -179,16 +179,16 @@ class App(ctk.CTk):
 
         self.text.configure(state="normal")
 
-        headers = []
-        for lb in ocr:
-            self.labels.append(
-                {
-                    "Source-File": lb["Source-File"],
-                    "text": lb["text"],
-                    "annotations": [],
-                }
-            )
-            src = Path(lb["Source-File"])
+        for results in ocr:
+            label = {
+                "Source-File": results["Source-File"],
+                "text": results["text"],
+                "header-locations": [],
+                "text-locations": [],
+                "annotations": [],
+            }
+
+            src = Path(results["Source-File"])
 
             beg = self.text.index(tk.CURRENT)
             self.text.insert(tk.INSERT, "=" * 72)
@@ -198,15 +198,25 @@ class App(ctk.CTk):
             self.text.insert(tk.INSERT, "=" * 72)
             self.text.insert(tk.INSERT, "\n")
             end = self.text.index(tk.CURRENT)
-            headers.append((beg, end))
-            self.text.insert(tk.INSERT, lb["text"])
+            label["header-locations"] = [beg, end]
+
+            beg = self.text.index(tk.CURRENT)
+            self.text.insert(tk.INSERT, results["text"])
+            end = self.text.index(tk.CURRENT)
+            label["text-locations"] = [beg, end]
+
             self.text.insert(tk.INSERT, "\n")
+
+            self.labels.append(label)
 
         self.text.configure(state="disabled")
 
         # Can't add these tags in the loop above
-        for beg, end in headers:
+        for lb in self.labels:
+            beg, end = lb["header-locations"]
             self.text.tag_add("header", beg, end)
+            beg, end = lb["text-locations"]
+            self.text.tag_add("text", beg, end)
 
     def load(self):
         path = filedialog.askopenfilename(
