@@ -2,13 +2,20 @@
 
 import json
 import tkinter as tk
+from collections import defaultdict
 from pathlib import Path
 from tkinter import filedialog, messagebox
 from tkinter.scrolledtext import ScrolledText
-from typing import ClassVar
+from typing import ClassVar, get_type_hints
 
 import customtkinter as ctk
-from pylib import const, darwin_core
+from pylib import const, darwin_core, info_extractor
+
+IE_TYPES = {
+    darwin_core.DWC[k]: v
+    for k, v in get_type_hints(info_extractor.InfoExtractor).items()
+    if k in info_extractor.OUTPUT_FIELDS
+}
 
 STYLE_LIST = [
     {"background": "red", "foreground": "white"},
@@ -16,24 +23,24 @@ STYLE_LIST = [
     {"background": "green", "foreground": "white"},
     {"background": "black", "foreground": "white"},
     {"background": "purple", "foreground": "white"},
+    {"background": "olive", "foreground": "white"},
+    {"background": "gray", "foreground": "white"},
     {"background": "orange"},
     {"background": "cyan"},
-    {"background": "olive", "foreground": "white"},
     {"background": "pink"},
-    {"background": "gray", "foreground": "white"},
     {"background": "red", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "blue", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "green", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "black", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "purple", "foreground": "yellow", "font": const.FONT_SM2},
+    {"background": "olive", "foreground": "yellow", "font": const.FONT_SM2},
+    {"background": "gray", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "orange", "font": const.FONT_SM2},
     {"background": "cyan", "font": const.FONT_SM2},
-    {"background": "olive", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "pink", "font": const.FONT_SM2},
-    {"background": "gray", "foreground": "yellow", "font": const.FONT_SM2},
 ]
 
-COLOR_LIST = [v["background"] for v in STYLE_LIST]
+DWC = list(darwin_core.DWC.values())
 
 
 class App(ctk.CTk):
@@ -46,10 +53,6 @@ class App(ctk.CTk):
         self.ocr_jsonl: Path = Path()
         self.labels = []
         self.dirty = False
-
-        self.dwc = []
-        for label in darwin_core.DWC.values():
-            self.dwc.append(label.removeprefix("dwc:"))
 
         ctk.set_appearance_mode("System")
         ctk.set_default_color_theme("blue")
@@ -70,7 +73,7 @@ class App(ctk.CTk):
         self.text.bind("<ButtonRelease-1>", self.on_add_annotation)  # left-click
         self.text.bind("<ButtonRelease-3>", self.on_delete_annotation)  # right-click
         self.tooltip = tk.Label(self, text="")
-        for dwc, opts in zip(self.dwc, STYLE_LIST, strict=False):
+        for dwc, opts in zip(DWC, STYLE_LIST, strict=False):
             self.text.tag_config(dwc, **opts)
             self.text.tag_bind(dwc, "<Enter>", self.show_tooltip)
             self.text.tag_bind(dwc, "<Leave>", self.hide_tooltip)
@@ -106,10 +109,10 @@ class App(ctk.CTk):
             font=const.FONT,
         )
         self.annotation = tk.StringVar()
-        self.annotation.set(self.dwc[0])
+        self.annotation.set(DWC[0])
         self.annotation_combo = ctk.CTkComboBox(
             master=self,
-            values=self.dwc,
+            values=DWC,
             variable=self.annotation,
             font=const.FONT,
             dropdown_font=const.FONT,
@@ -183,40 +186,41 @@ class App(ctk.CTk):
             label = {
                 "Source-File": results["Source-File"],
                 "text": results["text"],
-                "header-locations": [],
-                "text-locations": [],
-                "annotations": [],
+                "header-location": [],
+                "text-location": [],
+                "annotations": defaultdict(list),
             }
 
-            src = Path(results["Source-File"])
-
-            beg = self.text.index(tk.CURRENT)
-            self.text.insert(tk.INSERT, "=" * 72)
-            self.text.insert(tk.INSERT, "\n")
-            self.text.insert(tk.INSERT, f"{src}")
-            self.text.insert(tk.INSERT, "\n")
-            self.text.insert(tk.INSERT, "=" * 72)
-            self.text.insert(tk.INSERT, "\n")
-            end = self.text.index(tk.CURRENT)
-            label["header-locations"] = [beg, end]
-
-            beg = self.text.index(tk.CURRENT)
-            self.text.insert(tk.INSERT, results["text"])
-            end = self.text.index(tk.CURRENT)
-            label["text-locations"] = [beg, end]
-
-            self.text.insert(tk.INSERT, "\n")
-
+            self.build_header(label)
+            self.build_text(label)
             self.labels.append(label)
 
         self.text.configure(state="disabled")
 
-        # Can't add these tags in the loop above
+        self.add_header_tags()
+
+    def add_header_tags(self):
         for lb in self.labels:
-            beg, end = lb["header-locations"]
+            beg, end = lb["header-location"]
             self.text.tag_add("header", beg, end)
-            beg, end = lb["text-locations"]
-            self.text.tag_add("text", beg, end)
+
+    def build_text(self, label):
+        beg = self.text.index(tk.CURRENT)
+        self.text.insert(tk.INSERT, label["text"])
+        end = self.text.index(tk.CURRENT)
+        label["text-location"] = [beg, end]
+        self.text.insert(tk.INSERT, "\n")
+
+    def build_header(self, label):
+        beg = self.text.index(tk.CURRENT)
+        self.text.insert(tk.INSERT, "=" * 72)
+        self.text.insert(tk.INSERT, "\n")
+        self.text.insert(tk.INSERT, str(label["Source-File"]))
+        self.text.insert(tk.INSERT, "\n")
+        self.text.insert(tk.INSERT, "=" * 72)
+        self.text.insert(tk.INSERT, "\n")
+        end = self.text.index(tk.CURRENT)
+        label["header-location"] = [beg, end]
 
     def load(self):
         path = filedialog.askopenfilename(
@@ -231,8 +235,47 @@ class App(ctk.CTk):
         self.curr_dir = path.parent
         self.dirty = False
 
-        # with path.open() as f:
-        #     annotations = json.load(f)
+        with path.open() as f:
+            annotations = json.load(f)
+
+        self.text.configure(state="normal")
+
+        for result in annotations:
+            label = {
+                "Source-File": result["Source-File"],
+                "text": result["text"],
+                "header-location": [],
+                "text-location": [],
+                "annotations": {},
+            }
+
+            self.build_header(label)
+            self.build_text(label)
+
+            for dwc, val in result.items():
+                if dwc in ("Source-File", "text"):
+                    continue
+                if isinstance(val, list) and val:
+                    for v in val:
+                        self.load_tag(dwc, v, label)
+                elif isinstance(val, list):
+                    label["annotations"][dwc] = []
+                elif val:
+                    self.load_tag(dwc, val, label)
+                else:
+                    label["annotations"][dwc] = []
+
+            self.labels.append(label)
+
+        self.text.configure(state="disabled")
+
+        self.add_header_tags()
+
+    def load_tag(self, dwc, val, label):
+        text_beg, text_end = label["text-location"]
+        tag_beg = self.text.search(val, text_beg, text_end)
+        tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
+        self.text.tag_add(dwc, tag_beg, tag_end)
 
     def save(self):
         path = tk.filedialog.asksaveasfilename(
@@ -244,12 +287,37 @@ class App(ctk.CTk):
         if not path:
             return
 
+        for dwc in DWC:
+            indexes = self.text.tag_ranges(dwc)
+            indexes = zip(indexes[0::2], indexes[1::2], strict=True)
+            labels = (lb for lb in self.labels)
+            lb = next(labels)
+            for beg, end in indexes:
+                while self.text.compare(beg, ">", lb["text-location"][1]):
+                    lb = next(labels)
+                value = self.text.get(beg, end)
+                lb["annotations"][dwc].append(value)
+                print(f"{lb['Source-File']}")
+                print(f"{beg=} {end=} {value=}\n")
+
         path = Path(path)
         self.curr_dir = path.parent
         self.dirty = False
 
-        # with path.open("w") as f:
-        #     json.dump(self.annotations, f, indent=4)
+        annotations = []
+        for lb in self.labels:
+            anno = {"Source-File": lb["Source-File"], "text": lb["text"]}
+            for dwc in DWC:
+                print(IE_TYPES[dwc], type(IE_TYPES[dwc]))
+                if IE_TYPES[dwc] is str:
+                    anno[dwc] = lb["annotations"].get(dwc, [""])[0]
+                else:
+                    anno[dwc] = lb["annotations"].get(dwc, [])
+
+            annotations.append(anno)
+
+        with path.open("w") as f:
+            json.dump(annotations, f, indent=4)
 
     def safe_quit(self):
         if self.dirty:

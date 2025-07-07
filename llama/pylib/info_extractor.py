@@ -21,24 +21,62 @@ class InfoExtractor(dspy.Signature):
     prompt: str = dspy.InputField(default="", desc="Extract these traits")
 
     # Output traits -- Just capturing the text for now
-    sci_name: str = dspy.OutputField(default="", desc="Scientific name")
-    sci_authority: str = dspy.OutputField(default="", desc="Scientific name authority")
-    family: str = dspy.OutputField(default="", desc="Taxonomic family")
-    collection_date: str = dspy.OutputField(default="", desc="Specimen collection date")
-    locality: str = dspy.OutputField(default="", desc="Collected from this locality")
-    habitat: str = dspy.OutputField(default="", desc="Collected from this habitat")
-    elevation: str = dspy.OutputField(default="", desc="Specimen elevation")
-    lat_long: str = dspy.OutputField(default="", desc="Latitude and longitude")
-    trs: str = dspy.OutputField(default="", desc="Township Range Section (TRS)")
-    utm: str = dspy.OutputField(default="", desc="Universal Transverse Mercator (UTM)")
-    admin_units: list[str] = dspy.OutputField(default="", desc="Administrative units")
-    collector_names: list[str] = dspy.OutputField(default="", desc="Collector names")
-    collector_id: str = dspy.OutputField(default="", desc="Collector ID")
-    determiner_names: list[str] = dspy.OutputField(default="", desc="Determiners names")
-    determiner_id: str = dspy.OutputField(default="", desc="Determiner ID")
-    id_number: str = dspy.OutputField(default="", desc="Specimen ID")
-    assoc_taxa: list[str] = dspy.OutputField(default="", desc="Associated taxa")
-    other_obs: list[str] = dspy.OutputField(default="", desc="Other observations")
+    dwc_scientific_name: str = dspy.OutputField(
+        default="", desc="Scientific name", alias="dwc:scientificName"
+    )
+    dwc_scientific_name_authority: str = dspy.OutputField(
+        default="",
+        desc="Scientific name authority",
+        alias="dwc:scientificNameAuthority",
+    )
+    dwc_family: str = dspy.OutputField(
+        default="", desc="Taxonomic family", alias="dwc:family"
+    )
+    dwc_verbatim_event_date: str = dspy.OutputField(
+        default="", desc="Specimen collection date", alias="dwc:verbatimEventDate"
+    )
+    dwc_verbatim_locality: str = dspy.OutputField(
+        default="", desc="Collected from this locality", alias="dwc:verbatimLocality"
+    )
+    dwc_habitat: str = dspy.OutputField(
+        default="", desc="Collected from this habitat", alias="dwc:habitat"
+    )
+    dwc_verbatim_elevation: str = dspy.OutputField(
+        default="", desc="Specimen elevation", alias="dwc:verbatimElevation"
+    )
+    dwc_verbatim_coordinates: str = dspy.OutputField(
+        default="", desc="Latitude and longitude", alias="dwc:verbatimCoordinates"
+    )
+    dwc_recorded_by: list[str] = dspy.OutputField(
+        default="", desc="Collector names", alias="dwc:recordedBy"
+    )
+    dwc_recorded_by_id: str = dspy.OutputField(
+        default="", desc="Collector ID", alias="dwc:recordedByID"
+    )
+    dwc_identified_by: list[str] = dspy.OutputField(
+        default="", desc="Determiners names", alias="dwc:identifiedBy"
+    )
+    dwc_identified_by_id: str = dspy.OutputField(
+        default="", desc="Determiner ID", alias="dwc:identifiedByID"
+    )
+    dwc_occurrence_id: str = dspy.OutputField(
+        default="", desc="Specimen ID", alias="dwc:occurrenceID"
+    )
+    dwc_associated_taxa: list[str] = dspy.OutputField(
+        default="", desc="Associated taxa", alias="dwc:associatedTaxa"
+    )
+    dwc_occurrence_remarks: list[str] = dspy.OutputField(
+        default="", desc="Other observations", alias="dwc:occurrenceRemarks"
+    )
+    verbatim_administrative_unit: list[str] = dspy.OutputField(
+        default="", desc="Administrative units", alias="verbatimAdministrativeUnit"
+    )
+    verbatim_trs: str = dspy.OutputField(
+        default="", desc="Township Range Section (TRS)", alias="verbatimTRS"
+    )
+    verbatim_utm: str = dspy.OutputField(
+        default="", desc="Universal Transverse Mercator (UTM)", alias="verbatimUTM"
+    )
 
 
 INPUT_FIELDS = ("text", "prompt")
@@ -78,7 +116,7 @@ def split_examples(examples: list[dspy.Example], train_split: float, dev_split: 
     return dataset
 
 
-def score_prediction(example: dspy.Example, prediction: dspy.Prediction, trace=None):
+def score_prediction(example: dspy.Example, prediction: dspy.Prediction, _trace=None):
     """Score predictions from DSPy."""
     total_score: float = 0.0
 
