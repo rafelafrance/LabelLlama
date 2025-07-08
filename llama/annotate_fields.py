@@ -157,6 +157,7 @@ class App(ctk.CTk):
                 return
             idx = self.text.index(idx + " + 1 char")
 
+        self.dirty = True
         self.text.tag_add(self.annotation_combo.get(), beg, end)
 
     def on_delete_annotation(self, _event):
@@ -165,6 +166,7 @@ class App(ctk.CTk):
         if not name:
             return
         if tag := self.text.tag_prevrange(name, tk.CURRENT):
+            self.dirty = True
             self.text.tag_remove(name, *tag)
 
     def import_(self):
@@ -181,6 +183,8 @@ class App(ctk.CTk):
             ocr = [json.loads(ln) for ln in f]
 
         self.text.configure(state="normal")
+        self.text.delete("1.0", tk.END)
+        self.labels = []
 
         for results in ocr:
             label = {
@@ -239,6 +243,8 @@ class App(ctk.CTk):
             annotations = json.load(f)
 
         self.text.configure(state="normal")
+        self.text.delete("1.0", tk.END)
+        self.labels = []
 
         for result in annotations:
             label = {
@@ -246,7 +252,7 @@ class App(ctk.CTk):
                 "text": result["text"],
                 "header-location": [],
                 "text-location": [],
-                "annotations": {},
+                "annotations": defaultdict(list),
             }
 
             self.build_header(label)
@@ -256,10 +262,8 @@ class App(ctk.CTk):
                 if dwc in ("Source-File", "text"):
                     continue
                 if isinstance(val, list) and val:
-                    search_beg = None
                     for v in val:
-                        # Search for the next
-                        search_beg = self.load_tag(dwc, v, label, search_beg)
+                        self.load_tag(dwc, v, label)
                 elif isinstance(val, list):
                     label["annotations"][dwc] = []
                 elif val:
@@ -273,13 +277,19 @@ class App(ctk.CTk):
 
         self.add_header_tags()
 
-    def load_tag(self, dwc, val, label, search_begin=None):
-        text_beg, text_end = label["text-location"]
-        text_beg = search_begin if search_begin else text_beg
-        tag_beg = self.text.search(val, text_beg, text_end)
+    def load_tag(self, dwc, val, label):
+        search_beg, text_end = label["text-location"]
+        # Need to handle annotations with identical content
+        while tag_beg := self.text.search(val, search_beg, text_end):
+            names = set(self.text.tag_names(tag_beg))
+            names -= {"header", "sel"}
+            if not names:
+                break
+            search_beg = self.text.index(tag_beg + f" + {len(val)} chars")
+        else:
+            return
         tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
         self.text.tag_add(dwc, tag_beg, tag_end)
-        return tag_end
 
     def save(self):
         path = tk.filedialog.asksaveasfilename(
@@ -301,8 +311,6 @@ class App(ctk.CTk):
                     lb = next(labels)
                 value = self.text.get(beg, end)
                 lb["annotations"][dwc].append(value)
-                print(f"{lb['Source-File']}")
-                print(f"{beg=} {end=} {value=}\n")
 
         path = Path(path)
         self.curr_dir = path.parent
@@ -312,11 +320,9 @@ class App(ctk.CTk):
         for lb in self.labels:
             anno = {"Source-File": lb["Source-File"], "text": lb["text"]}
             for dwc in DWC:
-                print(IE_TYPES[dwc], type(IE_TYPES[dwc]))
-                if IE_TYPES[dwc] is str:
-                    anno[dwc] = lb["annotations"].get(dwc, [""])[0]
-                else:
-                    anno[dwc] = lb["annotations"].get(dwc, [])
+                if not (field := lb["annotations"].get(dwc)):
+                    continue
+                anno[dwc] = field[0] if IE_TYPES[dwc] is str else field
 
             annotations.append(anno)
 
