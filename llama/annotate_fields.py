@@ -256,8 +256,10 @@ class App(ctk.CTk):
                 if dwc in ("Source-File", "text"):
                     continue
                 if isinstance(val, list) and val:
+                    search_beg = None
                     for v in val:
-                        self.load_tag(dwc, v, label)
+                        # Search for the next
+                        search_beg = self.load_tag(dwc, v, label, search_beg)
                 elif isinstance(val, list):
                     label["annotations"][dwc] = []
                 elif val:
@@ -271,11 +273,13 @@ class App(ctk.CTk):
 
         self.add_header_tags()
 
-    def load_tag(self, dwc, val, label):
+    def load_tag(self, dwc, val, label, search_begin=None):
         text_beg, text_end = label["text-location"]
+        text_beg = search_begin if search_begin else text_beg
         tag_beg = self.text.search(val, text_beg, text_end)
         tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
         self.text.tag_add(dwc, tag_beg, tag_end)
+        return tag_end
 
     def save(self):
         path = tk.filedialog.asksaveasfilename(
