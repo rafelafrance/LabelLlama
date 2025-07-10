@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Any
 
+from .info_extractor import OUTPUT_FIELDS
+
 DWC = {
     "dwc_scientific_name": "dwc:scientificName",
     "dwc_scientific_name_authority": "dwc:scientificNameAuthority",
@@ -23,7 +25,7 @@ DWC = {
 }
 
 
-def to_dwc(label: dict[str, Any], output_fields: list[str]) -> dict[str, Any]:
+def to_dwc(label: dict[str, Any]) -> dict[str, Any]:
     """
     Convert a label as a JSON dict into a Darwin Core labeled dict.
 
@@ -32,7 +34,7 @@ def to_dwc(label: dict[str, Any], output_fields: list[str]) -> dict[str, Any]:
     """
     dwc = defaultdict()
     for key, val in label.items():
-        if key in output_fields:
+        if key in OUTPUT_FIELDS:
             key = DWC.get(key, key)
             if key == "dwc:occurrenceRemarks":
                 dwc[key] = format_text_as_html(val)

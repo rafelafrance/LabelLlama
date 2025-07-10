@@ -3,7 +3,7 @@
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from typing import ClassVar
 
 import customtkinter as ctk
@@ -12,30 +12,31 @@ from pylib.label_box import CONTENTS, Box
 from pylib.label_page import Page
 from pylib.spin_box import Spinner
 
-COLOR_LIST = [
-    "red",
-    "blue",
-    "green",
-    "black",
-    "purple",
-    "orange",
-    "cyan",
-    "olive",
-    "pink",
-    "gray",
+STYLE_LIST = [
+    {"background": "red", "foreground": "white", "font": const.FONT_SM},
+    {"background": "blue", "foreground": "white", "font": const.FONT_SM},
+    {"background": "green", "foreground": "white", "font": const.FONT_SM},
+    {"background": "black", "foreground": "white", "font": const.FONT_SM},
+    {"background": "purple", "foreground": "white", "font": const.FONT_SM},
+    {"background": "orange", "foreground": "black", "font": const.FONT_SM},
+    {"background": "cyan", "foreground": "black", "font": const.FONT_SM},
+    {"background": "olive", "foreground": "black", "font": const.FONT_SM},
+    {"background": "pink", "foreground": "black", "font": const.FONT_SM},
+    {"background": "gray", "foreground": "black", "font": const.FONT_SM},
 ]
-COLOR = dict(zip(CONTENTS, COLOR_LIST, strict=False))
+COLOR = {c: v["background"] for c, v in zip(CONTENTS, STYLE_LIST, strict=False)}
 
 
 class App(ctk.CTk):
-    row_span: ClassVar[int] = 10
+    rows: ClassVar[tuple[int]] = tuple(range(5 + len(CONTENTS)))
+    row_span: ClassVar[int] = len(rows) + 1
 
     def __init__(self):
         super().__init__()
 
-        self.curr_dir = "."
+        self.curr_dir = "../llama"
         self.image_dir: Path = Path()
-        self.canvas: ctk.CTkCanvas = None
+        self.canvas: ctk.CTkCanvas | None = None
         self.pages = []
         self.dirty = False
         self.dragging = False
@@ -45,13 +46,13 @@ class App(ctk.CTk):
 
         self.title("Outline labels on images of herbarium sheets")
 
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
-        self.grid_rowconfigure(9, weight=1)
+        self.grid_rowconfigure(self.rows, weight=0)
+        self.grid_rowconfigure(self.row_span, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
 
         self.image_frame = ctk.CTkFrame(master=self)
-        self.image_frame.grid(row=0, column=0, rowspan=self.row_span, sticky="nsew")
+        self.image_frame.grid(row=0, column=0, rowspan=self.row_span + 1, sticky="nsew")
 
         self.image_button = ctk.CTkButton(
             master=self,
@@ -75,39 +76,11 @@ class App(ctk.CTk):
         )
         self.save_button.grid(row=2, column=1, padx=16, pady=16)
 
+        self.sheet = ctk.CTkLabel(self, text="", font=const.FONT, height=1)
+        self.sheet.grid(row=3, column=1, padx=16, pady=16, sticky="ew")
+
         self.spinner = Spinner(master=self, command=self.change_page, width=140)
-        self.spinner.grid(row=3, column=1, padx=16, pady=16)
-
-        self.action = tk.StringVar()
-        self.action.set("add")
-        self.radio_add = ctk.CTkRadioButton(
-            master=self,
-            variable=self.action,
-            text="add",
-            value="add",
-            font=const.FONT,
-        )
-        self.radio_del = ctk.CTkRadioButton(
-            master=self,
-            variable=self.action,
-            text="delete",
-            value="delete",
-            font=const.FONT,
-        )
-        self.radio_content = ctk.CTkRadioButton(
-            master=self,
-            variable=self.action,
-            text="change content type",
-            value="content",
-            font=const.FONT,
-        )
-        self.radio_add.grid(row=4, column=1, padx=16, pady=16)
-        self.radio_del.grid(row=5, column=1, padx=16, pady=16)
-        self.radio_content.grid(row=6, column=1, padx=16, pady=16)
-
-        self.bind("A", lambda _: self.action.set("add"))
-        self.bind("C", lambda _: self.action.set("content"))
-        self.bind("D", lambda _: self.action.set("delete"))
+        self.spinner.grid(row=4, column=1, padx=16, pady=16)
 
         self.content_label = ctk.CTkLabel(
             master=self,
@@ -115,36 +88,23 @@ class App(ctk.CTk):
             width=200,
             font=const.FONT,
         )
+        self.content_label.grid(row=5, column=1, padx=16, pady=1)
+
         self.content = tk.StringVar()
         self.content.set(CONTENTS[0])
-        self.content_combo = ctk.CTkComboBox(
-            master=self,
-            values=CONTENTS,
-            variable=self.content,
-            font=const.FONT,
-            dropdown_font=const.FONT,
-        )
-        self.content_label.grid(row=7, column=1, padx=16, pady=1)
-        self.content_combo.grid(row=8, column=1, padx=16, pady=1)
 
-        self.bind("t", lambda _: self.set_content(CONTENTS[0]))
-        self.bind("h", lambda _: self.set_content(CONTENTS[1]))
-        self.bind("w", lambda _: self.set_content(CONTENTS[1]))  # For left hand
-        self.bind("m", lambda _: self.set_content(CONTENTS[2]))
-        self.bind("b", lambda _: self.set_content(CONTENTS[3]))
-        self.bind("q", lambda _: self.set_content(CONTENTS[4]))
-        self.bind("s", lambda _: self.set_content(CONTENTS[5]))
-        self.bind("p", lambda _: self.set_content(CONTENTS[6]))
-        self.bind("r", lambda _: self.set_content(CONTENTS[7]))
-        self.bind("e", lambda _: self.set_content(CONTENTS[8]))
+        style = ttk.Style(self)
+        for i, (content, opts) in enumerate(zip(CONTENTS, STYLE_LIST, strict=False), 6):
+            name = f"{content}.TRadiobutton"
+            style.configure(name, **opts)
+            radio = ttk.Radiobutton(
+                self, text=content, value=content, variable=self.content, style=name
+            )
+            radio.grid(sticky="w", row=i, column=1, padx=32, pady=8)
 
         self.protocol("WM_DELETE_WINDOW", self.safe_quit)
         self.focus()
         self.unbind_all("<<NextWindow>>")
-
-    def set_content(self, content):
-        self.content_combo.focus()
-        self.content.set(content)
 
     @property
     def index(self):
@@ -164,8 +124,8 @@ class App(ctk.CTk):
         self.canvas.delete("all")
         self.canvas.create_image((0, 0), image=self.page.photo, anchor="nw")
         self.display_page_boxes()
-        if self.action.get() == "delete":
-            self.action.set("add")
+
+        self.sheet.configure(text=self.page.path.name)
 
     def display_page_boxes(self):
         self.clear_page_boxes()
@@ -188,39 +148,33 @@ class App(ctk.CTk):
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
 
-        if self.pages and self.action.get() == "add":
-            self.dirty = True
-            content = self.content.get()
-            color = COLOR[content]
-            id_ = self.canvas.create_rectangle(0, 0, 1, 1, outline=color, width=4)
-            self.page.boxes.append(
-                Box(id_=id_, x0=x, y0=y, x1=x, y1=y, content=content)
-            )
-            self.dragging = True
-        elif self.pages and self.action.get() == "delete":
-            self.dirty = True
-            self.page.filter_delete(x, y)
-            self.display_page_boxes()
-            self.action.set("add")
-        elif self.pages and self.action.get() == "content":
-            self.dirty = True
-            box = self.page.find(x, y, "smallest")
-            if box:
-                box.content = self.content.get()
-                self.display_page_boxes()
+        self.dirty = True
+        content = self.content.get()
+        color = COLOR[content]
+        id_ = self.canvas.create_rectangle(0, 0, 1, 1, outline=color, width=4)
+        self.page.boxes.append(Box(id_=id_, x0=x, y0=y, x1=x, y1=y, content=content))
+        self.dragging = True
 
     def on_canvas_move(self, event):
-        if self.dragging and self.pages and self.action.get() == "add":
+        if self.dragging and self.pages:
             box = self.page.boxes[-1]
             box.x1 = self.canvas.canvasx(event.x)
             box.y1 = self.canvas.canvasy(event.y)
             self.canvas.coords(box.id, box.x0, box.y0, box.x1, box.y1)
 
     def on_canvas_release(self, _):
-        if self.dragging and self.pages and self.action.get() == "add":
+        if self.dragging and self.pages:
             self.page.filter_size()
             self.display_page_boxes()
             self.dragging = False
+
+    def on_delete_box(self, event):
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+
+        self.dirty = True
+        self.page.filter_delete(x, y)
+        self.display_page_boxes()
 
     def save(self):
         if not self.pages:
@@ -299,6 +253,7 @@ class App(ctk.CTk):
         self.canvas.bind("<ButtonPress-1>", self.on_canvas_press)
         self.canvas.bind("<B1-Motion>", self.on_canvas_move)
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
+        self.canvas.bind("<ButtonRelease-3>", self.on_delete_box)  # right-click
 
     def get_image_dir(self):
         image_dir = filedialog.askdirectory(

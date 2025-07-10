@@ -2,11 +2,10 @@
 
 import json
 import tkinter as tk
-from collections import defaultdict
 from pathlib import Path
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
-from typing import ClassVar, get_type_hints
+from typing import get_type_hints
 
 import customtkinter as ctk
 from pylib import const, darwin_core, info_extractor
@@ -18,23 +17,21 @@ IE_TYPES = {
 }
 
 STYLE_LIST = [
-    {"background": "red", "foreground": "white"},
-    {"background": "blue", "foreground": "white"},
-    {"background": "green", "foreground": "white"},
-    {"background": "black", "foreground": "white"},
-    {"background": "purple", "foreground": "white"},
-    {"background": "olive", "foreground": "white"},
-    {"background": "gray", "foreground": "white"},
-    {"background": "orange"},
-    {"background": "cyan"},
-    {"background": "pink"},
+    {"background": "red", "foreground": "white", "font": const.FONT_SM},
+    {"background": "blue", "foreground": "white", "font": const.FONT_SM},
+    {"background": "green", "foreground": "white", "font": const.FONT_SM},
+    {"background": "black", "foreground": "white", "font": const.FONT_SM},
+    {"background": "purple", "foreground": "white", "font": const.FONT_SM},
+    {"background": "gray", "foreground": "white", "font": const.FONT_SM},
+    {"background": "orange", "font": const.FONT_SM},
+    {"background": "cyan", "font": const.FONT_SM},
+    {"background": "pink", "font": const.FONT_SM},
     {"background": "red", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "blue", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "green", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "black", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "purple", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "olive", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "gray", "foreground": "yellow", "font": const.FONT_SM2},
     {"background": "orange", "font": const.FONT_SM2},
     {"background": "cyan", "font": const.FONT_SM2},
     {"background": "pink", "font": const.FONT_SM2},
@@ -44,8 +41,6 @@ DWC = list(darwin_core.DWC.values())
 
 
 class App(ctk.CTk):
-    row_span: ClassVar[int] = 10
-
     def __init__(self):
         super().__init__()
 
@@ -59,24 +54,27 @@ class App(ctk.CTk):
 
         self.title("Annotate fields on OCRed label text")
 
-        self.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=0)
-        self.grid_rowconfigure(9, weight=1)
+        rows = tuple(range(8 + len(DWC)))
+
+        self.grid_rowconfigure(rows, weight=0)
+        self.grid_rowconfigure(len(rows), weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0, minsize=280)
 
         self.text_frame = ctk.CTkFrame(master=self)
-        self.text_frame.grid(row=0, column=0, rowspan=self.row_span, sticky="nsew")
+        self.text_frame.grid(row=0, column=0, rowspan=len(rows) + 1, sticky="nsew")
 
         self.text = ScrolledText(self.text_frame, font=const.FONT_SM)
         self.text.pack(fill="both", expand=True)
         self.text.insert(tk.INSERT, "")
         self.text.bind("<ButtonRelease-1>", self.on_add_annotation)  # left-click
         self.text.bind("<ButtonRelease-3>", self.on_delete_annotation)  # right-click
-        self.tooltip = tk.Label(self, text="")
         for dwc, opts in zip(DWC, STYLE_LIST, strict=False):
             self.text.tag_config(dwc, **opts)
             self.text.tag_bind(dwc, "<Enter>", self.show_tooltip)
             self.text.tag_bind(dwc, "<Leave>", self.hide_tooltip)
+
+        self.tooltip = tk.Label(self, text="")
 
         self.jsonl_button = ctk.CTkButton(
             master=self,
@@ -108,24 +106,26 @@ class App(ctk.CTk):
             width=200,
             font=const.FONT,
         )
-        self.annotation = tk.StringVar()
-        self.annotation.set(DWC[0])
-        self.annotation_combo = ctk.CTkComboBox(
-            master=self,
-            values=DWC,
-            variable=self.annotation,
-            font=const.FONT,
-            dropdown_font=const.FONT,
-            width=260,
-        )
-        self.annotation_label.grid(row=7, column=1, padx=16, pady=1)
-        self.annotation_combo.grid(row=8, column=1, padx=16, pady=1)
+        self.annotation_label.grid(row=7, column=1, padx=16, pady=16)
+
+        self.annotation_value = tk.StringVar()
+        self.annotation_value.set(DWC[0])
+
+        style = ttk.Style(self)
+        for i, (dwc, opts) in enumerate(zip(DWC, STYLE_LIST, strict=False), 8):
+            name = f"{dwc}.TRadiobutton"
+            style.configure(name, **opts)
+            radio = ttk.Radiobutton(
+                self, text=dwc, value=dwc, variable=self.annotation_value, style=name
+            )
+            radio.grid(sticky="w", row=i, column=1, padx=32, pady=8)
 
         self.protocol("WM_DELETE_WINDOW", self.safe_quit)
         self.focus()
         self.unbind_all("<<NextWindow>>")
 
     def show_tooltip(self, event):
+        self.hide_tooltip(event)
         names = self.text.tag_names(tk.CURRENT)
         name = next((lb for lb in names if lb not in ("header", "sel")), "")
         self.tooltip = tk.Label(self, text=name)
@@ -158,7 +158,7 @@ class App(ctk.CTk):
             idx = self.text.index(idx + " + 1 char")
 
         self.dirty = True
-        self.text.tag_add(self.annotation_combo.get(), beg, end)
+        self.text.tag_add(self.annotation_value.get(), beg, end)
 
     def on_delete_annotation(self, _event):
         names = self.text.tag_names(tk.CURRENT)
@@ -192,7 +192,7 @@ class App(ctk.CTk):
                 "text": results["text"],
                 "header-location": [],
                 "text-location": [],
-                "annotations": defaultdict(list),
+                "annotations": {k: [] for k in DWC},
             }
 
             self.build_header(label)
@@ -252,7 +252,7 @@ class App(ctk.CTk):
                 "text": result["text"],
                 "header-location": [],
                 "text-location": [],
-                "annotations": defaultdict(list),
+                "annotations": {k: [] for k in DWC},
             }
 
             self.build_header(label)

@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 import customtkinter as ctk
 
-from llama.pylib import const
+from . import const
 
 
 class Spinner(ctk.CTkFrame):
