@@ -6,12 +6,10 @@ import textwrap
 from pathlib import Path
 
 import dspy
-from pylib import info_extractor as te
+from pylib import darwin_core as dwc
+from pylib import info_extractor as ie
 from pylib import log
 from rich import print as rprint
-
-# from pprint import pp
-# from pylib import track_scores as ts
 
 
 def main(args):
@@ -26,10 +24,10 @@ def main(args):
     )
     dspy.configure(lm=lm)
 
-    trait_extractor = dspy.Predict(te.InfoExtractor)
+    trait_extractor = dspy.Predict(ie.InfoExtractor)
     # trait_extractor = dspy.ChainOfThought(TraitExtractor)
 
-    preds = []
+    predictions = []
 
     for i, label in enumerate(labels, 1):
         rprint(f"[blue]{'=' * 80}")
@@ -37,7 +35,7 @@ def main(args):
         rprint(f"[blue]{label['text']}")
         print()
 
-        pred = trait_extractor(text=label["text"], prompt=te.PROMPT)
+        pred = trait_extractor(text=label["text"], prompt=ie.PROMPT)
 
         rprint(f"[green]{pred}")
 
@@ -47,17 +45,18 @@ def main(args):
         as_dict = {
             "Source-File": label["metadata"]["Source-File"],
             "text": label["text"],
+            "annotations": dwc.rekey(pred.toDict()),
         }
-        as_dict |= pred.toDict()
+        from pprint import pp
 
-        preds.append(as_dict)
+        pp(as_dict)
+        predictions.append(as_dict)
 
     # ts.TrackScores.summarize_scores(scores)
 
-    if args.predictions_jsonl:
-        with args.predictions_jsonl.open("w") as f:
-            for pred in preds:
-                f.write(json.dumps(pred) + "\n")
+    if args.predictions_json:
+        with args.predictions_json.open("w") as f:
+            f.write(json.dumps(predictions, indent=4) + "\n")
 
     log.finished()
 
@@ -74,6 +73,45 @@ def parse_args():
         required=True,
         metavar="PATH",
         help="""Get OCR results from this JSONL file.""",
+    )
+
+    arg_parser.add_argument(
+        "--predictions-json",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Output LLM predictions to this file.""",
+    )
+
+    arg_parser.add_argument(
+        "--model",
+        default="ollama_chat/gemma3:27b",
+        help="""Use this LLM model. (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--api-base",
+        default="http://localhost:11434",
+        help="""URL for the LM model. (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--api-key",
+        help="""Key for the LM provider.""",
+    )
+
+    arg_parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="""Turn off caching for the model.""",
+    )
+
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        default=0,
+        metavar="INT",
+        help="""Limit to this many labels, 0 = all (default: %(default)s)""",
     )
 
     args = arg_parser.parse_args()

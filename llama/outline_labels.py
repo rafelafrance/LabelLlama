@@ -6,7 +6,6 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import ClassVar
 
-import customtkinter as ctk
 from pylib import const
 from pylib.label_box import CONTENTS, Box
 from pylib.label_page import Page
@@ -27,8 +26,8 @@ STYLE_LIST = [
 COLOR = {c: v["background"] for c, v in zip(CONTENTS, STYLE_LIST, strict=False)}
 
 
-class App(ctk.CTk):
-    rows: ClassVar[tuple[int]] = tuple(range(5 + len(CONTENTS)))
+class App(tk.Tk):
+    rows: ClassVar[tuple[int]] = tuple(range(6 + len(CONTENTS)))
     row_span: ClassVar[int] = len(rows) + 1
 
     def __init__(self):
@@ -36,13 +35,10 @@ class App(ctk.CTk):
 
         self.curr_dir = "../llama"
         self.image_dir: Path = Path()
-        self.canvas: ctk.CTkCanvas | None = None
+        self.canvas: tk.Canvas | None = None
         self.pages = []
         self.dirty = False
         self.dragging = False
-
-        ctk.set_appearance_mode("System")
-        ctk.set_default_color_theme("blue")
 
         self.title("Outline labels on images of herbarium sheets")
 
@@ -51,54 +47,60 @@ class App(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=0)
 
-        self.image_frame = ctk.CTkFrame(master=self)
+        self.image_frame = ttk.Frame(self)
         self.image_frame.grid(row=0, column=0, rowspan=self.row_span + 1, sticky="nsew")
 
-        self.image_button = ctk.CTkButton(
-            master=self,
+        self.control_frame = ttk.Frame(self, relief="sunken", borderwidth=2)
+        self.control_frame.grid(
+            row=0, column=1, rowspan=self.row_span + 1, sticky="nsew"
+        )
+
+        self.image_button = tk.Button(
+            self.control_frame,
             text="Choose image directory",
             command=self.get_image_dir,
-            font=const.FONT,
+            font=const.FONT_SM,
         )
         self.image_button.grid(row=0, column=1, padx=16, pady=16)
 
-        self.load_button = ctk.CTkButton(
-            master=self, text="Load", command=self.load, font=const.FONT
+        self.load_button = tk.Button(
+            self.control_frame, text="Load", command=self.load, font=const.FONT_SM
         )
         self.load_button.grid(row=1, column=1, padx=16, pady=16)
 
-        self.save_button = ctk.CTkButton(
-            master=self,
+        self.save_button = tk.Button(
+            self.control_frame,
             text="Save",
             command=self.save,
             state="disabled",
-            font=const.FONT,
+            font=const.FONT_SM,
         )
         self.save_button.grid(row=2, column=1, padx=16, pady=16)
 
-        self.sheet = ctk.CTkLabel(self, text="", font=const.FONT, height=1)
+        self.sheet = ttk.Label(self.control_frame, text="", font=const.FONT_SM)
         self.sheet.grid(row=3, column=1, padx=16, pady=16, sticky="ew")
 
-        self.spinner = Spinner(master=self, command=self.change_page, width=140)
+        self.spinner = Spinner(self.control_frame, command=self.change_page, width=140)
         self.spinner.grid(row=4, column=1, padx=16, pady=16)
 
-        self.content_label = ctk.CTkLabel(
-            master=self,
-            text="Label content type",
-            width=200,
-            font=const.FONT,
+        self.content_label = ttk.Label(
+            self.control_frame, text="Label content type", font=const.FONT_SM
         )
-        self.content_label.grid(row=5, column=1, padx=16, pady=1)
+        self.content_label.grid(row=6, column=1, padx=16, pady=16, sticky="ew")
 
         self.content = tk.StringVar()
         self.content.set(CONTENTS[0])
 
         style = ttk.Style(self)
-        for i, (content, opts) in enumerate(zip(CONTENTS, STYLE_LIST, strict=False), 6):
+        for i, (content, opts) in enumerate(zip(CONTENTS, STYLE_LIST, strict=False), 7):
             name = f"{content}.TRadiobutton"
             style.configure(name, **opts)
             radio = ttk.Radiobutton(
-                self, text=content, value=content, variable=self.content, style=name
+                self.control_frame,
+                text=content,
+                value=content,
+                variable=self.content,
+                style=name,
             )
             radio.grid(sticky="w", row=i, column=1, padx=32, pady=8)
 
@@ -125,7 +127,7 @@ class App(ctk.CTk):
         self.canvas.create_image((0, 0), image=self.page.photo, anchor="nw")
         self.display_page_boxes()
 
-        self.sheet.configure(text=self.page.path.name)
+        self.sheet.configure(text=Path(self.page.path).name)
 
     def display_page_boxes(self):
         self.clear_page_boxes()
@@ -141,7 +143,7 @@ class App(ctk.CTk):
 
     def clear_page_boxes(self):
         for i, id_ in enumerate(self.canvas.find_all()):
-            if i:  # First object is the page itself
+            if i != 0:  # First object is the page itself
                 self.canvas.delete(id_)
 
     def on_canvas_press(self, event):
@@ -241,8 +243,8 @@ class App(ctk.CTk):
     def setup_canvas(self):
         self.update()
 
-        self.canvas = ctk.CTkCanvas(
-            master=self.image_frame,
+        self.canvas = tk.Canvas(
+            self.image_frame,
             width=self.image_frame.winfo_width(),
             height=self.image_frame.winfo_height(),
             background="black",

@@ -12,7 +12,6 @@ authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.12"
 dependencies = [
     "Jinja2",
-    "customtkinter",
     "dspy",
     "dspy-ai",
     "ftfy",

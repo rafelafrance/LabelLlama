@@ -45,6 +45,10 @@ def to_dwc(label: dict[str, Any]) -> dict[str, Any]:
     return dwc
 
 
+def rekey(label: dict[str, Any]) -> dict[str, Any]:
+    return {DWC[k]: v for k, v in label.items()}
+
+
 def format_text_as_html(text):
     if not isinstance(text, str):
         return text

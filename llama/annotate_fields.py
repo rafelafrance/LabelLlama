@@ -5,9 +5,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
-from typing import get_type_hints
+from typing import ClassVar, get_type_hints
 
-import customtkinter as ctk
 from pylib import const, darwin_core, info_extractor
 
 IE_TYPES = {
@@ -26,21 +25,24 @@ STYLE_LIST = [
     {"background": "orange", "font": const.FONT_SM},
     {"background": "cyan", "font": const.FONT_SM},
     {"background": "pink", "font": const.FONT_SM},
-    {"background": "red", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "blue", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "green", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "black", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "purple", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "olive", "foreground": "yellow", "font": const.FONT_SM2},
-    {"background": "orange", "font": const.FONT_SM2},
-    {"background": "cyan", "font": const.FONT_SM2},
-    {"background": "pink", "font": const.FONT_SM2},
+    {"background": "red", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "blue", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "green", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "black", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "purple", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "olive", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "orange", "font": const.FONT_SM_I},
+    {"background": "cyan", "font": const.FONT_SM_I},
+    {"background": "pink", "font": const.FONT_SM_I},
 ]
 
 DWC = list(darwin_core.DWC.values())
 
 
-class App(ctk.CTk):
+class App(tk.Tk):
+    rows: ClassVar[tuple[int]] = tuple(range(8 + len(DWC)))
+    row_span: ClassVar[int] = len(rows) + 1
+
     def __init__(self):
         super().__init__()
 
@@ -49,20 +51,20 @@ class App(ctk.CTk):
         self.labels = []
         self.dirty = False
 
-        ctk.set_appearance_mode("System")
-        ctk.set_default_color_theme("blue")
-
         self.title("Annotate fields on OCRed label text")
 
-        rows = tuple(range(8 + len(DWC)))
-
-        self.grid_rowconfigure(rows, weight=0)
-        self.grid_rowconfigure(len(rows), weight=1)
+        self.grid_rowconfigure(self.rows, weight=0)
+        self.grid_rowconfigure(self.row_span, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=0, minsize=280)
+        self.grid_columnconfigure(1, weight=0)
 
-        self.text_frame = ctk.CTkFrame(master=self)
-        self.text_frame.grid(row=0, column=0, rowspan=len(rows) + 1, sticky="nsew")
+        self.text_frame = ttk.Frame(master=self)
+        self.text_frame.grid(row=0, column=0, rowspan=self.row_span + 1, sticky="nsew")
+
+        self.control_frame = ttk.Frame(self, relief="sunken", borderwidth=2)
+        self.control_frame.grid(
+            row=0, column=1, rowspan=self.row_span + 1, sticky="nsew"
+        )
 
         self.text = ScrolledText(self.text_frame, font=const.FONT_SM)
         self.text.pack(fill="both", expand=True)
@@ -76,35 +78,34 @@ class App(ctk.CTk):
 
         self.tooltip = tk.Label(self, text="")
 
-        self.jsonl_button = ctk.CTkButton(
-            master=self,
+        self.jsonl_button = tk.Button(
+            self.control_frame,
             text="Import text",
             command=self.import_,
-            font=const.FONT,
+            font=const.FONT_SM,
         )
         self.jsonl_button.grid(row=0, column=1, padx=16, pady=16)
 
-        self.load_button = ctk.CTkButton(
-            master=self,
+        self.load_button = tk.Button(
+            self.control_frame,
             text="Load annotations",
             command=self.load,
-            font=const.FONT,
+            font=const.FONT_SM,
         )
         self.load_button.grid(row=1, column=1, padx=16, pady=16)
 
-        self.save_button = ctk.CTkButton(
-            master=self,
+        self.save_button = tk.Button(
+            self.control_frame,
             text="Save annotations",
             command=self.save,
-            font=const.FONT,
+            font=const.FONT_SM,
         )
         self.save_button.grid(row=2, column=1, padx=16, pady=16)
 
-        self.annotation_label = ctk.CTkLabel(
-            master=self,
+        self.annotation_label = tk.Label(
+            self.control_frame,
             text="Annotation type",
-            width=200,
-            font=const.FONT,
+            font=const.FONT_SM,
         )
         self.annotation_label.grid(row=7, column=1, padx=16, pady=16)
 
@@ -116,7 +117,11 @@ class App(ctk.CTk):
             name = f"{dwc}.TRadiobutton"
             style.configure(name, **opts)
             radio = ttk.Radiobutton(
-                self, text=dwc, value=dwc, variable=self.annotation_value, style=name
+                self.control_frame,
+                text=dwc,
+                value=dwc,
+                variable=self.annotation_value,
+                style=name,
             )
             radio.grid(sticky="w", row=i, column=1, padx=32, pady=8)
 
@@ -258,9 +263,7 @@ class App(ctk.CTk):
             self.build_header(label)
             self.build_text(label)
 
-            for dwc, val in result.items():
-                if dwc in ("Source-File", "text"):
-                    continue
+            for dwc, val in result["annotations"].items():
                 if isinstance(val, list) and val:
                     for v in val:
                         self.load_tag(dwc, v, label)
