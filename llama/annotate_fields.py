@@ -145,7 +145,7 @@ class App(tk.Tk):
 
         beg = self.text.index(tk.SEL_FIRST)
 
-        # Strip whitespace from annotations
+        # Strip leading and trailing whitespace from annotations
         selected = self.text.get(*select)
         trimmed = selected.lstrip()
         beg = self.text.index(beg + f" + {len(selected) - len(trimmed)} chars")
@@ -166,13 +166,25 @@ class App(tk.Tk):
         self.text.tag_add(self.annotation_value.get(), beg, end)
 
     def on_delete_annotation(self, _event):
+        # Is the cursor on a valid tag?
         names = self.text.tag_names(tk.CURRENT)
         name = next((lb for lb in names if lb not in ("header", "sel")), "")
         if not name:
             return
-        if tag := self.text.tag_prevrange(name, tk.CURRENT):
-            self.dirty = True
-            self.text.tag_remove(name, *tag)
+
+        self.dirty = True
+
+        # Remove the tag from current index to the start of the tag
+        idx = self.text.index(tk.CURRENT)
+        while name in self.text.tag_names(idx):
+            self.text.tag_remove(name, idx)
+            idx = self.text.index(idx + " - 1 char")
+
+        # Remove tag from after the current index to the end of the tag
+        idx = self.text.index(tk.CURRENT + " + 1 char")
+        while name in self.text.tag_names(idx):
+            self.text.tag_remove(name, idx)
+            idx = self.text.index(idx + " + 1 char")
 
     def import_(self):
         path = filedialog.askopenfilename(
@@ -321,11 +333,16 @@ class App(tk.Tk):
 
         annotations = []
         for lb in self.labels:
-            anno = {"Source-File": lb["Source-File"], "text": lb["text"]}
+            anno = {
+                "Source-File": lb["Source-File"],
+                "text": lb["text"],
+                "annotations": {},
+            }
             for dwc in DWC:
                 if not (field := lb["annotations"].get(dwc)):
+                    anno["annotations"][dwc] = "" if IE_TYPES[dwc] is str else []
                     continue
-                anno[dwc] = field[0] if IE_TYPES[dwc] is str else field
+                anno["annotations"][dwc] = field[0] if IE_TYPES[dwc] is str else field
 
             annotations.append(anno)
 
