@@ -174,13 +174,13 @@ class App(tk.Tk):
 
         self.dirty = True
 
-        # Remove the tag from current index to the start of the tag
+        # Remove the tag from current index to the start of the tag's span
         idx = self.text.index(tk.CURRENT)
         while name in self.text.tag_names(idx):
             self.text.tag_remove(name, idx)
             idx = self.text.index(idx + " - 1 char")
 
-        # Remove tag from after the current index to the end of the tag
+        # Remove tag from after the current index to the end of the tag's span
         idx = self.text.index(tk.CURRENT + " + 1 char")
         while name in self.text.tag_names(idx):
             self.text.tag_remove(name, idx)

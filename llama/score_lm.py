@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import textwrap
 from pathlib import Path
-from pprint import pp
 
 import dspy
-from pylib import darwin_core as dwc
 from pylib import info_extractor as ie
 from pylib import log
+from pylib import track_scores as ts
 from rich import print as rprint
 
 
 def main(args):
     log.started()
 
-    with args.ocr_jsonl.open() as f:
-        labels = [json.loads(ln) for ln in f]
-    labels = labels[: args.limit] if args.limit else labels
+    examples = ie.read_labels(args.gold_json, args.limit)
 
     lm = dspy.LM(
         args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
@@ -27,30 +23,21 @@ def main(args):
 
     trait_extractor = dspy.Predict(ie.InfoExtractor)
 
-    predictions = []
+    scores = []
 
-    for i, label in enumerate(labels, 1):
-        rprint(f"[blue]{'=' * 80}")
-        rprint(f"[blue]{i} {label['metadata']['Source-File']}")
-        rprint(f"[blue]{label['text']}")
+    for i, example in enumerate(examples, 1):
+        rprint(f"[blue]{i} {'=' * 80}")
+        rprint(f"[blue]{example['text']}")
         print()
 
-        pred = trait_extractor(text=label["text"], prompt=ie.PROMPT)
+        pred = trait_extractor(text=example["text"], prompt=ie.PROMPT)
 
-        rprint(f"[green]{pred}")
+        score = ts.TrackScores.track_scores(example=example, prediction=pred)
+        score.display()
 
-        as_dict = {
-            "Source-File": label["metadata"]["Source-File"],
-            "text": label["text"],
-            "annotations": dwc.rekey(pred.toDict()),
-        }
-        pp(as_dict)
+        scores.append(score)
 
-        predictions.append(as_dict)
-
-    if args.predictions_json:
-        with args.predictions_json.open("w") as f:
-            f.write(json.dumps(predictions, indent=4) + "\n")
+    ts.TrackScores.summarize_scores(scores)
 
     log.finished()
 
@@ -62,19 +49,11 @@ def parse_args():
     )
 
     arg_parser.add_argument(
-        "--ocr-jsonl",
+        "--gold-json",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Get OCR results from this JSONL file.""",
-    )
-
-    arg_parser.add_argument(
-        "--predictions-json",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Output LLM predictions to this file.""",
+        help="""Get gold standard from this JSON file.""",
     )
 
     arg_parser.add_argument(

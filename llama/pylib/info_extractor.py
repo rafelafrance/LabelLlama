@@ -1,14 +1,18 @@
+import json
 import random
+from pathlib import Path
 
 import dspy
 import Levenshtein
 
+from .darwin_core import DWC
+
 PROMPT = """
-    What is the scientific name, scientific name authority, family taxon,
+    From the label get the scientific name, scientific name authority, family taxon,
     collection date, elevation, latitude and longitude, Township Range Section (TRS),
     Universal Transverse Mercator (UTM), administrative unit, locality, habitat
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
-    associated taxa, and any other observations?
+    associated taxa, and any other observations.
     If it is not mentioned return an empty value.
     """
 
@@ -87,17 +91,18 @@ def dict2example(dct: dict[str, str]) -> dspy.Example:
     example = dspy.Example(text=dct["text"], prompt=PROMPT).with_inputs(
         "text", "prompt"
     )
-
     for fld in OUTPUT_FIELDS:
-        setattr(example, fld, dct[fld])
+        setattr(example, fld, dct["annotations"][DWC[fld]])
     return example
 
 
-# def read_labels(label_jsonl: Path) -> list[dspy.Example]:
-#     with label_jsonl.open() as f:
-#         label_data = json.load(f)
-#     # labels = [dict2example(d) for d in label_data]
-#     return label_data
+def read_labels(label_json: Path, limit: int = 0) -> list[dspy.Example]:
+    with label_json.open() as f:
+        label_data = json.load(f)
+        # label_data = [json.loads(ln) for ln in f]
+        label_data = label_data[:limit] if limit else label_data
+    examples = [dict2example(d) for d in label_data]
+    return examples
 
 
 def split_examples(examples: list[dspy.Example], train_split: float, dev_split: float):
