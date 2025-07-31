@@ -13,7 +13,7 @@ install:
 dev:
 	test -d .venv || python3.12 -m venv .venv
 	. .venv/bin/activate
-	python3.12 -m pip install -U pip setuptools wheel
+	python3.12 -m pip install -U pip setuptools setuptools-scm wheel
 	python3.12 -m pip install -e .[dev]
 	pre-commit install
 

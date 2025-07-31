@@ -96,7 +96,7 @@ def dict2example(dct: dict[str, str]) -> dspy.Example:
     return example
 
 
-def read_labels(label_json: Path, limit: int = 0) -> list[dspy.Example]:
+def read_examples(label_json: Path, limit: int = 0) -> list[dspy.Example]:
     with label_json.open() as f:
         label_data = json.load(f)
         # label_data = [json.loads(ln) for ln in f]

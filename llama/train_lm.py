@@ -1,51 +1,32 @@
-#!/usr/bin/env python3
-
 import argparse
 import textwrap
 from pathlib import Path
 
-import dspy
-from pylib import info_extractor as ie
 from pylib import log
-from pylib import track_scores as ts
-from rich import print as rprint
 
 
 def main(args):
-    log.started()
-
-    examples = ie.read_examples(args.gold_json, args.limit)
-
-    lm = dspy.LM(
-        args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
-    )
-    dspy.configure(lm=lm)
-
-    trait_extractor = dspy.Predict(ie.InfoExtractor)
-
-    scores = []
-
-    for i, example in enumerate(examples, 1):
-        rprint(f"[blue]{i} {'=' * 80}")
-        rprint(f"[blue]{example['text']}")
-        print()
-
-        pred = trait_extractor(text=example["text"], prompt=ie.PROMPT)
-
-        score = ts.TrackScores.track_scores(example=example, prediction=pred)
-        score.display()
-
-        scores.append(score)
-
-    ts.TrackScores.summarize_scores(scores)
+    log.started(args)
 
     log.finished()
+
+
+def validate_splits(args: argparse.Namespace) -> None:
+    splits = (args.train_split, args.val_split, args.test_split)
+
+    if sum(splits) != 1.0:
+        msg = "train, val, and test splits must sum to 1.0"
+        raise ValueError(msg)
+
+    if any(s < 0.0 or s > 1.0 for s in splits):
+        msg = "All splits must be in the interval [0.0, 1.0]"
+        raise ValueError(msg)
 
 
 def parse_args():
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("Extract information from OCRed herbarium labels."),
+        description=textwrap.dedent("Train a nodel with given examples."),
     )
 
     arg_parser.add_argument(
@@ -74,6 +55,33 @@ def parse_args():
     )
 
     arg_parser.add_argument(
+        "--train-split",
+        type=float,
+        metavar="FRACTION",
+        default=0.2,
+        help="""What fraction of records to use for training the model.
+            (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--val-split",
+        type=float,
+        metavar="FRACTION",
+        default=0.5,
+        help="""What fraction of records to use for validating the model between epochs.
+            (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--test-split",
+        type=float,
+        metavar="FRACTION",
+        default=0.3,
+        help="""What fraction of records to use for testing the model.
+            (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
         "--no-cache",
         action="store_true",
         help="""Turn off caching for the model.""",
@@ -88,6 +96,7 @@ def parse_args():
     )
 
     args = arg_parser.parse_args()
+    validate_splits(args)
 
     return args
 
