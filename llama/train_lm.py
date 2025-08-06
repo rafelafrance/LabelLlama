@@ -1,12 +1,59 @@
+#!/usr/bin/env python3
+
 import argparse
+import random
 import textwrap
 from pathlib import Path
 
+import dspy
+from dspy.evaluate import Evaluate
+from pylib import info_extractor as ie
 from pylib import log
 
 
 def main(args):
-    log.started(args)
+    log.started(args=args)
+
+    random.seed(args.seed)
+
+    label_data = ie.read_label_data(args.gold_json, args.limit)
+    examples = [ie.dict2example(lb) for lb in label_data]
+
+    dataset = ie.split_examples(
+        examples, train_split=args.train_split, val_split=args.val_split
+    )
+
+    lm = dspy.LM(
+        args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
+    )
+    dspy.configure(lm=lm)
+    info_extractor = dspy.Predict(ie.InfoExtractor)
+
+    evaluator = Evaluate(
+        devset=dataset["dev"],
+        metric=ie.score_prediction,
+        num_threads=1,
+        display_progress=True,  # display_table=True,
+        provide_traceback=True,
+    )
+
+    evaluator(info_extractor, devset=dataset["dev"])
+
+    mipro_optimizer = dspy.MIPROv2(metric=ie.score_prediction, auto="medium")
+
+    optimized_info_extractor = mipro_optimizer.compile(
+        info_extractor,
+        trainset=dataset["train"],
+        max_bootstrapped_demos=4,
+        requires_permission_to_run=False,
+        minibatch=False,
+    )
+
+    evaluator(optimized_info_extractor, devset=dataset["dev"])
+
+    dspy.inspect_history(n=1)
+
+    optimized_info_extractor.save(args.prompt_json)
 
     log.finished()
 
@@ -44,6 +91,14 @@ def parse_args():
     )
 
     arg_parser.add_argument(
+        "--prompts-json",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Save updated model prompts to this JSON file.""",
+    )
+
+    arg_parser.add_argument(
         "--api-base",
         default="http://localhost:11434",
         help="""URL for the LM model. (default: %(default)s)""",
@@ -58,7 +113,7 @@ def parse_args():
         "--train-split",
         type=float,
         metavar="FRACTION",
-        default=0.2,
+        default=0.3,
         help="""What fraction of records to use for training the model.
             (default: %(default)s)""",
     )
@@ -67,7 +122,7 @@ def parse_args():
         "--val-split",
         type=float,
         metavar="FRACTION",
-        default=0.5,
+        default=0.4,
         help="""What fraction of records to use for validating the model between epochs.
             (default: %(default)s)""",
     )
@@ -79,6 +134,14 @@ def parse_args():
         default=0.3,
         help="""What fraction of records to use for testing the model.
             (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--seed",
+        type=int,
+        metavar="INT",
+        default=839935,
+        help="""Seed for the random number generator. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(

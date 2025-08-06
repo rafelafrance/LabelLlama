@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import textwrap
+from dataclasses import asdict
 from pathlib import Path
 
 import dspy
@@ -12,9 +14,9 @@ from rich import print as rprint
 
 
 def main(args):
-    log.started()
+    log.started(args=args)
 
-    examples = ie.read_examples(args.gold_json, args.limit)
+    label_data = ie.read_label_data(args.gold_json, args.limit)
 
     lm = dspy.LM(
         args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
@@ -25,8 +27,10 @@ def main(args):
 
     scores = []
 
-    for i, example in enumerate(examples, 1):
-        rprint(f"[blue]{i} {'=' * 80}")
+    for i, one_label in enumerate(label_data, 1):
+        example = ie.dict2example(one_label)
+
+        rprint(f"[blue]{i} / {len(label_data)} {'=' * 80}")
         rprint(f"[blue]{example['text']}")
         print()
 
@@ -35,9 +39,19 @@ def main(args):
         score = ts.TrackScores.track_scores(example=example, prediction=pred)
         score.display()
 
+        score = {
+            "Source-File": one_label["Source-File"],
+            "text": one_label["text"],
+            **asdict(score),
+        }
+
         scores.append(score)
 
     ts.TrackScores.summarize_scores(scores)
+
+    if args.score_json:
+        with args.score_json.open("w") as f:
+            json.dump(scores, f, indent=4)
 
     log.finished()
 
@@ -54,6 +68,13 @@ def parse_args():
         required=True,
         metavar="PATH",
         help="""Get gold standard from this JSON file.""",
+    )
+
+    arg_parser.add_argument(
+        "--score-json",
+        type=Path,
+        metavar="PATH",
+        help="""Save score results to this JSON file.""",
     )
 
     arg_parser.add_argument(

@@ -96,21 +96,20 @@ def dict2example(dct: dict[str, str]) -> dspy.Example:
     return example
 
 
-def read_examples(label_json: Path, limit: int = 0) -> list[dspy.Example]:
+def read_label_data(label_json: Path, limit: int = 0) -> list[dict]:
     with label_json.open() as f:
         label_data = json.load(f)
         # label_data = [json.loads(ln) for ln in f]
         label_data = label_data[:limit] if limit else label_data
-    examples = [dict2example(d) for d in label_data]
-    return examples
+    return label_data
 
 
-def split_examples(examples: list[dspy.Example], train_split: float, dev_split: float):
+def split_examples(examples: list[dspy.Example], train_split: float, val_split: float):
     random.shuffle(examples)
 
     total = len(examples)
     split1 = round(total * train_split)
-    split2 = split1 + round(total * dev_split)
+    split2 = split1 + round(total * val_split)
 
     dataset = {
         "train": examples[:split1],

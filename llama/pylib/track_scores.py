@@ -72,7 +72,7 @@ class TrackScores:
         count = float(len(scores))
         for fld in OUTPUT_FIELDS:
             dwc = DWC[fld]
-            score: float = sum(getattr(s.scores, fld) for s in scores)
+            score: float = sum(s["scores"][fld] for s in scores)
             rprint(f"[blue]{dwc:<28} {score / count * 100.0:6.2f}")
-        total_score = sum(s.total_score for s in scores) / count * 100.0
+        total_score = sum(s["total_score"] for s in scores) / count * 100.0
         rprint(f"\n[blue]{'Total Score':<28} {total_score:6.2f}\n")
