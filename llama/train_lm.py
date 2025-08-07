@@ -33,7 +33,8 @@ def main(args):
         devset=dataset["dev"],
         metric=ie.score_prediction,
         num_threads=1,
-        display_progress=True,  # display_table=True,
+        display_progress=True,
+        display_table=True,
         provide_traceback=True,
     )
 
@@ -53,7 +54,7 @@ def main(args):
 
     dspy.inspect_history(n=1)
 
-    optimized_info_extractor.save(args.prompt_json)
+    optimized_info_extractor.save(args.prompts_json)
 
     log.finished()
 
