@@ -111,16 +111,14 @@ def split_examples(examples: list[dspy.Example], train_split: float, val_split: 
     split1 = round(total * train_split)
     split2 = split1 + round(total * val_split)
 
-    dataset = {
-        "train": examples[:split1],
-        "dev": examples[split1:split2],
-        "test": examples[split2:],
-    }
+    train_set = examples[:split1]
+    val_set = examples[split1:split2]
+    test_set = examples[split2:]
 
-    return dataset
+    return train_set, val_set, test_set
 
 
-def score_prediction(example: dspy.Example, prediction: dspy.Prediction, _trace=None):
+def levenshtein_score(example: dspy.Example, prediction: dspy.Prediction, _trace=None):
     """Score predictions from DSPy."""
     total_score: float = 0.0
 

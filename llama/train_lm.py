@@ -9,54 +9,78 @@ import dspy
 from dspy.evaluate import Evaluate
 from pylib import info_extractor as ie
 from pylib import log
+from rich.console import Console
+from rich.table import Table
 
 
 def main(args):
     log.started(args=args)
+
+    console = Console()
+
+    lm = dspy.LM(args.model, api_base=args.api_base, api_key=args.api_key, cache=False)
+    dspy.configure(lm=lm)
 
     random.seed(args.seed)
 
     label_data = ie.read_label_data(args.gold_json, args.limit)
     examples = [ie.dict2example(lb) for lb in label_data]
 
-    dataset = ie.split_examples(
+    train_set, val_set, test_set = ie.split_examples(
         examples, train_split=args.train_split, val_split=args.val_split
     )
 
-    lm = dspy.LM(
-        args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
-    )
-    dspy.configure(lm=lm)
-    info_extractor = dspy.Predict(ie.InfoExtractor)
+    initial_program = dspy.Predict(ie.InfoExtractor)
+    initial_score = evaluate_program(initial_program, test_set, ie.levenshtein_score)
+    console.log(f"[bold blue]Initial score: {initial_score}")
 
+    console.log("[bold green]Running MIPROv2 optimization")
+    teleprompter = dspy.MIPROv2(
+        metric=ie.levenshtein_score, auto="medium", verbose=True
+    )
+
+    optimized_program = teleprompter.compile(
+        initial_program,
+        trainset=train_set,
+        valset=val_set,
+        requires_permission_to_run=False,
+    )
+    optimized_score = evaluate_program(
+        optimized_program, test_set, ie.levenshtein_score
+    )
+    console.log(f"[bold blue]Optimized score: {optimized_score}")
+    improvement = optimized_score - initial_score
+
+    relative_improvement = (
+        (improvement / initial_score * 100) if initial_score > 0 else 0
+    )
+
+    results_table = Table(title="Performance Comparison")
+    results_table.add_column("Metric", style="cyan")
+    results_table.add_column("Score", justify="right")
+
+    results_table.add_row("Initial Program", f"{initial_score:.4f}")
+    results_table.add_row("Optimized Program", f"{optimized_score:.4f}")
+    results_table.add_row("Improvement", f"{improvement:+.4f}")
+    results_table.add_row("Relative Improvement", f"{relative_improvement:+.2f}%")
+
+    console.print(results_table)
+
+    optimized_program.save(args.prompts_json)
+
+    log.finished()
+
+
+def evaluate_program(program, dataset, metric):
     evaluator = Evaluate(
-        devset=dataset["dev"],
-        metric=ie.score_prediction,
+        devset=dataset,
         num_threads=1,
         display_progress=True,
         display_table=True,
         provide_traceback=True,
     )
-
-    evaluator(info_extractor, devset=dataset["dev"])
-
-    mipro_optimizer = dspy.MIPROv2(metric=ie.score_prediction, auto="medium")
-
-    optimized_info_extractor = mipro_optimizer.compile(
-        info_extractor,
-        trainset=dataset["train"],
-        max_bootstrapped_demos=4,
-        requires_permission_to_run=False,
-        minibatch=False,
-    )
-
-    evaluator(optimized_info_extractor, devset=dataset["dev"])
-
-    dspy.inspect_history(n=1)
-
-    optimized_info_extractor.save(args.prompts_json)
-
-    log.finished()
+    score = evaluator(program, metric=metric)
+    return score
 
 
 def validate_splits(args: argparse.Namespace) -> None:
@@ -143,12 +167,6 @@ def parse_args():
         metavar="INT",
         default=839935,
         help="""Seed for the random number generator. (default: %(default)s)""",
-    )
-
-    arg_parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="""Turn off caching for the model.""",
     )
 
     arg_parser.add_argument(
