@@ -7,6 +7,7 @@ from pathlib import Path
 
 import dspy
 from dspy.evaluate import Evaluate
+from dspy.teleprompt import BootstrapFewShotWithRandomSearch
 from pylib import info_extractor as ie
 from pylib import log
 from rich.console import Console
@@ -23,7 +24,10 @@ def main(args):
 
     random.seed(args.seed)
 
-    label_data = ie.read_label_data(args.gold_json, args.limit)
+    label_data = ie.read_label_data(args.gold_json)
+    limit = args.limit if args.limit else len(label_data)
+    label_data = random.sample(label_data, limit)
+
     examples = [ie.dict2example(lb) for lb in label_data]
 
     train_set, val_set, test_set = ie.split_examples(
@@ -34,16 +38,27 @@ def main(args):
     initial_score = evaluate_program(initial_program, test_set, ie.levenshtein_score)
     console.log(f"[bold blue]Initial score: {initial_score}")
 
-    console.log("[bold green]Running MIPROv2 optimization")
-    teleprompter = dspy.MIPROv2(
-        metric=ie.levenshtein_score, auto="medium", verbose=True
-    )
+    console.log("[bold green]Running optimization")
 
-    optimized_program = teleprompter.compile(
+    optimizer = None
+    match args.optimizer:
+        case "miprov2":
+            optimizer = dspy.MIPROv2(
+                metric=ie.levenshtein_score, auto="medium", verbose=True
+            )
+        case "bootstrap_random_search":
+            optimizer = BootstrapFewShotWithRandomSearch(
+                metric=ie.levenshtein_score,
+                max_bootstrapped_demos=4,
+                max_labeled_demos=4,
+                num_candidate_programs=10,
+                num_threads=4,
+            )
+
+    optimized_program = optimizer.compile(
         initial_program,
         trainset=train_set,
         valset=val_set,
-        requires_permission_to_run=False,
     )
     optimized_score = evaluate_program(
         optimized_program, test_set, ie.levenshtein_score
@@ -116,6 +131,13 @@ def parse_args():
     )
 
     arg_parser.add_argument(
+        "--optimizer",
+        choices=["miprov2", "bootstrap_random_search"],
+        default="miprov2",
+        help="""Use this LLM model. (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
         "--prompts-json",
         type=Path,
         required=True,
@@ -165,7 +187,7 @@ def parse_args():
         "--seed",
         type=int,
         metavar="INT",
-        default=839935,
+        default=830035,
         help="""Seed for the random number generator. (default: %(default)s)""",
     )
 
