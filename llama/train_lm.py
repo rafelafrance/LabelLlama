@@ -46,7 +46,8 @@ def main(args):
             optimizer = dspy.MIPROv2(
                 metric=ie.levenshtein_score, auto="medium", verbose=True
             )
-        case "bootstrap_random_search":
+
+        case "random_search":
             optimizer = BootstrapFewShotWithRandomSearch(
                 metric=ie.levenshtein_score,
                 max_bootstrapped_demos=4,
@@ -60,6 +61,7 @@ def main(args):
         trainset=train_set,
         valset=val_set,
     )
+
     optimized_score = evaluate_program(
         optimized_program, test_set, ie.levenshtein_score
     )
@@ -81,7 +83,7 @@ def main(args):
 
     console.print(results_table)
 
-    optimized_program.save(args.prompts_json)
+    optimized_program.save(args.optimized)
 
     log.finished()
 
@@ -132,13 +134,13 @@ def parse_args():
 
     arg_parser.add_argument(
         "--optimizer",
-        choices=["miprov2", "bootstrap_random_search"],
+        choices=["miprov2", "random_search", "finetune"],
         default="miprov2",
         help="""Use this LLM model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
-        "--prompts-json",
+        "--optimized",
         type=Path,
         required=True,
         metavar="PATH",
