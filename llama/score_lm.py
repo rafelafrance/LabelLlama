@@ -16,7 +16,8 @@ from rich import print as rprint
 def main(args):
     log.started(args=args)
 
-    label_data = ie.read_label_data(args.gold_json, args.limit)
+    label_data = ie.read_label_data(args.gold_json)
+    label_data = label_data[: args.limit] if args.limit else label_data
 
     lm = dspy.LM(
         args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
