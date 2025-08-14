@@ -20,7 +20,6 @@ TraitScores = make_dataclass(
 
 @dataclass
 class TrackScores:
-    total: float = 0.0
     total_score: float = 0.0
     trues: Traits = field(default_factory=Traits)  # type: ignore [reportGeneralTypeIssues]
     preds: Traits = field(default_factory=Traits)  # type: ignore [reportGeneralTypeIssues]

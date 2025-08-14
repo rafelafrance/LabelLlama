@@ -46,3 +46,32 @@ img {
 .item {
     margin: 2rem;
 }
+th {
+  padding: 2px 4px;
+  vertical-align: bottom;
+  text-align: left;
+}
+
+tbody td {
+  border-bottom: 1px solid #ddd;
+}
+
+th, td {
+  padding: 4px 1em;
+}
+
+td.right {
+  text-align: right;
+}
+
+td.red {
+    background: #f5c8c8;
+}
+
+td.yellow {
+    background: #ffffd8;
+}
+
+td.green {
+    background: #b8f2b8;
+}

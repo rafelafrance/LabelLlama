@@ -12,6 +12,7 @@ import jinja2
 from pylib import darwin_core as dwc
 
 # from pprint import pp
+# import sys
 
 
 @dataclass
@@ -20,22 +21,27 @@ class Label:
     name: str
     text: str
     url: str
-    results: dict[str, str] = field(default_factory=dict)
+    score: str
+    table: list[dict] = field(default_factory=list)
 
 
 def main(args):
     with args.predictions_jsonl.open() as f:
-        ocr = [json.loads(ln) for ln in f]
+        # ocr = [json.loads(ln) for ln in f]
+        ocr = json.load(f)
 
     labels = []
     for label in ocr:
         path = Path(label["Source-File"])
-        type_ = path.stem.split("_")[1]
-        url = encode_label(args.label_dir, path)
-        text = dwc.format_text_as_html(label["text"])
-        results = dwc.to_dwc(label)
         labels.append(
-            Label(type=type_, name=path.stem, text=text, url=url, results=results)
+            Label(
+                type=path.stem.split("_")[1],
+                name=path.stem,
+                text=dwc.format_text_as_html(label["text"]),
+                url=encode_label(args.label_dir, path),
+                score=f"{label["total_score"]:0.2f}",
+                table=results_to_table(label),
+            )
         )
 
     env = jinja2.Environment(
@@ -47,11 +53,41 @@ def main(args):
         now=datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M"),
         jsonl_file=args.predictions_jsonl,
         label_dir=args.label_dir,
-        rows=labels,
+        labels=labels,
     )
 
     with args.output_html.open("w") as html_file:
         html_file.write(template)
+
+
+def results_to_table(label) -> list[dict]:
+    fields = zip(
+        label["trues"].keys(),
+        label["trues"].values(),
+        label["preds"].values(),
+        label["scores"].values(),
+        strict=True,
+    )
+    rows = []
+    for key, true, pred, score in fields:
+        if score == 1.0 and true:
+            color = "green"
+        elif score == 1.0 and not true:
+            color = ""
+        elif score > 0.5:
+            color = "yellow"
+        else:
+            color = "red"
+        rows.append(
+            {
+                "key": dwc.DWC[key],
+                "true": "<br/>".join(true),
+                "pred": "<br/>".join(pred),
+                "score": f"{score:0.2f}",
+                "color": color,
+            }
+        )
+    return rows
 
 
 def encode_label(label_dir, ocr_path):

@@ -30,7 +30,7 @@ def to_dwc(label: dict[str, Any]) -> dict[str, Any]:
     The label is coming from the JSON lines output of the OCR engine.
     # TODO: Convert occurrenceRemarks to dynamicProperties after processing
     """
-    dwc = defaultdict()
+    dwc = defaultdict(dict)
     for key, val in label.items():
         if key in DWC:
             key = DWC.get(key, key)
