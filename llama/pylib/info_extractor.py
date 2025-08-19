@@ -69,11 +69,23 @@ class InfoExtractor(dspy.Signature):
     dwc_associated_taxa: list[str] = dspy.OutputField(
         default=[], desc="Associated taxa", alias="dwc:associatedTaxa"
     )
+    dwc_country: list[str] = dspy.OutputField(
+        default=[],
+        desc="The country where the specimen was collected",
+        alias="dwc:country",
+    )
+    dwc_state_province: list[str] = dspy.OutputField(
+        default=[],
+        desc="The state or province where the specimen was collected",
+        alias="dwc:stateProvince",
+    )
+    dwc_county: list[str] = dspy.OutputField(
+        default=[],
+        desc="The county where the specimen was collected",
+        alias="dwc:county",
+    )
     dwc_occurrence_remarks: list[str] = dspy.OutputField(
         default=[], desc="Other observations", alias="dwc:occurrenceRemarks"
-    )
-    verbatim_administrative_unit: list[str] = dspy.OutputField(
-        default=[], desc="Administrative units", alias="verbatimAdministrativeUnit"
     )
     verbatim_trs: list[str] = dspy.OutputField(
         default=[], desc="Township Range Section (TRS)", alias="verbatimTRS"

@@ -16,8 +16,10 @@ DWC = {
     "dwc_identified_by_id": "dwc:identifiedByID",
     "dwc_occurrence_id": "dwc:occurrenceID",
     "dwc_associated_taxa": "dwc:associatedTaxa",
+    "dwc_country": "dwc:country",
+    "dwc_state_province": "dwc:stateProvince",
+    "dwc_county": "dwc:county",
     "dwc_occurrence_remarks": "dwc:occurrenceRemarks",
-    "verbatim_administrative_unit": "verbatimAdministrativeUnit",
     "verbatim_trs": "verbatimTRS",
     "verbatim_utm": "verbatimUTM",
 }
