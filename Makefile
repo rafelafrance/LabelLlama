@@ -2,21 +2,16 @@
 .ONESHELL:
 
 test:
-	python3.12 -m unittest discover
+	uv run -m unittest discover
 
 install:
-	test -d .venv || python3.12 -m venv .venv
-	. .venv/bin/activate
-	python3.12 -m pip install -U pip setuptools wheel
-	python3.12 -m pip install .
+	uv sync
 
 dev:
-	test -d .venv || python3.12 -m venv .venv
-	. .venv/bin/activate
-	python3.12 -m pip install -U pip setuptools setuptools-scm wheel
-	python3.12 -m pip install -e .[dev]
-	pre-commit install
+	uv sync
 
 clean:
 	rm -rf .venv
+	rm -rf build
+	rm -rf LabelLlama.egg-info
 	find -iname "*.pyc" -delete

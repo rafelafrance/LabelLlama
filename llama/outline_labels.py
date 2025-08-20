@@ -3,7 +3,7 @@
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import Event, filedialog, messagebox, ttk
 from typing import ClassVar
 
 from pylib import const
@@ -30,7 +30,7 @@ class App(tk.Tk):
     rows: ClassVar[tuple[int]] = tuple(range(6 + len(CONTENTS)))
     row_span: ClassVar[int] = len(rows) + 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.curr_dir = "../llama"
@@ -109,18 +109,18 @@ class App(tk.Tk):
         self.unbind_all("<<NextWindow>>")
 
     @property
-    def index(self):
+    def index(self) -> int:
         return self.spinner.get() - 1
 
     @property
-    def page(self):
+    def page(self) -> Page:
         return self.pages[self.index]
 
-    def change_page(self):
+    def change_page(self) -> None:
         if self.pages:
             self.display_page()
 
-    def display_page(self):
+    def display_page(self) -> None:
         canvas_height = self.image_frame.winfo_height()
         self.page.resize(canvas_height)
         self.canvas.delete("all")
@@ -129,7 +129,7 @@ class App(tk.Tk):
 
         self.sheet.configure(text=Path(self.page.path).name)
 
-    def display_page_boxes(self):
+    def display_page_boxes(self) -> None:
         self.clear_page_boxes()
         for box in self.page.boxes:
             self.canvas.create_rectangle(
@@ -141,12 +141,12 @@ class App(tk.Tk):
                 width=4,
             )
 
-    def clear_page_boxes(self):
+    def clear_page_boxes(self) -> None:
         for i, id_ in enumerate(self.canvas.find_all()):
             if i != 0:  # First object is the page itself
                 self.canvas.delete(id_)
 
-    def on_canvas_press(self, event):
+    def on_canvas_press(self, event: Event) -> None:
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
 
@@ -157,20 +157,20 @@ class App(tk.Tk):
         self.page.boxes.append(Box(id_=id_, x0=x, y0=y, x1=x, y1=y, content=content))
         self.dragging = True
 
-    def on_canvas_move(self, event):
+    def on_canvas_move(self, event: Event) -> None:
         if self.dragging and self.pages:
             box = self.page.boxes[-1]
             box.x1 = self.canvas.canvasx(event.x)
             box.y1 = self.canvas.canvasy(event.y)
             self.canvas.coords(box.id, box.x0, box.y0, box.x1, box.y1)
 
-    def on_canvas_release(self, _):
+    def on_canvas_release(self, _: Event) -> None:
         if self.dragging and self.pages:
             self.page.filter_size()
             self.display_page_boxes()
             self.dragging = False
 
-    def on_delete_box(self, event):
+    def on_delete_box(self, event: Event) -> None:
         x = self.canvas.canvasx(event.x)
         y = self.canvas.canvasy(event.y)
 
@@ -178,7 +178,7 @@ class App(tk.Tk):
         self.page.filter_delete(x, y)
         self.display_page_boxes()
 
-    def save(self):
+    def save(self) -> None:
         if not self.pages:
             return
 
@@ -200,7 +200,7 @@ class App(tk.Tk):
         with path.open("w") as out_json:
             json.dump(output, out_json, indent=4)
 
-    def load(self):
+    def load(self) -> None:
         path = filedialog.askopenfilename(
             initialdir=self.curr_dir,
             title="Load image boxes",
@@ -240,7 +240,7 @@ class App(tk.Tk):
             self.spinner_clear()
             self.canvas.delete("all")
 
-    def setup_canvas(self):
+    def setup_canvas(self) -> None:
         self.update()
 
         self.canvas = tk.Canvas(
@@ -257,7 +257,7 @@ class App(tk.Tk):
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
         self.canvas.bind("<ButtonRelease-3>", self.on_delete_box)  # right-click
 
-    def get_image_dir(self):
+    def get_image_dir(self) -> None:
         image_dir = filedialog.askdirectory(
             initialdir=self.curr_dir,
             title="Choose image directory",
@@ -291,17 +291,17 @@ class App(tk.Tk):
             self.spinner_clear()
             self.canvas.delete("all")
 
-    def spinner_update(self, high):
+    def spinner_update(self, high: int) -> None:
         self.spinner.low = 1
         self.spinner.high = high
         self.spinner.set(1)
 
-    def spinner_clear(self):
+    def spinner_clear(self) -> None:
         self.spinner.low = 0
         self.spinner.high = 0
         self.spinner.set(0)
 
-    def safe_quit(self):
+    def safe_quit(self) -> None:
         if self.dirty:
             yes = messagebox.askyesno(
                 self.title(),
@@ -312,7 +312,7 @@ class App(tk.Tk):
         self.destroy()
 
 
-def main():
+def main() -> None:
     app = App()
     app.mainloop()
 

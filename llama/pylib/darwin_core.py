@@ -1,7 +1,6 @@
-from collections import defaultdict
 from typing import Any
 
-from llama.pylib.herbarium_extractor import DWC
+from llama.extractors.herbarium_extractor import DWC
 
 
 def to_dwc(label: dict[str, Any]) -> dict[str, Any]:
@@ -11,7 +10,7 @@ def to_dwc(label: dict[str, Any]) -> dict[str, Any]:
     The label is coming from the JSON lines output of the OCR engine.
     # TODO: Convert occurrenceRemarks to dynamicProperties after processing
     """
-    dwc = defaultdict(dict)
+    dwc = {}
     for key, val in label.items():
         if key in DWC:
             key = DWC.get(key, key)
@@ -28,7 +27,7 @@ def rekey(label: dict[str, Any]) -> dict[str, Any]:
     return {DWC[k]: v for k, v in label.items()}
 
 
-def format_text_as_html(text):
+def format_text_as_html(text: Any) -> str:
     if not isinstance(text, str):
         return text
     text = text.replace("\n", "<br/>")

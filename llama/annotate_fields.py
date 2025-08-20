@@ -3,18 +3,17 @@
 import json
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
-from typing import ClassVar, get_type_hints
+from typing import Any, ClassVar, get_type_hints
 
-from pylib import const, herbarium_extractor
-
-import llama.pylib.herbarium_extractor
+from extractors import herbarium_extractor as he
+from pylib import const
 
 IE_TYPES = {
-    llama.pylib.herbarium_extractor.DWC[k]: v
-    for k, v in get_type_hints(herbarium_extractor.HerbariumExtractor).items()
-    if k in herbarium_extractor.OUTPUT_FIELDS
+    he.DWC[k]: v
+    for k, v in get_type_hints(he.HerbariumExtractor).items()
+    if k in he.OUTPUT_FIELDS
 }
 
 STYLE_LIST = [
@@ -38,14 +37,14 @@ STYLE_LIST = [
     {"background": "pink", "font": const.FONT_SM_I},
 ]
 
-DWC = list(llama.pylib.herbarium_extractor.DWC.values())
+DWC = list(he.DWC.values())
 
 
 class App(tk.Tk):
     rows: ClassVar[tuple[int]] = tuple(range(8 + len(DWC)))
     row_span: ClassVar[int] = len(rows) + 1
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.curr_dir = "."
@@ -131,17 +130,17 @@ class App(tk.Tk):
         self.focus()
         self.unbind_all("<<NextWindow>>")
 
-    def show_tooltip(self, event):
+    def show_tooltip(self, event: Event) -> None:
         self.hide_tooltip(event)
         names = self.text.tag_names(tk.CURRENT)
         name = next((lb for lb in names if lb not in ("header", "sel")), "")
         self.tooltip = tk.Label(self, text=name)
         self.tooltip.place(x=event.x, y=event.y)
 
-    def hide_tooltip(self, _event):
+    def hide_tooltip(self, _event: Event) -> None:
         self.tooltip.place_forget()
 
-    def on_add_annotation(self, _event):
+    def on_add_annotation(self, _event: Event) -> None:
         if not (select := self.text.tag_ranges("sel")):
             return
 
@@ -167,7 +166,7 @@ class App(tk.Tk):
         self.dirty = True
         self.text.tag_add(self.annotation_value.get(), beg, end)
 
-    def on_delete_annotation(self, _event):
+    def on_delete_annotation(self, _event: Event) -> None:
         # Is the cursor on a valid tag?
         names = self.text.tag_names(tk.CURRENT)
         name = next((lb for lb in names if lb not in ("header", "sel")), "")
@@ -188,7 +187,7 @@ class App(tk.Tk):
             self.text.tag_remove(name, idx)
             idx = self.text.index(idx + " + 1 char")
 
-    def import_(self):
+    def import_(self) -> None:
         path = filedialog.askopenfilename(
             initialdir=self.curr_dir,
             title="Import OCRed text from JSONL file",
@@ -222,19 +221,19 @@ class App(tk.Tk):
 
         self.add_header_tags()
 
-    def add_header_tags(self):
+    def add_header_tags(self) -> None:
         for lb in self.labels:
             beg, end = lb["header-location"]
             self.text.tag_add("header", beg, end)
 
-    def build_text(self, label):
+    def build_text(self, label: dict[str, Any]) -> None:
         beg = self.text.index(tk.CURRENT)
         self.text.insert(tk.INSERT, label["text"])
         end = self.text.index(tk.CURRENT)
         label["text-location"] = [beg, end]
         self.text.insert(tk.INSERT, "\n")
 
-    def build_header(self, label):
+    def build_header(self, label: dict[str, Any]) -> None:
         beg = self.text.index(tk.CURRENT)
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
@@ -245,7 +244,7 @@ class App(tk.Tk):
         end = self.text.index(tk.CURRENT)
         label["header-location"] = [beg, end]
 
-    def load(self):
+    def load(self) -> None:
         path = filedialog.askopenfilename(
             initialdir=self.curr_dir,
             title="Load annotations",
@@ -294,7 +293,7 @@ class App(tk.Tk):
 
         self.add_header_tags()
 
-    def load_tag(self, dwc, val, label):
+    def load_tag(self, dwc: str, val: Any, label: dict[str, Any]) -> None:
         search_beg, text_end = label["text-location"]
         # Need to handle annotations with identical content
         while tag_beg := self.text.search(val, search_beg, text_end):
@@ -308,7 +307,7 @@ class App(tk.Tk):
         tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
         self.text.tag_add(dwc, tag_beg, tag_end)
 
-    def save(self):
+    def save(self) -> None:
         path = tk.filedialog.asksaveasfilename(
             initialdir=self.curr_dir,
             title="Save annotations",
@@ -351,7 +350,7 @@ class App(tk.Tk):
         with path.open("w") as f:
             json.dump(annotations, f, indent=4)
 
-    def safe_quit(self):
+    def safe_quit(self) -> None:
         if self.dirty:
             yes = messagebox.askyesno(
                 self.title(),
@@ -362,7 +361,7 @@ class App(tk.Tk):
         self.destroy()
 
 
-def main():
+def main() -> None:
     app = App()
     app.mainloop()
 

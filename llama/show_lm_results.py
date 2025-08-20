@@ -7,14 +7,11 @@ import textwrap
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import jinja2
+from extractors import herbarium_extractor as he
 from pylib import darwin_core as dwc
-
-import llama.pylib.herbarium_extractor
-
-# from pprint import pp
-# import sys
 
 
 @dataclass
@@ -27,9 +24,8 @@ class Label:
     table: list[dict] = field(default_factory=list)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     with args.predictions_jsonl.open() as f:
-        # ocr = [json.loads(ln) for ln in f]
         ocr = json.load(f)
 
     labels = []
@@ -41,7 +37,7 @@ def main(args):
                 name=path.stem,
                 text=dwc.format_text_as_html(label["text"]),
                 url=encode_label(args.label_dir, path),
-                score=f"{label["total_score"]:0.2f}",
+                score=f"{label['total_score']:0.2f}",
                 table=results_to_table(label),
             )
         )
@@ -62,7 +58,7 @@ def main(args):
         html_file.write(template)
 
 
-def results_to_table(label) -> list[dict]:
+def results_to_table(label: dict[str, Any]) -> list[dict]:
     fields = zip(
         label["trues"].keys(),
         label["trues"].values(),
@@ -72,17 +68,18 @@ def results_to_table(label) -> list[dict]:
     )
     rows = []
     for key, true, pred, score in fields:
+        yellow = 0.5
         if score == 1.0 and true:
             color = "green"
         elif score == 1.0 and not true:
             color = ""
-        elif score > 0.5:
+        elif score > yellow:
             color = "yellow"
         else:
             color = "red"
         rows.append(
             {
-                "key": llama.pylib.herbarium_extractor.DWC[key],
+                "key": he.DWC[key],
                 "true": "<br/>".join(true),
                 "pred": "<br/>".join(pred),
                 "score": f"{score:0.2f}",
@@ -92,14 +89,14 @@ def results_to_table(label) -> list[dict]:
     return rows
 
 
-def encode_label(label_dir, ocr_path):
+def encode_label(label_dir: Path, ocr_path: Path) -> str:
     path = label_dir / ocr_path.name
     with path.open("rb") as f:
         url = base64.b64encode(f.read()).decode()
     return url
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("""Show pipeline results."""),

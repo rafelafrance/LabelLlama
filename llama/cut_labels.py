@@ -9,7 +9,7 @@ from PIL import Image
 from tqdm import tqdm
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     args.label_dir.mkdir(parents=True, exist_ok=True)
 
     with args.sheet_labels.open() as f:
@@ -32,7 +32,7 @@ def main(args):
                 cropped.save(box_path)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("""Cut marked labels out of herbarium sheets."""),

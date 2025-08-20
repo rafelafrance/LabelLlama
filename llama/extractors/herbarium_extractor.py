@@ -121,9 +121,7 @@ OUTPUT_FIELDS = [t for t in vars(HerbariumExtractor()) if t not in INPUT_FIELDS]
 
 
 def dict2example(dct: dict[str, str]) -> dspy.Example:
-    example = dspy.Example(text=dct["text"], prompt=PROMPT).with_inputs(
-        "text", "prompt"
-    )
+    example = dspy.Example(text=dct["text"], prompt=PROMPT).with_inputs(*INPUT_FIELDS)
     for fld in OUTPUT_FIELDS:
         setattr(example, fld, dct["annotations"][DWC[fld]])
     return example
@@ -136,7 +134,9 @@ def read_label_data(label_json: Path) -> list[dict]:
     return label_data
 
 
-def split_examples(examples: list[dspy.Example], train_split: float, val_split: float):
+def split_examples(
+    examples: list[dspy.Example], train_split: float, val_split: float
+) -> tuple[list[dspy.Example], list[dspy.Example], list[dspy.Example]]:
     random.shuffle(examples)
 
     total = len(examples)
@@ -150,7 +150,7 @@ def split_examples(examples: list[dspy.Example], train_split: float, val_split: 
     return train_set, val_set, test_set
 
 
-def levenshtein_score(example: dspy.Example, prediction: dspy.Prediction, _trace=None):
+def levenshtein_score(example: dspy.Example, prediction: dspy.Prediction) -> float:
     """Score predictions from DSPy."""
     total_score: float = 0.0
 

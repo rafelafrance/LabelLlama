@@ -3,18 +3,20 @@
 import argparse
 import random
 import textwrap
+from collections.abc import Callable
 from pathlib import Path
 
 import dspy
 from dspy.evaluate import Evaluate
+from dspy.evaluate.evaluate import EvaluationResult
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
-from pylib import herbarium_extractor as he
+from extractors import herbarium_extractor as he
 from pylib import log
 from rich.console import Console
 from rich.table import Table
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     log.started(args=args)
 
     console = Console()
@@ -88,7 +90,11 @@ def main(args):
     log.finished()
 
 
-def evaluate_program(program, dataset, metric):
+def evaluate_program(
+    program: dspy.Predict,
+    dataset: list[dspy.Example],
+    metric: Callable,
+) -> EvaluationResult:
     evaluator = Evaluate(
         devset=dataset,
         num_threads=1,
@@ -112,7 +118,7 @@ def validate_splits(args: argparse.Namespace) -> None:
         raise ValueError(msg)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("Train a nodel with given examples."),

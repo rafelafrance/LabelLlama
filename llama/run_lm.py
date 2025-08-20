@@ -7,13 +7,13 @@ from pathlib import Path
 from pprint import pp
 
 import dspy
+from extractors import herbarium_extractor as ie
 from pylib import darwin_core as dwc
-from pylib import herbarium_extractor as ie
 from pylib import log
 from rich import print as rprint
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     log.started()
 
     with args.ocr_jsonl.open() as f:
@@ -55,7 +55,7 @@ def main(args):
     log.finished()
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("Extract information from OCRed herbarium labels."),

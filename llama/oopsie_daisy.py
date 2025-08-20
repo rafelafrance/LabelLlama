@@ -5,10 +5,10 @@ import json
 import textwrap
 from pathlib import Path
 
-from llama.pylib.herbarium_extractor import DWC
+from llama.extractors.herbarium_extractor import DWC
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     match args.oopsie:
         case "fix-duplicate-annotations":
             fix_duplicate_annotations(args)
@@ -18,7 +18,7 @@ def main(args):
             rebuild_label_outlines(args)
 
 
-def rebuild_label_outlines(args):
+def rebuild_label_outlines(args: argparse.Namespace) -> None:
     sheets = {
         p.stem: {"path": str(p.absolute()), "boxes": []}
         for p in sorted(args.sheet_dir.glob("*.jpg"))
@@ -36,7 +36,7 @@ def rebuild_label_outlines(args):
         json.dump(list(sheets.values()), f, indent=4)
 
 
-def fix_duplicate_annotations(args):
+def fix_duplicate_annotations(args: argparse.Namespace) -> None:
     with args.bad_annotations.open() as f:
         bad = json.load(f)
 
@@ -57,7 +57,7 @@ def fix_duplicate_annotations(args):
         json.dump(fixed, f, indent=4)
 
 
-def fix_annotation_struct(args):
+def fix_annotation_struct(args: argparse.Namespace) -> None:
     with args.bad_annotations.open() as f:
         bad = json.load(f)
 
@@ -79,7 +79,7 @@ def fix_annotation_struct(args):
         json.dump(fixed, f, indent=4)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(

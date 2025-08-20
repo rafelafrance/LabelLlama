@@ -1,22 +1,22 @@
+import tkinter as tk
 from collections.abc import Callable
-
-import customtkinter as ctk
+from tkinter import Event, ttk
 
 from . import const
 
 
-class Spinner(ctk.CTkFrame):
+class Spinner(ttk):
     def __init__(
         self,
-        *args,
+        *args: str,
         width: int = 100,
         height: int = 32,
         command: Callable | None = None,
         start: int = 0,
         low: int = 0,
         high: int = 0,
-        **kwargs,
-    ):
+        **kwargs: str,
+    ) -> None:
         super().__init__(*args, width=width, height=height, **kwargs)
 
         self.command = command
@@ -26,7 +26,7 @@ class Spinner(ctk.CTkFrame):
         self.grid_columnconfigure((0, 2), weight=0)
         self.grid_columnconfigure(1, weight=1)
 
-        self.subtract_button = ctk.CTkButton(
+        self.subtract_button = tk.Button(
             self,
             text="-",
             width=height - 6,
@@ -36,11 +36,11 @@ class Spinner(ctk.CTkFrame):
         )
         self.subtract_button.grid(row=0, column=0, padx=(3, 0), pady=3)
 
-        self.entry = ctk.CTkEntry(
+        self.entry = ttk.Entry(
             self,
             width=width - (2 * height),
-            height=height - 6,
-            border_width=0,
+            # height=height - 6,
+            # border_width=0,
             justify="center",
             font=const.FONT,
             takefocus=0,
@@ -49,7 +49,7 @@ class Spinner(ctk.CTkFrame):
         if self.command:
             self.entry.bind("<Return>", self.update_entry)
 
-        self.add_button = ctk.CTkButton(
+        self.add_button = tk.Button(
             self,
             text="+",
             width=height - 6,
@@ -76,7 +76,7 @@ class Spinner(ctk.CTkFrame):
         self.subtract_button.bind("f", self.next_page)  # For left hand
         self.subtract_button.bind("b", self.prev_page)  # For left hand
 
-    def next_page(self, _=None):
+    def next_page(self, _: Event | None = None) -> None:
         try:
             value = int(self.entry.get()) + 1
         except ValueError:
@@ -86,7 +86,7 @@ class Spinner(ctk.CTkFrame):
         if self.command is not None:
             self.command()
 
-    def prev_page(self, _=None):
+    def prev_page(self, _: Event | None = None) -> None:
         try:
             value = int(self.entry.get()) - 1
         except ValueError:
@@ -102,7 +102,7 @@ class Spinner(ctk.CTkFrame):
         except ValueError:
             return None
 
-    def update_entry(self, _=None):
+    def update_entry(self, _: Event | None = None) -> None:
         try:
             value = int(self.entry.get())
             self.set(value)
@@ -113,7 +113,7 @@ class Spinner(ctk.CTkFrame):
         if self.command is not None:
             self.command()
 
-    def set(self, value: int):
+    def set(self, value: int) -> None:
         value = min(max(int(value), self.low), self.high)
         self.entry.delete(0, "end")
         self.entry.insert(0, str(int(value)))

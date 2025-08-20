@@ -15,7 +15,9 @@ CONTENTS = [
 
 
 class Box:
-    def __init__(self, x0, y0, x1, y1, content, id_=None) -> None:
+    def __init__(
+        self, x0: int, y0: int, x1: int, y1: int, content: str, id_: str | None = None
+    ) -> None:
         if any(a is None for a in (x0, y0, x1, y1, content)):
             raise ValueError
         self.x0: int = x0
@@ -25,7 +27,7 @@ class Box:
         self.content: str = content
         self.id = id_  # Needed for tkinter
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.x0=} {self.y0=} {self.x1=} {self.y1=} {self.content=} {self.id=}"
 
     def as_dict(self, image_height: int, canvas_height: int) -> dict:
@@ -44,7 +46,7 @@ class Box:
     def too_small(self) -> bool:
         return abs(self.x1 - self.x0) < TOO_SMALL or abs(self.y1 - self.y0) < TOO_SMALL
 
-    def point_hit(self, x, y) -> bool:
+    def point_hit(self, x: int, y: int) -> bool:
         x0, x1 = (self.x0, self.x1) if self.x1 > self.x0 else (self.x1, self.x0)
         y0, y1 = (self.y0, self.y1) if self.y1 > self.y0 else (self.y1, self.y0)
         return x0 <= x <= x1 and y0 <= y <= y1
@@ -57,7 +59,7 @@ class Box:
         y1 = int(ratio * self.y1)
         return x0, y0, x1, y1
 
-    def fit_to_canvas(self, image_height: int, canvas_height: int):
+    def fit_to_canvas(self, image_height: int, canvas_height: int) -> None:
         ratio = canvas_height / image_height
         self.x0 = int(ratio * self.x0)
         self.y0 = int(ratio * self.y0)

@@ -4,7 +4,7 @@ import dspy
 import Levenshtein
 from rich import print as rprint
 
-from .herbarium_extractor import DWC, OUTPUT_FIELDS
+from llama.extractors.herbarium_extractor import DWC, OUTPUT_FIELDS
 
 Traits = make_dataclass(
     "Traits",
@@ -25,7 +25,9 @@ class TrackScores:
     scores: TraitScores = field(default_factory=TraitScores)  # type: ignore [reportGeneralTypeIssues]
 
     @classmethod
-    def track_scores(cls, *, example: dspy.Example, prediction: dspy.Prediction):
+    def track_scores(
+        cls, *, example: dspy.Example, prediction: dspy.Prediction
+    ) -> "TrackScores":
         """Save the score results for each trait field."""
         score = cls()
 
