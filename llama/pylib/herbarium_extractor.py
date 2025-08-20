@@ -5,7 +5,28 @@ from pathlib import Path
 import dspy
 import Levenshtein
 
-from .darwin_core import DWC
+DWC = {
+    "dwc_scientific_name": "dwc:scientificName",
+    "dwc_scientific_name_authority": "dwc:scientificNameAuthority",
+    "dwc_family": "dwc:family",
+    "dwc_verbatim_event_date": "dwc:verbatimEventDate",
+    "dwc_verbatim_locality": "dwc:verbatimLocality",
+    "dwc_habitat": "dwc:habitat",
+    "dwc_verbatim_elevation": "dwc:verbatimElevation",
+    "dwc_verbatim_coordinates": "dwc:verbatimCoordinates",
+    "dwc_recorded_by": "dwc:recordedBy",
+    "dwc_recorded_by_id": "dwc:recordedByID",
+    "dwc_identified_by": "dwc:identifiedBy",
+    "dwc_identified_by_id": "dwc:identifiedByID",
+    "dwc_occurrence_id": "dwc:occurrenceID",
+    "dwc_associated_taxa": "dwc:associatedTaxa",
+    "dwc_country": "dwc:country",
+    "dwc_state_province": "dwc:stateProvince",
+    "dwc_county": "dwc:county",
+    "dwc_occurrence_remarks": "dwc:occurrenceRemarks",
+    "verbatim_trs": "verbatimTRS",
+    "verbatim_utm": "verbatimUTM",
+}
 
 PROMPT = """
     From the label get the scientific name, scientific name authority, family taxon,
@@ -17,7 +38,7 @@ PROMPT = """
     """
 
 
-class InfoExtractor(dspy.Signature):
+class HerbariumExtractor(dspy.Signature):
     """Analyze herbarium specimen labels and extract this information."""
 
     # Input fields
@@ -96,7 +117,7 @@ class InfoExtractor(dspy.Signature):
 
 
 INPUT_FIELDS = ("text", "prompt")
-OUTPUT_FIELDS = [t for t in vars(InfoExtractor()) if t not in INPUT_FIELDS]
+OUTPUT_FIELDS = [t for t in vars(HerbariumExtractor()) if t not in INPUT_FIELDS]
 
 
 def dict2example(dct: dict[str, str]) -> dspy.Example:

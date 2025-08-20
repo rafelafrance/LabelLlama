@@ -7,12 +7,14 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import ClassVar, get_type_hints
 
-from pylib import const, darwin_core, info_extractor
+from pylib import const, herbarium_extractor
+
+import llama.pylib.herbarium_extractor
 
 IE_TYPES = {
-    darwin_core.DWC[k]: v
-    for k, v in get_type_hints(info_extractor.InfoExtractor).items()
-    if k in info_extractor.OUTPUT_FIELDS
+    llama.pylib.herbarium_extractor.DWC[k]: v
+    for k, v in get_type_hints(herbarium_extractor.HerbariumExtractor).items()
+    if k in herbarium_extractor.OUTPUT_FIELDS
 }
 
 STYLE_LIST = [
@@ -36,7 +38,7 @@ STYLE_LIST = [
     {"background": "pink", "font": const.FONT_SM_I},
 ]
 
-DWC = list(darwin_core.DWC.values())
+DWC = list(llama.pylib.herbarium_extractor.DWC.values())
 
 
 class App(tk.Tk):

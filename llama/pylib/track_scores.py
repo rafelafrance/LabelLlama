@@ -4,8 +4,7 @@ import dspy
 import Levenshtein
 from rich import print as rprint
 
-from .darwin_core import DWC
-from .info_extractor import OUTPUT_FIELDS
+from .herbarium_extractor import DWC, OUTPUT_FIELDS
 
 Traits = make_dataclass(
     "Traits",

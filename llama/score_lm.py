@@ -7,7 +7,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import dspy
-from pylib import info_extractor as ie
+from pylib import herbarium_extractor as ie
 from pylib import log
 from pylib import track_scores as ts
 from rich import print as rprint
@@ -24,7 +24,7 @@ def main(args):
     )
     dspy.configure(lm=lm)
 
-    trait_extractor = dspy.Predict(ie.InfoExtractor)
+    trait_extractor = dspy.Predict(ie.HerbariumExtractor)
 
     scores = []
 

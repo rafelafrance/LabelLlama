@@ -8,7 +8,7 @@ from pathlib import Path
 import dspy
 from dspy.evaluate import Evaluate
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
-from pylib import info_extractor as ie
+from pylib import herbarium_extractor as he
 from pylib import log
 from rich.console import Console
 from rich.table import Table
@@ -24,18 +24,18 @@ def main(args):
 
     random.seed(args.seed)
 
-    label_data = ie.read_label_data(args.gold_json)
+    label_data = he.read_label_data(args.gold_json)
     limit = args.limit if args.limit else len(label_data)
     label_data = random.sample(label_data, limit)
 
-    examples = [ie.dict2example(lb) for lb in label_data]
+    examples = [he.dict2example(lb) for lb in label_data]
 
-    train_set, val_set, test_set = ie.split_examples(
+    train_set, val_set, test_set = he.split_examples(
         examples, train_split=args.train_split, val_split=args.val_split
     )
 
-    initial_program = dspy.Predict(ie.InfoExtractor)
-    initial_score = evaluate_program(initial_program, test_set, ie.levenshtein_score)
+    initial_program = dspy.Predict(he.HerbariumExtractor)
+    initial_score = evaluate_program(initial_program, test_set, he.levenshtein_score)
     console.log(f"[bold blue]Initial score: {initial_score}")
 
     console.log("[bold green]Running optimization")
@@ -44,12 +44,12 @@ def main(args):
     match args.optimizer:
         case "miprov2":
             optimizer = dspy.MIPROv2(
-                metric=ie.levenshtein_score, auto="medium", verbose=True
+                metric=he.levenshtein_score, auto="medium", verbose=True
             )
 
         case "random_search":
             optimizer = BootstrapFewShotWithRandomSearch(
-                metric=ie.levenshtein_score,
+                metric=he.levenshtein_score,
                 max_bootstrapped_demos=4,
                 max_labeled_demos=4,
                 num_candidate_programs=10,
@@ -63,7 +63,7 @@ def main(args):
     )
 
     optimized_score = evaluate_program(
-        optimized_program, test_set, ie.levenshtein_score
+        optimized_program, test_set, he.levenshtein_score
     )
     console.log(f"[bold blue]Optimized score: {optimized_score}")
     improvement = optimized_score - initial_score

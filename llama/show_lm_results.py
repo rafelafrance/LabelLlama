@@ -11,6 +11,8 @@ from pathlib import Path
 import jinja2
 from pylib import darwin_core as dwc
 
+import llama.pylib.herbarium_extractor
+
 # from pprint import pp
 # import sys
 
@@ -80,7 +82,7 @@ def results_to_table(label) -> list[dict]:
             color = "red"
         rows.append(
             {
-                "key": dwc.DWC[key],
+                "key": llama.pylib.herbarium_extractor.DWC[key],
                 "true": "<br/>".join(true),
                 "pred": "<br/>".join(pred),
                 "score": f"{score:0.2f}",

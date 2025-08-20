@@ -5,7 +5,7 @@ import json
 import textwrap
 from pathlib import Path
 
-from pylib.darwin_core import DWC
+from llama.pylib.herbarium_extractor import DWC
 
 
 def main(args):
