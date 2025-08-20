@@ -7,16 +7,20 @@ from dataclasses import asdict
 from pathlib import Path
 
 import dspy
-from extractors import herbarium_extractor as ie
+from label_types import herbarium_label as ie
 from pylib import log
 from pylib import track_scores as ts
 from rich import print as rprint
+
+from llama.label_types import label_types
 
 
 def main(args: argparse.Namespace) -> None:
     log.started(args=args)
 
-    label_data = ie.read_label_data(args.gold_json)
+    label_type = label_types.LABEL_TYPES[args.label_type]
+
+    label_data = label_types.read_label_data(args.gold_json)
     label_data = label_data[: args.limit] if args.limit else label_data
 
     lm = dspy.LM(
@@ -24,12 +28,12 @@ def main(args: argparse.Namespace) -> None:
     )
     dspy.configure(lm=lm)
 
-    trait_extractor = dspy.Predict(ie.HerbariumExtractor)
+    trait_extractor = dspy.Predict(ie.HerbariumLabel)
 
     scores = []
 
     for i, one_label in enumerate(label_data, 1):
-        example = ie.dict2example(one_label)
+        example = label_types.dict2example(one_label, label_type)
 
         rprint(f"[blue]{i} / {len(label_data)} {'=' * 80}")
         rprint(f"[blue]{example['text']}")

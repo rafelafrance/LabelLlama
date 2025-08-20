@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import jinja2
-from extractors import herbarium_extractor as he
+from label_types import herbarium_label as he
 from pylib import darwin_core as dwc
 
 

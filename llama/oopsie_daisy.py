@@ -5,7 +5,7 @@ import json
 import textwrap
 from pathlib import Path
 
-from llama.extractors.herbarium_extractor import DWC
+from llama.label_types.herbarium_label import DWC
 
 
 def main(args: argparse.Namespace) -> None:

@@ -7,7 +7,7 @@ from pathlib import Path
 from pprint import pp
 
 import dspy
-from extractors import herbarium_extractor as ie
+from label_types import herbarium_label as ie
 from pylib import darwin_core as dwc
 from pylib import log
 from rich import print as rprint
@@ -25,7 +25,7 @@ def main(args: argparse.Namespace) -> None:
     )
     dspy.configure(lm=lm)
 
-    trait_extractor = dspy.Predict(ie.HerbariumExtractor)
+    trait_extractor = dspy.Predict(ie.HerbariumLabel)
 
     predictions = []
 

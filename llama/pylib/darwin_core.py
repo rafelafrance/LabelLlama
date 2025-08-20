@@ -1,6 +1,6 @@
 from typing import Any
 
-from llama.extractors.herbarium_extractor import DWC
+from llama.label_types.herbarium_label import DWC
 
 
 def to_dwc(label: dict[str, Any]) -> dict[str, Any]:

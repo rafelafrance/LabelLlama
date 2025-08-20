@@ -10,14 +10,18 @@ import dspy
 from dspy.evaluate import Evaluate
 from dspy.evaluate.evaluate import EvaluationResult
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
-from extractors import herbarium_extractor as he
+from label_types import herbarium_label as he
 from pylib import log
 from rich.console import Console
 from rich.table import Table
 
+from llama.label_types import label_types
+
 
 def main(args: argparse.Namespace) -> None:
     log.started(args=args)
+
+    label_type = label_types.LABEL_TYPES[args.label_type]
 
     console = Console()
 
@@ -26,18 +30,20 @@ def main(args: argparse.Namespace) -> None:
 
     random.seed(args.seed)
 
-    label_data = he.read_label_data(args.gold_json)
+    label_data = label_types.read_label_data(args.gold_json)
     limit = args.limit if args.limit else len(label_data)
     label_data = random.sample(label_data, limit)
 
-    examples = [he.dict2example(lb) for lb in label_data]
+    examples = [label_types.dict2example(lb, label_type) for lb in label_data]
 
-    train_set, val_set, test_set = he.split_examples(
+    train_set, val_set, test_set = label_types.split_examples(
         examples, train_split=args.train_split, val_split=args.val_split
     )
 
-    initial_program = dspy.Predict(he.HerbariumExtractor)
-    initial_score = evaluate_program(initial_program, test_set, he.levenshtein_score)
+    initial_program = dspy.Predict(he.HerbariumLabel)
+    initial_score = evaluate_program(
+        initial_program, test_set, label_types.levenshtein_score
+    )
     console.log(f"[bold blue]Initial score: {initial_score}")
 
     console.log("[bold green]Running optimization")
@@ -46,12 +52,14 @@ def main(args: argparse.Namespace) -> None:
     match args.optimizer:
         case "miprov2":
             optimizer = dspy.MIPROv2(
-                metric=he.levenshtein_score, auto="medium", verbose=True
+                metric=label_types.levenshtein_score,
+                auto="medium",
+                verbose=True,
             )
 
         case "random_search":
             optimizer = BootstrapFewShotWithRandomSearch(
-                metric=he.levenshtein_score,
+                metric=label_types.levenshtein_score,
                 max_bootstrapped_demos=4,
                 max_labeled_demos=4,
                 num_candidate_programs=10,
@@ -65,7 +73,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     optimized_score = evaluate_program(
-        optimized_program, test_set, he.levenshtein_score
+        optimized_program, test_set, label_types.levenshtein_score
     )
     console.log(f"[bold blue]Optimized score: {optimized_score}")
     improvement = optimized_score - initial_score
@@ -122,6 +130,14 @@ def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("Train a nodel with given examples."),
+    )
+
+    choices = list(label_types.LABEL_TYPES.key())
+    arg_parser.add_argument(
+        "--label-type",
+        choices=choices,
+        default=choices[0],
+        help="""Use this LLM model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(

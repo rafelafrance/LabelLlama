@@ -7,12 +7,12 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any, ClassVar, get_type_hints
 
-from extractors import herbarium_extractor as he
+from label_types import herbarium_label as he
 from pylib import const
 
 IE_TYPES = {
     he.DWC[k]: v
-    for k, v in get_type_hints(he.HerbariumExtractor).items()
+    for k, v in get_type_hints(he.HerbariumLabel).items()
     if k in he.OUTPUT_FIELDS
 }
 
