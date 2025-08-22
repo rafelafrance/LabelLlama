@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
+import textwrap
 import tkinter as tk
 from pathlib import Path
 from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
-from typing import Any, ClassVar, get_type_hints
+from typing import Any
 
-from label_types import herbarium_label as he
+from label_types import label_types
 from pylib import const
-
-IE_TYPES = {
-    he.DWC[k]: v
-    for k, v in get_type_hints(he.HerbariumLabel).items()
-    if k in he.OUTPUT_FIELDS
-}
 
 STYLE_LIST = [
     {"background": "red", "foreground": "white", "font": const.FONT_SM},
@@ -35,17 +31,28 @@ STYLE_LIST = [
     {"background": "orange", "font": const.FONT_SM_I},
     {"background": "cyan", "font": const.FONT_SM_I},
     {"background": "pink", "font": const.FONT_SM_I},
+    {"background": "red", "foreground": "seashell1", "font": const.FONT_SM_U},
+    {"background": "blue", "foreground": "seashell1", "font": const.FONT_SM_U},
+    {"background": "green", "foreground": "seashell1", "font": const.FONT_SM_U},
+    {"background": "black", "foreground": "seashell1", "font": const.FONT_SM_U},
+    {"background": "purple", "foreground": "seashell1", "font": const.FONT_SM_U},
+    {"background": "olive", "foreground": "seashell1", "font": const.FONT_SM_U},
+    {"background": "orange", "font": const.FONT_SM_U},
+    {"background": "cyan", "font": const.FONT_SM_U},
+    {"background": "pink", "font": const.FONT_SM_U},
 ]
-
-DWC = list(he.DWC.values())
 
 
 class App(tk.Tk):
-    rows: ClassVar[tuple[int]] = tuple(range(8 + len(DWC)))
-    row_span: ClassVar[int] = len(rows) + 1
-
-    def __init__(self) -> None:
+    def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
+
+        self.label_type = label_types.LABEL_TYPES[args.label_type]
+
+        self.ie_types = self.label_type.dwc
+        self.dwc = list(self.label_type.dwc.values())
+        self.rows: tuple[int] = tuple(range(8 + len(self.dwc)))
+        self.row_span: int = len(self.rows) + 1
 
         self.curr_dir = "."
         self.ocr_jsonl: Path = Path()
@@ -72,7 +79,7 @@ class App(tk.Tk):
         self.text.insert(tk.INSERT, "")
         self.text.bind("<ButtonRelease-1>", self.on_add_annotation)  # left-click
         self.text.bind("<ButtonRelease-3>", self.on_delete_annotation)  # right-click
-        for dwc, opts in zip(DWC, STYLE_LIST, strict=False):
+        for dwc, opts in zip(self.dwc, STYLE_LIST, strict=False):
             self.text.tag_config(dwc, **opts)
             self.text.tag_bind(dwc, "<Enter>", self.show_tooltip)
             self.text.tag_bind(dwc, "<Leave>", self.hide_tooltip)
@@ -111,10 +118,10 @@ class App(tk.Tk):
         self.annotation_label.grid(row=7, column=1, padx=16, pady=16)
 
         self.annotation_value = tk.StringVar()
-        self.annotation_value.set(DWC[0])
+        self.annotation_value.set(self.dwc[0])
 
         style = ttk.Style(self)
-        for i, (dwc, opts) in enumerate(zip(DWC, STYLE_LIST, strict=False), 8):
+        for i, (dwc, opts) in enumerate(zip(self.dwc, STYLE_LIST, strict=False), 8):
             name = f"{dwc}.TRadiobutton"
             style.configure(name, **opts)
             radio = ttk.Radiobutton(
@@ -210,7 +217,7 @@ class App(tk.Tk):
                 "text": results["text"],
                 "header-location": [],
                 "text-location": [],
-                "annotations": {k: [] for k in DWC},
+                "annotations": {k: [] for k in self.dwc},
             }
 
             self.build_header(label)
@@ -270,7 +277,7 @@ class App(tk.Tk):
                 "text": result["text"],
                 "header-location": [],
                 "text-location": [],
-                "annotations": {k: [] for k in DWC},
+                "annotations": {k: [] for k in self.dwc},
             }
 
             self.build_header(label)
@@ -317,7 +324,7 @@ class App(tk.Tk):
         if not path:
             return
 
-        for dwc in DWC:
+        for dwc in self.dwc:
             indexes = self.text.tag_ranges(dwc)
             indexes = zip(indexes[0::2], indexes[1::2], strict=True)
             labels = (lb for lb in self.labels)
@@ -339,11 +346,11 @@ class App(tk.Tk):
                 "text": lb["text"],
                 "annotations": {},
             }
-            for dwc in DWC:
+            for dwc in self.dwc:
                 if not (field := lb["annotations"].get(dwc)):
-                    anno["annotations"][dwc] = "" if IE_TYPES[dwc] is str else []
+                    anno["annotations"][dwc] = []
                     continue
-                anno["annotations"][dwc] = field[0] if IE_TYPES[dwc] is str else field
+                anno["annotations"][dwc] = field
 
             annotations.append(anno)
 
@@ -362,8 +369,27 @@ class App(tk.Tk):
 
 
 def main() -> None:
-    app = App()
+    args = parse_args()
+    app = App(args)
     app.mainloop()
+
+
+def parse_args() -> argparse.Namespace:
+    arg_parser = argparse.ArgumentParser(
+        allow_abbrev=True,
+        description=textwrap.dedent("Train a nodel with given examples."),
+    )
+
+    choices = list(label_types.LABEL_TYPES.keys())
+    arg_parser.add_argument(
+        "--label-type",
+        choices=choices,
+        default=choices[0],
+        help="""Use this label model. (default: %(default)s)""",
+    )
+
+    args = arg_parser.parse_args()
+    return args
 
 
 if __name__ == "__main__":

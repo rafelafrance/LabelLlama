@@ -132,12 +132,12 @@ def parse_args() -> argparse.Namespace:
         description=textwrap.dedent("Train a nodel with given examples."),
     )
 
-    choices = list(label_types.LABEL_TYPES.key())
+    choices = list(label_types.LABEL_TYPES.keys())
     arg_parser.add_argument(
         "--label-type",
         choices=choices,
         default=choices[0],
-        help="""Use this LLM model. (default: %(default)s)""",
+        help="""Use this label model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(

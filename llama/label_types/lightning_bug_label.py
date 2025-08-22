@@ -14,21 +14,18 @@ DWC = {
     "dwc_identified_by": "dwc:identifiedBy",
     "dwc_identified_by_id": "dwc:identifiedByID",
     "dwc_occurrence_id": "dwc:occurrenceID",
-    "dwc_associated_taxa": "dwc:associatedTaxa",
     "dwc_country": "dwc:country",
     "dwc_state_province": "dwc:stateProvince",
     "dwc_county": "dwc:county",
     "dwc_occurrence_remarks": "dwc:occurrenceRemarks",
-    "verbatim_trs": "verbatimTRS",
-    "verbatim_utm": "verbatimUTM",
 }
 
 PROMPT = """
     From the label get the scientific name, scientific name authority, family taxon,
-    collection date, elevation, latitude and longitude, Township Range Section (TRS),
-    Universal Transverse Mercator (UTM), administrative unit, locality, habitat
+    collection date, elevation, latitude and longitude, locality, habitat,
+    collection country, collection state or province, collection county,
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
-    associated taxa, and any other observations.
+    and any other observations.
     If it is not mentioned return an empty value.
     """
 
@@ -82,9 +79,6 @@ class LightningBugLabel(dspy.Signature):
     dwc_occurrence_id: list[str] = dspy.OutputField(
         default=[], desc="Specimen ID", alias="dwc:occurrenceID"
     )
-    dwc_associated_taxa: list[str] = dspy.OutputField(
-        default=[], desc="Associated taxa", alias="dwc:associatedTaxa"
-    )
     dwc_country: list[str] = dspy.OutputField(
         default=[],
         desc="The country where the specimen was collected",
@@ -102,12 +96,6 @@ class LightningBugLabel(dspy.Signature):
     )
     dwc_occurrence_remarks: list[str] = dspy.OutputField(
         default=[], desc="Other observations", alias="dwc:occurrenceRemarks"
-    )
-    verbatim_trs: list[str] = dspy.OutputField(
-        default=[], desc="Township Range Section (TRS)", alias="verbatimTRS"
-    )
-    verbatim_utm: list[str] = dspy.OutputField(
-        default=[], desc="Universal Transverse Mercator (UTM)", alias="verbatimUTM"
     )
 
 

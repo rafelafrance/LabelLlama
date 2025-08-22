@@ -26,7 +26,8 @@ DWC = {
 PROMPT = """
     From the label get the scientific name, scientific name authority, family taxon,
     collection date, elevation, latitude and longitude, Township Range Section (TRS),
-    Universal Transverse Mercator (UTM), administrative unit, locality, habitat
+    Universal Transverse Mercator (UTM), locality, habitat,
+    collection country, collection state or province, collection county,
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
     associated taxa, and any other observations.
     If it is not mentioned return an empty value.

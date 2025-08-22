@@ -9,7 +9,6 @@ from typing import ClassVar
 from pylib import const
 from pylib.label_box import CONTENTS, Box
 from pylib.label_page import Page
-from pylib.spin_box import Spinner
 
 STYLE_LIST = [
     {"background": "red", "foreground": "white", "font": const.FONT_SM},
@@ -80,7 +79,16 @@ class App(tk.Tk):
         self.sheet = ttk.Label(self.control_frame, text="", font=const.FONT_SM)
         self.sheet.grid(row=3, column=1, padx=16, pady=16, sticky="ew")
 
-        self.spinner = Spinner(self.control_frame, command=self.change_page, width=140)
+        self.page_no = tk.IntVar()
+        self.spinner = ttk.Spinbox(
+            self.control_frame,
+            textvariable=self.page_no,
+            wrap=True,
+            font=const.FONT_SM,
+            justify="center",
+            state="disabled",
+            command=self.display_page,
+        )
         self.spinner.grid(row=4, column=1, padx=16, pady=16)
 
         self.content_label = ttk.Label(
@@ -88,8 +96,7 @@ class App(tk.Tk):
         )
         self.content_label.grid(row=6, column=1, padx=16, pady=16, sticky="ew")
 
-        self.content = tk.StringVar()
-        self.content.set(CONTENTS[0])
+        self.content = tk.StringVar(value=CONTENTS[0])
 
         style = ttk.Style(self)
         for i, (content, opts) in enumerate(zip(CONTENTS, STYLE_LIST, strict=False), 7):
@@ -109,16 +116,8 @@ class App(tk.Tk):
         self.unbind_all("<<NextWindow>>")
 
     @property
-    def index(self) -> int:
-        return self.spinner.get() - 1
-
-    @property
     def page(self) -> Page:
-        return self.pages[self.index]
-
-    def change_page(self) -> None:
-        if self.pages:
-            self.display_page()
+        return self.pages[self.page_no.get() - 1]
 
     def display_page(self) -> None:
         canvas_height = self.image_frame.winfo_height()
@@ -154,7 +153,9 @@ class App(tk.Tk):
         content = self.content.get()
         color = COLOR[content]
         id_ = self.canvas.create_rectangle(0, 0, 1, 1, outline=color, width=4)
-        self.page.boxes.append(Box(id_=id_, x0=x, y0=y, x1=x, y1=y, content=content))
+        self.page.boxes.append(
+            Box(id_=str(id_), x0=x, y0=y, x1=x, y1=y, content=content)
+        )
         self.dragging = True
 
     def on_canvas_move(self, event: Event) -> None:
@@ -291,15 +292,17 @@ class App(tk.Tk):
             self.spinner_clear()
             self.canvas.delete("all")
 
-    def spinner_update(self, high: int) -> None:
-        self.spinner.low = 1
-        self.spinner.high = high
-        self.spinner.set(1)
+    def spinner_update(self, high: float) -> None:
+        self.page_no.set(1)
+        self.spinner.configure(state="normal")
+        self.spinner.configure(from_=1)
+        self.spinner.configure(to=high)
 
     def spinner_clear(self) -> None:
-        self.spinner.low = 0
-        self.spinner.high = 0
-        self.spinner.set(0)
+        self.page_no.set(0)
+        self.spinner.configure(state="disabled")
+        self.spinner.configure(from_=0)
+        self.spinner.configure(to=0)
 
     def safe_quit(self) -> None:
         if self.dirty:
