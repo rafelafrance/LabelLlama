@@ -4,53 +4,52 @@ import argparse
 import json
 import textwrap
 from pathlib import Path
-from pprint import pp
 
 import dspy
-from label_types import herbarium_label as ie
 from pylib import darwin_core as dwc
 from pylib import log
-from rich import print as rprint
+from rich.console import Console
+
+from llama.label_types import label_types
 
 
 def main(args: argparse.Namespace) -> None:
     log.started()
 
-    with args.ocr_jsonl.open() as f:
-        labels = [json.loads(ln) for ln in f]
-    labels = labels[: args.limit] if args.limit else labels
+    label_type = label_types.LABEL_TYPES[args.label_type]
 
-    lm = dspy.LM(
-        args.model, api_base=args.api_base, api_key=args.api_key, cache=args.no_cache
-    )
+    console = Console()
+
+    lm = dspy.LM(args.model, api_base=args.api_base, api_key=args.api_key, cache=False)
     dspy.configure(lm=lm)
 
-    trait_extractor = dspy.Predict(ie.HerbariumLabel)
+    label_data = label_types.read_label_data(args.label_input)
+    limit = args.limit if args.limit else len(label_data)
+    label_data = label_data[:limit]
+
+    extractor = dspy.Predict(label_type.signature)
 
     predictions = []
 
-    for i, label in enumerate(labels, 1):
-        rprint(f"[blue]{'=' * 80}")
-        rprint(f"[blue]{i} {label['metadata']['Source-File']}")
-        rprint(f"[blue]{label['text']}")
-        print()
+    for i, label in enumerate(label_data, 1):
+        console.log(f"[blue]{'=' * 80}")
+        console.log(f"[blue]{i} {label['path']}")
+        console.log(f"[blue]{label['text']}")
 
-        pred = trait_extractor(text=label["text"], prompt=ie.PROMPT)
+        pred = extractor(text=label["text"], prompt=label_type.prompt)
 
-        rprint(f"[green]{pred}")
+        console.log(f"[green]{pred}")
 
         as_dict = {
-            "Source-File": label["metadata"]["Source-File"],
+            "path": label["path"],
             "text": label["text"],
-            "annotations": dwc.rekey(pred.toDict()),
+            "annotations": dwc.to_dwc_keys(pred.toDict(), label_type.dwc),
         }
-        pp(as_dict)
 
         predictions.append(as_dict)
 
-    if args.predictions_json:
-        with args.predictions_json.open("w") as f:
-            f.write(json.dumps(predictions, indent=4) + "\n")
+    with args.annotations_json.open("w") as f:
+        f.write(json.dumps(predictions, indent=4) + "\n")
 
     log.finished()
 
@@ -58,23 +57,35 @@ def main(args: argparse.Namespace) -> None:
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("Extract information from OCRed herbarium labels."),
+        description=textwrap.dedent("""
+            Extract information from OCRed herbarium labels. I use this for:
+            1. Inference.
+            2. Bootstrapping annotation training data.
+            """),
+    )
+
+    choices = list(label_types.LABEL_TYPES.keys())
+    arg_parser.add_argument(
+        "--label-type",
+        choices=choices,
+        default=choices[0],
+        help="""Use this label model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
-        "--ocr-jsonl",
+        "--label-input",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Get OCR results from this JSONL file.""",
+        help="""Get label data from this JSON file.""",
     )
 
     arg_parser.add_argument(
-        "--predictions-json",
+        "--annotations-json",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Output LLM predictions to this file.""",
+        help="""Output predicted annotations to this JSON file.""",
     )
 
     arg_parser.add_argument(
@@ -92,12 +103,6 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--api-key",
         help="""Key for the LM provider.""",
-    )
-
-    arg_parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="""Turn off caching for the model.""",
     )
 
     arg_parser.add_argument(

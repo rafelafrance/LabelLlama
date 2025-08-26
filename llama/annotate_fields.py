@@ -86,14 +86,6 @@ class App(tk.Tk):
 
         self.tooltip = tk.Label(self, text="")
 
-        self.jsonl_button = tk.Button(
-            self.control_frame,
-            text="Import text",
-            command=self.import_,
-            font=const.FONT_SM,
-        )
-        self.jsonl_button.grid(row=0, column=1, padx=16, pady=16)
-
         self.load_button = tk.Button(
             self.control_frame,
             text="Load annotations",
@@ -194,40 +186,6 @@ class App(tk.Tk):
             self.text.tag_remove(name, idx)
             idx = self.text.index(idx + " + 1 char")
 
-    def import_(self) -> None:
-        path = filedialog.askopenfilename(
-            initialdir=self.curr_dir,
-            title="Import OCRed text from JSONL file",
-            filetypes=(("jsonl", "*.jsonl"), ("all files", "*")),
-        )
-        if not path:
-            return
-
-        path = Path(path)
-        with path.open() as f:
-            ocr = [json.loads(ln) for ln in f]
-
-        self.text.configure(state="normal")
-        self.text.delete("1.0", tk.END)
-        self.labels = []
-
-        for results in ocr:
-            label = {
-                "Source-File": results["Source-File"],
-                "text": results["text"],
-                "header-location": [],
-                "text-location": [],
-                "annotations": {k: [] for k in self.dwc},
-            }
-
-            self.build_header(label)
-            self.build_text(label)
-            self.labels.append(label)
-
-        self.text.configure(state="disabled")
-
-        self.add_header_tags()
-
     def add_header_tags(self) -> None:
         for lb in self.labels:
             beg, end = lb["header-location"]
@@ -244,7 +202,7 @@ class App(tk.Tk):
         beg = self.text.index(tk.CURRENT)
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
-        self.text.insert(tk.INSERT, str(label["Source-File"]))
+        self.text.insert(tk.INSERT, str(label["path"]))
         self.text.insert(tk.INSERT, "\n")
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
@@ -273,7 +231,7 @@ class App(tk.Tk):
 
         for result in annotations:
             label = {
-                "Source-File": result["Source-File"],
+                "path": result["path"],
                 "text": result["text"],
                 "header-location": [],
                 "text-location": [],
@@ -342,7 +300,7 @@ class App(tk.Tk):
         annotations = []
         for lb in self.labels:
             anno = {
-                "Source-File": lb["Source-File"],
+                "path": lb["path"],
                 "text": lb["text"],
                 "annotations": {},
             }

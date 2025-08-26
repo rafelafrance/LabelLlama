@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import jinja2
-from label_types import herbarium_label as he
+from label_types import label_types
 from pylib import darwin_core as dwc
 
 
@@ -28,9 +28,11 @@ def main(args: argparse.Namespace) -> None:
     with args.predictions_jsonl.open() as f:
         ocr = json.load(f)
 
+    label_type = label_types.LABEL_TYPES[args.label_type]
+
     labels = []
     for label in ocr:
-        path = Path(label["Source-File"])
+        path = Path(label["path"])
         labels.append(
             Label(
                 type=path.stem.split("_")[1],
@@ -38,7 +40,7 @@ def main(args: argparse.Namespace) -> None:
                 text=dwc.format_text_as_html(label["text"]),
                 url=encode_label(args.label_dir, path),
                 score=f"{label['total_score']:0.2f}",
-                table=results_to_table(label),
+                table=results_to_table(label, label_type),
             )
         )
 
@@ -58,7 +60,9 @@ def main(args: argparse.Namespace) -> None:
         html_file.write(template)
 
 
-def results_to_table(label: dict[str, Any]) -> list[dict]:
+def results_to_table(
+    label: dict[str, Any], label_type: label_types.LabelType
+) -> list[dict]:
     fields = zip(
         label["trues"].keys(),
         label["trues"].values(),
@@ -79,7 +83,7 @@ def results_to_table(label: dict[str, Any]) -> list[dict]:
             color = "red"
         rows.append(
             {
-                "key": he.DWC[key],
+                "key": label_type.dwc[key],
                 "true": "<br/>".join(true),
                 "pred": "<br/>".join(pred),
                 "score": f"{score:0.2f}",
@@ -100,6 +104,14 @@ def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("""Show pipeline results."""),
+    )
+
+    choices = list(label_types.LABEL_TYPES.keys())
+    arg_parser.add_argument(
+        "--label-type",
+        choices=choices,
+        default=choices[0],
+        help="""Use this label model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(

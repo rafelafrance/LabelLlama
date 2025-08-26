@@ -45,7 +45,7 @@ def main(args: argparse.Namespace) -> None:
         score.display()
 
         score = {
-            "Source-File": one_label["Source-File"],
+            "path": one_label["path"],
             "text": one_label["text"],
             **asdict(score),
         }

@@ -145,7 +145,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Get gold standard from this JSON file.""",
+        help="""Get gold standard annotations from this JSON file.""",
     )
 
     arg_parser.add_argument(

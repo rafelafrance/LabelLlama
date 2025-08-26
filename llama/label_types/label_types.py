@@ -13,7 +13,7 @@ from llama.label_types import herbarium_label, lightning_bug_label
 @dataclass
 class LabelType:
     prompt: str
-    label_type: Any  # An object derived from dspy.Signature
+    signature: Any  # An object derived from dspy.Signature
     input_fields: list[str]
     output_fields: list[str]
     dwc: dict[str, SupportsIndex | slice]
@@ -22,14 +22,14 @@ class LabelType:
 LABEL_TYPES = {
     "herbarium": LabelType(
         prompt=herbarium_label.PROMPT,
-        label_type=herbarium_label.HerbariumLabel,
+        signature=herbarium_label.HerbariumLabel,
         input_fields=herbarium_label.INPUT_FIELDS,
         output_fields=herbarium_label.OUTPUT_FIELDS,
         dwc=herbarium_label.DWC,
     ),
     "lightning_bug": LabelType(
         prompt=lightning_bug_label.PROMPT,
-        label_type=lightning_bug_label.LightningBugLabel,
+        signature=lightning_bug_label.LightningBugLabel,
         input_fields=lightning_bug_label.INPUT_FIELDS,
         output_fields=lightning_bug_label.OUTPUT_FIELDS,
         dwc=lightning_bug_label.DWC,

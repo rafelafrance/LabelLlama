@@ -6,15 +6,15 @@ import textwrap
 from pathlib import Path
 
 
-def main(args: argparse.Namespace) -> None:
+def main(args: argparse.Namespace) -> None:  # noqa: C901
     with args.annotation_json.open() as f:
         labels = json.load(f)
 
     for lb in labels:
         if args.label_dir:
-            old = Path(lb["Source-File"])
+            old = Path(lb["path"])
             new = args.label_dir / old.name
-            lb["Source-File"] = str(new)
+            lb["path"] = str(new)
 
         if args.add:
             for field in args.add:
@@ -23,6 +23,18 @@ def main(args: argparse.Namespace) -> None:
         if args.delete:
             for field in args.delete:
                 del lb["annotations"][field]
+
+        if args.rename:
+            for field in args.rename:
+                old, new = field.split(":")
+                lb["annotations"][new] = lb["annotations"][old]
+                del lb["annotations"][old]
+
+        if args.top_level:
+            for field in args.top_level:
+                old, new = field.split(":")
+                lb[new] = lb[old]
+                del lb[old]
 
     with args.annotation_json.open("w") as f:
         json.dump(labels, f, indent=4)
@@ -58,6 +70,27 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--delete",
         action="append",
+        metavar="FIELD",
+        help="""Delete this field from the annotations. You may uses this more
+            than once.""",
+    )
+
+    arg_parser.add_argument(
+        "--rename",
+        action="append",
+        metavar="OLD:NEW",
+        help="""Rename an annotation field from old to new.""",
+    )
+
+    arg_parser.add_argument(
+        "--top-level",
+        action="append",
+        metavar="OLD:NEW",
+        help="""Rename a top level field from old to new.""",
+    )
+
+    arg_parser.add_argument(
+        "--new",
         metavar="FIELD",
         help="""Delete this field from the annotations. You may uses this more
             than once.""",
