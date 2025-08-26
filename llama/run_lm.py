@@ -18,7 +18,7 @@ def main(args: argparse.Namespace) -> None:
 
     label_type = label_types.LABEL_TYPES[args.label_type]
 
-    console = Console()
+    console = Console(log_path=False)
 
     lm = dspy.LM(args.model, api_base=args.api_base, api_key=args.api_key, cache=False)
     dspy.configure(lm=lm)

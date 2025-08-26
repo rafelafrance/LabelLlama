@@ -37,6 +37,15 @@ The text is formatted and placed into named fields using the Darwin Core format.
 1. `outline_labels.py`: This is a GUI script used to mark labels on specimen images. You draw colored boxes around labels on the sheet. The colors correspond to the type of label.
    1. I use this to generate training data for a "label finder" model.
    2. I also use this to generate labels for the rest of the pipeline.
+   3. TODO:
+      1. Handle shrinking sheet images if the width is too small. I already do this for height.
+      2. Resize canvas and images when the screen is resized. Adding scroll bars would be another option.
+      3. Add a fast-forward button that takes you to the first unannotated sheet. Hitting it multiple times takes you to the next unannotated sheet.
+      4. General GUI improvements to make it look better. Frames and styling.
+      5. Maybe add keyboard shortcuts?
+      6. Improve radio button selection visibility.
+      7. Add mouse-over hints for the labels?
+
    ![outline_labels](assets/outline_labels.png)
 
    In this figure of a herbarium sheet, I outlined the typewritten labels in red and handwritten labels in blue. I ignored envelopes, barcodes, etc.
@@ -55,4 +64,17 @@ The text is formatted and placed into named fields using the Darwin Core format.
    1. To bootstrap annotation training data. The language models can help generate training data even without prior training. I will definitely need to run the generated data through the rest of the pipeline, but it helps.
    2. Later in the pipeline where I do final inference.
 10. `annotate_fields.py` A GUI script used to annotate label text that get used for training and scoring.
+    1. TODO:
+        1. General improvements to the GUI.
+        2. Add keyboard shortcuts?
+        3. Improve radio button selection visibility.
+        4. Add more information for the mouse-over popups.
+        5. Improve error reporting.
+
+![annotate_fields](assets/annotate_fields.png)
+
 11. `modify_annotated_fields.py` Used to add, delete, modify the annotated fields.
+12. `train_lm.py`
+13. `score_lm.py`
+14. `show_lm_results.py` Show what the trained language model produces.
+15. `run_lm.py` Reprise. Run the language model for inference.
