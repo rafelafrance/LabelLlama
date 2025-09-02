@@ -13,33 +13,36 @@ from label_types import label_types
 from pylib import const
 
 STYLE_LIST = [
+    {"background": "brown", "foreground": "white", "font": const.FONT_SM},
+    {"background": "olive", "foreground": "white", "font": const.FONT_SM},
+    {"background": "teal", "foreground": "white", "font": const.FONT_SM},
+    {"background": "navy", "foreground": "white", "font": const.FONT_SM},
     {"background": "red", "foreground": "white", "font": const.FONT_SM},
-    {"background": "blue", "foreground": "white", "font": const.FONT_SM},
-    {"background": "green", "foreground": "white", "font": const.FONT_SM},
-    {"background": "black", "foreground": "white", "font": const.FONT_SM},
-    {"background": "purple", "foreground": "white", "font": const.FONT_SM},
-    {"background": "gray", "foreground": "white", "font": const.FONT_SM},
     {"background": "orange", "font": const.FONT_SM},
+    {"background": "yellow", "font": const.FONT_SM},
+    {"background": "lime", "font": const.FONT_SM},
+    {"background": "green", "foreground": "white", "font": const.FONT_SM},
     {"background": "cyan", "font": const.FONT_SM},
-    {"background": "pink", "font": const.FONT_SM},
-    {"background": "red", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "blue", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "green", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "black", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "purple", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "blue", "foreground": "white", "font": const.FONT_SM},
+    {"background": "purple", "foreground": "white", "font": const.FONT_SM},
+    {"background": "magenta", "foreground": "white", "font": const.FONT_SM},
+    {"background": "gray", "font": const.FONT_SM},
+    {"background": "lavender", "font": const.FONT_SM},
+    {"background": "brown", "foreground": "yellow", "font": const.FONT_SM_I},
     {"background": "olive", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "orange", "font": const.FONT_SM_I},
-    {"background": "cyan", "font": const.FONT_SM_I},
-    {"background": "pink", "font": const.FONT_SM_I},
-    {"background": "red", "foreground": "seashell1", "font": const.FONT_SM_U},
-    {"background": "blue", "foreground": "seashell1", "font": const.FONT_SM_U},
-    {"background": "green", "foreground": "seashell1", "font": const.FONT_SM_U},
-    {"background": "black", "foreground": "seashell1", "font": const.FONT_SM_U},
-    {"background": "purple", "foreground": "seashell1", "font": const.FONT_SM_U},
-    {"background": "olive", "foreground": "seashell1", "font": const.FONT_SM_U},
-    {"background": "orange", "font": const.FONT_SM_U},
-    {"background": "cyan", "font": const.FONT_SM_U},
-    {"background": "pink", "font": const.FONT_SM_U},
+    {"background": "teal", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "navy", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "red", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "orange", "foreground": "navy", "font": const.FONT_SM_I},
+    {"background": "yellow", "foreground": "navy", "font": const.FONT_SM_I},
+    {"background": "lime", "foreground": "navy", "font": const.FONT_SM_I},
+    {"background": "green", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "cyan", "foreground": "navy", "font": const.FONT_SM_I},
+    {"background": "blue", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "purple", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "magenta", "foreground": "yellow", "font": const.FONT_SM_I},
+    {"background": "gray", "foreground": "navy", "font": const.FONT_SM_I},
+    {"background": "lavender", "foreground": "navy", "font": const.FONT_SM_I},
 ]
 
 
@@ -335,7 +338,9 @@ def main() -> None:
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("Train a nodel with given examples."),
+        description=textwrap.dedent(
+            "Annotate fields in label text manually to create training data."
+        ),
     )
 
     choices = list(label_types.LABEL_TYPES.keys())

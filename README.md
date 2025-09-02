@@ -15,14 +15,14 @@ Of course things are a bit more complicated than just those 3 steps.
 ### Find labels on the sheet
 ![Herbarium Labels](assets/show_labels.png)
 
-Labels outlined in orange are considered scientifically interesting and the teal labels can be ignored.
+In this example labels outlined in orange are considered scientifically interesting and the teal labels can be ignored.
 
 ### OCR text in the labels
 ![OCRed Text](assets/show_ocr_text.png)
 
 OCRed text from the label on the lower right of the sheet.
 
-### Find text text in the labels
+### Annotate text in the labels
 ![text.png|Label Text](assets/text.png)
 
 This is clearly from another sheet and label. The colors indicate text matched to fields.
@@ -32,7 +32,7 @@ This is clearly from another sheet and label. The colors indicate text matched t
 
 The text is formatted and placed into named fields using the Darwin Core format.
 
-## The pipeline
+## Pipeline overview
 
 1. `outline_labels.py`: This is a GUI script used to mark labels on specimen images. You draw colored boxes around labels on the sheet. The colors correspond to the type of label.
    1. I use this to generate training data for a "label finder" model.
@@ -46,7 +46,7 @@ The text is formatted and placed into named fields using the Darwin Core format.
       6. Improve radio button selection visibility.
       7. Add mouse-over hints for the labels?
 
-   ![outline_labels](assets/outline_labels.png)
+    ![outline_labels](assets/outline_labels.png)
 
    In this figure of a herbarium sheet, I outlined the typewritten labels in red and handwritten labels in blue. I ignored envelopes, barcodes, etc.
 2. `label_finder_input.py` TBD. Format the output of `outline_labels.py` for whatever model you're using for the label finder.
@@ -60,9 +60,7 @@ The text is formatted and placed into named fields using the Darwin Core format.
    1. `conda activate olmocr`
    2. `python -m olmocr.pipeline path/to/<workspace> --pdfs path/to/<label images>/*.jpg`
 8. `format_ocr_output.py` Convert OCR output into LabelLlama format.
-9. `run_lm.py` I use this script in 2 places:
-   1. To bootstrap annotation training data. The language models can help generate training data even without prior training. I will definitely need to run the generated data through the rest of the pipeline, but it helps.
-   2. Later in the pipeline where I do final inference.
+9. `run_lm.py` I use this script in 2 places. Here it is used to bootstrap annotation training data. The language models can help generate training data even without prior training. I will definitely need to run the generated data through the rest of the pipeline, but it helps.
 10. `annotate_fields.py` A GUI script used to annotate label text that get used for training and scoring.
     1. TODO:
         1. General improvements to the GUI.
@@ -71,7 +69,7 @@ The text is formatted and placed into named fields using the Darwin Core format.
         4. Add more information for the mouse-over popups.
         5. Improve error reporting.
 
-![annotate_fields](assets/annotate_fields.png)
+    ![annotate_fields](assets/annotate_fields.png)
 
 11. `modify_annotated_fields.py` Used to add, delete, modify the annotated fields.
 12. `train_lm.py`
