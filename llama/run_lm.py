@@ -10,7 +10,7 @@ from pylib import darwin_core as dwc
 from pylib import log
 from rich.console import Console
 
-from llama.label_types import label_types
+from llama.model_data import label_types
 
 
 def main(args: argparse.Namespace) -> None:

@@ -10,12 +10,12 @@ import dspy
 from dspy.evaluate import Evaluate
 from dspy.evaluate.evaluate import EvaluationResult
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
-from label_types import herbarium_label as he
+from model_data import herbarium_label as he
 from pylib import log
 from rich.console import Console
 from rich.table import Table
 
-from llama.label_types import label_types
+from llama.model_data import label_types
 
 
 def main(args: argparse.Namespace) -> None:

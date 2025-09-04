@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import jinja2
-from label_types import label_types
+from model_data import label_types
 from pylib import darwin_core as dwc
 
 

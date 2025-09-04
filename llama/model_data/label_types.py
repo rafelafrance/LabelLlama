@@ -7,7 +7,7 @@ from typing import Any, SupportsIndex
 import dspy
 import Levenshtein
 
-from llama.label_types import herbarium_label, lightning_bug_label
+from llama.model_data import herbarium_label, lightning_bug_label
 
 
 @dataclass

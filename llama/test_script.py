@@ -13,13 +13,13 @@ model = (
 
 
 PROMPT = """
-Below is the image of one page of a hebarium sheet that contains an image of a plant
-and some informational labels, stamps, and barcodes.
-Find all labels, barcodes, and stamps and return all of text on them.
-Ignore the image of the plant.
-If there is no text at all that you think you should read, you can output null.
-Do not hallucinate.
-"""
+    Below is the image of one page of a herbarium sheet that contains an image of a
+    plant and some informational labels, stamps, and barcodes.
+    Find all labels, barcodes, and stamps and return all of text on them.
+    Ignore the image of the plant.
+    If there is no text at all that you think you should read, you can output null.
+    Do not hallucinate.
+    """
 
 sheet_dir = "/home/rafe/work/language_models/LabelLlama/data/herbarium/sheets_001/"
 
