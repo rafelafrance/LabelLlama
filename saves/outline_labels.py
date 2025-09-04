@@ -6,9 +6,9 @@ from pathlib import Path
 from tkinter import Event, filedialog, messagebox, ttk
 from typing import ClassVar
 
-from pylib import const
-from pylib.label_box import CONTENTS, Box
-from pylib.label_page import Page
+from llama.pylib import const
+from llama.pylib.label_box import CONTENTS, Box
+from llama.pylib.label_page import Page
 
 STYLE_LIST = [
     {"background": "red", "foreground": "white", "font": const.FONT_SM},
