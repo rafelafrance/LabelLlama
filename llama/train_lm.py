@@ -7,15 +7,15 @@ from collections.abc import Callable
 from pathlib import Path
 
 import dspy
+from data_formats import herbarium_label as he
 from dspy.evaluate import Evaluate
 from dspy.evaluate.evaluate import EvaluationResult
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
-from model_data import herbarium_label as he
 from pylib import log
 from rich.console import Console
 from rich.table import Table
 
-from llama.model_data import label_types
+from llama.data_formats import label_types
 
 
 def main(args: argparse.Namespace) -> None:

@@ -29,7 +29,7 @@ messages = [
         "content": [
             {
                 "type": "image",
-                "image": sheet_dir + "800222.jpg",
+                "image": sheet_dir + "800097.jpg",
             },
             {"type": "text", "text": PROMPT},
         ],
@@ -47,7 +47,7 @@ inputs = processor.apply_chat_template(
     return_tensors="pt",
 ).to(model.device)
 
-output_ids = model.generate(**inputs, max_new_tokens=1000)
+output_ids = model.generate(**inputs, max_new_tokens=10_000)
 generated_ids = [
     output_ids[len(input_ids) :]
     for input_ids, output_ids in zip(inputs.input_ids, output_ids, strict=False)
@@ -56,4 +56,5 @@ output_text = processor.batch_decode(
     generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
 )
 for text in output_text:
+    print("=" * 80)
     print(text)

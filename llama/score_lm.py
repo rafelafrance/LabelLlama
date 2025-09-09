@@ -7,12 +7,12 @@ from dataclasses import asdict
 from pathlib import Path
 
 import dspy
-from model_data import herbarium_label as ie
+from data_formats import herbarium_label as ie
 from pylib import log
 from pylib import track_scores as ts
 from rich import print as rprint
 
-from llama.model_data import label_types
+from llama.data_formats import label_types
 
 
 def main(args: argparse.Namespace) -> None:

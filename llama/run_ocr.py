@@ -58,34 +58,24 @@ def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("""
-            Extract information from OCRed herbarium labels. I use this for:
-            1. Inference.
-            2. Bootstrapping annotation training data.
+            Extract text from labels on images of herbarium sheets.
             """),
     )
 
-    choices = list(label_types.LABEL_TYPES.keys())
     arg_parser.add_argument(
-        "--label-type",
-        choices=choices,
-        default=choices[0],
-        help="""Use this label model. (default: %(default)s)""",
-    )
-
-    arg_parser.add_argument(
-        "--label-input",
+        "--herbarium-sheets",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Get label data from this JSON file.""",
+        help="""Get herbarium sheet images from this directory.""",
     )
 
     arg_parser.add_argument(
-        "--annotations-json",
+        "--text-json",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Output predicted annotations to this JSON file.""",
+        help="""Output label text to this JSON file.""",
     )
 
     arg_parser.add_argument(

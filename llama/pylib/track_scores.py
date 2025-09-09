@@ -4,7 +4,7 @@ import dspy
 import Levenshtein
 from rich import print as rprint
 
-from llama.model_data.herbarium_label import DWC, OUTPUT_FIELDS
+from llama.data_formats.herbarium_label import DWC, OUTPUT_FIELDS
 
 Traits = make_dataclass(
     "Traits",

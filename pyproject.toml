@@ -12,6 +12,7 @@ authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
     "accelerate>=1.10.0",
+    "compressed-tensors>=0.11.0",
     "datasets>=4.0.0",
     "dspy>=3.0.1",
     "evaluate>=0.4.5",

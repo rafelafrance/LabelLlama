@@ -9,7 +9,7 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from model_data import label_types
+from data_formats import label_types
 from pylib import const
 
 STYLE_LIST = [
