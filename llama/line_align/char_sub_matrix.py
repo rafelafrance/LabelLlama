@@ -2,14 +2,14 @@ import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 from PIL import Image, ImageDraw, ImageFont
-from PIL.ImageFont import FreeTypeFont, TransposedFont
 from tqdm import tqdm
 
-# TODO(rafe): This whole messy module needs a scrub
+# TODO: This whole messy module needs a scrub
 
 CHAR_DB = Path(__file__).parent / "char_sub_matrix.sqlite"
 
@@ -41,7 +41,7 @@ def connect(db_path: Path) -> Generator:
         pass
 
 
-FONT_TYPE = ImageFont | FreeTypeFont | TransposedFont | None
+FONT_TYPE = Any  # ImageFont | FreeTypeFont | TransposedFont | None
 
 
 class Char:
