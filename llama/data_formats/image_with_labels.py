@@ -1,15 +1,18 @@
 import dspy
 
 PROMPT = """
-    Below is the image of a herbarium sheet that contains an image of a
-    plant and some informational labels, stamps, and barcodes.
+    Below is the image if a museum specimen and some informational
+    labels, stamps, and barcodes.
     Find all labels, barcodes, and stamps and return all of text on them.
-    Ignore the image of the plant.
+    Ignore the museum specimen itself.
+    Just return the plain text representation on this image as if you were reading it
+    naturally.
+    Read any natural handwriting.
     Do not hallucinate.
     """
 
 
-class HerbariumSheet(dspy.Signature):
+class ImageWithLabels(dspy.Signature):
     """Extract label text from an image of a herbarium sheet."""
 
     # Input fields
@@ -21,4 +24,4 @@ class HerbariumSheet(dspy.Signature):
 
 
 INPUT_FIELDS = ("image", "prompt")
-OUTPUT_FIELDS = [t for t in vars(HerbariumSheet()) if t not in INPUT_FIELDS]
+OUTPUT_FIELDS = [t for t in vars(ImageWithLabels()) if t not in INPUT_FIELDS]

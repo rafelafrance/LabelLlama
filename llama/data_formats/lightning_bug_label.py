@@ -4,6 +4,9 @@ DWC = {
     "dwc_scientific_name": "dwc:scientificName",
     "dwc_scientific_name_authority": "dwc:scientificNameAuthority",
     "dwc_family": "dwc:family",
+    "dwc_genus": "dwc:genus",
+    "dwc_subgenus": "dwc:subgenus",
+    "dwc_specific_epithet": "dwc:specificEpithet",
     "dwc_verbatim_event_date": "dwc:verbatimEventDate",
     "dwc_verbatim_locality": "dwc:verbatimLocality",
     "dwc_habitat": "dwc:habitat",
@@ -21,12 +24,13 @@ DWC = {
 }
 
 PROMPT = """
-    From the label get the scientific name, scientific name authority, family taxon,
+    From the label get the scientific name, scientific name authority, family,
+    genus, subgenus, specificEpithet,
     collection date, elevation, latitude and longitude, locality, habitat,
     collection country, collection state or province, collection county,
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
     and any other observations.
-    If it is not mentioned return an empty value.
+    If it is not mentioned return an empty value. Do not hallucinate.
     """
 
 
@@ -48,6 +52,15 @@ class LightningBugLabel(dspy.Signature):
     )
     dwc_family: list[str] = dspy.OutputField(
         default=[], desc="Taxonomic family", alias="dwc:family"
+    )
+    dwc_genus: list[str] = dspy.OutputField(
+        default=[], desc="Taxonomic genus", alias="dwc:genus"
+    )
+    dwc_subgenus: list[str] = dspy.OutputField(
+        default=[], desc="Taxonomic subgenus", alias="dwc:subgenus"
+    )
+    dwc_specific_epithet: list[str] = dspy.OutputField(
+        default=[], desc="Taxonomic specific epithet", alias="dwc:specificEpithet"
     )
     dwc_verbatim_event_date: list[str] = dspy.OutputField(
         default=[], desc="Specimen collection date", alias="dwc:verbatimEventDate"

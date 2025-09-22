@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 
+
 import torch
 from transformers import AutoModelForImageTextToText, AutoProcessor
 
-model_id = "allenai/olmOCR-7B-0725"
+# from llama.data_formats import lightning_bug_label
+
+PROMPT = """
+Below is the image of museum labels of insects.
+Just return the plain text representation of this document as if you were reading it
+naturally.
+Read any natural handwriting.
+Do not hallucinate.
+"""
+
+model_id = "allenai/olmOCR-7B-0825"
 processor = AutoProcessor.from_pretrained(model_id)
 model = (
     AutoModelForImageTextToText.from_pretrained(model_id, torch_dtype=torch.float16)
@@ -11,17 +22,10 @@ model = (
     .eval()
 )
 
-
-PROMPT = """
-    Below is the image of one page of a herbarium sheet that contains an image of a
-    plant and some informational labels, stamps, and barcodes.
-    Find all labels, barcodes, and stamps and return all of text on them.
-    Ignore the image of the plant.
-    If there is no text at all that you think you should read, you can output null.
-    Do not hallucinate.
-    """
-
-sheet_dir = "/home/rafe/work/language_models/LabelLlama/data/herbarium/sheets_001/"
+sheet_dir = (
+    "/home/rafe/work/language_models/LabelLlama/data/lightning_bug/"
+    "Transcribed_Labels/00000XXXX/0000000XX/"
+)
 
 messages = [
     {
@@ -29,7 +33,7 @@ messages = [
         "content": [
             {
                 "type": "image",
-                "image": sheet_dir + "800097.jpg",
+                "image": sheet_dir + "0000000XX_Page_00.jpg",
             },
             {"type": "text", "text": PROMPT},
         ],
