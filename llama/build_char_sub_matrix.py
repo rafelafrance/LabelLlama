@@ -19,13 +19,14 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    description = """Add characters to the Line Align utility's character substitution
-        matrix. The matrix has the characters along the row and column headers and
-        each cell value has a value that is a coarse approximation of how visually
-        similar the two characters are."""
-
     arg_parser = argparse.ArgumentParser(
-        description=textwrap.dedent(description), fromfile_prefix_chars="@"
+        allow_abbrev=True,
+        description=textwrap.dedent("""
+            Add characters to the Line Align utility's character substitution
+            matrix. The matrix has the characters along the row and column headers and
+            each cell value has a value that is a coarse approximation of how visually
+            similar the two characters are.
+            """),
     )
 
     arg_parser.add_argument(

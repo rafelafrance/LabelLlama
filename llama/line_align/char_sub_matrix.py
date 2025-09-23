@@ -14,13 +14,14 @@ from tqdm import tqdm
 CHAR_DB = Path(__file__).parent / "char_sub_matrix.sqlite"
 
 CHARS = r"""
-    ! " # % & ' ( ) * + , - . /
+    ! " # $ % & ' ( ) * + , - . /
     0 1 2 3 4 5 6 7 8 9
     : ; < = > ? @
     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
     [ \ ] ^ _ `
     a b c d e f g h i j k l m n o p q r s t u v w x y z
-    { } ~ ° é — ` ` “ ” ™
+    { | } ~
+    ° é — ` ` “ ” ™
     ¼ ½ ¾ ⅓ ⅔ x
     """
 CHARS = "".join(["\n", " ", *CHARS.split()])
@@ -61,6 +62,7 @@ class Char:
         threshold = 128  # Midway point of [0, 255]
         pix = np.asarray(image.getdata()) > threshold
         pix = pix.astype("float")
+        pix = pix.reshape((self.image_size, self.image_size))
         return pix
 
     def char_size(self) -> tuple[int, int]:

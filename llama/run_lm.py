@@ -14,7 +14,11 @@ from llama.data_formats import label_types
 
 
 def main(args: argparse.Namespace) -> None:
-    log.started()
+    extract_info(args)
+
+
+def extract_info(args: argparse.Namespace) -> None:
+    log.started(args=args)
 
     label_type = label_types.LABEL_TYPES[args.label_type]
 
@@ -58,9 +62,10 @@ def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("""
-            Extract information from OCRed herbarium labels. I use this for:
+            Extract information from OCRed museum labels. I use this for:
             1. Inference.
             2. Bootstrapping annotation training data.
+            3. Various data tests and demonstrations.
             """),
     )
 

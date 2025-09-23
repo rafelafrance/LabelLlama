@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 from PIL import Image
@@ -11,6 +11,7 @@ class ImageArea:
     east: int
     north: int = None
     south: int = None
+    text: list[str] = field(default_factory=list)
 
     def as_image(self) -> Image:
         return Image.fromarray(

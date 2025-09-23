@@ -18,6 +18,8 @@ from enum import Enum
 import numpy as np
 import numpy.typing as npt
 
+from llama.pylib import const
+
 
 class Dir(Enum):
     NONE = 0
@@ -52,7 +54,7 @@ class LineAlign:
     substitutions: dict[str, float] = field(default_factory=dict)
     gap: float = -3.0
     skew: float = -0.5
-    gap_char: str = "⋄"
+    gap_char: str = const.GAP_CHAR
 
     def align(self, lines: list[str]) -> list[str]:
         """
