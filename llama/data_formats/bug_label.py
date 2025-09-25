@@ -10,6 +10,7 @@ DWC = {
     "dwc_verbatim_event_date": "dwc:verbatimEventDate",
     "dwc_verbatim_locality": "dwc:verbatimLocality",
     "dwc_habitat": "dwc:habitat",
+    "dwc_sex": "dwc:sex",
     "dwc_verbatim_elevation": "dwc:verbatimElevation",
     "dwc_verbatim_coordinates": "dwc:verbatimCoordinates",
     "dwc_recorded_by": "dwc:recordedBy",
@@ -26,7 +27,7 @@ DWC = {
 PROMPT = """
     From the label get the scientific name, scientific name authority, family,
     genus, subgenus, specificEpithet,
-    collection date, elevation, latitude and longitude, locality, habitat,
+    collection date, elevation, latitude and longitude, locality, habitat, sex,
     collection country, collection state or province, collection county,
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
     and any other observations.
@@ -70,6 +71,9 @@ class LightningBugLabel(dspy.Signature):
     )
     dwc_habitat: list[str] = dspy.OutputField(
         default=[], desc="Collected from this habitat", alias="dwc:habitat"
+    )
+    dwc_sex: list[str] = dspy.OutputField(
+        default=[], desc="Sex of the specimen", alias="dwc:sex"
     )
     dwc_verbatim_elevation: list[str] = dspy.OutputField(
         default=[], desc="Specimen elevation", alias="dwc:verbatimElevation"

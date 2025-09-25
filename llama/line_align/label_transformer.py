@@ -141,7 +141,7 @@ def binary_opening(image: npt.NDArray) -> npt.NDArray:
 # Scale(), Orient(), Deskew() in every ensemble member because they change the
 # geometry, but you could exclude Blur() because it does not.
 
-#
+
 # def compose(*functions):
 #     return functools.reduce(lambda f, g: lambda x: g(f(x)), functions)
 #
@@ -153,7 +153,7 @@ def binary_opening(image: npt.NDArray) -> npt.NDArray:
 #     # orient,
 #     deskew,
 # )
-#
+
 # TRANSFORM_PIPELINES = {
 #     "deskew": compose(TRANSFORM_START),
 #     "binarize": compose(binarize_sauvola),
@@ -168,8 +168,8 @@ def binary_opening(image: npt.NDArray) -> npt.NDArray:
 #         array_to_image,
 #     ),
 # }
-#
-#
+
+
 # def transform_label(pipeline: str, image):
 #     """Transform the label to improve OCR results."""
 #     return TRANSFORM_PIPELINES[pipeline](image)

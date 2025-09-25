@@ -20,9 +20,11 @@ dependencies = [
     "imagesize>=1.4.1",
     "ipywidgets>=8.1.7",
     "jinja2>=3.1.6",
+    "jupyter>=1.1.1",
     "levenshtein>=0.27.1",
-    "marimo>=0.16.0",
+    "marimo[recommended]>=0.16.0",
     "matplotlib>=3.10.6",
+    "nbformat>=5.10.4",
     "pandas>=2.3.1",
     "pillow>=11.3.0",
     "pip>=25.2",
@@ -34,6 +36,7 @@ dependencies = [
     "torchvision>=0.23.0",
     "tqdm>=4.67.1",
     "transformers>=4.55.2",
+    "uv-build>=0.8.22",
 ]
 
 [tool.uv.build-backend]
@@ -80,6 +83,8 @@ ignore = [
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RUF001",  # Ambiguous quote character in string
     "RUF002",  # Docstring contains ambiguous `‘`
+    "S602",    # subprocess` call with `shell=True` identified, security issue
+    "S607",    # Starting a process with a partial executable path
     "SIM114",  # Combine if branches using logical or operator
     "SIM905",  # Consider using a list literal instead of `str.split`
     "SLF001",  # Private member accessed: {access}

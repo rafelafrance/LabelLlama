@@ -7,11 +7,12 @@ from typing import Any, SupportsIndex
 import dspy
 import Levenshtein
 
-from llama.data_formats import herbarium_label, lightning_bug_label
+from llama.data_formats import bug_label, herbarium_label
 
 
 @dataclass
 class LabelType:
+    key: str
     prompt: str
     signature: Any  # An object derived from dspy.Signature
     input_fields: list[str]
@@ -21,18 +22,20 @@ class LabelType:
 
 LABEL_TYPES = {
     "herbarium": LabelType(
+        key="herbarium",
         prompt=herbarium_label.PROMPT,
         signature=herbarium_label.HerbariumLabel,
         input_fields=herbarium_label.INPUT_FIELDS,
         output_fields=herbarium_label.OUTPUT_FIELDS,
         dwc=herbarium_label.DWC,
     ),
-    "lightning_bug": LabelType(
-        prompt=lightning_bug_label.PROMPT,
-        signature=lightning_bug_label.LightningBugLabel,
-        input_fields=lightning_bug_label.INPUT_FIELDS,
-        output_fields=lightning_bug_label.OUTPUT_FIELDS,
-        dwc=lightning_bug_label.DWC,
+    "bug": LabelType(
+        key="bug",
+        prompt=bug_label.PROMPT,
+        signature=bug_label.LightningBugLabel,
+        input_fields=bug_label.INPUT_FIELDS,
+        output_fields=bug_label.OUTPUT_FIELDS,
+        dwc=bug_label.DWC,
     ),
 }
 

@@ -1,25 +1,51 @@
 from dataclasses import dataclass, field
 
 import numpy as np
+import numpy.typing as npt
 from PIL import Image
 
 
 @dataclass
 class ImageArea:
-    image: Image
+    data: npt.NDArray
     west: int
     east: int
     north: int = None
     south: int = None
     text: list[str] = field(default_factory=list)
 
-    def as_image(self) -> Image:
+    @property
+    def image(self) -> Image:
         return Image.fromarray(
-            self.image[self.north : self.south, self.west : self.east]
+            self.data[self.north : self.south, self.west : self.east]
         )
 
+    def trim(self) -> None:
+        w, e, n, s = self.west, self.east, self.north, self.south
 
-def get_image_columns(image: Image) -> list[ImageArea]:
+        for w in range(self.west, self.east):
+            if np.max(self.data[self.north : self.south, w]) != 0:
+                break
+
+        for e in range(self.east - 1, self.west, -1):
+            if np.max(self.data[self.north : self.south, e]) != 0:
+                break
+
+        for n in range(self.north, self.south):
+            if np.max(self.data[n, self.west : self.east]) != 0:
+                break
+
+        for s in range(self.south - 1, self.north, -1):
+            if np.max(self.data[s, self.west : self.east]) != 0:
+                break
+
+        self.west = w
+        self.east = e
+        self.north = n
+        self.south = s
+
+
+def get_image_columns(image: npt.NDArray) -> list[ImageArea]:
     in_pic = False
     wests, easts = [], []
     for x in range(image.shape[1]):
@@ -39,7 +65,7 @@ def get_image_columns(image: Image) -> list[ImageArea]:
     ]
 
 
-def get_image_areas(image: Image, strip: ImageArea) -> list[ImageArea]:
+def get_labels(image: npt.NDArray, strip: ImageArea) -> list[ImageArea]:
     in_pic = False
     norths, souths = [], []
     for y in range(image.shape[0]):
@@ -53,7 +79,12 @@ def get_image_areas(image: Image, strip: ImageArea) -> list[ImageArea]:
     norths = [n + int((s - n) / 2) for s, n in zip([0, *souths], norths, strict=False)]
     norths[0] = 0
     souths = [*norths[1:], image.shape[0]]
-    return [
+    labels = [
         ImageArea(image, strip.west, strip.east, n, s)
         for n, s in zip(norths, souths, strict=True)
     ]
+
+    for lb in labels:
+        lb.trim()
+
+    return labels

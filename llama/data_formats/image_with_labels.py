@@ -7,6 +7,7 @@ PROMPT = """
     Ignore the museum specimen itself.
     Just return the plain text representation on this image as if you were reading it
     naturally.
+    If there are any female or male symbols convert them into text.
     Read any natural handwriting.
     Do not hallucinate.
     """
