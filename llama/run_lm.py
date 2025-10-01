@@ -55,13 +55,25 @@ def parse_args() -> argparse.Namespace:
 
     arg_parser.add_argument(
         "--api-base",
-        default="http://localhost:11434",
+        # default="http://localhost:11434",
         help="""URL for the LM model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
         "--api-key",
         help="""Key for the LM provider.""",
+    )
+
+    arg_parser.add_argument(
+        "--temperature",
+        type=float,
+        help="""Model temperature.""",
+    )
+
+    arg_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        help="""Maximum tokens.""",
     )
 
     arg_parser.add_argument(

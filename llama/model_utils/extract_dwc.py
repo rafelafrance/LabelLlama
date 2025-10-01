@@ -17,7 +17,14 @@ def extract_info(args: argparse.Namespace) -> None:
 
     console = Console(log_path=False)
 
-    lm = dspy.LM(args.model, api_base=args.api_base, api_key=args.api_key, cache=False)
+    lm = dspy.LM(
+        args.model,
+        api_base=args.api_base,
+        api_key=args.api_key,
+        cache=False,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens,
+    )
     dspy.configure(lm=lm)
 
     label_data = label_types.read_label_data(args.label_json)
@@ -48,6 +55,7 @@ def extract_info(args: argparse.Namespace) -> None:
     with args.annotations_json.open("w") as f:
         f.write(json.dumps(predictions, indent=4) + "\n")
 
-    release_gpu_memory_ollama(args.model)
+    if args.model.find("ollama") > -1:
+        release_gpu_memory_ollama(args.model)
 
     log.finished()

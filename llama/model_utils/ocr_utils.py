@@ -1,11 +1,9 @@
 import tempfile
-from typing import Any
+from typing import Any  # I'm using "Any" until I get simple hugging face types
 
 import torch
 from PIL import Image
 from transformers import AutoModelForImageTextToText, AutoProcessor
-
-# I'm using "Any" until I figure out the real HuggingFace types.
 
 
 def setup_ocr(model_id: str = "allenai/olmOCR-7B-0825") -> tuple[Any, Any]:
@@ -29,7 +27,7 @@ def ocr_label(label: Image, model: Any, processor: Any, prompt: str) -> list[str
                         "type": "image",
                         "image": f.name,
                     },
-                    {"type": "text", "text": prompt},  # image_with_labels.PROMPT},
+                    {"type": "text", "text": prompt},
                 ],
             }
         ]

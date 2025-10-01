@@ -4,12 +4,14 @@ import argparse
 import base64
 import json
 import textwrap
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import jinja2
+import pandas as pd
 from data_formats import label_types
 from pylib import darwin_core as dwc
 
@@ -25,11 +27,38 @@ class Label:
 
 
 def main(args: argparse.Namespace) -> None:
-    with args.predictions_jsonl.open() as f:
+    with args.predictions_json.open() as f:
         ocr = json.load(f)
 
     label_type = label_types.LABEL_TYPES[args.label_type]
 
+    if args.output_html:
+        to_html(args, label_type, ocr)
+
+    if args.output_csv:
+        to_csv(args, ocr)
+
+
+def to_csv(args: argparse.Namespace, ocr: dict) -> None:
+    new_ocr = deepcopy(ocr)
+
+    for row in new_ocr:
+        for key, value in row["annotations"].items():
+            if len(value) == 0:
+                row[key] = ""
+            elif len(value) == 1:
+                row[key] = value[0]
+            else:
+                row[key] = value
+        del row["annotations"]
+
+    df = pd.DataFrame(new_ocr)
+    df.to_csv(args.output_csv, index=False)
+
+
+def to_html(
+    args: argparse.Namespace, label_type: label_types.LabelType, ocr: dict
+) -> None:
     labels = []
     for label in ocr:
         path = Path(label["path"])
@@ -117,25 +146,30 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--label-dir",
         type=Path,
-        required=True,
         metavar="PATH",
         help="""Images of labels are in this directory.""",
     )
 
     arg_parser.add_argument(
-        "--predictions-jsonl",
+        "--predictions-json",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Language model predictions JSONL file.""",
+        help="""Language model predictions JSON file.""",
     )
 
     arg_parser.add_argument(
         "--output-html",
         type=Path,
-        required=True,
         metavar="PATH",
         help="""Output the pipeline results to this HTML file.""",
+    )
+
+    arg_parser.add_argument(
+        "--output-csv",
+        type=Path,
+        metavar="PATH",
+        help="""Output the results to this CSV file.""",
     )
 
     args = arg_parser.parse_args()

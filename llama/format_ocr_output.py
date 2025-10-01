@@ -6,7 +6,7 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from llama.model_data import label_types
+from llama.data_formats import label_types
 
 
 def main(args: argparse.Namespace) -> None:

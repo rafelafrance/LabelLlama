@@ -28,6 +28,7 @@ __pycache__
 *.egg-info/
 build/
 dist/
+__marimo__/
 
 # Environment
 .venv/
