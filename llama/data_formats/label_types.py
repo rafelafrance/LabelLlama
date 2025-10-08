@@ -2,7 +2,7 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, SupportsIndex
+from typing import Any
 
 import dspy
 import Levenshtein
@@ -17,7 +17,7 @@ class LabelType:
     signature: Any  # An object derived from dspy.Signature
     input_fields: list[str]
     output_fields: list[str]
-    dwc: dict[str, SupportsIndex | slice]
+    dwc: dict[str, Any]
 
 
 LABEL_TYPES = {
@@ -25,7 +25,7 @@ LABEL_TYPES = {
         key="herbarium",
         prompt=herbarium_label.PROMPT,
         signature=herbarium_label.HerbariumLabel,
-        input_fields=herbarium_label.INPUT_FIELDS,
+        input_fields=list(herbarium_label.INPUT_FIELDS),
         output_fields=herbarium_label.OUTPUT_FIELDS,
         dwc=herbarium_label.DWC,
     ),
@@ -33,7 +33,7 @@ LABEL_TYPES = {
         key="bug",
         prompt=bug_label.PROMPT,
         signature=bug_label.LightningBugLabel,
-        input_fields=bug_label.INPUT_FIELDS,
+        input_fields=list(bug_label.INPUT_FIELDS),
         output_fields=bug_label.OUTPUT_FIELDS,
         dwc=bug_label.DWC,
     ),
@@ -47,6 +47,11 @@ def dict2example(dct: dict[str, str], extractor: LabelType) -> dspy.Example:
     for fld in extractor.output_fields:
         setattr(example, fld, dct["annotations"][extractor.dwc[fld]])
     return example
+
+
+def flatten_dict(dct: dict[str, Any]) -> None:
+    _ = {dct[k]: v for k, v in dct["annotations"].items()}
+    del dct["annotations"]
 
 
 def read_label_data(label_json: Path) -> list[dict]:

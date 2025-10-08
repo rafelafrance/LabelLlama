@@ -10,8 +10,8 @@ class ImageArea:
     data: npt.NDArray
     west: int
     east: int
-    north: int = None
-    south: int = None
+    north: int = 0
+    south: int = 0
     text: list[str] = field(default_factory=list)
 
     @property

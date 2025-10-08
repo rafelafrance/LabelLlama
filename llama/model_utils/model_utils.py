@@ -26,4 +26,5 @@ def release_gpu_memory_ollama(model: str) -> None:
     Again, there has to be a better way.
     """
     model = model.split("/")[-1]
-    subprocess.run(["ollama", "stop", model], check=False, shell=True)
+    print(f"ollama stop {model}")
+    subprocess.run(["ollama", "stop", model], check=False)  # noqa: S603

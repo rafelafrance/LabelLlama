@@ -1,5 +1,6 @@
-import collections
 import unicodedata
+from collections import Counter
+from itertools import pairwise
 
 import regex as re
 
@@ -105,7 +106,7 @@ def _char_key(char: str) -> tuple:
     return order, char
 
 
-def consensus(aligned: list[str]) -> str:
+def find_consensus(aligned: list[str]) -> str:
     """
     Build a consensus string from the aligned copies.
 
@@ -114,7 +115,7 @@ def consensus(aligned: list[str]) -> str:
     """
     cons = []
     for i in range(len(aligned[0])):
-        counts = collections.Counter(s[i] for s in aligned).most_common()
+        counts = Counter(s[i] for s in aligned).most_common()
         top = counts[0][1]
         chars = [c[0] for c in counts if c[1] == top]
         chars = sorted(chars, key=_char_key)
@@ -129,86 +130,29 @@ def substitute(line: str) -> str:
     return line
 
 
-# def add_spaces(line: str, spell_well, vocab_len: int = 3) -> str:
-#     """
-#     Add spaces between words.
-#
-#     OCR engines will remove spaces between words. This function looks for a non-word
-#     and sees if adding a space will create 2 (or 1) word.
-#     For example: "SouthFlorida" becomes "South Florida".
-#     """
-#     tokens = spell_well.tokenize(line)
-#
-#     new = []
-#     for token in tokens:
-#         if token.isspace() or spell_well.is_word(token) or len(token) < vocab_len:
-#             new.append(token)
-#         else:
-#             candidates = []
-#             for i in range(1, len(token) - 1):
-#                 freq1 = spell_well.freq(token[:i])
-#                 freq2 = spell_well.freq(token[i:])
-#                 if freq1 or freq2:
-#                     sum_ = freq1 + freq2
-#                     count = int(freq1 > 0) + int(freq2 > 0)
-#                     candidates.append((count, sum_, i))
-#             if candidates:
-#                 i = sorted(candidates, reverse=True)[0][2]
-#                 new.append(token[:i])
-#                 new.append(" ")
-#                 new.append(token[i:])
-#             else:
-#                 new.append(token)
-#
-#     return line
+def remove_repeated_suffix(text: str) -> str:
+    """Remove repeated suffixes added by a lanuage model."""
+    for i in range(-6, 0):  # Suffixes of length 6 to 1
+        suffix = re.escape(text[i:])
+        # Go thru the matches backwards to find the first repeated suffix
+        matches = list(re.finditer(suffix, text))
+        matches.reverse()
+        suffixes_start = 0
+        for m1, m2 in pairwise(matches):
+            if m1.start() == m2.end():
+                suffixes_start = m2.start()
+            else:
+                break
+        if suffixes_start == 0:
+            continue
+        return text[:suffixes_start]
 
-
-# def remove_spaces(line, spell_well):
-#     """
-#     Remove extra spaces in words.
-#
-#     OCR engines will put spaces where there shouldn't be any. This is a simple
-#     scanner that looks for 2 non-words that make a new word when a space is removed.
-#     For example: "w est" becomes "west".
-#     """
-#     tokens = spell_well.tokenize(line)
-#
-#     if len(tokens) <= MIN_LEN:
-#         return line
-#
-#     new = tokens[:2]
-#
-#     for i in range(2, len(tokens)):
-#         prev = tokens[i - 2]
-#         between = tokens[i - 1]
-#         curr = tokens[i]
-#
-#         if (
-#             between.isspace()
-#             and spell_well.is_word(prev + curr)
-#             and not (spell_well.is_word(prev) or spell_well.is_word(curr))
-#         ):
-#             new.pop()  # Remove between
-#             new.pop()  # Remove prev
-#             new.append(prev + curr)
-#         else:
-#             new.append(tokens[i])
-#
-#     return "".join(new)
-
-
-# def spell_correct(line, spell_well):
-#     new = []
-#     for token in spell_well.tokenize(line):
-#         if spell_well.is_letters(token):
-#             token = spell_well.correct(token)
-#         new.append(token)
-#     return "".join(new)
+    return text
 
 
 def post_process_text(text: str) -> str:
+    text = text.strip()
     text = substitute(text)
-    # text = add_spaces(text, spell_well)
-    # text = remove_spaces(text, spell_well)
-    # text = spell_correct(text, spell_well)
+    text = remove_repeated_suffix(text)
+    text = text.strip()
     return text
