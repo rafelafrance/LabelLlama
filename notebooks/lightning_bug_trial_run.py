@@ -23,6 +23,7 @@ def _():
     import marimo as mo
     import matplotlib.pyplot as plt
     import pandas as pd
+    import torch
     from numpy.typing import NDArray
     from skimage import io
 
@@ -50,19 +51,20 @@ def _():
         os,
         pd,
         plt,
+        torch,
     )
-
-
-@app.cell
-def _(mo):
-    mo.md(r"""## Get test images""")
-    return
 
 
 @app.cell
 def _(os):
     # Do this so we can get the paths right for saving and reading data
     print(f"cwd = {os.getcwd()}")
+    return
+
+
+@app.cell
+def _(torch):
+    torch.cuda.is_available()
     return
 
 
@@ -123,11 +125,11 @@ def _(image_with_labels, label_builder, model_utils, ocr_utils, one_up):
             text = ocr_utils.ocr_label(lb.image, model, processor, image_with_labels.PROMPT)
             text = [label_builder.post_process_text(t) for t in text]
             lb.text = text
+            print("\n", i, "=" * 80)
             if i % 10 == 0:
-                print("\n", i, "=" * 80)
                 one_up(lb.image)
-                for ln in text:
-                    print(ln)
+            for ln in text:
+                print(ln)
 
         model_utils.release_gpu_memory_hf(model)
     return (ocr_all_labels,)
@@ -302,13 +304,22 @@ def _(mo):
 @app.cell
 def _(json, output_dir, pd):
     annotation_paths = sorted(output_dir.glob("*annotations*"))
-    # consensus_paths = sorted(output_dir.glob("*consensus*"))
+    consensus_paths = sorted(output_dir.glob("*consensus*"))
     csv_path = output_dir / "annotations.csv"
 
-    annotations = []
-    for path in annotation_paths:
-        with path.open() as fin:
+    annotations, consensus = [], []
+    for anno_path, cons_path in zip(annotation_paths, consensus_paths, strict=True):
+        with anno_path.open() as fin:
             annotations += json.load(fin)
+
+        with cons_path.open() as fin:
+            consensus += json.load(fin)
+
+        for anno, cons in zip(annotations, consensus, strict=True):
+            if anno["path"] != cons["path"]:
+                print("ERROR!")
+            anno["indexes"] = cons["indexes"]
+            anno["aligned"] = cons["aligned"]
 
     df = pd.DataFrame(annotations)
     df.to_csv(csv_path, index=False)
