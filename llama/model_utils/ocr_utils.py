@@ -1,16 +1,18 @@
-import base64
+# import base64
 import tempfile
-from io import BytesIO
+
+# from io import BytesIO
 from typing import Any
 
 import torch
-from olmocr.data.renderpdf import render_pdf_to_base64png
-from olmocr.prompts.anchor import get_anchor_text
+
+# from olmocr.data.renderpdf import render_pdf_to_base64png
+# from olmocr.prompts.anchor import get_anchor_text
 from PIL import Image
 from transformers import (
     AutoModelForImageTextToText,
     AutoProcessor,
-    Qwen2VLForConditionalGeneration,
+    # Qwen2VLForConditionalGeneration,
 )
 
 
@@ -24,14 +26,14 @@ def setup_ocr(model_id: str = "allenai/olmOCR-7B-0825") -> tuple[Any, Any]:
     return model, processor
 
 
-def setup_ocr_new(
-    model_id: str = "mradermacher/olmOCR-7B-0825-GGUF",
-) -> tuple[Any, Any]:
-    model = Qwen2VLForConditionalGeneration.from_pretrained(
-        model_id, torch_dtype=torch.bfloat16
-    ).eval()
-    processor = ""
-    return model, processor
+# def setup_ocr_new(
+#     model_id: str = "mradermacher/olmOCR-7B-0825-GGUF",
+# ) -> tuple[Any, Any]:
+#     model = Qwen2VLForConditionalGeneration.from_pretrained(
+#         model_id, torch_dtype=torch.bfloat16
+#     ).eval()
+#     processor = ""
+#     return model, processor
 
 
 def ocr_label(label: Image, model: Any, processor: Any, prompt: str) -> list[str]:
