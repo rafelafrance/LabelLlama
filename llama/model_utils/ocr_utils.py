@@ -41,7 +41,7 @@ def ocr_label(
     model: Any,
     processor: Any,
     prompt: str,
-    max_new_tokens: int | None = None,
+    max_new_tokens: int = 16384,
 ) -> list[str]:
     with tempfile.NamedTemporaryFile(suffix=".jpg") as f:
         label.save(f.name)
