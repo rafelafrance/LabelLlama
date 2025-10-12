@@ -16,14 +16,12 @@ from transformers import (
 )
 
 
-def setup_ocr(
-    model_id: str = "allenai/olmOCR-7B-0825", max_new_tokens: int | None = None
-) -> tuple[Any, Any]:
-    processor = AutoProcessor.from_pretrained(model_id, max_new_tokens=max_new_tokens)
+def setup_ocr(model_id: str = "allenai/olmOCR-7B-0825") -> tuple[Any, Any]:
+    processor = AutoProcessor.from_pretrained(model_id)
     model = (
         AutoModelForImageTextToText.from_pretrained(model_id, torch_dtype=torch.float16)
         .to("cuda")
-        .eval(),
+        .eval()
     )
     return model, processor
 
@@ -38,7 +36,13 @@ def setup_ocr(
 #     return model, processor
 
 
-def ocr_label(label: Image, model: Any, processor: Any, prompt: str) -> list[str]:
+def ocr_label(
+    label: Image,
+    model: Any,
+    processor: Any,
+    prompt: str,
+    max_new_tokens: int | None = None,
+) -> list[str]:
     with tempfile.NamedTemporaryFile(suffix=".jpg") as f:
         label.save(f.name)
         messages = [
@@ -62,9 +66,9 @@ def ocr_label(label: Image, model: Any, processor: Any, prompt: str) -> list[str
             tokenize=True,
             return_dict=True,
             return_tensors="pt",
-        ).to(model.device)
+        ).to("cuda" if torch.cuda.is_available() else "cpu")
 
-        output_ids = model.generate(**inputs, max_new_tokens=10_000)
+        output_ids = model.generate(**inputs, max_new_tokens=max_new_tokens)
         generated_ids = [
             output_ids[len(input_ids) :]
             for input_ids, output_ids in zip(inputs.input_ids, output_ids, strict=False)

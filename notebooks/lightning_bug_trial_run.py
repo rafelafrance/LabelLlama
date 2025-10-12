@@ -120,16 +120,16 @@ def _(mo):
 @app.cell
 def _(image_with_labels, label_builder, model_utils, ocr_utils, one_up):
     def ocr_all_labels(labels):
-        model, processor = ocr_utils.setup_ocr(max_new_tokens=1024)
+        model, processor = ocr_utils.setup_ocr()
         for i, lb in enumerate(labels):
-            text = ocr_utils.ocr_label(lb.image, model, processor, image_with_labels.PROMPT)
+            text = ocr_utils.ocr_label(
+                lb.image, model, processor, image_with_labels.PROMPT, max_new_tokens=1024
+            )
             text = [label_builder.post_process_text(t) for t in text]
             lb.text = text
-            print("\n", i, "=" * 80)
             if i % 10 == 0:
+                print("\n", i, "=" * 80)
                 one_up(lb.image)
-            for ln in text:
-                print(ln)
 
         model_utils.release_gpu_memory_hf(model)
     return (ocr_all_labels,)
@@ -194,7 +194,7 @@ def _(LineAlign, char_sub_matrix, image_slice):
 
 
 @app.cell
-def _(Path, SimilarLabels, align_texts, label_builder, result):
+def _(Path, SimilarLabels, align_texts, label_builder):
     def find_consensus_text(label_sets: SimilarLabels, image_path: Path):
         label_json = []
 
@@ -202,9 +202,10 @@ def _(Path, SimilarLabels, align_texts, label_builder, result):
             aligned = align_texts(label_set.labels)
             filtered = label_builder.filter_lines(aligned, threshold=32)
             cons = label_builder.find_consensus(filtered)
+            cons = label_builder.post_process_text(cons)
             print()
             print(j, "=" * 80)
-            for line in result:
+            for line in aligned:
                 line = " ".join(line.split())
                 print(line)
             print("-" * 40)
@@ -303,8 +304,8 @@ def _(mo):
 
 @app.cell
 def _(json, output_dir, pd):
-    annotation_paths = sorted(output_dir.glob("*annotations*"))
-    consensus_paths = sorted(output_dir.glob("*consensus*"))
+    annotation_paths = sorted(output_dir.glob("*annotations.json"))
+    consensus_paths = sorted(output_dir.glob("*consensus.json"))
     csv_path = output_dir / "annotations.csv"
 
     annotations, consensus = [], []
@@ -323,11 +324,6 @@ def _(json, output_dir, pd):
 
     df = pd.DataFrame(annotations)
     df.to_csv(csv_path, index=False)
-    return
-
-
-@app.cell
-def _():
     return
 
 

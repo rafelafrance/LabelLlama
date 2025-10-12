@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.16.2"
+__generated_with = "0.16.5"
 app = marimo.App(width="medium")
 
 
@@ -76,7 +76,7 @@ def _(mo):
 def _(Image, ImageOps, Path, one_up, os, simple_label):
     print(f"cwd = {os.getcwd()}")
 
-    image_dir = Path("../data/diode/labels/")
+    image_dir = Path("../data/geode/Label Test RMNH/")
 
     image_paths = list(image_dir.glob("*.jpg"))
     image_paths += list(image_dir.glob("*.JPG"))
@@ -120,7 +120,7 @@ def _(image_with_labels, labels, model_utils, ocr_utils, one_up):
 
 @app.cell
 def _(Path, json, labels):
-    label_json_path = Path("../data/diode/trial_run_ocr_text.json")
+    label_json_path = Path("../data/diode/trial_run_ocr_text_2.json")
     label_json = [lb.as_dict() for lb in labels]
     with label_json_path.open("w") as f:
         json.dump(label_json, f, indent=4)
@@ -135,7 +135,7 @@ def _(mo):
 
 @app.cell
 def _(Path):
-    anno_json = Path("../data/diode/trial_run_annotations.json")
+    anno_json = Path("../data/diode/trial_run_annotations_2.json")
     return (anno_json,)
 
 
@@ -177,7 +177,7 @@ def _(Path, anno_json, data_util, json, pd):
 
     df = pd.DataFrame(formatted)
 
-    formatted_csv = Path("../data/diode/trial_run_annotations.csv")
+    formatted_csv = Path("../data/diode/trial_run_annotations_2.csv")
 
     df.to_csv(formatted_csv, index=False)
     return
