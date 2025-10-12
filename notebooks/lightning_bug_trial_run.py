@@ -120,7 +120,7 @@ def _(mo):
 @app.cell
 def _(image_with_labels, label_builder, model_utils, ocr_utils, one_up):
     def ocr_all_labels(labels):
-        model, processor = ocr_utils.setup_ocr()
+        model, processor = ocr_utils.setup_ocr(max_new_tokens=1024)
         for i, lb in enumerate(labels):
             text = ocr_utils.ocr_label(lb.image, model, processor, image_with_labels.PROMPT)
             text = [label_builder.post_process_text(t) for t in text]

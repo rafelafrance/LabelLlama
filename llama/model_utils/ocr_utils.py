@@ -16,12 +16,14 @@ from transformers import (
 )
 
 
-def setup_ocr(model_id: str = "allenai/olmOCR-7B-0825") -> tuple[Any, Any]:
-    processor = AutoProcessor.from_pretrained(model_id)
+def setup_ocr(
+    model_id: str = "allenai/olmOCR-7B-0825", max_new_tokens: int | None = None
+) -> tuple[Any, Any]:
+    processor = AutoProcessor.from_pretrained(model_id, max_new_tokens=max_new_tokens)
     model = (
         AutoModelForImageTextToText.from_pretrained(model_id, torch_dtype=torch.float16)
         .to("cuda")
-        .eval()
+        .eval(),
     )
     return model, processor
 
