@@ -1,45 +1,22 @@
 import dspy
 
-DWC = {
-    "dwc_scientific_name": "dwc:scientificName",
-    "dwc_scientific_name_authority": "dwc:scientificNameAuthority",
-    "dwc_family": "dwc:family",
-    "dwc_genus": "dwc:genus",
-    "dwc_subgenus": "dwc:subgenus",
-    "dwc_specific_epithet": "dwc:specificEpithet",
-    "dwc_verbatim_event_date": "dwc:verbatimEventDate",
-    "dwc_verbatim_locality": "dwc:verbatimLocality",
-    "dwc_habitat": "dwc:habitat",
-    "dwc_sex": "dwc:sex",
-    "dwc_verbatim_elevation": "dwc:verbatimElevation",
-    "dwc_verbatim_coordinates": "dwc:verbatimCoordinates",
-    "dwc_recorded_by": "dwc:recordedBy",
-    "dwc_recorded_by_id": "dwc:recordedByID",
-    "dwc_identified_by": "dwc:identifiedBy",
-    "dwc_identified_by_id": "dwc:identifiedByID",
-    "dwc_occurrence_id": "dwc:occurrenceID",
-    "dwc_country": "dwc:country",
-    "dwc_state_province": "dwc:stateProvince",
-    "dwc_county": "dwc:county",
-    "dwc_occurrence_remarks": "dwc:occurrenceRemarks",
-}
-
 PROMPT = """
     From the label get the scientific name, scientific name authority, family,
     genus, subgenus, specificEpithet,
     collection date, elevation, latitude and longitude, locality, habitat, sex,
-    collection country, collection state or province, collection county,
+    collection country, collection state or province, collection county, island,
+    island group, body of water, municipality,
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
     and any other observations.
     If it is not mentioned return an empty value. Do not hallucinate.
     """
 
 
-class LightningBugLabel(dspy.Signature):
+class BugLabel(dspy.Signature):
     """Analyze herbarium specimen labels and extract this information."""
 
     # Input fields
-    text: str = dspy.InputField(default="", desc="Herbarium label text")
+    text: str = dspy.InputField(default="", desc="Insect label text")
     prompt: str = dspy.InputField(default="", desc="Extract these traits")
 
     # Output traits -- Just capturing the text for now
@@ -111,10 +88,33 @@ class LightningBugLabel(dspy.Signature):
         desc="The county where the specimen was collected",
         alias="dwc:county",
     )
+    dwc_water_body: list[str] = dspy.OutputField(
+        default=[],
+        desc="The body of water where the specimen was collected",
+        alias="dwc:waterBody",
+    )
+    dwc_island: list[str] = dspy.OutputField(
+        default=[],
+        desc="The island where the specimen was collected",
+        alias="dwc:island",
+    )
+    dwc_island_group: list[str] = dspy.OutputField(
+        default=[],
+        desc="The island group where the specimen was collected",
+        alias="dwc:islandGroup",
+    )
+    dwc_municipality: list[str] = dspy.OutputField(
+        default=[],
+        desc="The municipality where the specimen was collected",
+        alias="dwc:municipality",
+    )
     dwc_occurrence_remarks: list[str] = dspy.OutputField(
         default=[], desc="Other observations", alias="dwc:occurrenceRemarks"
     )
 
 
 INPUT_FIELDS = ("text", "prompt")
-OUTPUT_FIELDS = [t for t in vars(LightningBugLabel()) if t not in INPUT_FIELDS]
+OUTPUT_FIELDS = [t for t in vars(BugLabel()) if t not in INPUT_FIELDS]
+DWC = {
+    f[0]: f[1].alias for f in BugLabel.model_fields.items() if f[0] not in INPUT_FIELDS
+}

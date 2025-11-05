@@ -1,7 +1,7 @@
 import marimo
 
-__generated_with = "0.16.5"
-app = marimo.App(width="medium")
+__generated_with = "0.17.0"
+app = marimo.App(width="full")
 
 
 @app.cell(hide_code=True)
@@ -21,11 +21,16 @@ def _():
     import marimo as mo
     import matplotlib.pyplot as plt
     import pandas as pd
+    import polars as pl
     from numpy import typing as npt
     from PIL import Image, ImageOps
 
     from llama.data_formats import (
-        bug_label, data_util, label_types, simple_label, image_with_labels
+        bug_label,
+        data_util,
+        label_types,
+        simple_label,
+        image_with_labels,
     )
     from llama.model_utils import extract_dwc, model_utils, ocr_utils
     from llama.pylib import darwin_core
@@ -33,9 +38,7 @@ def _():
         Image,
         ImageOps,
         Path,
-        argparse,
         data_util,
-        extract_dwc,
         image_with_labels,
         json,
         mo,
@@ -43,27 +46,8 @@ def _():
         ocr_utils,
         os,
         pd,
-        plt,
-        simple_label,
+        pl,
     )
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""## Image display functions""")
-    return
-
-
-@app.cell
-def _(plt, simple_label):
-    def one_up(label: simple_label.SimpleLabel) -> None:
-        fig, ax = plt.subplots(nrows=1, ncols=1, sharex=True, sharey=True, figsize=(8, 8))
-
-        ax.imshow(label.image, cmap=plt.cm.gray)
-        ax.axis("off")
-
-        plt.show()
-    return (one_up,)
 
 
 @app.cell(hide_code=True)
@@ -73,7 +57,7 @@ def _(mo):
 
 
 @app.cell
-def _(Image, ImageOps, Path, one_up, os, simple_label):
+def _(Image, ImageOps, Path, os, pl):
     print(f"cwd = {os.getcwd()}")
 
     image_dir = Path("../data/geode/Label Test RMNH/")
@@ -87,10 +71,12 @@ def _(Image, ImageOps, Path, one_up, os, simple_label):
     for p in image_paths:
         image = Image.open(p).convert("L")
         image = ImageOps.exif_transpose(image, in_place=False)
-        labels.append(simple_label.SimpleLabel(image=image, path=p))
+        labels.append({"image": image, "path": p, "text": ""})
 
-    one_up(labels[0])
-    return (labels,)
+    labels = pl.DataFrame(labels)
+
+    labels[0, "image"]
+    return
 
 
 @app.cell(hide_code=True)
@@ -100,7 +86,7 @@ def _(mo):
 
 
 @app.cell
-def _(image_with_labels, labels, model_utils, ocr_utils, one_up):
+def _(image_with_labels, model_utils, ocr_utils, one_up):
     def ocr_all_labels(labels):
         model, processor = ocr_utils.setup_ocr()
         for i, lb in enumerate(labels):
@@ -114,17 +100,17 @@ def _(image_with_labels, labels, model_utils, ocr_utils, one_up):
         model_utils.release_gpu_memory_hf(model)
 
 
-    ocr_all_labels(labels)
+    # ocr_all_labels(labels)
     return
 
 
 @app.cell
-def _(Path, json, labels):
-    label_json_path = Path("../data/diode/trial_run_ocr_text_2.json")
-    label_json = [lb.as_dict() for lb in labels]
-    with label_json_path.open("w") as f:
-        json.dump(label_json, f, indent=4)
-    return (label_json_path,)
+def _():
+    # label_json_path = Path("../data/diode/trial_run_ocr_text_2.json")
+    # label_json = [lb.as_dict() for lb in labels]
+    # with label_json_path.open("w") as f:
+    #     json.dump(label_json, f, indent=4)
+    return
 
 
 @app.cell(hide_code=True)
@@ -135,24 +121,24 @@ def _(mo):
 
 @app.cell
 def _(Path):
-    anno_json = Path("../data/diode/trial_run_annotations_2.json")
+    anno_json = Path("../data/diode/gpt5_mini_annotations_3.json")
     return (anno_json,)
 
 
 @app.cell
-def _(anno_json, argparse, extract_dwc, label_json_path):
-    args = argparse.Namespace(
-        label_type="bug",
-        label_json=label_json_path,
-        annotations_json=anno_json,
-        # Defaults
-        model="ollama_chat/gemma3:27b",
-        api_base="http://localhost:11434",
-        api_key=None,
-        limit=0,
-    )
+def _():
+    # args = argparse.Namespace(
+    #     label_type="bug",
+    #     label_json=label_json_path,
+    #     annotations_json=anno_json,
+    #     # Defaults
+    #     model="ollama_chat/gemma3:27b",
+    #     api_base="http://localhost:11434",
+    #     api_key=None,
+    #     limit=0,
+    # )
 
-    extract_dwc.extract_info(args)
+    # extract_dwc.extract_info(args)
     return
 
 
@@ -177,7 +163,7 @@ def _(Path, anno_json, data_util, json, pd):
 
     df = pd.DataFrame(formatted)
 
-    formatted_csv = Path("../data/diode/trial_run_annotations_2.csv")
+    formatted_csv = Path("../data/diode/gpt5_mini_annotations_3.csv")
 
     df.to_csv(formatted_csv, index=False)
     return

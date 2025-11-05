@@ -7,7 +7,7 @@ from typing import Any
 import dspy
 import Levenshtein
 
-from llama.data_formats import bug_label, herbarium_label
+from llama.data_formats import bug_label, herbarium_label, image_with_labels
 
 
 @dataclass
@@ -20,10 +20,16 @@ class LabelType:
     dwc: dict[str, Any]
 
 
+def format_prompt(prompt: str) -> str:
+    lines = [ln.strip() for ln in prompt.splitlines()]
+    prompt = "\n".join(lines)
+    return prompt
+
+
 LABEL_TYPES = {
     "herbarium": LabelType(
         key="herbarium",
-        prompt=herbarium_label.PROMPT,
+        prompt=format_prompt(herbarium_label.PROMPT),
         signature=herbarium_label.HerbariumLabel,
         input_fields=list(herbarium_label.INPUT_FIELDS),
         output_fields=herbarium_label.OUTPUT_FIELDS,
@@ -31,11 +37,19 @@ LABEL_TYPES = {
     ),
     "bug": LabelType(
         key="bug",
-        prompt=bug_label.PROMPT,
-        signature=bug_label.LightningBugLabel,
+        prompt=format_prompt(bug_label.PROMPT),
+        signature=bug_label.BugLabel,
         input_fields=list(bug_label.INPUT_FIELDS),
         output_fields=bug_label.OUTPUT_FIELDS,
         dwc=bug_label.DWC,
+    ),
+    "image": LabelType(
+        key="image",
+        prompt=format_prompt(image_with_labels.PROMPT),
+        signature=image_with_labels.ImageWithLabels,
+        input_fields=list(image_with_labels.INPUT_FIELDS),
+        output_fields=image_with_labels.OUTPUT_FIELDS,
+        dwc={},
     ),
 }
 
@@ -50,7 +64,15 @@ def dict2example(dct: dict[str, str], extractor: LabelType) -> dspy.Example:
 
 
 def flatten_dict(dct: dict[str, Any]) -> None:
-    _ = {dct[k]: v for k, v in dct["annotations"].items()}
+    for k, v in dct["annotations"].items():
+        val = ""
+        if len(v) == 0:
+            val = ""
+        elif len(v) == 1:
+            val = v[0]
+        else:
+            val = v
+        dct[k] = val
     del dct["annotations"]
 
 

@@ -21,9 +21,5 @@ def lift_annotations(labels: list[dict]) -> list[dict]:
         lb |= copy(lb["annotations"])
         del lb["annotations"]
 
-        from pprint import pp
-
-        pp(lb)
-
         news.append(lb)
     return news

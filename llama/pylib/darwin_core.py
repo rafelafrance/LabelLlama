@@ -10,7 +10,7 @@ def dwc_format(label: dict[str, Any], dwc: dict[str, str]) -> dict[str, Any]:
     """
     formatted = {}
     for key, val in label.items():
-        key = dwc.get(key)
+        key = dwc.get(key, "")
         if key == "dwc:occurrenceRemarks":
             formatted[key] = format_text_as_html(val)
         elif key.startswith("dwc:"):

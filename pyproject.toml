@@ -11,35 +11,41 @@ license = { file = "LICENSE" }
 authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
-  "accelerate>=1.10.0",
-  "compressed-tensors>=0.11.0",
-  "datasets>=4.0.0",
-  "dspy>=3.0.1",
-  "evaluate>=0.4.5",
-  "ftfy>=6.3.1",
-  "imagesize>=1.4.1",
-  "ipywidgets>=8.1.7",
-  "jinja2>=3.1.6",
-  "jupyter>=1.1.1",
-  "levenshtein>=0.27.1",
-  # "llama-cpp-python",
-  "marimo[recommended]>=0.16.0",
-  "matplotlib>=3.10.6",
-  "nbformat>=5.10.4",
-  # "olmocr",
-  "pandas>=2.3.1",
-  "pillow>=11.3.0",
-  "pip>=25.2",
-  "pre-commit>=4.3.0",
-  "regex>=2025.7.34",
-  "rich>=14.1.0",
-  "scikit-image>=0.25.2",
-  # "torch==2.8.0+rocm6.4",
-  # "torchvision==0.23.0+rocm6.4",
-  "tqdm>=4.67.1",
-  "transformers>=4.55.2",
-  "uv-build>=0.8.22",
+  "altair>=5.5.0",
+  "dspy",
+  "duckdb>=1.4.1",
+  "ftfy",
+  "imagesize",
+  "jinja2",
+  "levenshtein",
+  "lmstudio>=1.5.0",
+  "marimo",
+  "matplotlib",
+  "pandas",
+  "pillow",
+  "polars>=1.34.0",
+  "pytorch-triton-rocm", # - pytorch-triton-rocm==3.5.0+git7416ffcb
+  "regex",
+  "rich",
+  "scikit-image",
+  "torch>=2.10.0.dev20251013", # - torch==2.10.0.dev20251013+rocm7.0
+  "torchvision>=0.25.0.dev20251014", # - torchvision==0.25.0.dev20251014+rocm7.0
+  "tqdm",
+  "transformers",
 ]
+
+[dependency-groups]
+dev = ["pre-commit>=4.3.0", "uv-build>=0.9.5"]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-rocm" }]
+torchvision = [{ index = "pytorch-rocm" }]
+pytorch-triton-rocm = [{ index = "pytorch-rocm" }]
+
+[[tool.uv.index]]
+name = "pytorch-rocm"
+url = "https://download.pytorch.org/whl/nightly/rocm7.0"
+explicit = true
 
 [tool.uv.build-backend]
 module-root = "."
@@ -47,8 +53,6 @@ module-name = "llama"
 
 [tool.ruff]
 exclude = ["notebooks/*"]
-
-target-version = "py313"
 
 show-fixes = true
 
@@ -72,13 +76,12 @@ ignore = [
   "D203",    # 1 blank line required before class docstring
   "D212",    # Multi-line docstring summary should start at the first line
   "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
-  "DTZ011",  # datetime.date.today() used"ERA001",  # Remove commented-out code
+  "DTZ011",  # datetime.date.today() used
   "ERA001",  # Remove commented-out code
   "FIX002",  # Line contains TODO
   "G004",    # Logging statement uses f-string
   "LOG015",  # Use own logger instead
   "N818",    # Exception name {name} should be named with an Error suffix
-  "PD901",   # Avoid using the generic variable name df for DataFrames
   "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
   "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
   "PT009",   # Use a regular assert instead of unittest-style {assertion}
