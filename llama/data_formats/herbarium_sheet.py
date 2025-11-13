@@ -10,7 +10,6 @@ PROMPT = """
     If it is not mentioned return an empty value.
     Do not hallucinate.
     """
-# island, island group, body of water, municipality,
 
 
 class HerbariumSheet(dspy.Signature):
@@ -32,20 +31,20 @@ class HerbariumSheet(dspy.Signature):
     dwc_family: list[str] = dspy.OutputField(
         default=[], desc="Taxonomic family", alias="dwc:family"
     )
-    dwc_verbatim_event_date: list[str] = dspy.OutputField(
-        default=[], desc="Specimen collection date", alias="dwc:verbatimEventDate"
+    dwc_event_date: list[str] = dspy.OutputField(
+        default=[], desc="Specimen collection date", alias="dwc:eventDate"
     )
-    dwc_verbatim_locality: list[str] = dspy.OutputField(
-        default=[], desc="Collected from this locality", alias="dwc:verbatimLocality"
+    dwc_locality: list[str] = dspy.OutputField(
+        default=[], desc="Collected from this locality", alias="dwc:locality"
     )
     dwc_habitat: list[str] = dspy.OutputField(
         default=[], desc="Collected from this habitat", alias="dwc:habitat"
     )
-    dwc_verbatim_elevation: list[str] = dspy.OutputField(
-        default=[], desc="Specimen elevation", alias="dwc:verbatimElevation"
+    dwc_elevation: list[str] = dspy.OutputField(
+        default=[], desc="Specimen elevation", alias="dwc:elevation"
     )
-    dwc_verbatim_coordinates: list[str] = dspy.OutputField(
-        default=[], desc="Latitude and longitude", alias="dwc:verbatimCoordinates"
+    dwc_coordinates: list[str] = dspy.OutputField(
+        default=[], desc="Latitude and longitude", alias="dwc:coordinates"
     )
     dwc_recorded_by: list[str] = dspy.OutputField(
         default=[], desc="Collector names", alias="dwc:recordedBy"
@@ -80,26 +79,17 @@ class HerbariumSheet(dspy.Signature):
         desc="The county where the specimen was collected",
         alias="dwc:county",
     )
-    # dwc_water_body: list[str] = dspy.OutputField(
-    #     default=[], desc="Collected from this water body", alias="dwc:waterBody"
-    # )
-    # dwc_island: list[str] = dspy.OutputField(
-    #     default=[], desc="Collected from this island", alias="dwc:island"
-    # )
-    # dwc_island_group: list[str] = dspy.OutputField(
-    #     default=[], desc="Collected from this island group", alias="dwc:islandGroup"
-    # )
     dwc_municipality: list[str] = dspy.OutputField(
         default=[], desc="Collected from this municipality", alias="dwc:municipality"
     )
     dwc_occurrence_remarks: list[str] = dspy.OutputField(
         default=[], desc="Other observations", alias="dwc:occurrenceRemarks"
     )
-    verbatim_trs: list[str] = dspy.OutputField(
-        default=[], desc="Township Range Section (TRS)", alias="verbatimTRS"
+    trs: list[str] = dspy.OutputField(
+        default=[], desc="Township Range Section (TRS)", alias="TRS"
     )
-    verbatim_utm: list[str] = dspy.OutputField(
-        default=[], desc="Universal Transverse Mercator (UTM)", alias="verbatimUTM"
+    utm: list[str] = dspy.OutputField(
+        default=[], desc="Universal Transverse Mercator (UTM)", alias="UTM"
     )
 
 

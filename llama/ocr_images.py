@@ -35,8 +35,8 @@ def main(args: argparse.Namespace) -> None:
 
         for i, image_path in enumerate(image_paths, start):
             rec_start = datetime.now()
-            console.log(f"[blue]{'=' * 80}")
-            console.log(f"[blue]{i} {image_path}")
+            console.log(f"[blue]\n{i} {'=' * 80}")
+            console.log(f"[blue]{image_path}")
 
             handle = client.files.prepare_image(image_path)
             chat = lms.Chat()
@@ -56,7 +56,7 @@ def main(args: argparse.Namespace) -> None:
             console.log(f"[green]{result['ocr_text']}")
             console.log(f"[blue]Inference Time: {datetime.now() - rec_start}")
 
-    console.log(f"[blue]Job Time: {datetime.now() - job_started}")
+    console.log(f"\n[blue]Job Time: {datetime.now() - job_started}")
     console.log("[blue]Finished")
 
 

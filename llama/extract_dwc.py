@@ -43,7 +43,7 @@ def main(args: argparse.Namespace) -> None:
     with args.dwc_output.open("a") as out_file:
         for i, ocr_rec in enumerate(ocr_records, start):
             rec_start = datetime.now()
-            console.log(f"[blue]{i} {'=' * 80}")
+            console.log(f"[blue]\n{i} {'=' * 80}")
 
             if ocr_rec.get("ocr_error"):
                 console.log("[red] skipped due to ocr error")
@@ -57,7 +57,7 @@ def main(args: argparse.Namespace) -> None:
             append_result(out_file, ocr_rec, pred, args.model_name, args.ocr_input)
             console.log(f"[blue]Inference Time: {datetime.now() - rec_start}")
 
-    console.log(f"[blue]Job Time: {datetime.now() - job_started}")
+    console.log(f"\n[blue]Job Time: {datetime.now() - job_started}")
     console.log("[blue]Finished")
 
 
@@ -87,6 +87,7 @@ def parse_args() -> argparse.Namespace:
         allow_abbrev=True,
         description=textwrap.dedent("""
             Extract Darwin Core (DwC) information from text on museum specimens.
+            For lms you need to load the model on the server, lms load <my-model>.
             """),
     )
 
@@ -125,7 +126,8 @@ def parse_args() -> argparse.Namespace:
         "--api-base",
         default="http://localhost:11434",
         help="""URL for the LM model. (default: %(default)s)
-            ollama is http://localhost:11434 and lmstudio is http://localhost:1234""",
+            ollama is http://localhost:11434
+            and lmstudio is http://localhost:1234/v1""",
     )
 
     arg_parser.add_argument(
