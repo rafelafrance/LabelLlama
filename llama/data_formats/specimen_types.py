@@ -7,7 +7,7 @@ from typing import Any
 import dspy
 import Levenshtein
 
-from llama.data_formats import bug_label, herbarium_label, image_with_labels
+from llama.data_formats import herbarium_sheet
 
 
 @dataclass
@@ -26,31 +26,31 @@ def format_prompt(prompt: str) -> str:
     return prompt
 
 
-LABEL_TYPES = {
+SPECIMEN_TYPES = {
     "herbarium": LabelType(
         key="herbarium",
-        prompt=format_prompt(herbarium_label.PROMPT),
-        signature=herbarium_label.HerbariumLabel,
-        input_fields=list(herbarium_label.INPUT_FIELDS),
-        output_fields=herbarium_label.OUTPUT_FIELDS,
-        dwc=herbarium_label.DWC,
+        prompt=format_prompt(herbarium_sheet.PROMPT),
+        signature=herbarium_sheet.HerbariumSheet,
+        input_fields=list(herbarium_sheet.INPUT_FIELDS),
+        output_fields=herbarium_sheet.OUTPUT_FIELDS,
+        dwc=herbarium_sheet.DWC,
     ),
-    "bug": LabelType(
-        key="bug",
-        prompt=format_prompt(bug_label.PROMPT),
-        signature=bug_label.BugLabel,
-        input_fields=list(bug_label.INPUT_FIELDS),
-        output_fields=bug_label.OUTPUT_FIELDS,
-        dwc=bug_label.DWC,
-    ),
-    "image": LabelType(
-        key="image",
-        prompt=format_prompt(image_with_labels.PROMPT),
-        signature=image_with_labels.ImageWithLabels,
-        input_fields=list(image_with_labels.INPUT_FIELDS),
-        output_fields=image_with_labels.OUTPUT_FIELDS,
-        dwc={},
-    ),
+    # "bug": LabelType(
+    #     key="bug",
+    #     prompt=format_prompt(bug_label.PROMPT),
+    #     signature=bug_label.BugLabel,
+    #     input_fields=list(bug_label.INPUT_FIELDS),
+    #     output_fields=bug_label.OUTPUT_FIELDS,
+    #     dwc=bug_label.DWC,
+    # ),
+    # "image": LabelType(
+    #     key="image",
+    #     prompt=format_prompt(image_with_labels.PROMPT),
+    #     signature=image_with_labels.ImageWithLabels,
+    #     input_fields=list(image_with_labels.INPUT_FIELDS),
+    #     output_fields=image_with_labels.OUTPUT_FIELDS,
+    #     dwc={},
+    # ),
 }
 
 

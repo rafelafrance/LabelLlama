@@ -24,10 +24,12 @@
 *.pyc
 *.swp
 __pycache__
-.ipynb_checkpoints/
 *.egg-info/
 build/
 dist/
+
+# Notebooks
+.ipynb_checkpoints/
 __marimo__/
 
 # Environment

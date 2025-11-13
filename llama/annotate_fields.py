@@ -9,8 +9,8 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from data_formats import label_types
-from pylib import const
+from data_formats import specimen_types
+from old.llama.pylib import const
 
 STYLE_LIST = [
     {"background": "brown", "foreground": "white", "font": const.FONT_SM},

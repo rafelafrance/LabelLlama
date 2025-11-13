@@ -6,16 +6,18 @@ PROMPT = """
     Universal Transverse Mercator (UTM), locality, habitat,
     collection country, collection state or province, collection county,
     collector names, collector ID, determiner names, determiner ID, specimen ID number,
-    associated taxa, and any other observations.
-    If it is not mentioned return an empty value. Do not hallucinate.
+    associated taxa, and all other observations go into occurrence remarks.
+    If it is not mentioned return an empty value.
+    Do not hallucinate.
     """
+# island, island group, body of water, municipality,
 
 
-class HerbariumLabel(dspy.Signature):
-    """Analyze herbarium specimen labels and extract this information."""
+class HerbariumSheet(dspy.Signature):
+    """Analyze text from herbarium sheets and extract this information."""
 
     # Input fields
-    text: str = dspy.InputField(default="", desc="Herbarium label text")
+    text: str = dspy.InputField(default="", desc="Herbarium sheet text")
     prompt: str = dspy.InputField(default="", desc="Extract these traits")
 
     # Output traits -- Just capturing the text for now
@@ -78,6 +80,18 @@ class HerbariumLabel(dspy.Signature):
         desc="The county where the specimen was collected",
         alias="dwc:county",
     )
+    # dwc_water_body: list[str] = dspy.OutputField(
+    #     default=[], desc="Collected from this water body", alias="dwc:waterBody"
+    # )
+    # dwc_island: list[str] = dspy.OutputField(
+    #     default=[], desc="Collected from this island", alias="dwc:island"
+    # )
+    # dwc_island_group: list[str] = dspy.OutputField(
+    #     default=[], desc="Collected from this island group", alias="dwc:islandGroup"
+    # )
+    dwc_municipality: list[str] = dspy.OutputField(
+        default=[], desc="Collected from this municipality", alias="dwc:municipality"
+    )
     dwc_occurrence_remarks: list[str] = dspy.OutputField(
         default=[], desc="Other observations", alias="dwc:occurrenceRemarks"
     )
@@ -90,9 +104,9 @@ class HerbariumLabel(dspy.Signature):
 
 
 INPUT_FIELDS = ("text", "prompt")
-OUTPUT_FIELDS = [t for t in vars(HerbariumLabel()) if t not in INPUT_FIELDS]
+OUTPUT_FIELDS = [t for t in vars(HerbariumSheet()) if t not in INPUT_FIELDS]
 DWC = {
     f[0]: f[1].alias
-    for f in HerbariumLabel.model_fields.items()
+    for f in HerbariumSheet.model_fields.items()
     if f[0] not in INPUT_FIELDS
 }

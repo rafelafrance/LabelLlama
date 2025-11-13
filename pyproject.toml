@@ -11,41 +11,34 @@ license = { file = "LICENSE" }
 authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
-  "altair>=5.5.0",
-  "dspy",
-  "duckdb>=1.4.1",
-  "ftfy",
-  "imagesize",
-  "jinja2",
-  "levenshtein",
-  "lmstudio>=1.5.0",
-  "marimo",
-  "matplotlib",
-  "pandas",
-  "pillow",
-  "polars>=1.34.0",
-  "pytorch-triton-rocm", # - pytorch-triton-rocm==3.5.0+git7416ffcb
-  "regex",
-  "rich",
-  "scikit-image",
-  "torch>=2.10.0.dev20251013", # - torch==2.10.0.dev20251013+rocm7.0
-  "torchvision>=0.25.0.dev20251014", # - torchvision==0.25.0.dev20251014+rocm7.0
-  "tqdm",
-  "transformers",
+    "dspy>=3.0.4",
+    "duckdb>=1.4.1",
+    "jinja2>=3.1.6",
+    "levenshtein>=0.27.3",
+    "litellm>=1.79.3",
+    "llama-cpp-python>=0.3.16",
+    "lmstudio>=1.5.0",
+    "marimo>=0.17.7",
+    "pandas>=2.3.3",
+    "pillow>=12.0.0",
+    "polars>=1.35.1",
+    "pydantic>=2.12.4",
+    "rich>=14.2.0",
+    "scikit-image>=0.25.2",
+    "scikit-learn>=1.7.2",
+    "torch>=2.9.0",
+    "torchvision>=0.24.0",
+    "tqdm>=4.67.1",
+    "transformers>=4.57.1",
 ]
 
 [dependency-groups]
 dev = ["pre-commit>=4.3.0", "uv-build>=0.9.5"]
 
-[tool.uv.sources]
-torch = [{ index = "pytorch-rocm" }]
-torchvision = [{ index = "pytorch-rocm" }]
-pytorch-triton-rocm = [{ index = "pytorch-rocm" }]
-
-[[tool.uv.index]]
-name = "pytorch-rocm"
-url = "https://download.pytorch.org/whl/nightly/rocm7.0"
-explicit = true
+#[tool.uv.sources]
+#torch = [{ index = "pytorch-rocm" }]
+#torchvision = [{ index = "pytorch-rocm" }]
+#pytorch-triton-rocm = [{ index = "pytorch-rocm" }]
 
 [tool.uv.build-backend]
 module-root = "."
@@ -64,36 +57,36 @@ docstring-code-format = true
 select = ["ALL"]
 
 ignore = [
-  "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
-  "COM812",  # Trailing comma missing
-  "D100",    # Missing docstring in public module
-  "D101",    # Missing docstring in public class
-  "D102",    # Missing docstring in public method
-  "D103",    # Missing docstring in public function
-  "D104",    # Missing docstring in public package
-  "D105",    # Missing docstring in public method
-  "D107",    # Missing docstring in public __init__
-  "D203",    # 1 blank line required before class docstring
-  "D212",    # Multi-line docstring summary should start at the first line
-  "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
-  "DTZ011",  # datetime.date.today() used
-  "ERA001",  # Remove commented-out code
-  "FIX002",  # Line contains TODO
-  "G004",    # Logging statement uses f-string
-  "LOG015",  # Use own logger instead
-  "N818",    # Exception name {name} should be named with an Error suffix
-  "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
-  "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
-  "PT009",   # Use a regular assert instead of unittest-style {assertion}
-  "RET504",  # Unnecessary assignment to {name} before return statement
-  "RUF001",  # Ambiguous quote character in string
-  "RUF002",  # Docstring contains ambiguous `‘`
-  "S602",    # subprocess` call with `shell=True` identified, security issue
-  "S607",    # Starting a process with a partial executable path
-  "SIM114",  # Combine if branches using logical or operator
-  "SIM905",  # Consider using a list literal instead of `str.split`
-  "SLF001",  # Private member accessed: {access}
-  "T201",    # print found
-  "TD002",   # Missing author in TODO
-  "TD003",   # Missing issue link on the line following this TODO
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+    "COM812",  # Trailing comma missing
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in public method
+    "D107",    # Missing docstring in public __init__
+    "D203",    # 1 blank line required before class docstring
+    "D212",    # Multi-line docstring summary should start at the first line
+    "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
+    "DTZ011",  # datetime.date.today() used
+    "ERA001",  # Remove commented-out code
+    "FIX002",  # Line contains TODO
+    "G004",    # Logging statement uses f-string
+    "LOG015",  # Use own logger instead
+    "N818",    # Exception name {name} should be named with an Error suffix
+    "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+    "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
+    "PT009",   # Use a regular assert instead of unittest-style {assertion}
+    "RET504",  # Unnecessary assignment to {name} before return statement
+    "RUF001",  # Ambiguous quote character in string
+    "RUF002",  # Docstring contains ambiguous `‘`
+    "S602",    # subprocess` call with `shell=True` identified, security issue
+    "S607",    # Starting a process with a partial executable path
+    "SIM114",  # Combine if branches using logical or operator
+    "SIM905",  # Consider using a list literal instead of `str.split`
+    "SLF001",  # Private member accessed: {access}
+    "T201",    # print found
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link on the line following this TODO
 ]
