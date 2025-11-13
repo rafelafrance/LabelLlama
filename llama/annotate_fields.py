@@ -50,10 +50,10 @@ class App(tk.Tk):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
 
-        self.label_type = label_types.LABEL_TYPES[args.label_type]
+        self.specimen_type = specimen_types.SPECIMEN_TYPES[args.specimen_types]
 
-        self.ie_types = self.label_type.dwc
-        self.dwc = list(self.label_type.dwc.values())
+        self.ie_types = self.specimen_type.dwc
+        self.dwc = list(self.specimen_type.dwc.values())
         self.rows: tuple[int] = tuple(range(8 + len(self.dwc)))
         self.row_span: int = len(self.rows) + 1
 
@@ -343,12 +343,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
 
-    choices = list(label_types.LABEL_TYPES.keys())
+    choices = list(specimen_types.SPECIMEN_TYPES.keys())
     arg_parser.add_argument(
-        "--label-type",
+        "--specimen-type",
         choices=choices,
         default=choices[0],
-        help="""Use this label model. (default: %(default)s)""",
+        help="""Use this specimen model. (default: %(default)s)""",
     )
 
     args = arg_parser.parse_args()
