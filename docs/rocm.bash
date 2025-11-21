@@ -2,8 +2,8 @@
 # llama.cpp/docs/build for HIP/ROCm
 
 HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
-    cmake -S . -B build -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1151 -DCMAKE_BUILD_TYPE=Release &&
-    cmake --build build --config Release -- -j 16
+  cmake -S . -B build -DGGML_HIP=ON -DAMDGPU_TARGETS=gfx1151 -DCMAKE_BUILD_TYPE=Release &&
+  cmake --build build --config Release -- -j 16
 
 # Unified memory
 # export GML_CUDA_ENABLE_UNIFIED_MEMORY=1  # Slows things down if you don't use unified memory and you do this
@@ -15,4 +15,4 @@ export TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1
 uv pip install --upgrade --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm7.0
 
 # llama-cpp-python
-CMAKE_ARGS="-DGGML_HIPBLAS=on" pip install llama-cpp-python
+CMAKE_ARGS="-DGGML_HIPBLAS=on" uv pip install llama-cpp-python

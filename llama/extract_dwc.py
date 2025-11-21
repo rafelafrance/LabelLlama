@@ -32,10 +32,8 @@ def main(args: argparse.Namespace) -> None:
 
     extractor = dspy.Predict(specimen_type.signature)
 
-    ocr_records = []
     with args.ocr_input.open() as in_file:
-        for ocr_ln in in_file:
-            ocr_records.append(json.loads(ocr_ln))
+        ocr_records = [json.loads(ln) for ln in in_file]
 
     ocr_records = ocr_records[args.first : args.last]
     start = args.first if args.first else 0

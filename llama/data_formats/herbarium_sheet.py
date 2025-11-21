@@ -1,12 +1,30 @@
 import dspy
 
 PROMPT = """
-    From the label get the scientific name, scientific name authority, family taxon,
-    collection date, elevation, latitude and longitude, Township Range Section (TRS),
-    Universal Transverse Mercator (UTM), locality, habitat,
-    collection country, collection state or province, collection county,
-    collector names, collector ID, determiner names, determiner ID, specimen ID number,
-    associated taxa, and all other observations go into occurrence remarks.
+    From the text get the following fields:
+        - scientific name: The species.
+        - scientific name authority: Who described the species.
+        - family: What taxonomic family is the species in.
+        - collection date: When was the specimen collected.
+        - elevation: The specimen was collected at this altitude.
+        - locality: A description of where the specimen was collected.
+        - habitat: The specimen was collected in this environment.
+        - latitude and longitude: Geolocation coordinates of the collection.
+        - country: The specimen was collected in this country.
+        - state or province: The specimen was collected in this state or province.
+        - county: The specimen was collected in this county.
+        - municipality: The specimen was collected in this municipality.
+        - collector names: Which person or people collected the specimen.
+        - collector ID: What ID did the collector use to identify themself.
+        - determiner names: Who identified or verified the species.
+        - determiner ID: What ID did the determiner use.
+        - specimen ID number: What numbers are used to identify this specimen.
+        - associated taxa: Was the specimen found near, around, or on another species.
+        - Township Range Section (TRS): Examples
+            "T8N R17W", "T4S R3E Sec 27", "T3N R7W SW/4 section 20".
+        - Universal Transverse Mercator (UTM): Examples
+            "33T 500000 4649776", "Z12 N7874900 E768500", "11S 316745.14 3542301.90".
+    All other observations go into occurrence remarks.
     If it is not mentioned return an empty value.
     Do not hallucinate.
     """
