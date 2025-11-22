@@ -15,7 +15,6 @@ dependencies = [
     "dspy>=3.0.4",
     "duckdb>=1.4.1",
     "jinja2>=3.1.6",
-    "jupyter>=1.1.1",
     "levenshtein>=0.27.3",
     "litellm>=1.79.3",
     "llama-cpp-python>=0.3.16",
@@ -23,22 +22,19 @@ dependencies = [
     "marimo>=0.17.7",
     "pandas>=2.3.3",
     "pillow>=12.0.0",
-    "pip>=25.3",
     "polars[pyarrow]>=1.35.1",
     "pydantic>=2.12.4",
-    "rich[jupyter]>=14.2.0",
-    "ruff>=0.14.5",
-    "scikit-image>=0.25.2",
-    "scikit-learn>=1.7.2",
     "sqlglot>=28.0.0",
-    "torch>=2.9.0",
-    "torchvision>=0.24.0",
     "tqdm>=4.67.1",
-    "transformers>=4.57.1",
 ]
 
 [dependency-groups]
-dev = ["pre-commit>=4.3.0", "uv-build>=0.9.5"]
+dev = [
+    "pre-commit>=4.3.0",
+    "ruff>=0.14.6",
+    "ty>=0.0.1a27",
+    "uv-build>=0.9.5",
+]
 
 # I need this because some models require the new features.
 # export TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1
@@ -48,6 +44,9 @@ dev = ["pre-commit>=4.3.0", "uv-build>=0.9.5"]
 # torch = [{ index = "pytorch-rocm" }]
 # torchvision = [{ index = "pytorch-rocm" }]
 # pytorch-triton-rocm = [{ index = "pytorch-rocm" }]
+
+[tool.marimo.display]
+custom_css = ["marimo_custom.css"]
 
 [tool.uv.build-backend]
 module-root = "."
