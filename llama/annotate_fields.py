@@ -10,39 +10,44 @@ from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
 from data_formats import specimen_types
-from old.llama.pylib import const
+
+FONT = ("DejaVu Sans", 24)
+FONT_SM = ("DejaVu Sans", 16)
+FONT_SM_I = ("DejaVu Sans", 16, "italic")
+FONT_SM_U = ("DejaVu Sans", 16, "underline")
+FONT_SM_UI = ("DejaVu Sans", 16, "underline italic")
 
 STYLE_LIST = [
-    {"background": "brown", "foreground": "white", "font": const.FONT_SM},
-    {"background": "olive", "foreground": "white", "font": const.FONT_SM},
-    {"background": "teal", "foreground": "white", "font": const.FONT_SM},
-    {"background": "navy", "foreground": "white", "font": const.FONT_SM},
-    {"background": "red", "foreground": "white", "font": const.FONT_SM},
-    {"background": "orange", "font": const.FONT_SM},
-    {"background": "yellow", "font": const.FONT_SM},
-    {"background": "lime", "font": const.FONT_SM},
-    {"background": "green", "foreground": "white", "font": const.FONT_SM},
-    {"background": "cyan", "font": const.FONT_SM},
-    {"background": "blue", "foreground": "white", "font": const.FONT_SM},
-    {"background": "purple", "foreground": "white", "font": const.FONT_SM},
-    {"background": "magenta", "foreground": "white", "font": const.FONT_SM},
-    {"background": "gray", "font": const.FONT_SM},
-    {"background": "lavender", "font": const.FONT_SM},
-    {"background": "brown", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "olive", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "teal", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "navy", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "red", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "orange", "foreground": "navy", "font": const.FONT_SM_I},
-    {"background": "yellow", "foreground": "navy", "font": const.FONT_SM_I},
-    {"background": "lime", "foreground": "navy", "font": const.FONT_SM_I},
-    {"background": "green", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "cyan", "foreground": "navy", "font": const.FONT_SM_I},
-    {"background": "blue", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "purple", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "magenta", "foreground": "yellow", "font": const.FONT_SM_I},
-    {"background": "gray", "foreground": "navy", "font": const.FONT_SM_I},
-    {"background": "lavender", "foreground": "navy", "font": const.FONT_SM_I},
+    {"background": "brown", "foreground": "white", "font": FONT_SM},
+    {"background": "olive", "foreground": "white", "font": FONT_SM},
+    {"background": "teal", "foreground": "white", "font": FONT_SM},
+    {"background": "navy", "foreground": "white", "font": FONT_SM},
+    {"background": "red", "foreground": "white", "font": FONT_SM},
+    {"background": "orange", "font": FONT_SM},
+    {"background": "yellow", "font": FONT_SM},
+    {"background": "lime", "font": FONT_SM},
+    {"background": "green", "foreground": "white", "font": FONT_SM},
+    {"background": "cyan", "font": FONT_SM},
+    {"background": "blue", "foreground": "white", "font": FONT_SM},
+    {"background": "purple", "foreground": "white", "font": FONT_SM},
+    {"background": "magenta", "foreground": "white", "font": FONT_SM},
+    {"background": "gray", "font": FONT_SM},
+    {"background": "lavender", "font": FONT_SM},
+    {"background": "brown", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "olive", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "teal", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "navy", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "red", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "orange", "foreground": "navy", "font": FONT_SM_I},
+    {"background": "yellow", "foreground": "navy", "font": FONT_SM_I},
+    {"background": "lime", "foreground": "navy", "font": FONT_SM_I},
+    {"background": "green", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "cyan", "foreground": "navy", "font": FONT_SM_I},
+    {"background": "blue", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "purple", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "magenta", "foreground": "yellow", "font": FONT_SM_I},
+    {"background": "gray", "foreground": "navy", "font": FONT_SM_I},
+    {"background": "lavender", "foreground": "navy", "font": FONT_SM_I},
 ]
 
 
@@ -77,7 +82,7 @@ class App(tk.Tk):
             row=0, column=1, rowspan=self.row_span + 1, sticky="nsew"
         )
 
-        self.text = ScrolledText(self.text_frame, font=const.FONT_SM)
+        self.text = ScrolledText(self.text_frame, font=FONT_SM)
         self.text.pack(fill="both", expand=True)
         self.text.insert(tk.INSERT, "")
         self.text.bind("<ButtonRelease-1>", self.on_add_annotation)  # left-click
@@ -93,7 +98,7 @@ class App(tk.Tk):
             self.control_frame,
             text="Load annotations",
             command=self.load,
-            font=const.FONT_SM,
+            font=FONT_SM,
         )
         self.load_button.grid(row=1, column=1, padx=16, pady=16)
 
@@ -101,14 +106,14 @@ class App(tk.Tk):
             self.control_frame,
             text="Save annotations",
             command=self.save,
-            font=const.FONT_SM,
+            font=FONT_SM,
         )
         self.save_button.grid(row=2, column=1, padx=16, pady=16)
 
         self.annotation_label = tk.Label(
             self.control_frame,
             text="Annotation type",
-            font=const.FONT_SM,
+            font=FONT_SM,
         )
         self.annotation_label.grid(row=7, column=1, padx=16, pady=16)
 
