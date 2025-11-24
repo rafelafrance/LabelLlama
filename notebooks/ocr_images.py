@@ -82,6 +82,7 @@ def _(cxn, mo):
         create sequence if not exists ocr_run_seq;
         create table if not exists ocr_run (
             ocr_run_id integer primary key default nextval('ocr_run_seq'),
+            prompt         char,
             model          char,
             api_host       char,
             temperature    float,
@@ -325,8 +326,8 @@ def _(mo):
 def _():
     insert_run = """
         insert into ocr_run
-            (model, api_host, temperature, context_length, stamp)
-            values (?, ?, ?, ?, current_localtimestamp())
+            (prompt, model, api_host, temperature, context_length, stamp)
+            values (?, ?, ?, ?, ?, current_localtimestamp())
             returning ocr_run_id;
     """
 
@@ -375,6 +376,7 @@ def _(
             run_id = cxn.execute(
                 insert_run,
                 [
+                    prompt,
                     args.model_name,
                     args.api_host,
                     args.temperature,
@@ -551,7 +553,7 @@ def _(all_records, mo):
 @app.cell
 def _(cxn, image_idx, mo):
     image_rec = cxn.execute(
-        "select * from all_records where ocr_id = ?", 
+        "select * from all_records where ocr_id = ?",
         [image_idx.value],
     ).df()
 
