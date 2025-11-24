@@ -39,7 +39,6 @@ dev = [
 # I need this because some models require the new features.
 # export TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1
 # uv pip install --upgrade --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm7.0
-
 # [tool.uv.sources]
 # torch = [{ index = "pytorch-rocm" }]
 # torchvision = [{ index = "pytorch-rocm" }]
@@ -75,6 +74,7 @@ ignore = [
     "D105",    # Missing docstring in public method
     "D107",    # Missing docstring in public __init__
     "D203",    # 1 blank line required before class docstring
+    "D205",    # 1 blank line required between summary line and description
     "D212",    # Multi-line docstring summary should start at the first line
     "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
     "DTZ011",  # datetime.date.today() used

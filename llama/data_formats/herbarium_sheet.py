@@ -1,100 +1,100 @@
-import dspy
+from dspy import InputField, OutputField, Signature
 
 
-class HerbariumSheet(dspy.Signature):
+class HerbariumSheet(Signature):
     """Analyze text from a herbarium sheets and extract information."""
 
-    text: str = dspy.InputField()
+    text: str = InputField()
 
-    scientific_name: list[str] = dspy.OutputField(
+    scientific_name: list[str] = OutputField(
         default=[], desc="Scientific name or species", alias="dwc:scientificName",
     )
-    scientific_name_authority: list[str] = dspy.OutputField(
+    scientific_name_authority: list[str] = OutputField(
         default=[],
         desc="Scientific name authority",
         alias="dwc:scientificNameAuthority",
     )
-    family: list[str] = dspy.OutputField(
+    family: list[str] = OutputField(
         default=[], desc="Taxonomic family", alias="dwc:family",
     )
-    event_date: list[str] = dspy.OutputField(
+    event_date: list[str] = OutputField(
         default=[],
         desc="When was the specimen collected",
         alias="dwc:eventDate",
     )
-    locality: list[str] = dspy.OutputField(
+    locality: list[str] = OutputField(
         default=[],
         desc="A description of where the specimen was collected",
         alias="dwc:locality",
     )
-    habitat: list[str] = dspy.OutputField(
+    habitat: list[str] = OutputField(
         default=[],
         desc="Collected from this habitat, or environment",
         alias="dwc:habitat",
     )
-    elevation: list[str] = dspy.OutputField(
+    elevation: list[str] = OutputField(
         default=[],
         desc="The specimen was collected at this elevation or altitude",
         alias="dwc:elevation",
     )
-    coordinates: list[str] = dspy.OutputField(
+    coordinates: list[str] = OutputField(
         default=[],
         desc="The specimen was collected at this latitude and longitude",
         alias="dwc:coordinates",
     )
-    recorded_by: list[str] = dspy.OutputField(
+    recorded_by: list[str] = OutputField(
         default=[],
-        desc="The person or people collected the specimen",
+        desc="The person or people who collected the specimen",
         alias="dwc:recordedBy",
     )
-    recorded_by_id: list[str] = dspy.OutputField(
+    recorded_by_id: list[str] = OutputField(
         default=[],
-        desc="What ID did the collector use to identify themself",
+        desc="What ID did the collector(s) use to identify themself",
         alias="dwc:recordedByID",
     )
-    identified_by: list[str] = dspy.OutputField(
+    identified_by: list[str] = OutputField(
         default=[], desc="Who identified or verified the species",
         alias="dwc:identifiedBy",
     )
-    identified_by_id: list[str] = dspy.OutputField(
+    identified_by_id: list[str] = OutputField(
         default=[],
-        desc="The ID did the determiner used to identify themself",
+        desc="The ID did the determiner(s) used to identify themself",
         alias="dwc:identifiedByID",
     )
-    occurrence_id: list[str] = dspy.OutputField(
+    occurrence_id: list[str] = OutputField(
         default=[],
-        desc="The numbers are used to identify this specimen",
+        desc="The numbers used to identify the specimen",
         alias="dwc:occurrenceID",
     )
-    associated_taxa: list[str] = dspy.OutputField(
+    associated_taxa: list[str] = OutputField(
         default=[],
         desc="Was the specimen found near, around, or on another species",
         alias="dwc:associatedTaxa",
     )
-    country: list[str] = dspy.OutputField(
+    country: list[str] = OutputField(
         default=[],
         desc="The country where the specimen was collected",
         alias="dwc:country",
     )
-    state_province: list[str] = dspy.OutputField(
+    state_province: list[str] = OutputField(
         default=[],
         desc="The state or province where the specimen was collected",
         alias="dwc:stateProvince",
     )
-    county: list[str] = dspy.OutputField(
+    county: list[str] = OutputField(
         default=[],
         desc="The county where the specimen was collected",
         alias="dwc:county",
     )
-    municipality: list[str] = dspy.OutputField(
+    municipality: list[str] = OutputField(
         default=[], desc="Collected from this municipality", alias="dwc:municipality",
     )
-    occurrence_remarks: list[str] = dspy.OutputField(
+    occurrence_remarks: list[str] = OutputField(
         default=[],
         desc="This contains all other observations",
         alias="dwc:occurrenceRemarks",
     )
-    trs: list[str] = dspy.OutputField(
+    trs: list[str] = OutputField(
         default=[],
         desc=(
             "Township Range Section (TRS), "
@@ -102,7 +102,7 @@ class HerbariumSheet(dspy.Signature):
         ),
         alias="TRS",
     )
-    utm: list[str] = dspy.OutputField(
+    utm: list[str] = OutputField(
         default=[],
         desc=(
             "Universal Transverse Mercator (UTM)"

@@ -7,6 +7,18 @@ app = marimo.App(width="medium", css_file="marimo_custom.css")
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    Note:
+
+    `export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
+
+    before running this notebook.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     # OCR a directory of images
 
     I am currently using 2 models for extracting text from images of museum specimens.
@@ -27,16 +39,8 @@ def _():
 
 @app.cell
 def _():
-    import argparse
-    import csv
-    import io
-    import textwrap
-    import warnings
-    from collections import defaultdict
-    from collections.abc import Iterable
-    from dataclasses import InitVar, asdict, dataclass
+    from dataclasses import dataclass
     from datetime import datetime, timedelta
-    from enum import IntEnum
     from pathlib import Path
 
     import duckdb
@@ -70,13 +74,14 @@ def _(mo):
 
 
 @app.cell
-def _(duckdb):
-    cxn = duckdb.connect("data/herbarium/labelllama_herbarium.db")
-    return (cxn,)
+def _(Path, duckdb):
+    db_path = Path("data/herbarium/labelllama_herbarium.db")
+    db_cxn = duckdb.connect(db_path)
+    return db_cxn, db_path
 
 
 @app.cell
-def _(cxn, mo):
+def _(db_cxn, mo):
     _df = mo.sql(
         f"""
         create sequence if not exists ocr_run_seq;
@@ -102,7 +107,7 @@ def _(cxn, mo):
             stamp      timestamptz,
         );
         """,
-        engine=cxn
+        engine=db_cxn
     )
     return
 
@@ -116,11 +121,11 @@ def _(mo):
 
 
 @app.cell
-def _(Path, dataclass):
+def _(Path, dataclass, db_path):
     @dataclass
     class Args:
         image_dir: Path  # Images of museum specimens are in this directory
-        db: Path  # Output OCRed text to this database
+        db: Path = db_path  # Output OCRed text to this database
         # Model parameters
         model_name: str = "noctrex/Chandra-OCR-GGUF/Chandra-OCR-Q4_K_S.gguf"
         api_host: str = "localhost:1234"  # URL for the LM model
@@ -145,23 +150,23 @@ def _(mo):
 
 
 @app.cell
-def _(cxn, mo, ocr):
+def _(db_cxn, mo, ocr):
     all_records = mo.sql(
         f"""
         select * from ocr;
         """,
-        engine=cxn
+        engine=db_cxn
     )
     return (all_records,)
 
 
 @app.cell
-def _(all_records, cxn, mo):
+def _(all_records, db_cxn, mo):
     all_images = mo.sql(
         f"""
         select distinct image from all_records;
         """,
-        engine=cxn
+        engine=db_cxn
     )
     return (all_images,)
 
@@ -175,7 +180,7 @@ def _(mo):
 
 
 @app.cell
-def _(all_records, cxn, mo):
+def _(all_records, db_cxn, mo):
     all_errors = mo.sql(
         f"""
         select image, max(text) as top
@@ -183,9 +188,23 @@ def _(all_records, cxn, mo):
             group by image
             having top = '';
         """,
-        engine=cxn
+        engine=db_cxn
     )
     return (all_errors,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Don't leave the DB open.
+    """)
+    return
+
+
+@app.cell
+def _(db_cxn):
+    db_cxn.close()
+    return
 
 
 @app.cell(hide_code=True)
@@ -256,67 +275,6 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Create the model.
-    """)
-    return
-
-
-@app.cell
-def _(lms):
-    def setup_model(
-        client: lms.Client, model_name: str, temperature: float, context_length: int
-    ) -> lms.llm:
-        return client.llm.model(
-            model_name,
-            config={
-                "temperature": temperature,
-                "contextLength": context_length,
-            },
-        )
-    return (setup_model,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Prepare an image and its prompt for sending to the server.
-    """)
-    return
-
-
-@app.cell
-def _(Path, lms):
-    def build_chat_message(client: lms.Client, image_path: Path, prompt: str) -> lms.Chat:
-        handle = client.files.prepare_image(image_path)
-        chat = lms.Chat()
-        chat.add_user_message(prompt, images=[handle])
-        return chat
-    return (build_chat_message,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    OCR an image and check for errors.
-    """)
-    return
-
-
-@app.cell
-def _(lms):
-    def ocr_one_image(model: lms.llm, chat: lms.Chat) -> tuple[str, str]:
-        ocr_text, ocr_error = "", ""
-        try:
-            ocr_text = model.respond(chat)
-        except lms.LMStudioServerError as err:
-            ocr_error = f"Server error: {err}"
-        return str(ocr_text), ocr_error
-    return (ocr_one_image,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
     Prepared SQL statements does not seem to be something that Marimo does with an SQL cell, so I have to do it the old fashioned way.
     """)
     return
@@ -354,23 +312,20 @@ def _(mo):
 @app.cell
 def _(
     Args,
-    build_chat_message,
-    cxn,
     datetime,
+    duckdb,
     filter_images,
     insert_ocr,
     insert_run,
     lms,
     mo,
-    ocr_one_image,
     prompt,
-    setup_model,
     update_run,
 ):
     def ocr_images(args: Args) -> None:
         job_began = datetime.now()
 
-        with lms.Client(args.api_host) as client:
+        with lms.Client(args.api_host) as client, duckdb.connect(args.db) as cxn:
             image_paths = filter_images(args)
 
             run_id = cxn.execute(
@@ -384,23 +339,33 @@ def _(
                 ],
             ).fetchone()[0]
 
-            model = setup_model(
-                client, args.model_name, args.temperature, args.context_length
+            model = client.llm.model(
+                args.model_name,
+                config={
+                    "temperature": args.temperature,
+                    "contextLength": args.context_length,
+                },
             )
 
             for image_path in mo.status.progress_bar(image_paths, title="OCR Progress"):
                 rec_began = datetime.now()
 
-                chat = build_chat_message(client, image_path, prompt)
+                handle = client.files.prepare_image(image_path)
+                chat = lms.Chat()
+                chat.add_user_message(prompt, images=[handle])
 
-                ocr_text, ocr_error = ocr_one_image(model, chat)
+                ocr_text, ocr_error = "", ""
+                try:
+                    ocr_text = model.respond(chat)
+                except lms.LMStudioServerError as err:
+                    ocr_error = f"Server error: {err}"
 
                 cxn.execute(
                     insert_ocr,
                     [
                         run_id,
                         str(image_path),
-                        ocr_text,
+                        str(ocr_text),
                         ocr_error,
                         datetime.now() - rec_began,
                     ],
@@ -431,7 +396,6 @@ def _(mo):
 def _(Args, Path):
     args1 = Args(
         image_dir=Path("./data/herbarium/sheets_001"),
-        db=Path("./data/herbarium/labelllama_herbarium.db"),
     )
     # ocr_images(args1)
     return
@@ -440,7 +404,7 @@ def _(Args, Path):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Firefox keep dying on me. It's happened with both jupyter and marimo. It appears to be related to a memory leak with lmstudio [bug](https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/1209). The server is holding onto data. I've created the `--missing` parameter so I can restart a job without overwriting the data that exists.
+    Firefox keeps dying on me. It's happened with both jupyter and marimo. It appears to be related to a memory leak with lmstudio [bug](https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/1209). The server is holding onto data. I've created the `--missing` parameter so I can restart a job without overwriting the data that exists.
     """)
     return
 
@@ -449,7 +413,6 @@ def _(mo):
 def _(Args, Path):
     args2 = Args(
         image_dir=Path("./data/herbarium/sheets_001"),
-        db=Path("./data/herbarium/labelllama_herbarium.db"),
         missing=True,  # Process only missing records
     )
     # ocr_images(args2)
@@ -468,7 +431,6 @@ def _(mo):
 def _(Args, Path):
     args3 = Args(
         image_dir=Path("./data/herbarium/sheets_001"),
-        db=Path("./data/herbarium/labelllama_herbarium.db"),
         model_name="google/gemma-3-27b",  # New model
         retry=True,  # Only try sheets that always errored before
     )
@@ -488,7 +450,6 @@ def _(mo):
 def _(Args, Path):
     args4 = Args(
         image_dir=Path("./data/herbarium/CoordinateExamplesNov25"),  # New dir
-        db=Path("./data/herbarium/labelllama_herbarium.db"),
     )
     # ocr_images(args4)
     return
@@ -506,7 +467,6 @@ def _(mo):
 def _(Args, Path):
     args5 = Args(
         image_dir=Path("./data/herbarium/CoordinateExamplesNov25"),
-        db=Path("./data/herbarium/labelllama_herbarium.db"),
         model_name="google/gemma-3-27b",  # New model
         retry=True,  # Retry errored records with different parameters
         context_length=8192,  # Doubled the context
@@ -538,27 +498,27 @@ def _(mo):
 
 
 @app.cell
-def _(all_records, mo):
-    image_idx = mo.ui.slider(
-        1,
-        len(all_records),
-        full_width=True,
-        debounce=True,
-        show_value=True,
-    )
-    image_idx
-    return (image_idx,)
+def _():
+    # image_idx = mo.ui.slider(
+    #     1,
+    #     len(all_records),
+    #     full_width=True,
+    #     debounce=True,
+    #     show_value=True,
+    # )
+    # image_idx
+    return
 
 
 @app.cell
-def _(cxn, image_idx, mo):
-    image_rec = cxn.execute(
-        "select * from all_records where ocr_id = ?",
-        [image_idx.value],
-    ).df()
+def _():
+    # image_rec = cxn.execute(
+    #     "select * from all_records where ocr_id = ?",
+    #     [image_idx.value],
+    # ).df()
 
-    print(image_rec.at[0, "text"])
-    mo.image(src=image_rec.at[0, "image"])
+    # print(image_rec.at[0, "text"])
+    # mo.image(src=image_rec.at[0, "image"])
     return
 
 
