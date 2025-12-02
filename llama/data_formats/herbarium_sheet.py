@@ -98,7 +98,8 @@ class HerbariumSheet(Signature):
         default=[],
         desc=(
             "Township Range Section (TRS), "
-            'Examples "T8N R17W", "T4S R3E Sec 27", "T3N R7W SW/4 section 20"'
+            'Examples "T8N R17W", "T4S R3E Sec 27", "T3N R7W SW/4 section 20", '
+            '"S.14, T12S, R4W"'
         ),
         alias="TRS",
     )

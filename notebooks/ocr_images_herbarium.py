@@ -1,19 +1,7 @@
 import marimo
 
-__generated_with = "0.18.0"
+__generated_with = "0.18.1"
 app = marimo.App(width="medium", css_file="marimo_custom.css")
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Note:
-
-    `export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
-
-    before running this notebook.
-    """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -25,6 +13,7 @@ def _(mo):
 
     1. First I use an OCR model to get all of the text from labels etc. on the museum specimen image.
     2. Next I use another model that extracts Darwin Core fields from the text gotten in step 1.
+    3. I do a final formatting pass on the data from step #2.
 
     This notebook is about step #1, transforming images into text.
     """)
@@ -46,7 +35,19 @@ def _():
     import duckdb
     import lmstudio as lms
     import polars as pl
-    return Path, dataclass, datetime, duckdb, lms
+    return Path, dataclass, datetime, duckdb, lms, pl
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Note:
+
+    `export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
+
+    before running this notebook.
+    """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -68,47 +69,51 @@ def _(mo):
     mo.md(r"""
     ## Set up a database and tables used to store OCR information.
 
-    I have learned from other projects that having dozens of CSV files is just horrible. I know they usually not planned and grow orgaincally, but I'm going for a database upfront. A DB also allows me to store metadata in the same location as the bulk of the data. And duckdb seems chic.
+    I have learned from other projects that having dozens of CSV files is just horrible. I know they usually not planned and grow orgaincally, but I'm going for a database up front. A DB also allows me to store metadata in the same location as the bulk of the data. And duckdb seems chic.
     """)
     return
 
 
 @app.cell
-def _(Path, duckdb):
-    db_path = Path("data/herbarium/labelllama_herbarium.db")
-    db_cxn = duckdb.connect(db_path)
-    return db_cxn, db_path
+def _(Path):
+    db_path = Path("data/herbarium/labelllama_herbarium.duckdb")
+    return (db_path,)
 
 
 @app.cell
-def _(db_cxn, mo):
-    _df = mo.sql(
-        f"""
-        create sequence if not exists ocr_run_seq;
-        create table if not exists ocr_run (
-            ocr_run_id integer primary key default nextval('ocr_run_seq'),
-            prompt         char,
-            model          char,
-            api_host       char,
-            temperature    float,
-            context_length integer,
-            elapsed        interval,
-            stamp          timestamptz,
-        );
+def _(Path, db_path, duckdb):
+    def create_ocr_tables(db_path: Path) -> None:
+        sql = f"""
+            create sequence if not exists ocr_run_seq;
+            create table if not exists ocr_run (
+                ocr_run_id integer primary key default nextval('ocr_run_seq'),
+                prompt         char,
+                model          char,
+                api_host       char,
+                notes          char,
+                temperature    float,
+                context_length integer,
+                elapsed        interval,
+                time_started   timestamptz default current_localtimestamp(),
+            );
 
-        create sequence if not exists ocr_id_seq;
-        create table if not exists ocr (
-            ocr_id integer primary key default nextval('ocr_id_seq'),
-            ocr_run_id integer,
-            image      char,
-            text       char,
-            error      char,
-            elapsed    interval,
-            stamp      timestamptz,
-        );
-        """,
-        engine=db_cxn
-    )
+            create sequence if not exists ocr_id_seq;
+            create table if not exists ocr (
+                ocr_id integer primary key default nextval('ocr_id_seq'),
+                ocr_run_id   integer references ocr_run(ocr_run_id),
+                image_path   char,
+                ocr_text     char,
+                ocr_error    char,
+                elapsed      interval,
+                time_started timestamptz default current_localtimestamp(),
+            );
+            """
+
+        with duckdb.connect(db_path) as cxn:
+            cxn.execute(sql)
+
+
+    create_ocr_tables(db_path)
     return
 
 
@@ -131,6 +136,7 @@ def _(Path, dataclass, db_path):
         api_host: str = "localhost:1234"  # URL for the LM model
         context_length: int = 4096  # Model's context length
         temperature: float = 0.1  # Model's temperature
+        notes: str = ""  # Information about the OCR run
         # Parameters for restarting the OCR process
         first: int | None = None  # Used for restarts. None == first
         last: int | None = None  # Used to stop early. None == last
@@ -143,32 +149,32 @@ def _(Path, dataclass, db_path):
 def _(mo):
     mo.md(r"""
     ## Code dealing with record selection
-
-    Get all image paths in the database. I don't think that Marimo will rerun this cell after inserts, I should verify this.
     """)
     return
 
 
 @app.cell
-def _(db_cxn, mo, ocr):
-    all_records = mo.sql(
-        f"""
-        select * from ocr;
-        """,
-        engine=db_cxn
-    )
-    return (all_records,)
+def _(Path, duckdb, pl):
+    def get_all_records(db_path: Path) -> pl.dataframe:
+        with duckdb.connect(db_path) as cxn:
+            return cxn.execute("select * from ocr;").pl()
+    return (get_all_records,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Get all image paths in the database.
+    """)
+    return
 
 
 @app.cell
-def _(all_records, db_cxn, mo):
-    all_images = mo.sql(
-        f"""
-        select distinct image from all_records;
-        """,
-        engine=db_cxn
-    )
-    return (all_images,)
+def _(Path, duckdb, pl):
+    def get_all_images(db_path: Path) -> pl.dataframe:
+        with duckdb.connect(db_path) as cxn:
+            return cxn.execute("select distinct image_path from ocr;").pl()
+    return (get_all_images,)
 
 
 @app.cell(hide_code=True)
@@ -180,31 +186,17 @@ def _(mo):
 
 
 @app.cell
-def _(all_records, db_cxn, mo):
-    all_errors = mo.sql(
-        f"""
-        select image, max(text) as top
-            from all_records
-            group by image
-            having top = '';
-        """,
-        engine=db_cxn
-    )
-    return (all_errors,)
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    Don't leave the DB open.
-    """)
-    return
-
-
-@app.cell
-def _(db_cxn):
-    db_cxn.close()
-    return
+def _(Path, duckdb, pl):
+    def get_all_errors(db_path: Path) -> pl.dataframe:
+        sql = """
+            select image_path, max(ocr_text) as top
+                from ocr
+                group by image_path
+                having top = '';
+            """
+        with duckdb.connect(db_path) as cxn:
+            return cxn.execute(sql).pl()
+    return (get_all_errors,)
 
 
 @app.cell(hide_code=True)
@@ -220,7 +212,7 @@ def _(mo):
 
 
 @app.cell
-def _(Args, Path, all_errors, all_images):
+def _(Args, Path, db_path, get_all_errors, get_all_images):
     def filter_images(args: Args) -> list[Path]:
         image_paths = sorted(args.image_dir.glob("*.jpg"))
 
@@ -229,12 +221,12 @@ def _(Args, Path, all_errors, all_images):
 
         # Only get --missing image paths, images not already in the DB
         if args.missing:
-            completed = {r[0] for r in all_images}
+            completed = {r[0] for r in get_all_images(args.db)}
             image_paths = [p for p in image_paths if str(p) not in completed]
 
         # Get images to --retry, images with only errors
         if args.retry:
-            errored = {r[0] for r in all_errors}
+            errored = {r[0] for r in get_all_errors(db_path)}
             image_paths = [p for p in image_paths if str(p) in errored]
 
         return image_paths
@@ -275,53 +267,13 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Prepared SQL statements does not seem to be something that Marimo does with an SQL cell, so I have to do it the old fashioned way.
+    ## OCR all images.
     """)
     return
 
 
 @app.cell
-def _():
-    insert_run = """
-        insert into ocr_run
-            (prompt, model, api_host, temperature, context_length, stamp)
-            values (?, ?, ?, ?, ?, current_localtimestamp())
-            returning ocr_run_id;
-    """
-
-    insert_ocr = """
-        insert into ocr
-            (ocr_run_id, image, text, error, elapsed, stamp)
-            values (?, ?, ?, ?, ?, current_localtimestamp());
-    """
-
-    update_run = """
-        update ocr_run set elapsed = ? where ocr_run_id = ?;
-    """
-    return insert_ocr, insert_run, update_run
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    OCR all images.
-    """)
-    return
-
-
-@app.cell
-def _(
-    Args,
-    datetime,
-    duckdb,
-    filter_images,
-    insert_ocr,
-    insert_run,
-    lms,
-    mo,
-    prompt,
-    update_run,
-):
+def _(Args, datetime, duckdb, filter_images, lms, mo, prompt):
     def ocr_images(args: Args) -> None:
         job_began = datetime.now()
 
@@ -329,11 +281,17 @@ def _(
             image_paths = filter_images(args)
 
             run_id = cxn.execute(
-                insert_run,
+                """
+                insert into ocr_run
+                    (prompt, model, api_host, notes, temperature, context_length)
+                    values (?, ?, ?, ?, ?, ?)
+                    returning ocr_run_id;
+                """,
                 [
                     prompt,
                     args.model_name,
                     args.api_host,
+                    args.notes.strip(),
                     args.temperature,
                     args.context_length,
                 ],
@@ -361,7 +319,11 @@ def _(
                     ocr_error = f"Server error: {err}"
 
                 cxn.execute(
-                    insert_ocr,
+                    """
+                    insert into ocr
+                        (ocr_run_id, image_path, ocr_text, ocr_error, elapsed)
+                        values (?, ?, ?, ?, ?);
+                    """,
                     [
                         run_id,
                         str(image_path),
@@ -372,14 +334,17 @@ def _(
                 )
 
             job_elapsed = datetime.now() - job_began
-            cxn.execute(update_run, [job_elapsed, run_id])
+            cxn.execute(
+                "update ocr_run set elapsed = ? where ocr_run_id = ?;",
+                [job_elapsed, run_id],
+            )
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## OCR runs
+    # OCR runs
     """)
     return
 
@@ -414,6 +379,10 @@ def _(Args, Path):
     args2 = Args(
         image_dir=Path("./data/herbarium/sheets_001"),
         missing=True,  # Process only missing records
+        notes="""
+            The job keeps crashing on me due to an lmstudio bug.
+            Capture remaining sheets from ocr_run_id 1.
+            """,
     )
     # ocr_images(args2)
     return
@@ -433,6 +402,9 @@ def _(Args, Path):
         image_dir=Path("./data/herbarium/sheets_001"),
         model_name="google/gemma-3-27b",  # New model
         retry=True,  # Only try sheets that always errored before
+        notes="""
+            Try a difference model on sheets that errored before on runs 1, 2, & 3.
+            """,
     )
     # ocr_images(args3)
     return
@@ -450,6 +422,7 @@ def _(mo):
 def _(Args, Path):
     args4 = Args(
         image_dir=Path("./data/herbarium/CoordinateExamplesNov25"),  # New dir
+        notes="""A new group of sheet images.""",
     )
     # ocr_images(args4)
     return
@@ -470,6 +443,7 @@ def _(Args, Path):
         model_name="google/gemma-3-27b",  # New model
         retry=True,  # Retry errored records with different parameters
         context_length=8192,  # Doubled the context
+        notes="""Retry errored sheets in ocr_run_id 5 with a new model and params.""",
     )
     # ocr_images(args5)
     return
@@ -484,8 +458,8 @@ def _(mo):
 
 
 @app.cell
-def _(all_errors):
-    len(all_errors)
+def _(db_path, get_all_errors):
+    len(get_all_errors(db_path))
     return
 
 
@@ -498,27 +472,28 @@ def _(mo):
 
 
 @app.cell
-def _():
-    # image_idx = mo.ui.slider(
-    #     1,
-    #     len(all_records),
-    #     full_width=True,
-    #     debounce=True,
-    #     show_value=True,
-    # )
-    # image_idx
-    return
+def _(db_path, get_all_records, mo):
+    image_idx = mo.ui.slider(
+        1,
+        len(get_all_records(db_path)),
+        full_width=True,
+        debounce=True,
+        show_value=True,
+    )
+    image_idx
+    return (image_idx,)
 
 
 @app.cell
-def _():
-    # image_rec = cxn.execute(
-    #     "select * from all_records where ocr_id = ?",
-    #     [image_idx.value],
-    # ).df()
+def _(db_path, duckdb, image_idx, mo):
+    with duckdb.connect(db_path) as view_cxn:
+        image_rec = view_cxn.execute(
+            "select * from ocr where ocr_id = ?",
+            [image_idx.value],
+        ).df()
 
-    # print(image_rec.at[0, "text"])
-    # mo.image(src=image_rec.at[0, "image"])
+    print(image_rec.at[0, "ocr_text"])
+    mo.image(src=image_rec.at[0, "image_path"])
     return
 
 

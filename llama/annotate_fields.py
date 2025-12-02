@@ -9,7 +9,7 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from data_formats import specimen_types
+from old.llama.data_formats import specimen_types
 
 FONT = ("DejaVu Sans", 24)
 FONT_SM = ("DejaVu Sans", 16)

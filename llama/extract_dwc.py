@@ -10,7 +10,7 @@ from pathlib import Path
 import dspy
 from rich.console import Console
 
-from llama.data_formats import specimen_types
+from old.llama.data_formats import specimen_types
 
 
 def main(args: argparse.Namespace) -> None:
