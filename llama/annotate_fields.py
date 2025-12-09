@@ -229,6 +229,8 @@ class App(tk.Tk):
         if not path:
             return
 
+        self.title(f"Editing: {path}")
+
         path = Path(path)
         self.curr_dir = path.parent
         self.dirty = False
@@ -241,12 +243,10 @@ class App(tk.Tk):
         self.labels = []
 
         for result in annotations:
-            label = {
-                "image_path": result["image_path"],
-                "ocr_text": result["ocr_text"],
+            label = result | {
                 "header-location": [],
                 "text-location": [],
-            } | {k: [] for k in self.fields}
+            }
 
             self.build_header(label)
             self.build_text(label)
@@ -293,6 +293,12 @@ class App(tk.Tk):
         if not path:
             return
 
+        # Clear out the old field data
+        for lb in self.labels:
+            for field in self.fields:
+                lb[field] = []
+
+        # Add the new field data
         for field in self.fields:
             indexes = self.text.tag_ranges(field)
             indexes = zip(indexes[0::2], indexes[1::2], strict=True)
@@ -310,16 +316,8 @@ class App(tk.Tk):
 
         annotations = []
         for lb in self.labels:
-            anno = {
-                "image_path": lb["image_path"],
-                "ocr_text": lb["ocr_text"],
-            }
-            for field in self.fields:
-                if not (value := lb.get(field)):
-                    anno[field] = []
-                    continue
-                anno[field] = value
-
+            anno = {k: v for k, v in lb.items() if k not in self.fields}
+            anno |= {f: lb.get(f, []) for f in self.fields}
             annotations.append(anno)
 
         with path.open("w") as f:
