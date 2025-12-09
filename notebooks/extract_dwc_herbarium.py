@@ -13,9 +13,9 @@ def _(mo):
 
     1. First I use an OCR model to get all of the text from labels etc. on the museum specimen image.
     2. Next I use another model that extracts Darwin Core fields from the text gotten in step 1.
-    3. I do a final formatting pass on the data from step #2.
+    3. I do a final formatting pass on the data from step 2.
 
-    This notebook is about step #2, capturing text into structured fields.
+    This notebook is about step 2, capturing text into structured fields.
     """)
     return
 
@@ -38,7 +38,7 @@ def _():
     import polars as pl
 
     from llama.data_formats import specimen_types
-    return Path, copyfile, dataclass, datetime, dspy, duckdb, specimen_types
+    return Path, dataclass, datetime, dspy, duckdb, specimen_types
 
 
 @app.cell(hide_code=True)
@@ -80,19 +80,19 @@ def _(mo):
 
 
 @app.cell
-def _(Path, copyfile):
+def _(Path):
     specimen_type = "herbarium"
 
     db_path = Path("data/herbarium/labelllama_herbarium.duckdb")
 
-    db_backup = Path("data/herbarium/labelllama_herbarium_2025-11-30.duckdb")
+    # db_backup = Path("data/herbarium/labelllama_herbarium_2025-12-04.duckdb")
 
-    copyfile(src=db_backup, dst=db_path)
-    return db_path, specimen_type
+    # copyfile(src=db_backup, dst=db_path)
+    return (db_path,)
 
 
 @app.cell
-def _(Path, db_path, duckdb, specimen_type, specimen_types):
+def _(Path, duckdb, specimen_types):
     def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
         # Fields specific to the specimen type
         spec_type = specimen_types.SPECIMEN_TYPES[specimen_type]
@@ -103,25 +103,24 @@ def _(Path, db_path, duckdb, specimen_type, specimen_types):
             create sequence if not exists dwc_run_seq;
             create table if not exists dwc_run (
                 dwc_run_id integer primary key default nextval('dwc_run_seq'),
-                prompt         char,
-                model          char,
-                api_host       char,
-                notes          char,
-                temperature    float,
-                max_tokens     integer,
-                specimen_type  char,
-                elapsed        interval,
-                time_started   timestamptz default current_localtimestamp(),
+                prompt        char,
+                model         char,
+                api_host      char,
+                notes         char,
+                temperature   float,
+                max_tokens    integer,
+                specimen_type char,
+                dwc_run_elapsed interval,
+                dwc_run_started timestamptz default current_localtimestamp(),
             );
 
             create sequence if not exists dwc_id_seq;
             create table if not exists dwc (
                 dwc_id integer primary key default nextval('dwc_id_seq'),
-                dwc_run_id   integer references dwc_run(dwc_run_id),
-                ocr_id       integer references ocr(ocr_id),
+                dwc_run_id  integer references dwc_run(dwc_run_id),
+                ocr_id      integer references ocr(ocr_id),
+                dwc_elapsed interval,
                 {fields}
-                elapsed      interval,
-                time_started timestamptz default current_localtimestamp(),
             );
             """
 
@@ -129,7 +128,7 @@ def _(Path, db_path, duckdb, specimen_type, specimen_types):
             cxn.execute(sql)
 
 
-    create_dwc_tables(db_path, specimen_type)
+    # create_dwc_tables(db_path, specimen_type)
     return
 
 
@@ -149,10 +148,7 @@ def _(Path, dataclass, db_path):
         specimen_type: str = ""
         cache: bool = False  # Use cached records?
         # Model parameters
-        model_name: str = (
-            "lm_studio/bartowski/google_gemma-3-27b-it-GGUF"
-            "/google_gemma-3-27b-it-Q4_K_S.gguf"
-        )
+        model_name: str = "lm_studio/google/gemma-3-27b"
         api_host: str = "http://localhost:1234/v1"  # URL for the LM model
         api_key: str | None = None
         context_length: int = 4096  # Model's context length
@@ -164,7 +160,15 @@ def _(Path, dataclass, db_path):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Code dealing with record selection
+    ## Code dealing with information extraction
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    The record selection query will definitely change a lot, so I'm pulling it out of the extract_dwc function where it will get buried.
     """)
     return
 
@@ -172,7 +176,7 @@ def _(mo):
 @app.cell
 def _(Path, db_path, duckdb):
     def select_records(db_path: Path) -> list:
-        sql = "select * from ocr where ocr_run_id in (6, 7) and ocr_text <> '';"
+        sql = "select * from ocr where ocr_run_id in (10, 12) and ocr_text <> '' limit 100;"
 
         with duckdb.connect(db_path) as cxn:
             return cxn.execute(sql).pl()
@@ -194,12 +198,12 @@ def _(mo):
 def _(Args, datetime, dspy, duckdb, mo, ocr_input, specimen_types):
     def extract_dwc(args: Args) -> None:
         spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+
         names = ", ".join(f"{f}" for f in spec_type.output_fields.keys())
         vars = ", ".join(f"${f}" for f in spec_type.output_fields.keys())
-
         insert_dwc = f"""
             insert into dwc
-                (dwc_run_id, ocr_id, elapsed, {names})
+                (dwc_run_id, ocr_id, dwc_elapsed, {names})
                 values ($dwc_run_id, $ocr_id, $elapsed, {vars});
             """
 
@@ -285,12 +289,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args, extract_dwc):
+def _(Args):
     args1 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/google/gemma-3-27b",
     )
-    extract_dwc(args1)
+    # extract_dwc(args1)
     return
 
 
@@ -303,12 +307,66 @@ def _(mo):
 
 
 @app.cell
-def _(Args, extract_dwc):
+def _(Args):
     args2 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/google/gemma-3-12b",
     )
-    extract_dwc(args2)
+    # extract_dwc(args2)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Try a phi-4 model.
+    """)
+    return
+
+
+@app.cell
+def _(Args, extract_dwc):
+    args3 = Args(
+        specimen_type="herbarium",
+        model_name="lm_studio/microsoft/phi-4",
+    )
+    extract_dwc(args3)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Try a new granite model.
+    """)
+    return
+
+
+@app.cell
+def _(Args):
+    args4 = Args(
+        specimen_type="herbarium",
+        model_name="lm_studio/unsloth/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q4_K_S.gguf",
+    )
+    # extract_dwc(args4)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Try a largish model 70b parameters.
+    """)
+    return
+
+
+@app.cell
+def _(Args):
+    args5 = Args(
+        specimen_type="herbarium",
+        model_name="lm_studio/meta/llama-3.3-70b",
+    )
+    # extract_dwc(args5)
     return
 
 

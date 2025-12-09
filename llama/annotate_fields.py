@@ -9,45 +9,42 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from old.llama.data_formats import specimen_types
+from llama.data_formats import specimen_types
 
-FONT = ("DejaVu Sans", 24)
-FONT_SM = ("DejaVu Sans", 16)
-FONT_SM_I = ("DejaVu Sans", 16, "italic")
-FONT_SM_U = ("DejaVu Sans", 16, "underline")
-FONT_SM_UI = ("DejaVu Sans", 16, "underline italic")
+FONT = ("liberation sans", 16)
+FONT_I = ("liberation sans", 16, "italic")
 
 STYLE_LIST = [
-    {"background": "brown", "foreground": "white", "font": FONT_SM},
-    {"background": "olive", "foreground": "white", "font": FONT_SM},
-    {"background": "teal", "foreground": "white", "font": FONT_SM},
-    {"background": "navy", "foreground": "white", "font": FONT_SM},
-    {"background": "red", "foreground": "white", "font": FONT_SM},
-    {"background": "orange", "font": FONT_SM},
-    {"background": "yellow", "font": FONT_SM},
-    {"background": "lime", "font": FONT_SM},
-    {"background": "green", "foreground": "white", "font": FONT_SM},
-    {"background": "cyan", "font": FONT_SM},
-    {"background": "blue", "foreground": "white", "font": FONT_SM},
-    {"background": "purple", "foreground": "white", "font": FONT_SM},
-    {"background": "magenta", "foreground": "white", "font": FONT_SM},
-    {"background": "gray", "font": FONT_SM},
-    {"background": "lavender", "font": FONT_SM},
-    {"background": "brown", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "olive", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "teal", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "navy", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "red", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "orange", "foreground": "navy", "font": FONT_SM_I},
-    {"background": "yellow", "foreground": "navy", "font": FONT_SM_I},
-    {"background": "lime", "foreground": "navy", "font": FONT_SM_I},
-    {"background": "green", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "cyan", "foreground": "navy", "font": FONT_SM_I},
-    {"background": "blue", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "purple", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "magenta", "foreground": "yellow", "font": FONT_SM_I},
-    {"background": "gray", "foreground": "navy", "font": FONT_SM_I},
-    {"background": "lavender", "foreground": "navy", "font": FONT_SM_I},
+    {"background": "brown", "foreground": "white", "font": FONT},
+    {"background": "olive", "foreground": "white", "font": FONT},
+    {"background": "teal", "foreground": "white", "font": FONT},
+    {"background": "navy", "foreground": "white", "font": FONT},
+    {"background": "red", "foreground": "white", "font": FONT},
+    {"background": "orange", "font": FONT},
+    {"background": "yellow", "font": FONT},
+    {"background": "lime", "font": FONT},
+    {"background": "green", "foreground": "white", "font": FONT},
+    {"background": "cyan", "font": FONT},
+    {"background": "blue", "foreground": "white", "font": FONT},
+    {"background": "purple", "foreground": "white", "font": FONT},
+    {"background": "magenta", "foreground": "white", "font": FONT},
+    {"background": "gray", "font": FONT},
+    {"background": "lavender", "font": FONT},
+    {"background": "brown", "foreground": "yellow", "font": FONT_I},
+    {"background": "olive", "foreground": "yellow", "font": FONT_I},
+    {"background": "teal", "foreground": "yellow", "font": FONT_I},
+    {"background": "navy", "foreground": "yellow", "font": FONT_I},
+    {"background": "red", "foreground": "yellow", "font": FONT_I},
+    {"background": "orange", "foreground": "navy", "font": FONT_I},
+    {"background": "yellow", "foreground": "navy", "font": FONT_I},
+    {"background": "lime", "foreground": "navy", "font": FONT_I},
+    {"background": "green", "foreground": "yellow", "font": FONT_I},
+    {"background": "cyan", "foreground": "navy", "font": FONT_I},
+    {"background": "blue", "foreground": "yellow", "font": FONT_I},
+    {"background": "purple", "foreground": "yellow", "font": FONT_I},
+    {"background": "magenta", "foreground": "yellow", "font": FONT_I},
+    {"background": "gray", "foreground": "navy", "font": FONT_I},
+    {"background": "lavender", "foreground": "navy", "font": FONT_I},
 ]
 
 
@@ -55,11 +52,15 @@ class App(tk.Tk):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
 
-        self.specimen_type = specimen_types.SPECIMEN_TYPES[args.specimen_types]
+        self.specimen_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+        spec_type = self.specimen_type.model_fields
+        self.fields = [
+            k
+            for k, v in spec_type.items()
+            if v.json_schema_extra["__dspy_field_type"] == "output"
+        ]
 
-        self.ie_types = self.specimen_type.dwc
-        self.dwc = list(self.specimen_type.dwc.values())
-        self.rows: tuple[int] = tuple(range(8 + len(self.dwc)))
+        self.rows: tuple[int] = tuple(range(8 + len(self.fields)))
         self.row_span: int = len(self.rows) + 1
 
         self.curr_dir = "."
@@ -82,15 +83,15 @@ class App(tk.Tk):
             row=0, column=1, rowspan=self.row_span + 1, sticky="nsew"
         )
 
-        self.text = ScrolledText(self.text_frame, font=FONT_SM)
+        self.text = ScrolledText(self.text_frame, font=FONT)
         self.text.pack(fill="both", expand=True)
         self.text.insert(tk.INSERT, "")
         self.text.bind("<ButtonRelease-1>", self.on_add_annotation)  # left-click
         self.text.bind("<ButtonRelease-3>", self.on_delete_annotation)  # right-click
-        for dwc, opts in zip(self.dwc, STYLE_LIST, strict=False):
-            self.text.tag_config(dwc, **opts)
-            self.text.tag_bind(dwc, "<Enter>", self.show_tooltip)
-            self.text.tag_bind(dwc, "<Leave>", self.hide_tooltip)
+        for field, opts in zip(self.fields, STYLE_LIST, strict=False):
+            self.text.tag_config(field, **opts)
+            self.text.tag_bind(field, "<Enter>", self.show_tooltip)
+            self.text.tag_bind(field, "<Leave>", self.hide_tooltip)
 
         self.tooltip = tk.Label(self, text="")
 
@@ -98,7 +99,7 @@ class App(tk.Tk):
             self.control_frame,
             text="Load annotations",
             command=self.load,
-            font=FONT_SM,
+            font=FONT,
         )
         self.load_button.grid(row=1, column=1, padx=16, pady=16)
 
@@ -106,28 +107,30 @@ class App(tk.Tk):
             self.control_frame,
             text="Save annotations",
             command=self.save,
-            font=FONT_SM,
+            font=FONT,
         )
         self.save_button.grid(row=2, column=1, padx=16, pady=16)
 
         self.annotation_label = tk.Label(
             self.control_frame,
             text="Annotation type",
-            font=FONT_SM,
+            font=FONT,
         )
         self.annotation_label.grid(row=7, column=1, padx=16, pady=16)
 
         self.annotation_value = tk.StringVar()
-        self.annotation_value.set(self.dwc[0])
+        self.annotation_value.set(self.fields[0])
 
         style = ttk.Style(self)
-        for i, (dwc, opts) in enumerate(zip(self.dwc, STYLE_LIST, strict=False), 8):
-            name = f"{dwc}.TRadiobutton"
+        for i, (field, opts) in enumerate(
+            zip(self.fields, STYLE_LIST, strict=False), 8
+        ):
+            name = f"{field}.TRadiobutton"
             style.configure(name, **opts)
             radio = ttk.Radiobutton(
                 self.control_frame,
-                text=dwc,
-                value=dwc,
+                text=field,
+                value=field,
                 variable=self.annotation_value,
                 style=name,
             )
@@ -201,7 +204,7 @@ class App(tk.Tk):
 
     def build_text(self, label: dict[str, Any]) -> None:
         beg = self.text.index(tk.CURRENT)
-        self.text.insert(tk.INSERT, label["text"])
+        self.text.insert(tk.INSERT, label["ocr_text"])
         end = self.text.index(tk.CURRENT)
         label["text-location"] = [beg, end]
         self.text.insert(tk.INSERT, "\n")
@@ -210,7 +213,7 @@ class App(tk.Tk):
         beg = self.text.index(tk.CURRENT)
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
-        self.text.insert(tk.INSERT, str(label["path"]))
+        self.text.insert(tk.INSERT, str(label["image_path"]))
         self.text.insert(tk.INSERT, "\n")
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
@@ -239,26 +242,26 @@ class App(tk.Tk):
 
         for result in annotations:
             label = {
-                "path": result["path"],
-                "text": result["text"],
+                "image_path": result["image_path"],
+                "ocr_text": result["ocr_text"],
                 "header-location": [],
                 "text-location": [],
-                "annotations": {k: [] for k in self.dwc},
-            }
+            } | {k: [] for k in self.fields}
 
             self.build_header(label)
             self.build_text(label)
 
-            for dwc, val in result["annotations"].items():
+            for field in self.fields:
+                val = result[field]
                 if isinstance(val, list) and val:
                     for v in val:
-                        self.load_tag(dwc, v, label)
+                        self.load_tag(field, v, label)
                 elif isinstance(val, list):
-                    label["annotations"][dwc] = []
+                    label[field] = []
                 elif val:
-                    self.load_tag(dwc, val, label)
+                    self.load_tag(field, val, label)
                 else:
-                    label["annotations"][dwc] = []
+                    label[field] = []
 
             self.labels.append(label)
 
@@ -266,7 +269,7 @@ class App(tk.Tk):
 
         self.add_header_tags()
 
-    def load_tag(self, dwc: str, val: Any, label: dict[str, Any]) -> None:
+    def load_tag(self, field: str, val: Any, label: dict[str, Any]) -> None:
         search_beg, text_end = label["text-location"]
         # Need to handle annotations with identical content
         while tag_beg := self.text.search(val, search_beg, text_end):
@@ -278,7 +281,7 @@ class App(tk.Tk):
         else:
             return
         tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
-        self.text.tag_add(dwc, tag_beg, tag_end)
+        self.text.tag_add(field, tag_beg, tag_end)
 
     def save(self) -> None:
         path = tk.filedialog.asksaveasfilename(
@@ -290,8 +293,8 @@ class App(tk.Tk):
         if not path:
             return
 
-        for dwc in self.dwc:
-            indexes = self.text.tag_ranges(dwc)
+        for field in self.fields:
+            indexes = self.text.tag_ranges(field)
             indexes = zip(indexes[0::2], indexes[1::2], strict=True)
             labels = (lb for lb in self.labels)
             lb = next(labels)
@@ -299,7 +302,7 @@ class App(tk.Tk):
                 while self.text.compare(beg, ">", lb["text-location"][1]):
                     lb = next(labels)
                 value = self.text.get(beg, end)
-                lb["annotations"][dwc].append(value)
+                lb[field].append(value)
 
         path = Path(path)
         self.curr_dir = path.parent
@@ -308,15 +311,14 @@ class App(tk.Tk):
         annotations = []
         for lb in self.labels:
             anno = {
-                "path": lb["path"],
-                "text": lb["text"],
-                "annotations": {},
+                "image_path": lb["image_path"],
+                "ocr_text": lb["ocr_text"],
             }
-            for dwc in self.dwc:
-                if not (field := lb["annotations"].get(dwc)):
-                    anno["annotations"][dwc] = []
+            for field in self.fields:
+                if not (value := lb.get(field)):
+                    anno[field] = []
                     continue
-                anno["annotations"][dwc] = field
+                anno[field] = value
 
             annotations.append(anno)
 

@@ -93,8 +93,8 @@ def _(Path, db_path, duckdb):
                 notes          char,
                 temperature    float,
                 context_length integer,
-                elapsed        interval,
-                time_started   timestamptz default current_localtimestamp(),
+                ocr_run_elapsed interval,
+                ocr_run_started timestamptz default current_localtimestamp(),
             );
 
             create sequence if not exists ocr_id_seq;
@@ -104,8 +104,7 @@ def _(Path, db_path, duckdb):
                 image_path   char,
                 ocr_text     char,
                 ocr_error    char,
-                elapsed      interval,
-                time_started timestamptz default current_localtimestamp(),
+                ocr_elapsed  interval,
             );
             """
 
@@ -173,7 +172,8 @@ def _(mo):
 def _(Path, duckdb, pl):
     def get_all_images(db_path: Path) -> pl.dataframe:
         with duckdb.connect(db_path) as cxn:
-            return cxn.execute("select distinct image_path from ocr;").pl()
+            all_images = cxn.execute("select distinct image_path from ocr;").pl()
+        return all_images
     return (get_all_images,)
 
 
@@ -221,12 +221,12 @@ def _(Args, Path, db_path, get_all_errors, get_all_images):
 
         # Only get --missing image paths, images not already in the DB
         if args.missing:
-            completed = {r[0] for r in get_all_images(args.db)}
+            completed = {r[0] for r in get_all_images(args.db).rows()}
             image_paths = [p for p in image_paths if str(p) not in completed]
 
         # Get images to --retry, images with only errors
         if args.retry:
-            errored = {r[0] for r in get_all_errors(db_path)}
+            errored = {r[0] for r in get_all_errors(db_path).rows()}
             image_paths = [p for p in image_paths if str(p) in errored]
 
         return image_paths
@@ -446,6 +446,64 @@ def _(Args, Path):
         notes="""Retry errored sheets in ocr_run_id 5 with a new model and params.""",
     )
     # ocr_images(args5)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    This is a larger set (~1500) of images that contain UTM and TRS notations.
+    """)
+    return
+
+
+@app.cell
+def _(Args, Path):
+    args6 = Args(
+        image_dir=Path("./data/herbarium/utm_trs_test"),
+        notes="""A set of herbarium sheets that contain TRS & UTM notations.""",
+    )
+    # ocr_images(args6)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    _Mea culpa_. I forgot to prevent my computer from sleeping, so the job died part of the way thru. Restarting.
+    """)
+    return
+
+
+@app.cell
+def _(Args, Path):
+    args7 = Args(
+        image_dir=Path("./data/herbarium/utm_trs_test"),
+        notes="""A set of herbarium sheets that contain TRS & UTM notations. continued""",
+        missing=True,  # Process only missing records
+    )
+    # ocr_images(args7)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    Process the errors for the TRS & UTM dataset.
+    """)
+    return
+
+
+@app.cell
+def _(Args, Path):
+    args8 = Args(
+        image_dir=Path("./data/herbarium/utm_trs_test"),
+        model_name="google/gemma-3-27b",  # New model
+        retry=True,  # Retry errored records with different parameters
+        context_length=8192,  # Doubled the context
+        notes="""Retry errored sheets in ocr_run_id 5 with a new model and params.""",
+    )
+    # ocr_images(args8)
     return
 
 
