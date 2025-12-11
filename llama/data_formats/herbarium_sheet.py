@@ -1,13 +1,17 @@
 from dspy import InputField, OutputField, Signature
 
 
+# NOTE: I use the output field order while annotating fields (annotate_fields.py)
+# TODO: Will field order have an affect on language model output?
 class HerbariumSheet(Signature):
     """Analyze text from a herbarium sheets and extract information."""
 
     text: str = InputField()
 
     scientific_name: list[str] = OutputField(
-        default=[], desc="Scientific name or species", alias="dwc:scientificName",
+        default=[],
+        desc="Scientific name or species",
+        alias="dwc:scientificName",
     )
     scientific_name_authority: list[str] = OutputField(
         default=[],
@@ -15,32 +19,24 @@ class HerbariumSheet(Signature):
         alias="dwc:scientificNameAuthority",
     )
     family: list[str] = OutputField(
-        default=[], desc="Taxonomic family", alias="dwc:family",
+        default=[],
+        desc="Taxonomic family",
+        alias="dwc:family",
+    )
+    associated_taxa: list[str] = OutputField(
+        default=[],
+        desc="Was the specimen found near, around, or on another species",
+        alias="dwc:associatedTaxa",
+    )
+    occurrence_id: list[str] = OutputField(
+        default=[],
+        desc="The numbers used to identify the specimen",
+        alias="dwc:occurrenceID",
     )
     event_date: list[str] = OutputField(
         default=[],
         desc="When was the specimen collected",
         alias="dwc:eventDate",
-    )
-    locality: list[str] = OutputField(
-        default=[],
-        desc="A description of where the specimen was collected",
-        alias="dwc:locality",
-    )
-    habitat: list[str] = OutputField(
-        default=[],
-        desc="Collected from this habitat, or environment",
-        alias="dwc:habitat",
-    )
-    elevation: list[str] = OutputField(
-        default=[],
-        desc="The specimen was collected at this elevation or altitude",
-        alias="dwc:elevation",
-    )
-    coordinates: list[str] = OutputField(
-        default=[],
-        desc="The specimen was collected at this latitude and longitude",
-        alias="dwc:coordinates",
     )
     recorded_by: list[str] = OutputField(
         default=[],
@@ -53,7 +49,8 @@ class HerbariumSheet(Signature):
         alias="dwc:recordedByID",
     )
     identified_by: list[str] = OutputField(
-        default=[], desc="Who identified or verified the species",
+        default=[],
+        desc="Who identified or verified the species",
         alias="dwc:identifiedBy",
     )
     identified_by_id: list[str] = OutputField(
@@ -61,15 +58,15 @@ class HerbariumSheet(Signature):
         desc="The ID did the determiner(s) used to identify themself",
         alias="dwc:identifiedByID",
     )
-    occurrence_id: list[str] = OutputField(
+    elevation: list[str] = OutputField(
         default=[],
-        desc="The numbers used to identify the specimen",
-        alias="dwc:occurrenceID",
+        desc="The specimen was collected at this elevation or altitude",
+        alias="dwc:elevation",
     )
-    associated_taxa: list[str] = OutputField(
+    coordinates: list[str] = OutputField(
         default=[],
-        desc="Was the specimen found near, around, or on another species",
-        alias="dwc:associatedTaxa",
+        desc="The specimen was collected at this latitude and longitude",
+        alias="dwc:coordinates",
     )
     country: list[str] = OutputField(
         default=[],
@@ -87,7 +84,9 @@ class HerbariumSheet(Signature):
         alias="dwc:county",
     )
     municipality: list[str] = OutputField(
-        default=[], desc="Collected from this municipality", alias="dwc:municipality",
+        default=[],
+        desc="Collected from this municipality",
+        alias="dwc:municipality",
     )
     occurrence_remarks: list[str] = OutputField(
         default=[],
@@ -111,6 +110,16 @@ class HerbariumSheet(Signature):
             '"11S 316745.14 3542301.90"'
         ),
         alias="UTM",
+    )
+    locality: list[str] = OutputField(
+        default=[],
+        desc="A description of where the specimen was collected",
+        alias="dwc:locality",
+    )
+    habitat: list[str] = OutputField(
+        default=[],
+        desc="Collected from this habitat, or environment",
+        alias="dwc:habitat",
     )
 
 

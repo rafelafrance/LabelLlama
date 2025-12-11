@@ -93,6 +93,7 @@ ignore = [
     "RUF002",  # Docstring contains ambiguous `‘`
     "S602",    # subprocess` call with `shell=True` identified, security issue
     "S607",    # Starting a process with a partial executable path
+    "S608",    # Possible SQL injection vector through string-based query construction
     "SIM114",  # Combine if branches using logical or operator
     "SIM905",  # Consider using a list literal instead of `str.split`
     "SLF001",  # Private member accessed: {access}

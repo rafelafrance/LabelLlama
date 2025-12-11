@@ -29,7 +29,7 @@ def _():
 @app.cell
 def _():
     from dataclasses import dataclass
-    from datetime import datetime, timedelta
+    from datetime import datetime
     from pathlib import Path
 
     import duckdb

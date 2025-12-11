@@ -12,7 +12,7 @@ from typing import Any
 from llama.data_formats import specimen_types
 
 FONT = ("liberation sans", 16)
-FONT_I = ("liberation sans", 16, "italic")
+FONT_I = ("liberation sans", 16, "italic bold")
 
 STYLE_LIST = [
     {"background": "brown", "foreground": "white", "font": FONT},
@@ -204,16 +204,16 @@ class App(tk.Tk):
 
     def build_text(self, label: dict[str, Any]) -> None:
         beg = self.text.index(tk.CURRENT)
-        self.text.insert(tk.INSERT, label["ocr_text"])
+        self.text.insert(tk.INSERT, label["pre_dwc_text"])
         end = self.text.index(tk.CURRENT)
         label["text-location"] = [beg, end]
         self.text.insert(tk.INSERT, "\n")
 
-    def build_header(self, label: dict[str, Any]) -> None:
+    def build_header(self, i: int, label: dict[str, Any]) -> None:
         beg = self.text.index(tk.CURRENT)
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
-        self.text.insert(tk.INSERT, str(label["image_path"]))
+        self.text.insert(tk.INSERT, f"{i} {label['image_path']}")
         self.text.insert(tk.INSERT, "\n")
         self.text.insert(tk.INSERT, "=" * 72)
         self.text.insert(tk.INSERT, "\n")
@@ -242,24 +242,24 @@ class App(tk.Tk):
         self.text.delete("1.0", tk.END)
         self.labels = []
 
-        for result in annotations:
+        for i, result in enumerate(annotations, 1):
             label = result | {
                 "header-location": [],
                 "text-location": [],
             }
 
-            self.build_header(label)
+            self.build_header(i, label)
             self.build_text(label)
 
             for field in self.fields:
                 val = result[field]
                 if isinstance(val, list) and val:
                     for v in val:
-                        self.load_tag(field, v, label)
+                        self.add_tag(field, v, label)
                 elif isinstance(val, list):
                     label[field] = []
                 elif val:
-                    self.load_tag(field, val, label)
+                    self.add_tag(field, val, label)
                 else:
                     label[field] = []
 
@@ -269,19 +269,30 @@ class App(tk.Tk):
 
         self.add_header_tags()
 
-    def load_tag(self, field: str, val: Any, label: dict[str, Any]) -> None:
+    def add_tag(self, field: str, val: Any, label: dict[str, Any]) -> None:
         search_beg, text_end = label["text-location"]
         # Need to handle annotations with identical content
         while tag_beg := self.text.search(val, search_beg, text_end):
+            search_beg = self.text.index(tag_beg + f" + {len(val)} chars")
+
+            # Is the text already tagged?
             names = set(self.text.tag_names(tag_beg))
             names -= {"header", "sel"}
-            if not names:
-                break
-            search_beg = self.text.index(tag_beg + f" + {len(val)} chars")
-        else:
-            return
-        tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
-        self.text.tag_add(field, tag_beg, tag_end)
+            if names:
+                continue
+
+            # Is there a word break. \b does not work
+            tag_end = self.text.index(tag_beg + f" + {len(val)} chars")
+            before_idx = self.text.index(tag_beg + " - 1 char")
+
+            before = self.text.get(before_idx)
+            after = self.text.get(tag_end)
+
+            if before.isalpha() or after.isalpha():
+                continue
+
+            # All checks passed
+            self.text.tag_add(field, tag_beg, tag_end)
 
     def save(self) -> None:
         path = tk.filedialog.asksaveasfilename(
@@ -293,12 +304,12 @@ class App(tk.Tk):
         if not path:
             return
 
-        # Clear out the old field data
+        # Remove old field data
         for lb in self.labels:
             for field in self.fields:
                 lb[field] = []
 
-        # Add the new field data
+        # Replace field data
         for field in self.fields:
             indexes = self.text.tag_ranges(field)
             indexes = zip(indexes[0::2], indexes[1::2], strict=True)
@@ -308,7 +319,8 @@ class App(tk.Tk):
                 while self.text.compare(beg, ">", lb["text-location"][1]):
                     lb = next(labels)
                 value = self.text.get(beg, end)
-                lb[field].append(value)
+                if value not in lb[field]:
+                    lb[field].append(value)
 
         path = Path(path)
         self.curr_dir = path.parent

@@ -1,168 +1,229 @@
 #!/usr/bin/env python3
+"""
+Extract Darwin Core (DwC) fields from OCRed text.
+
+Note:
+`export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
+before running this notebook.
+
+"""
 
 import argparse
-import io
-import json
 import textwrap
 from datetime import datetime
 from pathlib import Path
 
 import dspy
-from rich.console import Console
+import duckdb
+from tqdm import tqdm
 
-from old.llama.data_formats import specimen_types
+from llama.data_formats import specimen_types
 
 
-def main(args: argparse.Namespace) -> None:
-    console = Console(log_path=False)
-    console.log("[blue]Started")
-    job_started = datetime.now()
+def extract_dwc(args: argparse.Namespace) -> None:
+    """Extract Darwin Core information from the texts."""
+    create_dwc_tables(args.db_path, args.specimen_type)
 
-    specimen_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+    spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+
+    names = ", ".join(f"{f}" for f in spec_type.output_fields)
+    vars_ = ", ".join(f"${f}" for f in spec_type.output_fields)
+    insert_dwc = f"""
+        insert into dwc
+            (dwc_run_id, pre_dwc_id, dwc_elapsed, {names})
+            values ($dwc_run_id, $pre_dwc_id, $dwc_elapsed, {vars_});
+        """
+
+    job_began = datetime.now()
 
     lm = dspy.LM(
         args.model_name,
-        api_base=args.api_base,
+        api_base=args.api_host,
         api_key=args.api_key,
         temperature=args.temperature,
-        max_tokens=args.max_tokens,
+        max_tokens=args.context_length,
         cache=args.cache,
     )
     dspy.configure(lm=lm)
 
-    extractor = dspy.Predict(specimen_type.signature)
+    predictor = dspy.Predict(spec_type)
 
-    with args.ocr_input.open() as in_file:
-        ocr_records = [json.loads(ln) for ln in in_file]
+    adapter = dspy.ChatAdapter()
+    prompt = adapter.format(
+        predictor.signature,
+        demos=predictor.demos,
+        inputs={k: f"{{{k}}}" for k in predictor.signature.input_fields},
+    )
 
-    ocr_records = ocr_records[args.first : args.last]
-    start = args.first if args.first else 0
+    with duckdb.connect(args.db_path) as cxn:
+        run_id = cxn.execute(
+            """
+            insert into dwc_run (
+                prompt, model, api_host, notes, temperature,
+                max_tokens, specimen_type
+            )
+            values (?, ?, ?, ?, ?, ?, ?)
+            returning dwc_run_id;
+            """,
+            [
+                prompt,
+                args.model_name,
+                args.api_host,
+                args.notes.strip(),
+                args.temperature,
+                args.context_length,
+                args.specimen_type,
+            ],
+        ).fetchone()[0]
 
-    with args.dwc_output.open("a") as out_file:
-        for i, ocr_rec in enumerate(ocr_records, start):
-            rec_start = datetime.now()
-            console.log(f"[blue]\n{i} {'=' * 80}")
+        pre_dwc_input = select_records(args.db_path, args.pre_dwc_run_id, args.limit)
+        rows = pre_dwc_input.rows(named=True)
 
-            if ocr_rec.get("ocr_error"):
-                console.log("[red] skipped due to ocr error")
-                continue
+        for pre_dwc_rec in tqdm(rows):
+            rec_began = datetime.now()
 
-            console.log(f"[blue]{ocr_rec['image_path']}")
-            console.log(f"[blue]{ocr_rec['ocr_text']}")
+            prediction = predictor(text=pre_dwc_rec["pre_dwc_text"])
 
-            pred = extractor(text=ocr_rec["ocr_text"], prompt=specimen_type.prompt)
-            console.log(f"[green]{pred}")
-            append_result(out_file, ocr_rec, pred, args.model_name, args.ocr_input)
-            console.log(f"[blue]Inference Time: {datetime.now() - rec_start}")
+            cxn.execute(
+                insert_dwc,
+                {
+                    "dwc_run_id": run_id,
+                    "pre_dwc_id": pre_dwc_rec["pre_dwc_id"],
+                    "dwc_elapsed": datetime.now() - rec_began,
+                }
+                | prediction.toDict(),
+            )
 
-    console.log(f"\n[blue]Job Time: {datetime.now() - job_started}")
-    console.log("[blue]Finished")
+        cxn.execute(
+            "update dwc_run set dwc_run_elapsed = ? where dwc_run_id = ?;",
+            [datetime.now() - job_began, run_id],
+        )
 
 
-def append_result(
-    out_file: io.StringIO,
-    ocr_rec: dict,
-    pred: dspy.Prediction,
-    model_name: str,
-    ocr_file: Path,
-) -> dict:
-    result = {
-        **ocr_rec,
-        "ocr_file": str(ocr_file),
-        "dwc_model": model_name,
-        "dwc_time": datetime.now().isoformat(sep=" ", timespec="seconds"),
-        "dwc_fields": pred.toDict(),
-    }
-    out_file.write(json.dumps(result))
-    out_file.write("\n")
-    out_file.flush()
+def select_records(
+    db_path: Path, pre_dwc_run_id: int, limit: int | None = None
+) -> list:
+    run_ids = ", ".join(str(i) for i in pre_dwc_run_id)
+    sql = f"select * from pre_dwc where pre_dwc_run_id in ({run_ids})"
+    if limit:
+        sql += f" limit {limit}"
 
-    return result
+    with duckdb.connect(db_path) as cxn:
+        return cxn.execute(sql).pl()
+
+
+def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
+    # Fields specific to the specimen type
+    spec_type = specimen_types.SPECIMEN_TYPES[specimen_type]
+    fields = [f"{f} char[]," for f in spec_type.output_fields]
+    fields = "\n".join(fields)
+
+    sql = f"""
+        create sequence if not exists dwc_run_seq;
+        create table if not exists dwc_run (
+            dwc_run_id integer primary key default nextval('dwc_run_seq'),
+            prompt        char,
+            model         char,
+            api_host      char,
+            notes         char,
+            temperature   float,
+            max_tokens    integer,
+            specimen_type char,
+            dwc_run_elapsed interval,
+            dwc_run_started timestamptz default current_localtimestamp(),
+        );
+
+        create sequence if not exists dwc_id_seq;
+        create table if not exists dwc (
+            dwc_id integer primary key default nextval('dwc_id_seq'),
+            dwc_run_id  integer references dwc_run(dwc_run_id),
+            pre_dwc_id  integer references pre_dwc(pre_dwc_id),
+            dwc_elapsed interval,
+            {fields}
+        );
+        """
+
+    with duckdb.connect(db_path) as cxn:
+        cxn.execute(sql)
 
 
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("""
-            Extract Darwin Core (DwC) information from text on museum specimens.
-            For lms you need to load the model on the server, lms load <my-model>.
-            """),
+        description=textwrap.dedent("""Extract Darwin Core information from text."""),
     )
 
-    choices = list(specimen_types.SPECIMEN_TYPES.keys())
+    spec_types = list(specimen_types.SPECIMEN_TYPES.keys())
     arg_parser.add_argument(
         "--specimen-type",
-        choices=choices,
-        default=choices[0],
-        help="""Use this specimen model. (default: %(default)s)""",
+        choices=spec_types,
+        default=spec_types[0],
+        help="""What type of data are you extracting.""",
     )
 
     arg_parser.add_argument(
-        "--ocr-input",
+        "--db-path",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Parse OCR text from this JSONL file.""",
+        help="""Path to the database.""",
     )
 
     arg_parser.add_argument(
-        "--dwc-output",
-        type=Path,
+        "--pre-dwc-run-id",
+        type=int,
         required=True,
-        metavar="PATH",
-        help="""Output predicted Darwin Core fields to this JSONL file.""",
+        action="append",
+        help="""Parse records from this preprocessing OCR run.""",
     )
 
     arg_parser.add_argument(
         "--model-name",
-        default="ollama_chat/gemma3:27b",
-        help="""Use this language model. (default: %(default)s)
-            also lm_studio/gemma-3-27b""",
+        default="lm_studio/google/gemma-3-27b",
+        help="""Use this language model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
-        "--api-base",
-        default="http://localhost:11434",
-        help="""URL for the LM model. (default: %(default)s)
-            ollama is http://localhost:11434
-            and lmstudio is http://localhost:1234/v1""",
+        "--api-host",
+        default="http://localhost:1234/v1",
+        help="""URL for the LM model. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
         "--api-key",
-        help="""Key for the LM provider. Local ones do not need this.""",
+        help="""API key.""",
+    )
+
+    arg_parser.add_argument(
+        "--context-length",
+        type=int,
+        default=4096,
+        help="""Model's context length. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
         "--temperature",
         type=float,
-        help="""Model temperature.""",
+        default=0.1,
+        help="""Model's temperature. (default: %(default)s)""",
     )
 
     arg_parser.add_argument(
-        "--max-tokens",
-        type=int,
-        help="""Maximum tokens.""",
+        "--notes",
+        default="",
+        help="""Notes about this dataset.""",
     )
 
     arg_parser.add_argument(
         "--cache",
         action="store_true",
-        help="""Use cached predictions?""",
+        help="""Use cached records?""",
     )
 
     arg_parser.add_argument(
-        "--first",
+        "--limit",
         type=int,
-        metavar="INT",
-        help="""The index of the first OCR record to process.""",
-    )
-
-    arg_parser.add_argument(
-        "--last",
-        type=int,
-        metavar="INT",
-        help="""The index of the last OCR record to process.""",
+        help="""Limit the number of records to parse?""",
     )
 
     args = arg_parser.parse_args()
@@ -171,4 +232,4 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    main(ARGS)
+    extract_dwc(ARGS)

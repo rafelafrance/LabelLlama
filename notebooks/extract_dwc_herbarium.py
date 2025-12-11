@@ -29,16 +29,15 @@ def _():
 @app.cell
 def _():
     from dataclasses import dataclass
-    from datetime import datetime, timedelta
+    from datetime import datetime
     from pathlib import Path
     from shutil import copyfile
 
     import dspy
     import duckdb
-    import polars as pl
 
     from llama.data_formats import specimen_types
-    return Path, dataclass, datetime, dspy, duckdb, specimen_types
+    return Path, copyfile, dataclass, datetime, dspy, duckdb, specimen_types
 
 
 @app.cell(hide_code=True)
@@ -80,14 +79,14 @@ def _(mo):
 
 
 @app.cell
-def _(Path):
+def _(Path, copyfile):
     specimen_type = "herbarium"
 
     db_path = Path("data/herbarium/labelllama_herbarium.duckdb")
 
-    # db_backup = Path("data/herbarium/labelllama_herbarium_2025-12-04.duckdb")
+    db_backup = Path("data/herbarium/labelllama_herbarium_2025-12-11b.duckdb")
 
-    # copyfile(src=db_backup, dst=db_path)
+    copyfile(src=db_backup, dst=db_path)
     return (db_path,)
 
 
@@ -96,7 +95,7 @@ def _(Path, duckdb, specimen_types):
     def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
         # Fields specific to the specimen type
         spec_type = specimen_types.SPECIMEN_TYPES[specimen_type]
-        fields = [f"{f} char[]," for f in spec_type.output_fields.keys()]
+        fields = [f"{f} char[]," for f in spec_type.output_fields]
         fields = "\n".join(fields)
 
         sql = f"""
@@ -118,7 +117,7 @@ def _(Path, duckdb, specimen_types):
             create table if not exists dwc (
                 dwc_id integer primary key default nextval('dwc_id_seq'),
                 dwc_run_id  integer references dwc_run(dwc_run_id),
-                ocr_id      integer references ocr(ocr_id),
+                pre_dwc_id  integer references pre_dwc(pre_dwc_id),
                 dwc_elapsed interval,
                 {fields}
             );
@@ -126,10 +125,7 @@ def _(Path, duckdb, specimen_types):
 
         with duckdb.connect(db_path) as cxn:
             cxn.execute(sql)
-
-
-    # create_dwc_tables(db_path, specimen_type)
-    return
+    return (create_dwc_tables,)
 
 
 @app.cell(hide_code=True)
@@ -144,7 +140,7 @@ def _(mo):
 def _(Path, dataclass, db_path):
     @dataclass
     class Args:
-        db: Path = db_path  # Output dwc info to this database
+        db_path: Path = db_path  # Output dwc info to this database
         specimen_type: str = ""
         cache: bool = False  # Use cached records?
         # Model parameters
@@ -174,16 +170,13 @@ def _(mo):
 
 
 @app.cell
-def _(Path, db_path, duckdb):
+def _(Path, duckdb):
     def select_records(db_path: Path) -> list:
-        sql = "select * from ocr where ocr_run_id in (10, 12) and ocr_text <> '' limit 100;"
+        sql = """select * from pre_dwc where pre_dwc_run_id in (1);"""
 
         with duckdb.connect(db_path) as cxn:
             return cxn.execute(sql).pl()
-
-
-    ocr_input = select_records(db_path)
-    return (ocr_input,)
+    return (select_records,)
 
 
 @app.cell(hide_code=True)
@@ -195,16 +188,27 @@ def _(mo):
 
 
 @app.cell
-def _(Args, datetime, dspy, duckdb, mo, ocr_input, specimen_types):
+def _(
+    Args,
+    create_dwc_tables,
+    datetime,
+    dspy,
+    duckdb,
+    mo,
+    select_records,
+    specimen_types,
+):
     def extract_dwc(args: Args) -> None:
+        create_dwc_tables(args.db_path, args.specimen_type)
+
         spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
 
-        names = ", ".join(f"{f}" for f in spec_type.output_fields.keys())
-        vars = ", ".join(f"${f}" for f in spec_type.output_fields.keys())
+        names = ", ".join(f"{f}" for f in spec_type.output_fields)
+        vars_ = ", ".join(f"${f}" for f in spec_type.output_fields)
         insert_dwc = f"""
             insert into dwc
-                (dwc_run_id, ocr_id, dwc_elapsed, {names})
-                values ($dwc_run_id, $ocr_id, $elapsed, {vars});
+                (dwc_run_id, pre_dwc_id, dwc_elapsed, {names})
+                values ($dwc_run_id, $pre_dwc_id, $dwc_elapsed, {vars_});
             """
 
         job_began = datetime.now()
@@ -228,7 +232,7 @@ def _(Args, datetime, dspy, duckdb, mo, ocr_input, specimen_types):
             inputs={k: f"{{{k}}}" for k in predictor.signature.input_fields},
         )
 
-        with duckdb.connect(args.db) as cxn:
+        with duckdb.connect(args.db_path) as cxn:
             run_id = cxn.execute(
                 """
                 insert into dwc_run (
@@ -249,24 +253,26 @@ def _(Args, datetime, dspy, duckdb, mo, ocr_input, specimen_types):
                 ],
             ).fetchone()[0]
 
-            rows = ocr_input.rows(named=True)
-            for ocr_rec in mo.status.progress_bar(rows, title="DwC Progress"):
+            pre_dwc_input = select_records(args.db_path)
+            rows = pre_dwc_input.rows(named=True)
+
+            for pre_dwc_rec in mo.status.progress_bar(rows, title="DwC Progress"):
                 rec_began = datetime.now()
 
-                prediction = predictor(text=ocr_rec["ocr_text"])
+                prediction = predictor(text=pre_dwc_rec["pre_dwc_text"])
 
                 cxn.execute(
                     insert_dwc,
                     {
                         "dwc_run_id": run_id,
-                        "ocr_id": ocr_rec["ocr_id"],
-                        "elapsed": datetime.now() - rec_began,
+                        "pre_dwc_id": pre_dwc_rec["pre_dwc_id"],
+                        "dwc_elapsed": datetime.now() - rec_began,
                     }
                     | prediction.toDict(),
                 )
 
             cxn.execute(
-                "update dwc_run set elapsed = ? where dwc_run_id = ?;",
+                "update dwc_run set dwc_run_elapsed = ? where dwc_run_id = ?;",
                 [datetime.now() - job_began, run_id],
             )
     return (extract_dwc,)
@@ -283,18 +289,18 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    This is a vanillia set of parameters using a 27b parameter model.
+    This is a vanillia set of parameters using a 27b parameter model. I'm going to use these records to create a gold standard for scoring models.
     """)
     return
 
 
 @app.cell
-def _(Args):
+def _(Args, extract_dwc):
     args1 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/google/gemma-3-27b",
     )
-    # extract_dwc(args1)
+    extract_dwc(args1)
     return
 
 
@@ -325,12 +331,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args, extract_dwc):
+def _(Args):
     args3 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/microsoft/phi-4",
     )
-    extract_dwc(args3)
+    # extract_dwc(args3)
     return
 
 
