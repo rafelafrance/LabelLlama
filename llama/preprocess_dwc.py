@@ -16,20 +16,51 @@ from pathlib import Path
 import duckdb
 from tqdm import tqdm
 
-EXCLUDE = [
+EXCLUDE_LINE_CONTAINING = [
     "academy",
+    "academ",
+    "botanic garden",
     "botanical",
     "center for",
+    "database",
+    "department of",
     "forest service",
+    "government",
     "herbaria",
     "herbarium",
     "plant biology",
     "sciences",
     "university",
 ]
-EXCLUDE = [rf"\b{e}\b" for e in EXCLUDE]
+EXCLUDE_LINE_CONTAINING = [rf"\b{e}\b" for e in EXCLUDE_LINE_CONTAINING]
 
-REMOVE_LN = re.compile(f"({'|'.join(EXCLUDE)})", flags=re.IGNORECASE)
+EXCLUDE_LINE_CONTAINING = re.compile(
+    f"({'|'.join(EXCLUDE_LINE_CONTAINING)})", flags=re.IGNORECASE
+)
+
+
+def main(args: argparse.Namespace) -> None:
+    if args.display:
+        display_changes(args)
+    else:
+        pre_dwc(args)
+
+
+def display_changes(args: argparse.Namespace) -> None:
+    ocr_rows = select_records(args.db_path, args.ocr_run_id, args.limit)
+    ocr_rows = ocr_rows.rows(named=True)
+    for ocr_row in tqdm(ocr_rows):
+        before = ocr_row["ocr_text"]
+
+        after = filter_lines(before)
+        after = join_lines(after)
+
+        print("=" * 90)
+        print(before)
+        print()
+        print("-" * 80)
+        print(after)
+        print()
 
 
 def pre_dwc(args: argparse.Namespace) -> None:
@@ -63,14 +94,14 @@ def pre_dwc(args: argparse.Namespace) -> None:
 
 
 def join_lines(text: str) -> str:
-    text = text.replace("\n\n", "<br>")
+    text = re.sub(r"\n\s*\n", "<br>", text)
     text = text.replace("\n", " ")
-    text = text.replace("<br>", "\n")
+    text = text.replace("<br>", "\n\n")
     return text
 
 
 def filter_lines(text: str) -> str:
-    lines = [ln for ln in text.splitlines() if not REMOVE_LN.search(ln)]
+    lines = [ln for ln in text.splitlines() if not EXCLUDE_LINE_CONTAINING.search(ln)]
     text = "\n".join(lines)
     return text
 
@@ -132,6 +163,12 @@ def parse_args() -> argparse.Namespace:
     )
 
     arg_parser.add_argument(
+        "--display",
+        action="store_true",
+        help="""Only display before and after versions of the text.""",
+    )
+
+    arg_parser.add_argument(
         "--limit",
         type=int,
         help="""Limit the number of records to parse?""",
@@ -149,4 +186,4 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    pre_dwc(ARGS)
+    main(ARGS)

@@ -9,6 +9,7 @@ before running this notebook.
 """
 
 import argparse
+import sys
 import textwrap
 from datetime import datetime
 from pathlib import Path
@@ -56,6 +57,11 @@ def extract_dwc(args: argparse.Namespace) -> None:
     )
 
     with duckdb.connect(args.db_path) as cxn:
+        pre_dwc_input = select_records(args.db_path, args.pre_dwc_run_id, args.limit)
+        rows = pre_dwc_input.rows(named=True)
+        if not rows:
+            sys.exit(f"No preprocessed records found with ID {args.pre_dwc_run_id}")
+
         run_id = cxn.execute(
             """
             insert into dwc_run (
@@ -75,9 +81,6 @@ def extract_dwc(args: argparse.Namespace) -> None:
                 args.specimen_type,
             ],
         ).fetchone()[0]
-
-        pre_dwc_input = select_records(args.db_path, args.pre_dwc_run_id, args.limit)
-        rows = pre_dwc_input.rows(named=True)
 
         for pre_dwc_rec in tqdm(rows):
             rec_began = datetime.now()

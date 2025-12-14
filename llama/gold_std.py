@@ -13,6 +13,8 @@ ACTIONS: list[str] = ["list", "select", "insert"]
 
 
 def main(args: argparse.Namespace) -> None:
+    create_gold_tables(args.db_path, args.specimen_type)
+
     if args.action == "list":
         list_dwc_runs(args)
 
@@ -25,25 +27,37 @@ def main(args: argparse.Namespace) -> None:
 
 def list_dwc_runs(args: argparse.Namespace) -> None:
     with duckdb.connect(args.db_path) as cxn:
-        rows = cxn.execute("select * from dwc_run").pl()
-        rows = rows.rows(named=True)
-        for row in rows:
-            for key, val in {
-                k: v for k, v in row.items() if k not in {"prompt"}
-            }.items():
-                print(f"{key:>16} {val}")
-            print()
+        for table in ("pre_dwc_run", "dwc_run", "gold_run"):
+            child = table.removesuffix("_run")
+            id_ = f"{table}_id"
+
+            print("=" * 90)
+            print(f"{table}\n")
+
+            rows = cxn.execute(f"select * from {table}").pl()
+            rows = rows.rows(named=True)
+            for row in rows:
+                for key, val in {
+                    k: v for k, v in row.items() if k not in {"prompt"}
+                }.items():
+                    print(f"{key:>20} {val}")
+
+                count = cxn.execute(
+                    f"select count(*) from {child} where {id_} = ?", [row[id_]]
+                ).fetchone()[0]
+                print(f"{'number of records':>20} {count}")
+
+                print()
 
 
 def select_gold_recs(args: argparse.Namespace) -> None:
     spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
     names = ", ".join(f"{f}" for f in spec_type.output_fields)
 
-    run_ids = ", ".join(str(i) for i in args.dwc_run_id)
     select = f"""
-        select image_path, pre_dwc_text, {names}
+        select image_path, pre_dwc_id, pre_dwc_text, {names}
             from dwc join pre_dwc using (pre_dwc_id) join ocr using (ocr_id)
-            where dwc_run_id in ({run_ids})
+            where dwc_run_id = {args.dwc_run_id}
         """
     if args.limit:
         select += f" limit {args.limit}"
@@ -60,8 +74,9 @@ def insert_gold_recs(args: argparse.Namespace) -> None:
     with args.gold_json.open() as f:
         sheets = json.load(f)
 
-    create_gold_tables(args.db_path, args.specimen_type)
-    run_id = insert_gold_run_rec(args.db_path, args.specimen_type, args.notes)
+    run_id = insert_gold_run_rec(
+        args.db_path, args.specimen_type, args.notes, args.gold_json
+    )
     insert_gold = create_insert_gold(args.specimen_type)
 
     spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
@@ -71,7 +86,7 @@ def insert_gold_recs(args: argparse.Namespace) -> None:
             cxn.execute(
                 insert_gold,
                 {
-                    "gold_run_seq": run_id,
+                    "gold_run_id": run_id,
                     "pre_dwc_id": sheet["pre_dwc_id"],
                 }
                 | {n: sheet[n] for n in spec_type.output_fields},
@@ -84,18 +99,20 @@ def create_insert_gold(specimen_type: str) -> str:
     names = ", ".join(f"{f}" for f in spec_type.output_fields)
     vars_ = ", ".join(f"${f}" for f in spec_type.output_fields)
     insert_gold = f"""
-        insert into dwc
-            (old_run_id, pre_dwc_id, {names})
+        insert into gold
+            (gold_run_id, pre_dwc_id, {names})
             values ($gold_run_id, $pre_dwc_id, {vars_});
         """
     return insert_gold
 
 
-def insert_gold_run_rec(db_path: Path, specimen_type: str, notes: str) -> int:
+def insert_gold_run_rec(
+    db_path: Path, specimen_type: str, notes: str, json_path: Path
+) -> int:
     with duckdb.connect(db_path) as cxn:
         run_id = cxn.execute(
-            """inseert into gold_run (specimen_type, notes) values (?, ?);""",
-            [specimen_type, notes],
+            "insert into gold_run (specimen_type, notes, json_path) values (?, ?, ?);",
+            [specimen_type, notes, str(json_path)],
         ).fetchone()[0]
     return run_id
 
@@ -112,7 +129,8 @@ def create_gold_tables(db_path: Path, specimen_type: str) -> None:
             gold_run_id integer primary key default nextval('gold_run_seq'),
             notes         char,
             specimen_type char,
-            gold_run_started timestamptz default current_localtimestamp(),
+            json_path     char,
+            gold_run_created timestamptz default current_localtimestamp(),
         );
 
         create sequence if not exists gold_id_seq;
@@ -169,9 +187,8 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--dwc-run-id",
         type=int,
-        action="append",
-        help="""Make the gold standard from these dwc-runs.
-            You may uses this more than once.""",
+        help="""Make a gold standard template from this dwc-run.
+            Note: It's only using the dwc-run as a starter not the data itself.""",
     )
 
     arg_parser.add_argument(
