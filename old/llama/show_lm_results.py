@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+
+import argparse
+import base64
+import json
+import textwrap
+from copy import deepcopy
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import jinja2
+import pandas as pd
+from data_formats import label_types
+from pylib import darwin_core as dwc
+
+
+@dataclass
+class Label:
+    type: str
+    name: str
+    text: str
+    url: str
+    score: str
+    table: list[dict] = field(default_factory=list)
+
+
+def main(args: argparse.Namespace) -> None:
+    with args.predictions_json.open() as f:
+        ocr = json.load(f)
+
+    label_type = label_types.LABEL_TYPES[args.label_type]
+
+    if args.output_html:
+        to_html(args, label_type, ocr)
+
+    if args.output_csv:
+        to_csv(args, ocr)
+
+
+def to_csv(args: argparse.Namespace, ocr: dict) -> None:
+    new_ocr = deepcopy(ocr)
+
+    for row in new_ocr:
+        for key, value in row["annotations"].items():
+            if len(value) == 0:
+                row[key] = ""
+            elif len(value) == 1:
+                row[key] = value[0]
+            else:
+                row[key] = value
+        del row["annotations"]
+
+    df = pd.DataFrame(new_ocr)
+    df.to_csv(args.output_csv, index=False)
+
+
+def to_html(
+    args: argparse.Namespace, label_type: label_types.LabelType, ocr: dict
+) -> None:
+    labels = []
+    for label in ocr:
+        path = Path(label["path"])
+        labels.append(
+            Label(
+                type=path.stem.split("_")[1],
+                name=path.stem,
+                text=dwc.format_text_as_html(label["text"]),
+                url=encode_label(args.label_dir, path),
+                score=f"{label['total_score']:0.2f}",
+                table=results_to_table(label, label_type),
+            )
+        )
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader("./llama/templates"),
+        autoescape=True,
+    )
+
+    template = env.get_template("show_lm_results.html").render(
+        now=datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M"),
+        jsonl_file=args.predictions_jsonl,
+        label_dir=args.label_dir,
+        labels=labels,
+    )
+
+    with args.output_html.open("w") as html_file:
+        html_file.write(template)
+
+
+def results_to_table(
+    label: dict[str, Any], label_type: label_types.LabelType
+) -> list[dict]:
+    fields = zip(
+        label["trues"].keys(),
+        label["trues"].values(),
+        label["preds"].values(),
+        label["scores"].values(),
+        strict=True,
+    )
+    rows = []
+    for key, true, pred, score in fields:
+        yellow = 0.5
+        if score == 1.0 and true:
+            color = "green"
+        elif score == 1.0 and not true:
+            color = ""
+        elif score > yellow:
+            color = "yellow"
+        else:
+            color = "red"
+        rows.append(
+            {
+                "key": label_type.dwc[key],
+                "true": "<br/>".join(true),
+                "pred": "<br/>".join(pred),
+                "score": f"{score:0.2f}",
+                "color": color,
+            }
+        )
+    return rows
+
+
+def encode_label(label_dir: Path, ocr_path: Path) -> str:
+    path = label_dir / ocr_path.name
+    with path.open("rb") as f:
+        url = base64.b64encode(f.read()).decode()
+    return url
+
+
+def parse_args() -> argparse.Namespace:
+    arg_parser = argparse.ArgumentParser(
+        allow_abbrev=True,
+        description=textwrap.dedent("""Show pipeline results."""),
+    )
+
+    choices = list(label_types.LABEL_TYPES.keys())
+    arg_parser.add_argument(
+        "--label-type",
+        choices=choices,
+        default=choices[0],
+        help="""Use this label model. (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--label-dir",
+        type=Path,
+        metavar="PATH",
+        help="""Images of labels are in this directory.""",
+    )
+
+    arg_parser.add_argument(
+        "--predictions-json",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Language model predictions JSON file.""",
+    )
+
+    arg_parser.add_argument(
+        "--output-html",
+        type=Path,
+        metavar="PATH",
+        help="""Output the pipeline results to this HTML file.""",
+    )
+
+    arg_parser.add_argument(
+        "--output-csv",
+        type=Path,
+        metavar="PATH",
+        help="""Output the results to this CSV file.""",
+    )
+
+    args = arg_parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    ARGS = parse_args()
+    main(ARGS)

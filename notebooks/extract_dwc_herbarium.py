@@ -37,7 +37,7 @@ def _():
     import duckdb
 
     from llama.data_formats import specimen_types
-    return Path, copyfile, dataclass, datetime, dspy, duckdb, specimen_types
+    return Path, dataclass, datetime, dspy, duckdb, specimen_types
 
 
 @app.cell(hide_code=True)
@@ -79,14 +79,14 @@ def _(mo):
 
 
 @app.cell
-def _(Path, copyfile):
+def _(Path):
     specimen_type = "herbarium"
 
     db_path = Path("data/herbarium/labelllama_herbarium.duckdb")
 
-    db_backup = Path("data/herbarium/labelllama_herbarium_2025-12-11b.duckdb")
+    # db_backup = Path("data/herbarium/labelllama_herbarium_2025-12-11b.duckdb")
 
-    copyfile(src=db_backup, dst=db_path)
+    # copyfile(src=db_backup, dst=db_path)
     return (db_path,)
 
 
@@ -295,12 +295,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args, extract_dwc):
+def _(Args):
     args1 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/google/gemma-3-27b",
     )
-    extract_dwc(args1)
+    # extract_dwc(args1)
     return
 
 
@@ -313,12 +313,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args):
+def _(Args, extract_dwc):
     args2 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/google/gemma-3-12b",
     )
-    # extract_dwc(args2)
+    extract_dwc(args2)
     return
 
 
@@ -331,12 +331,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args):
+def _(Args, extract_dwc):
     args3 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/microsoft/phi-4",
     )
-    # extract_dwc(args3)
+    extract_dwc(args3)
     return
 
 
@@ -349,12 +349,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args):
+def _(Args, extract_dwc):
     args4 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/unsloth/granite-4.0-h-small-GGUF/granite-4.0-h-small-Q4_K_S.gguf",
     )
-    # extract_dwc(args4)
+    extract_dwc(args4)
     return
 
 
@@ -367,12 +367,12 @@ def _(mo):
 
 
 @app.cell
-def _(Args):
+def _(Args, extract_dwc):
     args5 = Args(
         specimen_type="herbarium",
         model_name="lm_studio/meta/llama-3.3-70b",
     )
-    # extract_dwc(args5)
+    extract_dwc(args5)
     return
 
 

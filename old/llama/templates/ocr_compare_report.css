@@ -1,0 +1,77 @@
+body {
+  margin: 40px;
+  line-height: 1.4;
+  font-size: 20px;
+}
+
+h1 > span {
+  float: right;
+  margin-right: 12px;
+}
+
+header {
+    margin-bottom: 4rem;
+}
+
+header label {
+    display: inline-block;
+    font-weight: bold;
+    width: 12rem;
+}
+
+section {
+    margin-top: 2rem;
+    border-top: 1px solid gray;
+}
+
+section .text {
+    margin-top: 1rem;
+}
+
+img {
+    margin-top: 1rem;
+}
+
+.header label {
+    display: inline-block;
+    font-weight: bold;
+    width: 10rem;
+}
+
+.container {
+    display: flex;
+    align-content: space-between;
+}
+
+.item {
+    margin: 2rem;
+}
+th {
+  padding: 2px 4px;
+  vertical-align: bottom;
+  text-align: left;
+}
+
+tbody td {
+  border-bottom: 1px solid #ddd;
+}
+
+th, td {
+  padding: 4px 1em;
+}
+
+td.right {
+  text-align: right;
+}
+
+td.red {
+    background: #f5c8c8;
+}
+
+td.yellow {
+    background: #ffffd8;
+}
+
+td.green {
+    background: #b8f2b8;
+}

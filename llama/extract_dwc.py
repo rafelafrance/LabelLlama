@@ -106,13 +106,14 @@ def extract_dwc(args: argparse.Namespace) -> None:
 def select_records(
     db_path: Path, pre_dwc_run_id: int, limit: int | None = None
 ) -> list:
-    run_ids = ", ".join(str(i) for i in pre_dwc_run_id)
-    sql = f"select * from pre_dwc where pre_dwc_run_id in ({run_ids})"
-    if limit:
-        sql += f" limit {limit}"
+    sql = "select * from pre_dwc where pre_dwc_run_id = ?"
 
     with duckdb.connect(db_path) as cxn:
-        return cxn.execute(sql).pl()
+        if limit:
+            sql += " limit ?"
+            return cxn.execute(sql, [pre_dwc_run_id, limit]).pl()
+
+        return cxn.execute(sql, [pre_dwc_run_id]).pl()
 
 
 def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
@@ -176,7 +177,6 @@ def parse_args() -> argparse.Namespace:
         "--pre-dwc-run-id",
         type=int,
         required=True,
-        action="append",
         help="""Parse records from this preprocessing OCR run.""",
     )
 

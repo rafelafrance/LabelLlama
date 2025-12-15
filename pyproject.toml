@@ -26,6 +26,7 @@ dependencies = [
     "polars>=1.35.2",
     "pyarrow>=22.0.0",
     "pydantic>=2.12.4",
+    "rich>=14.2.0",
     "sqlglot>=28.0.0",
     "tqdm>=4.67.1",
 ]
@@ -86,6 +87,7 @@ ignore = [
     "LOG015",  # Use own logger instead
     "N818",    # Exception name {name} should be named with an Error suffix
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+    "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
     "PT009",   # Use a regular assert instead of unittest-style {assertion}
     "RET504",  # Unnecessary assignment to {name} before return statement
