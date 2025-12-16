@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Extract Darwin Core (DwC) fields from OCRed text.
-
-Note:
-`export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
-before running this notebook.
-
-"""
+"""Extract Darwin Core (DwC) fields from OCRed text."""
 
 import argparse
 import sys
@@ -18,21 +11,22 @@ import dspy
 import duckdb
 from tqdm import tqdm
 
-from llama.data_formats import specimen_types
+from llama.modules.dwc_extract import DwcExtract
+from llama.signatures.all_signatures import SIGNATURES
 
 
 def extract_dwc(args: argparse.Namespace) -> None:
     """Extract Darwin Core information from the texts."""
-    create_dwc_tables(args.db_path, args.specimen_type)
+    create_dwc_tables(args.db_path, args.signature)
 
-    spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+    signature = SIGNATURES[args.signature]
 
-    names = ", ".join(f"{f}" for f in spec_type.output_fields)
-    vars_ = ", ".join(f"${f}" for f in spec_type.output_fields)
+    names = ", ".join(f"{f}" for f in signature.output_fields)
+    vars_ = ", ".join(f"${f}" for f in signature.output_fields)
     insert_dwc = f"""
         insert into dwc
-            (dwc_run_id, pre_dwc_id, dwc_elapsed, {names})
-            values ($dwc_run_id, $pre_dwc_id, $dwc_elapsed, {vars_});
+            (dwc_run_id, ocr_id, dwc_elapsed, {names})
+            values ($dwc_run_id, $ocr_id, $dwc_elapsed, {vars_});
         """
 
     job_began = datetime.now()
@@ -47,7 +41,7 @@ def extract_dwc(args: argparse.Namespace) -> None:
     )
     dspy.configure(lm=lm)
 
-    predictor = dspy.Predict(spec_type)
+    predictor = DwcExtract(args.signature)
 
     adapter = dspy.ChatAdapter()
     prompt = adapter.format(
@@ -57,16 +51,15 @@ def extract_dwc(args: argparse.Namespace) -> None:
     )
 
     with duckdb.connect(args.db_path) as cxn:
-        pre_dwc_input = select_records(args.db_path, args.pre_dwc_run_id, args.limit)
-        rows = pre_dwc_input.rows(named=True)
+        ocr_recs = select_records(args.db_path, args.ocr_run_id, args.limit)
+        rows = ocr_recs.rows(named=True)
         if not rows:
-            sys.exit(f"No preprocessed records found with ID {args.pre_dwc_run_id}")
+            sys.exit(f"No OCR records found with ID {args.ocr_run_id}")
 
         run_id = cxn.execute(
             """
             insert into dwc_run (
-                prompt, model, api_host, notes, temperature,
-                max_tokens, specimen_type
+                prompt, model, api_host, notes, temperature, max_tokens, specimen_type
             )
             values (?, ?, ?, ?, ?, ?, ?)
             returning dwc_run_id;
@@ -82,16 +75,16 @@ def extract_dwc(args: argparse.Namespace) -> None:
             ],
         ).fetchone()[0]
 
-        for pre_dwc_rec in tqdm(rows):
+        for ocr_rec in tqdm(rows):
             rec_began = datetime.now()
 
-            prediction = predictor(text=pre_dwc_rec["pre_dwc_text"])
+            prediction = predictor(text=ocr_rec["ocr_text"])
 
             cxn.execute(
                 insert_dwc,
                 {
                     "dwc_run_id": run_id,
-                    "pre_dwc_id": pre_dwc_rec["pre_dwc_id"],
+                    "ocr_id": ocr_rec["ocr_id"],
                     "dwc_elapsed": datetime.now() - rec_began,
                 }
                 | prediction.toDict(),
@@ -103,23 +96,21 @@ def extract_dwc(args: argparse.Namespace) -> None:
         )
 
 
-def select_records(
-    db_path: Path, pre_dwc_run_id: int, limit: int | None = None
-) -> list:
-    sql = "select * from pre_dwc where pre_dwc_run_id = ?"
+def select_records(db_path: Path, ocr_run_id: int, limit: int | None = None) -> list:
+    sql = "select * from ocr where ocr_run_id = ?"
 
     with duckdb.connect(db_path) as cxn:
         if limit:
             sql += " limit ?"
-            return cxn.execute(sql, [pre_dwc_run_id, limit]).pl()
+            return cxn.execute(sql, [ocr_run_id, limit]).pl()
 
-        return cxn.execute(sql, [pre_dwc_run_id]).pl()
+        return cxn.execute(sql, [ocr_run_id]).pl()
 
 
 def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
     # Fields specific to the specimen type
-    spec_type = specimen_types.SPECIMEN_TYPES[specimen_type]
-    fields = [f"{f} char[]," for f in spec_type.output_fields]
+    sig = SIGNATURES[specimen_type]
+    fields = [f"{f} char[]," for f in sig.output_fields]
     fields = "\n".join(fields)
 
     sql = f"""
@@ -133,7 +124,7 @@ def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
             temperature   float,
             max_tokens    integer,
             specimen_type char,
-            dwc_run_elapsed interval,
+            dwc_run_elapsed char,
             dwc_run_started timestamptz default current_localtimestamp(),
         );
 
@@ -141,8 +132,8 @@ def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
         create table if not exists dwc (
             dwc_id integer primary key default nextval('dwc_id_seq'),
             dwc_run_id  integer references dwc_run(dwc_run_id),
-            pre_dwc_id  integer references pre_dwc(pre_dwc_id),
-            dwc_elapsed interval,
+            ocr_id      integer references ocr(ocr_id),
+            dwc_elapsed char,
             {fields}
         );
         """
@@ -157,12 +148,12 @@ def parse_args() -> argparse.Namespace:
         description=textwrap.dedent("""Extract Darwin Core information from text."""),
     )
 
-    spec_types = list(specimen_types.SPECIMEN_TYPES.keys())
+    sigs = list(SIGNATURES.keys())
     arg_parser.add_argument(
-        "--specimen-type",
-        choices=spec_types,
-        default=spec_types[0],
-        help="""What type of data are you extracting.""",
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
     )
 
     arg_parser.add_argument(
@@ -174,10 +165,11 @@ def parse_args() -> argparse.Namespace:
     )
 
     arg_parser.add_argument(
-        "--pre-dwc-run-id",
+        "--ocr-run-id",
         type=int,
         required=True,
-        help="""Parse records from this preprocessing OCR run.""",
+        action="append",
+        help="""Parse records from this OCR run.""",
     )
 
     arg_parser.add_argument(

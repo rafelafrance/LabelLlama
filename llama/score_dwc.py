@@ -8,7 +8,7 @@ import duckdb
 import Levenshtein
 from rich import print as rprint
 
-from llama.data_formats import specimen_types
+from llama.signatures.all_signatures import SIGNATURES
 
 HAPPY = 0.9  # Scores above this are green
 OK = 0.75  # Scores below this are red
@@ -47,7 +47,7 @@ def display_runs(args: argparse.Namespace) -> None:
 
 
 def score_dwc_run(args: argparse.Namespace) -> None:
-    spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+    spec_type = SIGNATURES[args.signature]
     fields = spec_type.output_fields
 
     by_field = dict.fromkeys(fields, 0.0)
@@ -105,12 +105,12 @@ def parse_args() -> argparse.Namespace:
         help="""Path to the database.""",
     )
 
-    spec_types = list(specimen_types.SPECIMEN_TYPES.keys())
+    sigs = list(SIGNATURES.keys())
     arg_parser.add_argument(
-        "--specimen-type",
-        choices=spec_types,
-        default=spec_types[0],
-        help="""What type of data is in the json file.""",
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
     )
 
     arg_parser.add_argument(

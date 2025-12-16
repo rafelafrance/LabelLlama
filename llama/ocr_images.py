@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-OCR a directory of images.
-
-Note:
-`export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
-before running this script.
-
-"""
+"""OCR a directory of images."""
 
 import argparse
 import textwrap
@@ -111,18 +104,18 @@ def create_ocr_tables(db_path: Path) -> None:
             notes          char,
             temperature    float,
             context_length integer,
-            ocr_run_elapsed interval,
+            ocr_run_elapsed char,
             ocr_run_started timestamptz default current_localtimestamp(),
         );
 
         create sequence if not exists ocr_id_seq;
         create table if not exists ocr (
             ocr_id integer primary key default nextval('ocr_id_seq'),
-            ocr_run_id   integer references ocr_run(ocr_run_id),
+            ocr_run_id   integer, -- references ocr_run(ocr_run_id),
             image_path   char,
             ocr_text     char,
             ocr_error    char,
-            ocr_elapsed  interval,
+            ocr_elapsed  char,
         );
         """
 

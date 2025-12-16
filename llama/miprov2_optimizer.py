@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Extract Darwin Core (DwC) fields from OCRed text.
-
-Note:
-`export  POLARS_IMPORT_INTERVAL_AS_STRUCT=1`
-before running this notebook.
-
-"""
+"""Extract Darwin Core (DwC) fields from OCRed text."""
 
 import argparse
 import textwrap
@@ -17,38 +10,39 @@ import dspy
 import duckdb
 from tqdm import tqdm
 
-from llama.data_formats import specimen_types
+from llama.signatures.all_signatures import SIGNATURES
 
 
 def miprov2_dwc(args: argparse.Namespace) -> None:
-    spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
-
-    lm = dspy.LM(
-        args.model_name,
-        api_base=args.api_host,
-        api_key=args.api_key,
-        temperature=args.temperature,
-        max_tokens=args.context_length,
-        cache=args.cache,
-    )
-    dspy.configure(lm=lm)
-
-    predictor = dspy.Predict(spec_type)
-
-    adapter = dspy.ChatAdapter()
-    prompt = adapter.format(
-        predictor.signature,
-        demos=predictor.demos,
-        inputs={k: f"{{{k}}}" for k in predictor.signature.input_fields},
-    )
-
-    with duckdb.connect(args.db_path) as cxn:
-        pre_dwc_input = select_records(args.db_path, args.gold_run_id, args.limit)
-
-        for pre_dwc_rec in tqdm(rows):
-            rec_began = datetime.now()
-
-            prediction = predictor(text=pre_dwc_rec["pre_dwc_text"])
+    pass
+    # sig = SIGNATURES[args.specimen_type]
+    #
+    # lm = dspy.LM(
+    #     args.model_name,
+    #     api_base=args.api_host,
+    #     api_key=args.api_key,
+    #     temperature=args.temperature,
+    #     max_tokens=args.context_length,
+    #     cache=args.cache,
+    # )
+    # dspy.configure(lm=lm)
+    #
+    # predictor = dspy.Predict(sig)
+    #
+    # adapter = dspy.ChatAdapter()
+    # prompt = adapter.format(
+    #     predictor.signature,
+    #     demos=predictor.demos,
+    #     inputs={k: f"{{{k}}}" for k in predictor.signature.input_fields},
+    # )
+    #
+    # with duckdb.connect(args.db_path) as cxn:
+    #     pre_dwc_input = select_records(args.db_path, args.gold_run_id, args.limit)
+    #
+    #     for pre_dwc_rec in tqdm(rows):
+    #         rec_began = datetime.now()
+    #
+    #         prediction = predictor(text=pre_dwc_rec["pre_dwc_text"])
 
 
 def select_records(
@@ -69,12 +63,12 @@ def parse_args() -> argparse.Namespace:
         description=textwrap.dedent("""Extract Darwin Core information from text."""),
     )
 
-    spec_types = list(specimen_types.SPECIMEN_TYPES.keys())
+    sigs = list(SIGNATURES.keys())
     arg_parser.add_argument(
-        "--specimen-type",
-        choices=spec_types,
-        default=spec_types[0],
-        help="""What type of data are you extracting.""",
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
     )
 
     arg_parser.add_argument(

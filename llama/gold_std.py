@@ -7,7 +7,7 @@ from pathlib import Path
 
 import duckdb
 
-from llama.data_formats import specimen_types
+from llama.signatures.all_signatures import SIGNATURES
 
 ACTIONS: list[str] = ["list", "select", "insert"]
 
@@ -51,8 +51,8 @@ def list_dwc_runs(args: argparse.Namespace) -> None:
 
 
 def select_gold_recs(args: argparse.Namespace) -> None:
-    spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
-    names = ", ".join(f"{f}" for f in spec_type.output_fields)
+    sig = SIGNATURES[args.signature]
+    names = ", ".join(f"{f}" for f in sig.output_fields)
 
     select = f"""
         select image_path, pre_dwc_id, pre_dwc_text, {names}
@@ -79,7 +79,7 @@ def insert_gold_recs(args: argparse.Namespace) -> None:
     )
     insert_gold = create_insert_gold(args.specimen_type)
 
-    spec_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
+    sig = SIGNATURES[args.signature]
 
     with duckdb.connect(args.db_path) as cxn:
         for sheet in sheets:
@@ -89,19 +89,19 @@ def insert_gold_recs(args: argparse.Namespace) -> None:
                     "gold_run_id": run_id,
                     "pre_dwc_id": sheet["pre_dwc_id"],
                 }
-                | {n: sheet[n] for n in spec_type.output_fields},
+                | {n: sheet[n] for n in sig.output_fields},
             )
 
 
-def create_insert_gold(specimen_type: str) -> str:
-    spec_type = specimen_types.SPECIMEN_TYPES[specimen_type]
+def create_insert_gold(signature: str) -> str:
+    sig = SIGNATURES[signature]
 
-    names = ", ".join(f"{f}" for f in spec_type.output_fields)
-    vars_ = ", ".join(f"${f}" for f in spec_type.output_fields)
+    names = ", ".join(f"{f}" for f in sig.output_fields)
+    vars_ = ", ".join(f"${f}" for f in sig.output_fields)
     insert_gold = f"""
         insert into gold
-            (gold_run_id, pre_dwc_id, {names})
-            values ($gold_run_id, $pre_dwc_id, {vars_});
+            (gold_run_id, ocr_id, {names})
+            values ($gold_run_id, $ocr_id, {vars_});
         """
     return insert_gold
 
@@ -117,10 +117,10 @@ def insert_gold_run_rec(
     return run_id
 
 
-def create_gold_tables(db_path: Path, specimen_type: str) -> None:
+def create_gold_tables(db_path: Path, signature: str) -> None:
     # Fields specific to the specimen type
-    spec_type = specimen_types.SPECIMEN_TYPES[specimen_type]
-    fields = [f"{f} char[]," for f in spec_type.output_fields]
+    sig = SIGNATURES[signature]
+    fields = [f"{f} char[]," for f in sig.output_fields]
     fields = "\n".join(fields)
 
     sql = f"""
@@ -136,8 +136,8 @@ def create_gold_tables(db_path: Path, specimen_type: str) -> None:
         create sequence if not exists gold_id_seq;
         create table if not exists gold (
             gold_id integer primary key default nextval('gold_id_seq'),
-            gold_run_id integer references gold_run(gold_run_id),
-            pre_dwc_id  integer references pre_dwc(pre_dwc_id),
+            gold_run_id integer, -- references gold_run(gold_run_id),
+            ocr_id      integer, -- references ocr(ocr_id),
             {fields}
         );
         """
@@ -176,12 +176,12 @@ def parse_args() -> argparse.Namespace:
         help="""Work with this JSON file.""",
     )
 
-    spec_types = list(specimen_types.SPECIMEN_TYPES.keys())
+    sigs = list(SIGNATURES.keys())
     arg_parser.add_argument(
-        "--specimen-type",
-        choices=spec_types,
-        default=spec_types[0],
-        help="""What type of data is in the json file.""",
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
     )
 
     arg_parser.add_argument(

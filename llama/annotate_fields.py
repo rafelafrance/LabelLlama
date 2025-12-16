@@ -9,7 +9,7 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from llama.data_formats import specimen_types
+from llama.signature.all_signatures import SIGNATURES
 
 FONT = ("liberation sans", 16)
 FONT_I = ("liberation sans", 16, "italic bold")
@@ -52,11 +52,11 @@ class App(tk.Tk):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
 
-        self.specimen_type = specimen_types.SPECIMEN_TYPES[args.specimen_type]
-        spec_type = self.specimen_type.model_fields
+        self.signature = SIGNATURES[args.specimen_type]
+        sig = self.signature.model_fields
         self.fields = [
             k
-            for k, v in spec_type.items()
+            for k, v in sig.items()
             if v.json_schema_extra["__dspy_field_type"] == "output"
         ]
 
@@ -360,12 +360,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
 
-    choices = list(specimen_types.SPECIMEN_TYPES.keys())
+    sigs = list(SIGNATURES.keys())
     arg_parser.add_argument(
-        "--specimen-type",
-        choices=choices,
-        default=choices[0],
-        help="""Use this specimen model. (default: %(default)s)""",
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
     )
 
     args = arg_parser.parse_args()
