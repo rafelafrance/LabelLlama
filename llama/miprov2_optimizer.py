@@ -1,66 +1,106 @@
 #!/usr/bin/env python3
-"""Extract Darwin Core (DwC) fields from OCRed text."""
 
 import argparse
+import random
 import textwrap
-from datetime import datetime
 from pathlib import Path
 
 import dspy
 import duckdb
-from tqdm import tqdm
 
+from llama.modules.dwc_extract import DwcExtract
+from llama.pylib.metric import metric
 from llama.signatures.all_signatures import SIGNATURES
 
 
 def miprov2_dwc(args: argparse.Namespace) -> None:
-    pass
-    # sig = SIGNATURES[args.specimen_type]
-    #
-    # lm = dspy.LM(
-    #     args.model_name,
-    #     api_base=args.api_host,
-    #     api_key=args.api_key,
-    #     temperature=args.temperature,
-    #     max_tokens=args.context_length,
-    #     cache=args.cache,
-    # )
-    # dspy.configure(lm=lm)
-    #
-    # predictor = dspy.Predict(sig)
-    #
-    # adapter = dspy.ChatAdapter()
-    # prompt = adapter.format(
-    #     predictor.signature,
-    #     demos=predictor.demos,
-    #     inputs={k: f"{{{k}}}" for k in predictor.signature.input_fields},
-    # )
-    #
-    # with duckdb.connect(args.db_path) as cxn:
-    #     pre_dwc_input = select_records(args.db_path, args.gold_run_id, args.limit)
-    #
-    #     for pre_dwc_rec in tqdm(rows):
-    #         rec_began = datetime.now()
-    #
-    #         prediction = predictor(text=pre_dwc_rec["pre_dwc_text"])
+    lm = dspy.LM(
+        model=args.model_name,
+        api_base=args.api_host,
+        api_key=args.api_key,
+        temperature=args.temperature,
+        max_tokens=args.context_length,
+        cache=args.cache,
+    )
+    dspy.configure(lm=lm)
+
+    predictor = DwcExtract(args.signature)
+
+    dataset: dict[str, list[dspy.Example]] = select_records(
+        args.db_path,
+        args.gold_run_id,
+        predictor,
+        train_split=args.train_fract,
+        val_split=args.val_fract,
+        limit=args.limit,
+        seed=args.seed,
+    )
+
+    evaluator = dspy.evaluate.Evaluate(
+        devset=dataset["trainval"],
+        metric=metric,
+        display_progress=True,
+        provide_traceback=True,
+    )
+
+    evaluator(predictor)
+
+    optimizer = dspy.MIPROv2(
+        metric=metric,
+        auto="medium",
+    )
+
+    compiled_model = optimizer.compile(
+        student=predictor,
+        trainset=dataset["train"],
+        valset=dataset["val"],
+        max_bootstrapped_demos=4,
+        requires_permission_to_run=False,
+        minibatch=False,
+    )
+
+    evaluator(compiled_model)
+    dspy.inspect_history(n=1)
+    compiled_model.save(args.optimized_json)
 
 
 def select_records(
-    db_path: Path, pre_dwc_run_id: int, limit: int | None = None
-) -> list:
-    run_ids = ", ".join(str(i) for i in pre_dwc_run_id)
-    sql = f"select * from pre_dwc where pre_dwc_run_id in ({run_ids})"
+    db_path: Path,
+    gold_run_id: int,
+    predictor: dspy.Module,
+    train_split: float = 0.1,
+    val_split: float = 0.5,
+    limit: int | None = None,
+    seed: int = 992573,
+) -> dict[str, list[dspy.Example]]:
+    sql = f"select * from gold where gold_run_id in ({gold_run_id})"
     if limit:
         sql += f" limit {limit}"
 
     with duckdb.connect(db_path) as cxn:
-        return cxn.execute(sql).pl()
+        df = cxn.execute(sql).pl()
+
+    rows = [predictor.dict2example(r) for r in df.rows(named=True)]
+
+    random.seed(seed)
+    random.shuffle(rows)
+
+    total = len(rows)
+    split1 = round(total * train_split)
+    split2 = split1 + round(total * val_split)
+
+    return {
+        "train": rows[:split1],
+        "val": rows[split1:split2],
+        "test": rows[split2:],
+        "trainval": rows[:split2],
+    }
 
 
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("""Extract Darwin Core information from text."""),
+        description=textwrap.dedent("""Use MIPROv2 to optimize a model."""),
     )
 
     sigs = list(SIGNATURES.keys())
@@ -77,6 +117,14 @@ def parse_args() -> argparse.Namespace:
         required=True,
         metavar="PATH",
         help="""Path to the database.""",
+    )
+
+    arg_parser.add_argument(
+        "--optimized-json",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Where to save the optimized prompt.""",
     )
 
     arg_parser.add_argument(
@@ -130,9 +178,34 @@ def parse_args() -> argparse.Namespace:
     )
 
     arg_parser.add_argument(
+        "--train-fract",
+        type=float,
+        default=0.1,
+        metavar="FLOAT",
+        help="""What fraction of the records to use for training.
+            (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
+        "--val-fract",
+        type=float,
+        default=0.5,
+        metavar="FLOAT",
+        help="""What fraction of the records to use for valiation.
+            (default: %(default)s)""",
+    )
+
+    arg_parser.add_argument(
         "--limit",
         type=int,
         help="""Limit the number of records to parse?""",
+    )
+
+    arg_parser.add_argument(
+        "--seed",
+        type=int,
+        default=992573,
+        help="""Seed for the random number generator. (default: %(default)s)""",
     )
 
     args = arg_parser.parse_args()

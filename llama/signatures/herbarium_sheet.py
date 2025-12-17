@@ -2,7 +2,6 @@ from dspy import InputField, OutputField, Signature
 
 
 # NOTE: I use the output field order while annotating fields (annotate_fields.py)
-# TODO: Will field order have an affect on language model output?
 class HerbariumSheet(Signature):
     """Analyze text from a herbarium sheets and extract information."""
 

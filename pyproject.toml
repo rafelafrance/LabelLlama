@@ -9,12 +9,13 @@ readme = "README.md"
 description = ""
 license = { file = "LICENSE" }
 authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
+copyright = "Copyright (C) 2025 by Raphael LaFrance"
 requires-python = ">=3.13"
 dependencies = [
     "altair>=6.0.0",
     "dspy>=3.0.4",
     "duckdb>=1.4.1",
-    "flet>=0.28.3",
+    "flet[all]>=0.28.3",
     "jinja2>=3.1.6",
     "levenshtein>=0.27.3",
     "litellm>=1.79.3",
@@ -40,13 +41,8 @@ dev = [
     "uv-build>=0.9.5",
 ]
 
-# I need this because some models require the new features.
-# export TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1
-# uv pip install --upgrade --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm7.0
-# [tool.uv.sources]
-# torch = [{ index = "pytorch-rocm" }]
-# torchvision = [{ index = "pytorch-rocm" }]
-# pytorch-triton-rocm = [{ index = "pytorch-rocm" }]
+[tool.flet.app]
+path = "llama"
 
 [tool.marimo.display]
 custom_css = ["marimo_custom.css"]
@@ -104,3 +100,6 @@ ignore = [
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link on the line following this TODO
 ]
+
+[tool.ty.rules]
+

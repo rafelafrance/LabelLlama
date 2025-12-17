@@ -1,34 +1,81 @@
-# Label Llama![CI](https://github.com/rafelafrance/LabelLlama/workflows/CI/badge.svg)
+# Labelllama app
 
-## From 30,000 feet:
+## Run the app
 
-Extract information from labels on images of herbarium sheets.
+### uv
 
-There are 2 main steps:
+Run as a desktop app:
 
-1. OCR the text on the images.
-2. Extract information from the OCRed text.
+```
+uv run flet run
+```
 
-Of course things are a bit more complicated than just those 2 steps.
+Run as a web app:
 
-### Given images of museum specimens
+```
+uv run flet run --web
+```
 
-![Herbarium Sheet](assets/sheet.jpg)
+### Poetry
 
-### OCR text on the images
+Install dependencies from `pyproject.toml`:
 
-![OCRed Text](assets/show_ocr_text.png)
+```
+poetry install
+```
 
-OCRed text from the label on the lower right of the sheet.
+Run as a desktop app:
 
-### Find text text in the labels
+```
+poetry run flet run
+```
 
-![text.png|Label Text](assets/text.png)
+Run as a web app:
 
-This is clearly from another sheet and label. The colors indicate text matched to fields.
+```
+poetry run flet run --web
+```
 
-### Output text to structured fields
+For more details on running the app, refer to the [Getting Started Guide](https://flet.dev/docs/getting-started/).
 
-![Label Traits](assets/traits.png)
+## Build the app
 
-The text is formatted and placed into named fields using the Darwin Core format.
+### Android
+
+```
+flet build apk -v
+```
+
+For more details on building and signing `.apk` or `.aab`, refer to the [Android Packaging Guide](https://flet.dev/docs/publish/android/).
+
+### iOS
+
+```
+flet build ipa -v
+```
+
+For more details on building and signing `.ipa`, refer to the [iOS Packaging Guide](https://flet.dev/docs/publish/ios/).
+
+### macOS
+
+```
+flet build macos -v
+```
+
+For more details on building macOS package, refer to the [macOS Packaging Guide](https://flet.dev/docs/publish/macos/).
+
+### Linux
+
+```
+flet build linux -v
+```
+
+For more details on building Linux package, refer to the [Linux Packaging Guide](https://flet.dev/docs/publish/linux/).
+
+### Windows
+
+```
+flet build windows -v
+```
+
+For more details on building Windows package, refer to the [Windows Packaging Guide](https://flet.dev/docs/publish/windows/).
