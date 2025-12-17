@@ -21,7 +21,7 @@ class DwcExtract(dspy.Module):
     def forward(self, text: str) -> AnySignature:
         text = self.filter_lines(text)
         text = self.join_lines(text)
-        specimen = self.predictor(text)
+        specimen = self.predictor(text=text)
         return specimen
 
     def setup_filter_pattern(self) -> re.Pattern:

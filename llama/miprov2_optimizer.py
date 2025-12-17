@@ -43,7 +43,7 @@ def miprov2_dwc(args: argparse.Namespace) -> None:
         provide_traceback=True,
     )
 
-    evaluator(predictor)
+    evaluator(predictor, devset=dataset["trainval"])
 
     optimizer = dspy.MIPROv2(
         metric=metric,
@@ -73,14 +73,21 @@ def select_records(
     limit: int | None = None,
     seed: int = 992573,
 ) -> dict[str, list[dspy.Example]]:
-    sql = f"select * from gold where gold_run_id in ({gold_run_id})"
+    names = ", ".join(f"{f}" for f in predictor.output_names)
+
+    sql = f"""
+        select ocr_text as text, {names}
+            from gold join ocr using (ocr_id)
+            where gold_run_id = {gold_run_id}
+        """
     if limit:
         sql += f" limit {limit}"
 
     with duckdb.connect(db_path) as cxn:
         df = cxn.execute(sql).pl()
 
-    rows = [predictor.dict2example(r) for r in df.rows(named=True)]
+    rows = df.rows(named=True)
+    rows = [predictor.dict2example(r) for r in rows]
 
     random.seed(seed)
     random.shuffle(rows)

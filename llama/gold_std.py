@@ -55,9 +55,9 @@ def select_gold_recs(args: argparse.Namespace) -> None:
     names = ", ".join(f"{f}" for f in sig.output_fields)
 
     select = f"""
-        select image_path, pre_dwc_id, pre_dwc_text, {names}
-            from dwc join pre_dwc using (pre_dwc_id) join ocr using (ocr_id)
-            where dwc_run_id = {args.dwc_run_id}
+        select image_path, ocr_id, ocr_text, {names}
+            from dwc join ocr using (ocr_id)
+            where ocr_id = {args.ocr_id}
         """
     if args.limit:
         select += f" limit {args.limit}"
@@ -87,7 +87,7 @@ def insert_gold_recs(args: argparse.Namespace) -> None:
                 insert_gold,
                 {
                     "gold_run_id": run_id,
-                    "pre_dwc_id": sheet["pre_dwc_id"],
+                    "ocr_id": sheet["ocr_id"],
                 }
                 | {n: sheet[n] for n in sig.output_fields},
             )
