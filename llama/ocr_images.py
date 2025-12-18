@@ -123,19 +123,19 @@ def create_ocr_tables(db_path: Path) -> None:
         cxn.execute(sql)
 
 
-def get_all_records(db_path: Path) -> pl.dataframe:
+def get_all_records(db_path: Path) -> pl.DataFrame:
     with duckdb.connect(db_path) as cxn:
         return cxn.execute("select * from ocr;").pl()
 
 
-def get_all_images(db_path: Path) -> pl.dataframe:
+def get_all_images(db_path: Path) -> pl.DataFrame:
     """Get all image paths in the database."""
     with duckdb.connect(db_path) as cxn:
         all_images = cxn.execute("select distinct image_path from ocr;").pl()
     return all_images
 
 
-def get_all_errors(db_path: Path) -> pl.dataframe:
+def get_all_errors(db_path: Path) -> pl.DataFrame:
     """
     Get records that only have errors. I.e. not successfully OCRed even once.
     Note that errors do not go away they are "overwritten" by later successful OCR

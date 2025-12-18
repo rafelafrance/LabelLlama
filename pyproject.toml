@@ -102,4 +102,4 @@ ignore = [
 ]
 
 [tool.ty.rules]
-
+non-subscriptable = "ignore"

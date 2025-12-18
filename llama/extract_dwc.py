@@ -9,6 +9,7 @@ from pathlib import Path
 
 import dspy
 import duckdb
+import polars as pl
 from tqdm import tqdm
 
 from llama.modules.dwc_extract import DwcExtract
@@ -96,7 +97,9 @@ def extract_dwc(args: argparse.Namespace) -> None:
         )
 
 
-def select_records(db_path: Path, ocr_run_id: int, limit: int | None = None) -> list:
+def select_records(
+    db_path: Path, ocr_run_id: int, limit: int | None = None
+) -> pl.DataFrame:
     sql = "select * from ocr where ocr_run_id = ?"
 
     with duckdb.connect(db_path) as cxn:

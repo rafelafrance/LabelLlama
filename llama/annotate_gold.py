@@ -60,7 +60,7 @@ class App(tk.Tk):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
 
-        self.signature = SIGNATURES[args.specimen_type]
+        self.signature = SIGNATURES[args.signature]
         sig = self.signature.model_fields
         self.fields = [
             k

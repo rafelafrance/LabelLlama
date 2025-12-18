@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-import random
 import textwrap
 from pathlib import Path
+from typing import LiteralString
 
 import dspy
 import duckdb
 
 from llama.modules.dwc_extract import DwcExtract
+from llama.pylib.const import SPLITS
 from llama.pylib.metric import metric
 from llama.signatures.all_signatures import SIGNATURES
 
@@ -26,24 +27,20 @@ def miprov2_dwc(args: argparse.Namespace) -> None:
 
     predictor = DwcExtract(args.signature)
 
-    dataset: dict[str, list[dspy.Example]] = select_records(
+    dataset: dict[LiteralString, list[dspy.Example]] = select_records(
         args.db_path,
         args.gold_run_id,
         predictor,
-        train_split=args.train_fract,
-        val_split=args.val_fract,
-        limit=args.limit,
-        seed=args.seed,
     )
 
     evaluator = dspy.evaluate.Evaluate(
-        devset=dataset["trainval"],
+        devset=dataset["val"],
         metric=metric,
         display_progress=True,
         provide_traceback=True,
     )
 
-    evaluator(predictor, devset=dataset["trainval"])
+    evaluator(predictor, devset=dataset["val"])
 
     optimizer = dspy.MIPROv2(
         metric=metric,
@@ -65,43 +62,23 @@ def miprov2_dwc(args: argparse.Namespace) -> None:
 
 
 def select_records(
-    db_path: Path,
-    gold_run_id: int,
-    predictor: dspy.Module,
-    train_split: float = 0.1,
-    val_split: float = 0.5,
-    limit: int | None = None,
-    seed: int = 992573,
-) -> dict[str, list[dspy.Example]]:
+    db_path: Path, gold_run_id: int, predictor: dspy.Module
+) -> dict[LiteralString, list[dspy.Example]]:
     names = ", ".join(f"{f}" for f in predictor.output_names)
-
-    sql = f"""
+    query = f"""
         select ocr_text as text, {names}
             from gold join ocr using (ocr_id)
-            where gold_run_id = {gold_run_id}
+            where gold_run_id = ? and split = ?
         """
-    if limit:
-        sql += f" limit {limit}"
 
     with duckdb.connect(db_path) as cxn:
-        df = cxn.execute(sql).pl()
+        splits: dict[LiteralString, list[dspy.Example]] = {}
 
-    rows = df.rows(named=True)
-    rows = [predictor.dict2example(r) for r in rows]
+        for split in SPLITS[:-1]:
+            df = cxn.execute(query, [gold_run_id, split]).pl()
+            splits[split] = [predictor.dict2example(r) for r in df.rows(named=True)]
 
-    random.seed(seed)
-    random.shuffle(rows)
-
-    total = len(rows)
-    split1 = round(total * train_split)
-    split2 = split1 + round(total * val_split)
-
-    return {
-        "train": rows[:split1],
-        "val": rows[split1:split2],
-        "test": rows[split2:],
-        "trainval": rows[:split2],
-    }
+    return splits
 
 
 def parse_args() -> argparse.Namespace:
@@ -182,37 +159,6 @@ def parse_args() -> argparse.Namespace:
         "--cache",
         action="store_true",
         help="""Use cached records?""",
-    )
-
-    arg_parser.add_argument(
-        "--train-fract",
-        type=float,
-        default=0.1,
-        metavar="FLOAT",
-        help="""What fraction of the records to use for training.
-            (default: %(default)s)""",
-    )
-
-    arg_parser.add_argument(
-        "--val-fract",
-        type=float,
-        default=0.5,
-        metavar="FLOAT",
-        help="""What fraction of the records to use for valiation.
-            (default: %(default)s)""",
-    )
-
-    arg_parser.add_argument(
-        "--limit",
-        type=int,
-        help="""Limit the number of records to parse?""",
-    )
-
-    arg_parser.add_argument(
-        "--seed",
-        type=int,
-        default=992573,
-        help="""Seed for the random number generator. (default: %(default)s)""",
     )
 
     args = arg_parser.parse_args()
