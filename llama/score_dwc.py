@@ -47,13 +47,13 @@ def display_runs(args: argparse.Namespace) -> None:
 
 
 def score_dwc_run(args: argparse.Namespace) -> None:
-    spec_type = SIGNATURES[args.signature]
-    fields = spec_type.output_fields
+    sig = SIGNATURES[args.signature]
+    fields = sig.output_fields
 
     by_field = dict.fromkeys(fields, 0.0)
 
     with duckdb.connect(args.db_path) as cxn:
-        sql = r"""
+        query = r"""
             select columns(gold.*) as "gold_\0",
                    columns(dwc.*)  as "dwc_\0"
               from gold
@@ -61,7 +61,7 @@ def score_dwc_run(args: argparse.Namespace) -> None:
              where gold_run_id = ?
                and dwc_run_id  = ?;
             """
-        rows = cxn.execute(sql, [args.gold_run_id, args.dwc_run_id]).pl()
+        rows = cxn.execute(query, [args.gold_run_id, args.dwc_run_id]).pl()
         rows = rows.rows(named=True)
 
     for row in rows:

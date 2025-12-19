@@ -9,19 +9,20 @@ today=$(date +"%Y-%m-%d")
 #   --context-length 16384 \
 #   --gold-run-id 1
 
-# ./llama/miprov2_optimizer.py \
-#   --db-path data/herbarium/labelllama_herbarium.duckdb \
-#   --optimized-json data/herbarium/miprov2_gemma3_12b_"$today".json \
-#   --model-name "lm_studio/google/gemma-3-12b" \
-#   --context-length 16384 \
-#   --gold-run-id 1
-
 ./llama/miprov2_optimizer.py \
   --db-path data/herbarium/labelllama_herbarium.duckdb \
-  --optimized-json data/herbarium/miprov2_phi-4_"$today".json \
-  --model-name "lm_studio/microsoft/phi-4" \
-  --context-length 16384 \
+  --optimized-json data/herbarium/miprov2_gemma3_12b_"$today".json \
+  --model-name "lm_studio/google/gemma-3-12b" \
+  --context-length 65536 \
   --gold-run-id 1
+
+# ./llama/miprov2_optimizer.py \
+#   --db-path data/herbarium/labelllama_herbarium.duckdb \
+#   --optimized-json data/herbarium/miprov2_phi-4_"$today".json \
+#   --api-host "http://localhost:11434" \
+#   --model-name "ollama_chat/phi3:14b" \
+#   --context-length 65536 \
+#   --gold-run-id 1
 
 # ./llama/miprov2_optimizer.py \
 #   --db-path data/herbarium/labelllama_herbarium.duckdb \
