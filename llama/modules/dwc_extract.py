@@ -63,7 +63,6 @@ def join_lines(text: str) -> str:
 class DwcExtract(dspy.Module):
     def __init__(self, signature: str) -> None:
         self.signature: AnySignature = SIGNATURES[signature]
-
         self.predictor = dspy.Predict(self.signature)
 
         self.input_fields = self.signature.input_fields

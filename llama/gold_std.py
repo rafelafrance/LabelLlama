@@ -47,6 +47,9 @@ def export_action(args: argparse.Namespace) -> None:
             from dwc join ocr using (ocr_id)
             where ocr_id = {args.ocr_id}
         """
+
+
+
     if args.limit:
         select += f" limit {args.limit}"
 

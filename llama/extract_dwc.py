@@ -2,7 +2,6 @@
 """Extract Darwin Core (DwC) fields from OCRed text."""
 
 import argparse
-import sys
 import textwrap
 from datetime import datetime
 from pathlib import Path
@@ -47,23 +46,19 @@ def extract_dwc(args: argparse.Namespace) -> None:
     adapter = dspy.ChatAdapter()
     prompt = adapter.format(
         predictor.signature,
-        demos=predictor.demos,
+        demos=predictor.predictor.demos,
         inputs={k: f"{{{k}}}" for k in predictor.signature.input_fields},
     )
 
     with duckdb.connect(args.db_path) as cxn:
         ocr_recs = select_records(args.db_path, args.ocr_run_id, args.limit)
         rows = ocr_recs.rows(named=True)
-        if not rows:
-            sys.exit(f"No OCR records found with ID {args.ocr_run_id}")
 
         run_id = cxn.execute(
             """
-            insert into dwc_run (
-                prompt, model, api_host, notes, temperature, max_tokens, specimen_type
-            )
-            values (?, ?, ?, ?, ?, ?, ?)
-            returning dwc_run_id;
+            insert into dwc_run (prompt, model, api_host, notes, temperature,
+                                 max_tokens, specimen_type)
+            values (?, ?, ?, ?, ?, ?, ?) returning dwc_run_id;
             """,
             [
                 prompt,
@@ -72,7 +67,7 @@ def extract_dwc(args: argparse.Namespace) -> None:
                 args.notes.strip(),
                 args.temperature,
                 args.context_length,
-                args.specimen_type,
+                args.signature,
             ],
         ).fetchone()[0]
 
@@ -98,16 +93,17 @@ def extract_dwc(args: argparse.Namespace) -> None:
 
 
 def select_records(
-    db_path: Path, ocr_run_id: int, limit: int | None = None
+    db_path: Path, ocr_run_id: list[int], limit: int | None = None,
 ) -> pl.DataFrame:
-    sql = "select * from ocr where ocr_run_id = ?"
+    run_ids = ", ".join(str(i) for i in ocr_run_id)
+    query = "select ocr_id, ocr_text from ocr where ocr_run_id in (?)"
 
     with duckdb.connect(db_path) as cxn:
         if limit:
-            sql += " limit ?"
-            return cxn.execute(sql, [ocr_run_id, limit]).pl()
+            query += " limit ?"
+            return cxn.execute(query, [run_ids, limit]).pl()
 
-        return cxn.execute(sql, [ocr_run_id]).pl()
+        return cxn.execute(query, [run_ids]).pl()
 
 
 def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
@@ -116,7 +112,7 @@ def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
     fields = [f"{f} char[]," for f in sig.output_fields]
     fields = "\n".join(fields)
 
-    sql = f"""
+    query = f"""
         create sequence if not exists dwc_run_seq;
         create table if not exists dwc_run (
             dwc_run_id integer primary key default nextval('dwc_run_seq'),
@@ -142,7 +138,7 @@ def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
         """
 
     with duckdb.connect(db_path) as cxn:
-        cxn.execute(sql)
+        cxn.execute(query)
 
 
 def parse_args() -> argparse.Namespace:
@@ -172,7 +168,7 @@ def parse_args() -> argparse.Namespace:
         type=int,
         required=True,
         action="append",
-        help="""Parse records from this OCR run.""",
+        help="""Parse records from this OCR run. You may do this more than once.""",
     )
 
     arg_parser.add_argument(
@@ -202,7 +198,6 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--temperature",
         type=float,
-        default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
     )
 
