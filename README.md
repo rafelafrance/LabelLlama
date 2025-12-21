@@ -1,81 +1,34 @@
-# Labelllama app
+# Label Llama![CI](https://github.com/rafelafrance/LabelLlama/workflows/CI/badge.svg)
 
-## Run the app
+## From 30,000 feet:
 
-### uv
+Extract information from labels on images of herbarium sheets.
 
-Run as a desktop app:
+There are 2 main steps:
 
-```
-uv run flet run
-```
+1. OCR the text on the images.
+2. Extract information from the OCRed text.
 
-Run as a web app:
+Of course things are a bit more complicated than just those 2 steps.
 
-```
-uv run flet run --web
-```
+### Given images of museum specimens
 
-### Poetry
+![Herbarium Sheet](assets/sheet.jpg)
 
-Install dependencies from `pyproject.toml`:
+### OCR text on the images
 
-```
-poetry install
-```
+![OCRed Text](assets/show_ocr_text.png)
 
-Run as a desktop app:
+OCRed text from the label on the lower right of the sheet.
 
-```
-poetry run flet run
-```
+### Find text text in the labels
 
-Run as a web app:
+![text.png|Label Text](assets/text.png)
 
-```
-poetry run flet run --web
-```
+This is clearly from another sheet and label. The colors indicate text matched to fields.
 
-For more details on running the app, refer to the [Getting Started Guide](https://flet.dev/docs/getting-started/).
+### Output text to structured fields
 
-## Build the app
+![Label Traits](assets/traits.png)
 
-### Android
-
-```
-flet build apk -v
-```
-
-For more details on building and signing `.apk` or `.aab`, refer to the [Android Packaging Guide](https://flet.dev/docs/publish/android/).
-
-### iOS
-
-```
-flet build ipa -v
-```
-
-For more details on building and signing `.ipa`, refer to the [iOS Packaging Guide](https://flet.dev/docs/publish/ios/).
-
-### macOS
-
-```
-flet build macos -v
-```
-
-For more details on building macOS package, refer to the [macOS Packaging Guide](https://flet.dev/docs/publish/macos/).
-
-### Linux
-
-```
-flet build linux -v
-```
-
-For more details on building Linux package, refer to the [Linux Packaging Guide](https://flet.dev/docs/publish/linux/).
-
-### Windows
-
-```
-flet build windows -v
-```
-
-For more details on building Windows package, refer to the [Windows Packaging Guide](https://flet.dev/docs/publish/windows/).
+The text is formatted and placed into named fields using the Darwin Core format.
