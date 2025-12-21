@@ -8,7 +8,8 @@ from pathlib import Path
 
 import duckdb
 
-from llama.signatures.all_signatures import SIGNATURES, AnySignature
+from llama.pylib.db_util import create_gold_tables, get_field_names, get_field_vars
+from llama.signatures.all_signatures import SIGNATURES
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -38,23 +39,16 @@ def list_action(args: argparse.Namespace) -> None:
 
 def export_action(args: argparse.Namespace) -> None:
     create_gold_tables(args.db_path, args.signature)
-
-    sig: AnySignature = SIGNATURES[args.signature]
-    names = ", ".join(f"{f}" for f in sig.output_fields)
+    fields = get_field_names(args.signature)
 
     select = f"""
-        select image_path, ocr_id, ocr_text, {names}
+        select image_path, ocr_id, ocr_text, {fields}
             from dwc join ocr using (ocr_id)
-            where ocr_id = {args.ocr_id}
+            where dwc_run_id = ? limit ?
         """
 
-
-
-    if args.limit:
-        select += f" limit {args.limit}"
-
     with duckdb.connect(args.db_path) as cxn:
-        rows = cxn.execute(select).pl()
+        rows = cxn.execute(select, [args.dwc_run_id, args.limit]).pl()
         rows = rows.rows(named=True)
 
     with args.gold_json.open("w") as fp:
@@ -73,15 +67,15 @@ def import_action(args: argparse.Namespace) -> None:
             [args.signature, args.notes, str(args.json_path)],
         ).fetchone()[0]
 
-        sig = SIGNATURES[args.signature]
-
-        names: str = ", ".join(f"{f}" for f in sig.output_fields)
-        vars_: str = ", ".join(f"${f}" for f in sig.output_fields)
+        names: str = get_field_names(args.signature)
+        vars_: str = get_field_vars(args.signature)
         insert_gold = f"""
             insert into gold
                 (gold_run_id, ocr_id, {names})
                 values ($gold_run_id, $ocr_id, {vars_});
             """
+
+        sig = SIGNATURES[args.signature]
 
         for sheet in sheets:
             cxn.execute(
@@ -119,36 +113,6 @@ def split_action(args: argparse.Namespace) -> None:
 
         sql = "update gold set split = ? where gold_id = ?"
         cxn.executemany(sql, updates)
-
-
-def create_gold_tables(db_path: Path, signature: str) -> None:
-    # Fields specific to the specimen type
-    sig = SIGNATURES[signature]
-    fields = [f"{f} char[]," for f in sig.output_fields]
-    fields = "\n".join(fields)
-
-    sql = f"""
-        create sequence if not exists gold_run_seq;
-        create table if not exists gold_run (
-            gold_run_id integer primary key default nextval('gold_run_seq'),
-            notes         char,
-            specimen_type char,
-            json_path     char,
-            gold_run_created timestamptz default current_localtimestamp(),
-        );
-
-        create sequence if not exists gold_id_seq;
-        create table if not exists gold (
-            gold_id integer primary key default nextval('gold_id_seq'),
-            gold_run_id integer, -- references gold_run(gold_run_id),
-            ocr_id      integer, -- references ocr(ocr_id),
-            split       char,
-            {fields}
-        );
-        """
-
-    with duckdb.connect(db_path) as cxn:
-        cxn.execute(sql)
 
 
 def parse_args() -> argparse.Namespace:
@@ -216,6 +180,12 @@ def parse_args() -> argparse.Namespace:
         choices=sigs,
         default=sigs[0],
         help="""What type of data are you extracting? What is its signature?""",
+    )
+
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit the number of records to export.""",
     )
 
     export_parser.set_defaults(func=export_action)

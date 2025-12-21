@@ -11,6 +11,8 @@ import lmstudio as lms
 import polars as pl
 from tqdm import tqdm
 
+from llama.pylib.db_util import create_ocr_tables
+
 # A reasonable starting prompt. I will parameterize and try variations on this later.
 PROMPT = " ".join(
     """
@@ -91,36 +93,6 @@ def ocr_images(args: argparse.Namespace) -> None:
             "update ocr_run set elapsed = ? where ocr_run_id = ?;",
             [job_elapsed, run_id],
         )
-
-
-def create_ocr_tables(db_path: Path) -> None:
-    sql = """
-        create sequence if not exists ocr_run_seq;
-        create table if not exists ocr_run (
-            ocr_run_id integer primary key default nextval('ocr_run_seq'),
-            prompt         char,
-            model          char,
-            api_host       char,
-            notes          char,
-            temperature    float,
-            context_length integer,
-            ocr_run_elapsed char,
-            ocr_run_started timestamptz default current_localtimestamp(),
-        );
-
-        create sequence if not exists ocr_id_seq;
-        create table if not exists ocr (
-            ocr_id integer primary key default nextval('ocr_id_seq'),
-            ocr_run_id   integer, -- references ocr_run(ocr_run_id),
-            image_path   char,
-            ocr_text     char,
-            ocr_error    char,
-            ocr_elapsed  char,
-        );
-        """
-
-    with duckdb.connect(db_path) as cxn:
-        cxn.execute(sql)
 
 
 def get_all_records(db_path: Path) -> pl.DataFrame:

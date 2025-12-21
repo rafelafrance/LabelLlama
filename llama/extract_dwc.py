@@ -8,10 +8,10 @@ from pathlib import Path
 
 import dspy
 import duckdb
-import polars as pl
 from tqdm import tqdm
 
 from llama.modules.dwc_extract import DwcExtract
+from llama.pylib.db_util import create_dwc_tables
 from llama.signatures.all_signatures import SIGNATURES
 
 
@@ -51,7 +51,10 @@ def extract_dwc(args: argparse.Namespace) -> None:
     )
 
     with duckdb.connect(args.db_path) as cxn:
-        ocr_recs = select_records(args.db_path, args.ocr_run_id, args.limit)
+        run_ids = ", ".join(str(i) for i in args.ocr_run_id)
+        query = "select ocr_id, ocr_text from ocr where ocr_run_id in (?) limit ?"
+        ocr_recs = cxn.execute(query, [run_ids, args.limit]).pl()
+
         rows = ocr_recs.rows(named=True)
 
         run_id = cxn.execute(
@@ -90,55 +93,6 @@ def extract_dwc(args: argparse.Namespace) -> None:
             "update dwc_run set dwc_run_elapsed = ? where dwc_run_id = ?;",
             [datetime.now() - job_began, run_id],
         )
-
-
-def select_records(
-    db_path: Path, ocr_run_id: list[int], limit: int | None = None,
-) -> pl.DataFrame:
-    run_ids = ", ".join(str(i) for i in ocr_run_id)
-    query = "select ocr_id, ocr_text from ocr where ocr_run_id in (?)"
-
-    with duckdb.connect(db_path) as cxn:
-        if limit:
-            query += " limit ?"
-            return cxn.execute(query, [run_ids, limit]).pl()
-
-        return cxn.execute(query, [run_ids]).pl()
-
-
-def create_dwc_tables(db_path: Path, specimen_type: str) -> None:
-    # Fields specific to the specimen type
-    sig = SIGNATURES[specimen_type]
-    fields = [f"{f} char[]," for f in sig.output_fields]
-    fields = "\n".join(fields)
-
-    query = f"""
-        create sequence if not exists dwc_run_seq;
-        create table if not exists dwc_run (
-            dwc_run_id integer primary key default nextval('dwc_run_seq'),
-            prompt        char,
-            model         char,
-            api_host      char,
-            notes         char,
-            temperature   float,
-            max_tokens    integer,
-            specimen_type char,
-            dwc_run_elapsed char,
-            dwc_run_started timestamptz default current_localtimestamp(),
-        );
-
-        create sequence if not exists dwc_id_seq;
-        create table if not exists dwc (
-            dwc_id integer primary key default nextval('dwc_id_seq'),
-            dwc_run_id  integer references dwc_run(dwc_run_id),
-            ocr_id      integer references ocr(ocr_id),
-            dwc_elapsed char,
-            {fields}
-        );
-        """
-
-    with duckdb.connect(db_path) as cxn:
-        cxn.execute(query)
 
 
 def parse_args() -> argparse.Namespace:
@@ -216,7 +170,7 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--limit",
         type=int,
-        help="""Limit the number of records to parse?""",
+        help="""Limit the number of records to parse.""",
     )
 
     args = arg_parser.parse_args()

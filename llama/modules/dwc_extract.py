@@ -2,6 +2,7 @@ import re
 from typing import Any
 
 import dspy
+from dspy import Prediction
 
 from llama.signatures.all_signatures import SIGNATURES, AnySignature
 
@@ -60,6 +61,12 @@ def join_lines(text: str) -> str:
     return text
 
 
+def clean_text(text: str) -> str:
+    text = filter_lines(text)
+    text = join_lines(text)
+    return text
+
+
 class DwcExtract(dspy.Module):
     def __init__(self, signature: str) -> None:
         self.signature: AnySignature = SIGNATURES[signature]
@@ -70,9 +77,8 @@ class DwcExtract(dspy.Module):
         self.input_names: list[str] = list(self.input_fields.keys())
         self.output_names: list[str] = list(self.output_fields.keys())
 
-    def forward(self, text: str) -> AnySignature:
-        text = filter_lines(text)
-        text = join_lines(text)
+    def forward(self, text: str) -> Prediction:
+        text = clean_text(text)
         specimen = self.predictor(text=text)
         return specimen
 
