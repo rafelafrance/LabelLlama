@@ -50,11 +50,24 @@
 #    --context-length 65536 \
 #    --api-key "$OPENAI_API_KEY"
 
- ./llama/extract_dwc.py \
-    --db-path data/herbarium/labelllama_herbarium.duckdb \
-    --model-name "openai/gpt-5-nano" \
-    --notes "A small sized ChatGPT test from gold run 1" \
-    --ocr-run-id 10 \
-    --limit 100 \
-    --context-length 65536 \
-    --api-key "$OPENAI_API_KEY"
+# ./llama/extract_dwc.py \
+#    --db-path data/herbarium/labelllama_herbarium.duckdb \
+#    --model-name "openai/gpt-5-nano" \
+#    --notes "A small sized ChatGPT test from gold run 1" \
+#    --ocr-run-id 10 \
+#    --limit 100 \
+#    --context-length 65536 \
+#    --api-key "$OPENAI_API_KEY"
+
+uv run llama/extract_dwc.py extract \
+  --db-path data/herbarium/labelllama_herbarium.duckdb \
+  --signature herbarium \
+  --ocr-run-id 1 \
+  --ocr-run-id 2 \
+  --ocr-run-id 3 \
+  --model-name "openai/gpt-5-nano" \
+  --api-key "$OPENAI_API_KEY" \
+  --context-length 65536 \
+  --notes "Test pricing for 1000 herbarium records" \
+  --limit 1000 \
+  --seed 933992

@@ -120,6 +120,62 @@ class HerbariumSheet(Signature):
         desc="Collected from this habitat, or environment",
         alias="dwc:habitat",
     )
+    flowers_present: list[str] = OutputField(
+        default=[],
+        desc="Are there flowers on the plant?",
+        alias="dwc:dynamicProperties:flowers_present",
+    )
+    fruit_present: list[str] = OutputField(
+        default=[],
+        desc="Is there fruit on the plant?",
+        alias="dwc:dynamicProperties:fruit_present",
+    )
+    flower_color: list[str] = OutputField(
+        default=[],
+        desc="What are the colors of the flowers?",
+        alias="dwc:dynamicProperties:flower_color",
+    )
+    fruit_color: list[str] = OutputField(
+        default=[],
+        desc="What are the colors of the fruits?",
+        alias="dwc:dynamicProperties:fruit_color",
+    )
+    height: list[str] = OutputField(
+        default=[],
+        desc="How tall is the specimen?",
+        alias="dwc:dynamicProperties:plant_height",
+    )
+    size: list[str] = OutputField(
+        default=[],
+        desc="Other specimen sizes?",
+        alias="dwc:dynamicProperties:plant_size",
+    )
+    habit: list[str] = OutputField(
+        default=[],
+        desc="What is the specimen habit? Examples herbaceous, woody, decumbent, erect",
+        alias="dwc:dynamicProperties:plant_habit",
+    )
+    abundance: list[str] = OutputField(
+        default=[],
+        desc="How common is the specimen? Examples include common, scattered, rare",
+        alias="dwc:dynamicProperties:plant_abundance",
+    )
+    leaf_shape: list[str] = OutputField(
+        default=[],
+        desc=(
+            "What is the shape of the specimen's leaf? "
+            "Examples acute, caudate, elliptic, lobed"
+        ),
+        alias="dwc:dynamicProperties:leaf_shape",
+    )
+    leaf_margin: list[str] = OutputField(
+        default=[],
+        desc=(
+            "Description of the specimen's leaf margins. "
+            "Examples entire, crenate, dentate, serrate"
+        ),
+        alias="dwc:dynamicProperties:leaf_margin",
+    )
 
 
 # INPUT_FIELDS = ("text", )

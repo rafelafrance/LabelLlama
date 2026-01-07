@@ -1,4 +1,5 @@
 from pathlib import Path
+from pprint import pp
 
 import duckdb
 
@@ -76,10 +77,10 @@ def create_dwc_tables(db_path: Path, signature: str) -> None:
         );
 
         create sequence if not exists dwc_id_seq;
-        create table if not exists dwc (
+        create table if not exists dwc_{signature} (
             dwc_id integer primary key default nextval('dwc_id_seq'),
-            dwc_run_id  integer -- references dwc_run(dwc_run_id),
-            ocr_id      integer -- references ocr(ocr_id),
+            dwc_run_id  integer, -- references dwc_run(dwc_run_id),
+            ocr_id      integer, -- references ocr(ocr_id),
             dwc_elapsed char,
             {fields}
         );
@@ -104,7 +105,7 @@ def create_gold_tables(db_path: Path, signature: str) -> None:
         );
 
         create sequence if not exists gold_id_seq;
-        create table if not exists gold (
+        create table if not exists gold_{signature} (
             gold_id integer primary key default nextval('gold_id_seq'),
             gold_run_id integer, -- references gold_run(gold_run_id),
             ocr_id      integer, -- references ocr(ocr_id),
@@ -115,3 +116,30 @@ def create_gold_tables(db_path: Path, signature: str) -> None:
 
     with duckdb.connect(db_path) as cxn:
         cxn.execute(sql)
+
+
+def display_runs(db_path: Path, table: str) -> None:
+    """Show run information so people can get the right IDs, etc."""
+    id_ = f"{table}_id"
+
+    print("=" * 90)
+    print(f"{table}\n")
+
+    with duckdb.connect(db_path) as cxn:
+        rows = cxn.execute(f"select * from {table}").pl()
+        rows = rows.rows(named=True)
+
+        for row in rows:
+            for key, value in row.items():
+                if key not in ("prompt"):
+                    print(f"{key:>30} {value}")
+
+            child = table.removesuffix("_run")
+            child += f"_{row['specimen_type']}" if row.get("specimen_type") else ""
+
+            count = 0
+            if id_ and row.get(id_):
+                count = cxn.execute(
+                    f"select count(*) from {child} where {id_} = ?", [row[id_]]
+                ).fetchone()[0]
+            print(f"{f'{child} records':>30} {int(count):,d}\n")

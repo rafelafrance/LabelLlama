@@ -28,9 +28,7 @@ def miprov2_dwc(args: argparse.Namespace) -> None:
     predictor = DwcExtract(args.signature)
 
     dataset: dict[LiteralString, list[dspy.Example]] = select_records(
-        args.db_path,
-        args.gold_run_id,
-        predictor,
+        args.db_path, args.gold_run_id, predictor, args.signature
     )
 
     evaluator = dspy.evaluate.Evaluate(
@@ -62,12 +60,12 @@ def miprov2_dwc(args: argparse.Namespace) -> None:
 
 
 def select_records(
-    db_path: Path, gold_run_id: int, predictor: dspy.Module
+    db_path: Path, gold_run_id: int, predictor: dspy.Module, signature: str
 ) -> dict[LiteralString, list[dspy.Example]]:
     names = ", ".join(f"{f}" for f in predictor.output_names)
     query = f"""
         select ocr_text as text, {names}
-            from gold join ocr using (ocr_id)
+            from gold_{signature} join ocr using (ocr_id)
             where gold_run_id = ? and split = ?
         """
 
@@ -102,6 +100,14 @@ def parse_args() -> argparse.Namespace:
         required=True,
         metavar="PATH",
         help="""Path to the database.""",
+    )
+
+    sigs = list(SIGNATURES.keys())
+    arg_parser.add_argument(
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
     )
 
     arg_parser.add_argument(

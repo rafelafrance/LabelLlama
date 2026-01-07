@@ -8,42 +8,22 @@ from pathlib import Path
 
 import duckdb
 
-from llama.pylib.db_util import create_gold_tables, get_field_names, get_field_vars
+from llama.pylib import db_util
 from llama.signatures.all_signatures import SIGNATURES
 
 
 def list_action(args: argparse.Namespace) -> None:
-    with duckdb.connect(args.db_path) as cxn:
-        for table in ("dwc_run", "gold_run"):
-            child = table.removesuffix("_run")
-            id_ = f"{table}_id"
-
-            print("=" * 90)
-            print(f"{table}\n")
-
-            rows = cxn.execute(f"select * from {table}").pl()
-            rows = rows.rows(named=True)
-            for row in rows:
-                for key, val in {
-                    k: v for k, v in row.items() if k not in {"prompt"}
-                }.items():
-                    print(f"{key:>20} {val}")
-
-                count = cxn.execute(
-                    f"select count(*) from {child} where {id_} = ?", [row[id_]]
-                ).fetchone()[0]
-                print(f"{'number of records':>20} {count}")
-
-                print()
+    db_util.display_runs(args.db_path, "dwc_run")
+    db_util.display_runs(args.db_path, "gold_run")
 
 
 def export_action(args: argparse.Namespace) -> None:
-    create_gold_tables(args.db_path, args.signature)
-    fields = get_field_names(args.signature)
+    db_util.create_gold_tables(args.db_path, args.signature)
+    fields = db_util.get_field_names(args.signature)
 
     select = f"""
         select image_path, ocr_id, ocr_text, {fields}
-            from dwc join ocr using (ocr_id)
+            from dwc_{args.signature} join ocr using (ocr_id)
             where dwc_run_id = ? limit ?
         """
 
@@ -56,7 +36,7 @@ def export_action(args: argparse.Namespace) -> None:
 
 
 def import_action(args: argparse.Namespace) -> None:
-    create_gold_tables(args.db_path, args.signature)
+    db_util.create_gold_tables(args.db_path, args.signature)
 
     with args.gold_json.open() as fp:
         sheets = json.load(fp)
@@ -67,10 +47,10 @@ def import_action(args: argparse.Namespace) -> None:
             [args.signature, args.notes, str(args.json_path)],
         ).fetchone()[0]
 
-        names: str = get_field_names(args.signature)
-        vars_: str = get_field_vars(args.signature)
+        names: str = db_util.get_field_names(args.signature)
+        vars_: str = db_util.get_field_vars(args.signature)
         insert_gold = f"""
-            insert into gold
+            insert into gold_{args.signature}
                 (gold_run_id, ocr_id, {names})
                 values ($gold_run_id, $ocr_id, {vars_});
             """
@@ -278,4 +258,3 @@ def parse_args() -> argparse.Namespace:
 if __name__ == "__main__":
     ARGS = parse_args()
     ARGS.func(ARGS)
-    # main(ARGS)
