@@ -38,10 +38,10 @@ class Entry:
 
     def add_dwc(
         self,
-         dwc_run: dict[str, Any],
-         dwc: dict[str, Any],
-         by_field: dict[str, list[float]],
-         idx: int,
+        dwc_run: dict[str, Any],
+        dwc: dict[str, Any],
+        by_field: dict[str, list[float]],
+        idx: int,
     ) -> None:
         self.table["dataset"] += [get_dwc_name(dwc_run), ""]
         avg = 0.0
