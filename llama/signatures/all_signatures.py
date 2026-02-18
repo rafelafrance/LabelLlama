@@ -1,11 +1,9 @@
-from dspy import Signature
-
+from llama.signatures.cas_v1 import CasV1
 from llama.signatures.herbarium_sheet import HerbariumSheet
-from llama.signatures.ocr_image import OcrImage
 
-type AnySignature = HerbariumSheet  # | OcrImage
+type AnySignature = HerbariumSheet | CasV1
 
 SIGNATURES: dict[str, AnySignature] = {
     "herbarium": HerbariumSheet,
-    # "ocr": OcrImage,
+    "cas_v1": CasV1,
 }

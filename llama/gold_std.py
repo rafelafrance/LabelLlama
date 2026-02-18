@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import json
 import random
 import textwrap
@@ -35,16 +36,19 @@ def export_action(args: argparse.Namespace) -> None:
         json.dump(rows, fp, indent=4)
 
 
-def import_action(args: argparse.Namespace) -> None:
+def import_json_action(args: argparse.Namespace) -> None:
     db_util.create_gold_tables(args.db_path, args.signature)
 
     with args.gold_json.open() as fp:
         sheets = json.load(fp)
 
     with duckdb.connect(args.db_path) as cxn:
-        run_id = cxn.execute(
-            "insert into gold_run (specimen_type, notes, json_path) values (?, ?, ?);",
-            [args.signature, args.notes, str(args.json_path)],
+        gold_run_id = cxn.execute(
+            """
+            insert into gold_run (specimen_type, notes, src_path) values (?, ?, ?)
+            returning gold_run_id;
+            """,
+            [args.signature, args.notes, str(args.gold_json)],
         ).fetchone()[0]
 
         names: str = db_util.get_field_names(args.signature)
@@ -61,7 +65,44 @@ def import_action(args: argparse.Namespace) -> None:
             cxn.execute(
                 query=insert_gold,
                 parameters={
-                    "gold_run_id": run_id,
+                    "gold_run_id": gold_run_id,
+                    "ocr_id": sheet["ocr_id"],
+                }
+                | {n: sheet[n] for n in sig.output_fields},
+            )
+
+
+def import_csv_action(args: argparse.Namespace) -> None:
+    db_util.create_gold_tables(args.db_path, args.signature)
+
+    with args.gold_csv.open() as fp:
+        reader = csv.DictReader(fp)
+        sheets = [dict(r) for r in reader]
+
+    with duckdb.connect(args.db_path) as cxn:
+        gold_run_id = cxn.execute(
+            """
+            insert into gold_run (specimen_type, notes, src_path) values (?, ?, ?)
+            returning gold_run_id;
+            """,
+            [args.signature, args.notes, str(args.gold_csv)],
+        ).fetchone()[0]
+
+        names: str = db_util.get_field_names(args.signature)
+        vars_: str = db_util.get_field_vars(args.signature)
+        insert_gold = f"""
+            insert into gold_{args.signature}
+                (gold_run_id, ocr_id, {names})
+                values ($gold_run_id, $ocr_id, {vars_});
+            """
+
+        sig = SIGNATURES[args.signature]
+
+        for sheet in sheets:
+            cxn.execute(
+                query=insert_gold,
+                parameters={
+                    "gold_run_id": gold_run_id,
                     "ocr_id": sheet["ocr_id"],
                 }
                 | {n: sheet[n] for n in sig.output_fields},
@@ -171,12 +212,12 @@ def parse_args() -> argparse.Namespace:
     export_parser.set_defaults(func=export_action)
 
     # ------------------------------------------------------------
-    import_parser = subparsers.add_parser(
-        "import",
+    import_json_parser = subparsers.add_parser(
+        "import-json",
         help="""Import a gold standard JSON file.""",
     )
 
-    import_parser.add_argument(
+    import_json_parser.add_argument(
         "--db-path",
         type=Path,
         required=True,
@@ -184,7 +225,7 @@ def parse_args() -> argparse.Namespace:
         help="""Path to the database.""",
     )
 
-    import_parser.add_argument(
+    import_json_parser.add_argument(
         "--gold-json",
         type=Path,
         required=True,
@@ -193,14 +234,54 @@ def parse_args() -> argparse.Namespace:
     )
 
     sigs = list(SIGNATURES.keys())
-    import_parser.add_argument(
+    import_json_parser.add_argument(
         "--signature",
         choices=sigs,
         default=sigs[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
 
-    import_parser.set_defaults(func=import_action)
+    import_json_parser.add_argument(
+        "--notes", help="""A breif description of the gold standard."""
+    )
+
+    import_json_parser.set_defaults(func=import_json_action)
+
+    # ------------------------------------------------------------
+    import_csv_parser = subparsers.add_parser(
+        "import-csv",
+        help="""Import a gold standard CSV file.""",
+    )
+
+    import_csv_parser.add_argument(
+        "--db-path",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Path to the database.""",
+    )
+
+    import_csv_parser.add_argument(
+        "--gold-csv",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Import data from this CSV file.""",
+    )
+
+    sigs = list(SIGNATURES.keys())
+    import_csv_parser.add_argument(
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
+    )
+
+    import_csv_parser.add_argument(
+        "--notes", help="""A breif description of the gold standard."""
+    )
+
+    import_csv_parser.set_defaults(func=import_csv_action)
 
     # ------------------------------------------------------------
     split_parser = subparsers.add_parser(

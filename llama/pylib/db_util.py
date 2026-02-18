@@ -1,5 +1,4 @@
 from pathlib import Path
-from pprint import pp
 
 import duckdb
 
@@ -100,7 +99,7 @@ def create_gold_tables(db_path: Path, signature: str) -> None:
             gold_run_name char,
             notes         char,
             specimen_type char,
-            json_path     char,
+            src_path      char,
             gold_run_created timestamptz default current_localtimestamp(),
         );
 
