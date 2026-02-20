@@ -1,6 +1,0 @@
-#!/bin/bash
-
-./llama/gold_std.py export \
-  --db-path data/herbarium/labelllama_herbarium.duckdb \
-  --gold-json data/herbarium/gold_std_2025-12-14.json \
-  --dwc-run-id 3

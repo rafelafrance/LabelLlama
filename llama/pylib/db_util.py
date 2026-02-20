@@ -2,29 +2,6 @@ from pathlib import Path
 
 import duckdb
 
-from llama.signatures.all_signatures import SIGNATURES
-
-
-def get_fields(signature: str) -> list[str]:
-    sig = SIGNATURES[signature]
-    return sig.output_fields
-
-
-def get_field_definitions(signature: str) -> str:
-    fields = [f"{f} char[]," for f in get_fields(signature)]
-    fields = "\n".join(fields)
-    return fields
-
-
-def get_field_names(signature: str) -> str:
-    names: str = ", ".join(f"{f}" for f in get_fields(signature))
-    return names
-
-
-def get_field_vars(signature: str) -> str:
-    vars_: str = ", ".join(f"${f}" for f in get_fields(signature))
-    return vars_
-
 
 def create_ocr_tables(db_path: Path) -> None:
     sql = """
@@ -56,10 +33,8 @@ def create_ocr_tables(db_path: Path) -> None:
         cxn.execute(sql)
 
 
-def create_dwc_tables(db_path: Path, signature: str) -> None:
-    fields = get_field_definitions(signature)
-
-    query = f"""
+def create_dwc_tables(db_path: Path) -> None:
+    query = """
         create sequence if not exists dwc_run_seq;
         create table if not exists dwc_run (
             dwc_run_id integer primary key default nextval('dwc_run_seq'),
@@ -70,18 +45,17 @@ def create_dwc_tables(db_path: Path, signature: str) -> None:
             notes         char,
             temperature   float,
             max_tokens    integer,
-            specimen_type char,
             dwc_run_elapsed char,
             dwc_run_started timestamptz default current_localtimestamp(),
         );
 
         create sequence if not exists dwc_id_seq;
-        create table if not exists dwc_{signature} (
+        create table if not exists dwc (
             dwc_id integer primary key default nextval('dwc_id_seq'),
             dwc_run_id  integer, -- references dwc_run(dwc_run_id),
             ocr_id      integer, -- references ocr(ocr_id),
-            dwc_elapsed char,
-            {fields}
+            field       char,
+            value       char,
         );
         """
 
@@ -89,27 +63,25 @@ def create_dwc_tables(db_path: Path, signature: str) -> None:
         cxn.execute(query)
 
 
-def create_gold_tables(db_path: Path, signature: str) -> None:
-    fields = get_field_definitions(signature)
-
-    sql = f"""
+def create_gold_tables(db_path: Path) -> None:
+    sql = """
         create sequence if not exists gold_run_seq;
         create table if not exists gold_run (
             gold_run_id integer primary key default nextval('gold_run_seq'),
             gold_run_name char,
             notes         char,
-            specimen_type char,
             src_path      char,
             gold_run_created timestamptz default current_localtimestamp(),
         );
 
         create sequence if not exists gold_id_seq;
-        create table if not exists gold_{signature} (
+        create table if not exists gold (
             gold_id integer primary key default nextval('gold_id_seq'),
             gold_run_id integer, -- references gold_run(gold_run_id),
             ocr_id      integer, -- references ocr(ocr_id),
             split       char,
-            {fields}
+            field       char,
+            value       char,
         );
         """
 
@@ -134,7 +106,6 @@ def display_runs(db_path: Path, table: str) -> None:
                     print(f"{key:>30} {value}")
 
             child = table.removesuffix("_run")
-            child += f"_{row['specimen_type']}" if row.get("specimen_type") else ""
 
             count = 0
             if id_ and row.get(id_):

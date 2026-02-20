@@ -1,7 +1,6 @@
 from dspy import InputField, OutputField, Signature
 
 
-# NOTE: I use the output field order while annotating fields (annotate_fields.py)
 class HerbariumSheet(Signature):
     """Analyze text from a herbarium sheets and extract information."""
 
@@ -176,12 +175,3 @@ class HerbariumSheet(Signature):
         ),
         alias="dwc:dynamicProperties:leaf_margin",
     )
-
-
-# INPUT_FIELDS = ("text", )
-# OUTPUT_FIELDS = [t for t in vars(HerbariumSheet()) if t not in INPUT_FIELDS]
-# DWC = {
-#     f[0]: f[1].alias
-#     for f in HerbariumSheet.model_fields.items()
-#     if f[0] not in INPUT_FIELDS
-# }

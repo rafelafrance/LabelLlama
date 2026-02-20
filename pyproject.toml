@@ -84,6 +84,7 @@ ignore = [
     "FIX002",  # Line contains TODO
     "G004",    # Logging statement uses f-string
     "LOG015",  # Use own logger instead
+    "N815",    # Variable in class scope should not be mixedCase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
     "PLR2004", # Magic value used in comparison, consider replacing with a constant variable

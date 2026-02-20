@@ -10,7 +10,6 @@ from pathlib import Path
 import duckdb
 
 from llama.pylib import db_util
-from llama.signatures.all_signatures import SIGNATURES
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -18,14 +17,13 @@ def list_action(args: argparse.Namespace) -> None:
     db_util.display_runs(args.db_path, "gold_run")
 
 
-def export_action(args: argparse.Namespace) -> None:
-    db_util.create_gold_tables(args.db_path, args.signature)
-    fields = db_util.get_field_names(args.signature)
+def init_from_dwc_action(args: argparse.Namespace) -> None:
+    db_util.create_dwc_tables(args.db_path)
+    db_util.create_gold_tables(args.db_path)
 
-    select = f"""
-        select image_path, ocr_id, ocr_text, {fields}
-            from dwc_{args.signature} join ocr using (ocr_id)
-            where dwc_run_id = ? limit ?
+    select = """
+        with run as (select * from dwc where dwc_run_id = ?)
+        pivot run on field using first(value) group by ocr_id limit ?;
         """
 
     with duckdb.connect(args.db_path) as cxn:
@@ -37,7 +35,9 @@ def export_action(args: argparse.Namespace) -> None:
 
 
 def import_json_action(args: argparse.Namespace) -> None:
-    db_util.create_gold_tables(args.db_path, args.signature)
+    db_util.create_gold_tables(args.db_path)
+
+    raise NotImplementedError
 
     with args.gold_json.open() as fp:
         sheets = json.load(fp)
@@ -45,21 +45,16 @@ def import_json_action(args: argparse.Namespace) -> None:
     with duckdb.connect(args.db_path) as cxn:
         gold_run_id = cxn.execute(
             """
-            insert into gold_run (specimen_type, notes, src_path) values (?, ?, ?)
+            insert into gold_run (gold_run_name, notes, src_path) values (?, ?, ?)
             returning gold_run_id;
             """,
             [args.signature, args.notes, str(args.gold_json)],
         ).fetchone()[0]
 
-        names: str = db_util.get_field_names(args.signature)
-        vars_: str = db_util.get_field_vars(args.signature)
-        insert_gold = f"""
-            insert into gold_{args.signature}
-                (gold_run_id, ocr_id, {names})
-                values ($gold_run_id, $ocr_id, {vars_});
+        insert_gold = """
+            insert into gold (gold_run_id, ocr_id, split, field, value)
+                values ($gold_run_id, $ocr_id, '', $field, $value);
             """
-
-        sig = SIGNATURES[args.signature]
 
         for sheet in sheets:
             cxn.execute(
@@ -67,46 +62,53 @@ def import_json_action(args: argparse.Namespace) -> None:
                 parameters={
                     "gold_run_id": gold_run_id,
                     "ocr_id": sheet["ocr_id"],
-                }
-                | {n: sheet[n] for n in sig.output_fields},
+                    "field": None,
+                    "value": None,
+                },
             )
 
 
 def import_csv_action(args: argparse.Namespace) -> None:
-    db_util.create_gold_tables(args.db_path, args.signature)
+    db_util.create_gold_tables(args.db_path)
 
     with args.gold_csv.open() as fp:
         reader = csv.DictReader(fp)
-        sheets = [dict(r) for r in reader]
+        gold = [dict(r) for r in reader]
+
+    select_ocr = """select image_path, ocr_id from ocr order by ocr_run_id, ocr_id;"""
 
     with duckdb.connect(args.db_path) as cxn:
+        ocr_rows = cxn.execute(select_ocr).pl()
+        ocr_rows = ocr_rows.rows(named=True)
+        ocr_ids = {Path(r["image_path"]).stem: r["ocr_id"] for r in ocr_rows}
+
+        gold_run_name = f"Import CSV {args.gold_csv.name}"
         gold_run_id = cxn.execute(
             """
-            insert into gold_run (specimen_type, notes, src_path) values (?, ?, ?)
+            insert into gold_run (gold_run_name, notes, src_path) values (?, ?, ?)
             returning gold_run_id;
             """,
-            [args.signature, args.notes, str(args.gold_csv)],
+            [gold_run_name, args.notes, str(args.gold_csv)],
         ).fetchone()[0]
 
-        names: str = db_util.get_field_names(args.signature)
-        vars_: str = db_util.get_field_vars(args.signature)
-        insert_gold = f"""
-            insert into gold_{args.signature}
-                (gold_run_id, ocr_id, {names})
-                values ($gold_run_id, $ocr_id, {vars_});
-            """
-
-        sig = SIGNATURES[args.signature]
-
-        for sheet in sheets:
-            cxn.execute(
-                query=insert_gold,
-                parameters={
-                    "gold_run_id": gold_run_id,
-                    "ocr_id": sheet["ocr_id"],
-                }
-                | {n: sheet[n] for n in sig.output_fields},
-            )
+        for row in gold:
+            ocr_id = ocr_ids[Path(row[args.file_name]).stem.casefold()]
+            for field, value in row.items():
+                if field in args.skip:
+                    continue
+                field = field.casefold()
+                cxn.execute(
+                    query="""
+                        insert into gold (gold_run_id, ocr_id, split, field, value)
+                        values ($gold_run_id, $ocr_id, '', $field, $value);
+                        """,
+                    parameters={
+                        "gold_run_id": gold_run_id,
+                        "ocr_id": ocr_id,
+                        "field": field,
+                        "value": value,
+                    },
+                )
 
 
 def split_action(args: argparse.Namespace) -> None:
@@ -164,95 +166,79 @@ def parse_args() -> argparse.Namespace:
     list_parser.set_defaults(func=list_action)
 
     # ------------------------------------------------------------
-    export_parser = subparsers.add_parser(
-        "export",
-        help="""Export this DwC run data as a starting point for a new gold standard.
-            This will create a JSON file that you can feed into annotate_gold GUI
-            script.""",
+    init_from_dwc_parser = subparsers.add_parser(
+        "init-from-dwc",
+        help="""Create a new starter gold standard from a DwC run. It is often easier
+            to modify an existing gold standard than create a new one. You can update
+            the annotations using the annotate_fields.py utility.""",
     )
-
-    export_parser.add_argument(
+    init_from_dwc_parser.add_argument(
         "--db-path",
         type=Path,
         required=True,
         metavar="PATH",
         help="""Path to the database.""",
     )
-
-    export_parser.add_argument(
+    init_from_dwc_parser.add_argument(
         "--gold-json",
         type=Path,
         required=True,
         metavar="PATH",
         help="""Export the data to this JSON file.""",
     )
-
-    export_parser.add_argument(
+    init_from_dwc_parser.add_argument(
         "--dwc-run-id",
         type=int,
         required=True,
         help="""Make a gold standard template from this dwc-run.
             Note: It's only using the dwc-run as a starter not the data itself.""",
     )
-
-    sigs = list(SIGNATURES.keys())
-    export_parser.add_argument(
-        "--signature",
-        choices=sigs,
-        default=sigs[0],
-        help="""What type of data are you extracting? What is its signature?""",
-    )
-
-    arg_parser.add_argument(
+    init_from_dwc_parser.add_argument(
         "--limit",
         type=int,
         help="""Limit the number of records to export.""",
     )
-
-    export_parser.set_defaults(func=export_action)
+    init_from_dwc_parser.set_defaults(func=init_from_dwc_action)
 
     # ------------------------------------------------------------
-    import_json_parser = subparsers.add_parser(
-        "import-json",
-        help="""Import a gold standard JSON file.""",
-    )
-
-    import_json_parser.add_argument(
-        "--db-path",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Path to the database.""",
-    )
-
-    import_json_parser.add_argument(
-        "--gold-json",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Import data from this JSON file.""",
-    )
-
-    sigs = list(SIGNATURES.keys())
-    import_json_parser.add_argument(
-        "--signature",
-        choices=sigs,
-        default=sigs[0],
-        help="""What type of data are you extracting? What is its signature?""",
-    )
-
-    import_json_parser.add_argument(
-        "--notes", help="""A breif description of the gold standard."""
-    )
-
-    import_json_parser.set_defaults(func=import_json_action)
+    # import_json_parser = subparsers.add_parser(
+    #     "import-json",
+    #     help="""Import a gold standard JSON file. These typically come from
+    #         the annotate_gold.py utility.""",
+    # )
+    # import_json_parser.add_argument(
+    #     "--db-path",
+    #     type=Path,
+    #     required=True,
+    #     metavar="PATH",
+    #     help="""Path to the database.""",
+    # )
+    # import_json_parser.add_argument(
+    #     "--gold-json",
+    #     type=Path,
+    #     required=True,
+    #     metavar="PATH",
+    #     help="""Import data from this JSON file.""",
+    # )
+    # import_json_parser.add_argument(
+    #     "--skip",
+    #     action="append",
+    #     metavar="COLUMN",
+    #     help="""Skip this column in the CSV file. You may use this argument more than
+    #         once. Quote this argument if there are odd characters or spaces in the
+    #         column name.""",
+    # )
+    # import_json_parser.add_argument(
+    #     "--notes", help="""A breif description of the gold standard."""
+    # )
+    # import_json_parser.set_defaults(func=import_json_action)
 
     # ------------------------------------------------------------
     import_csv_parser = subparsers.add_parser(
         "import-csv",
-        help="""Import a gold standard CSV file.""",
+        help="""Import a gold standard CSV file. These typically come from
+            outside sources.""",
     )
-
     import_csv_parser.add_argument(
         "--db-path",
         type=Path,
@@ -260,7 +246,6 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Path to the database.""",
     )
-
     import_csv_parser.add_argument(
         "--gold-csv",
         type=Path,
@@ -268,26 +253,29 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Import data from this CSV file.""",
     )
-
-    sigs = list(SIGNATURES.keys())
     import_csv_parser.add_argument(
-        "--signature",
-        choices=sigs,
-        default=sigs[0],
-        help="""What type of data are you extracting? What is its signature?""",
+        "--file-name",
+        required=True,
+        metavar="COLUMN",
+        help="""The file name column used to link OCR records.""",
     )
-
+    import_csv_parser.add_argument(
+        "--skip",
+        action="append",
+        metavar="COLUMN",
+        help="""Skip this column in the CSV file. You may use this argument more than
+            once. Quote this argument if there are odd characters or spaces in the
+            column name.""",
+    )
     import_csv_parser.add_argument(
         "--notes", help="""A breif description of the gold standard."""
     )
-
     import_csv_parser.set_defaults(func=import_csv_action)
 
     # ------------------------------------------------------------
     split_parser = subparsers.add_parser(
         "split", help="Split a gold_run into training, validation, and test datasets"
     )
-
     split_parser.add_argument(
         "--db-path",
         type=Path,
@@ -295,14 +283,12 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Path to the database.""",
     )
-
     split_parser.add_argument(
         "--gold-run-id",
         type=int,
         required=True,
         help="""Split this gold-run into training, validation, and testing datasets.""",
     )
-
     split_parser.add_argument(
         "--train-fract",
         type=float,
@@ -311,7 +297,6 @@ def parse_args() -> argparse.Namespace:
         help="""What fraction of the records to use for training.
             (default: %(default)s)""",
     )
-
     split_parser.add_argument(
         "--val-fract",
         type=float,
@@ -320,14 +305,12 @@ def parse_args() -> argparse.Namespace:
         help="""What fraction of the records to use for valiation.
             (default: %(default)s)""",
     )
-
     split_parser.add_argument(
         "--seed",
         type=int,
         default=992583,
         help="""Seed for the random number generator. (default: %(default)s)""",
     )
-
     split_parser.set_defaults(func=split_action)
 
     # ------------------------------------------------------------
