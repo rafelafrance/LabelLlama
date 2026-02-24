@@ -4,7 +4,7 @@ from typing import Any
 import dspy
 from dspy import Prediction
 
-from llama.signatures.all_signatures import SIGNATURES, AnySignature
+from llama.signatures.all_signatures import SIGNATURES
 
 
 def setup_filter_pattern() -> re.Pattern:
@@ -69,7 +69,7 @@ def clean_text(text: str) -> str:
 
 class DwcExtract(dspy.Module):
     def __init__(self, signature: str) -> None:
-        self.signature: AnySignature = SIGNATURES[signature]
+        self.signature = SIGNATURES[signature]
         self.predictor = dspy.Predict(self.signature)
 
         self.input_fields = self.signature.input_fields
@@ -79,8 +79,8 @@ class DwcExtract(dspy.Module):
 
     def forward(self, text: str) -> Prediction:
         text = clean_text(text)
-        specimen = self.predictor(text=text)
-        return specimen
+        prediction = self.predictor(text=text)
+        return prediction
 
     def dict2example(self, dct: dict[str, Any]) -> dspy.Example:
         example: dspy.Example = dspy.Example(**dct).with_inputs(*self.input_names)

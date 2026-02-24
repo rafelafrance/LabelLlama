@@ -5,11 +5,19 @@ import csv
 import json
 import random
 import textwrap
+import warnings
 from pathlib import Path
 
 import duckdb
+import Levenshtein
+from rich import print as rprint
 
 from llama.pylib import db_util
+from llama.signatures.cas_v1 import CAS_V1_POST
+
+EXACT = 1.0  # Scores equaling this are blue
+HAPPY = 0.9  # Scores above this are green
+OK = 0.75  # Scores below this are red
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -45,10 +53,10 @@ def import_json_action(args: argparse.Namespace) -> None:
     with duckdb.connect(args.db_path) as cxn:
         gold_run_id = cxn.execute(
             """
-            insert into gold_run (gold_run_name, notes, src_path) values (?, ?, ?)
+            insert into gold_run (notes, src_path) values (?, ?, ?)
             returning gold_run_id;
             """,
-            [args.signature, args.notes, str(args.gold_json)],
+            [args.notes, str(args.gold_json)],
         ).fetchone()[0]
 
         insert_gold = """
@@ -82,21 +90,19 @@ def import_csv_action(args: argparse.Namespace) -> None:
         ocr_rows = ocr_rows.rows(named=True)
         ocr_ids = {Path(r["image_path"]).stem: r["ocr_id"] for r in ocr_rows}
 
-        gold_run_name = f"Import CSV {args.gold_csv.name}"
         gold_run_id = cxn.execute(
             """
-            insert into gold_run (gold_run_name, notes, src_path) values (?, ?, ?)
+            insert into gold_run (notes, src_path) values (?, ?, ?)
             returning gold_run_id;
             """,
-            [gold_run_name, args.notes, str(args.gold_csv)],
+            [args.notes, str(args.gold_csv)],
         ).fetchone()[0]
 
         for row in gold:
-            ocr_id = ocr_ids[Path(row[args.file_name]).stem.casefold()]
+            ocr_id = ocr_ids[Path(row[args.file_name]).stem]
             for field, value in row.items():
                 if field in args.skip:
                     continue
-                field = field.casefold()
                 cxn.execute(
                     query="""
                         insert into gold (gold_run_id, ocr_id, split, field, value)
@@ -136,6 +142,114 @@ def split_action(args: argparse.Namespace) -> None:
 
         sql = "update gold set split = ? where gold_id = ?"
         cxn.executemany(sql, updates)
+
+
+def score_dwc_action(args: argparse.Namespace) -> None:
+    select_dwc = f"""
+        with run as (select * from dwc where dwc_run_id = {args.dwc_run_id})
+        pivot run on field using first(value) group by ocr_id;
+        """
+    select_gold = f"""
+        with run as (select * from gold where gold_run_id = {args.gold_run_id})
+        pivot run on field using first(value) group by ocr_id;
+        """
+    select_text = """
+        select distinct ocr_id, ocr_text from gold join ocr using (ocr_id)
+        where gold_run_id = ?;
+        """
+
+    with duckdb.connect(args.db_path) as cxn:
+        dwc_rows = cxn.execute(select_dwc).pl()
+        dwc_rows = dwc_rows.rows(named=True)
+        dwc_rows = {r["ocr_id"]: r for r in dwc_rows}
+
+        gold_rows = cxn.execute(select_gold).pl()
+        gold_rows = gold_rows.rows(named=True)
+        gold_rows = {r["ocr_id"]: r for r in gold_rows}
+
+        text_rows = cxn.execute(select_text, [args.gold_run_id]).pl()
+        text_rows = text_rows.rows(named=True)
+        text_rows = {r["ocr_id"]: r["ocr_text"] for r in text_rows}
+
+    # Validate fields
+    dwc_fields = {
+        f for f in next(iter(dwc_rows.values())) if f not in db_util.DWC_METADATA
+    }
+    gold_fields = {
+        f for f in next(iter(gold_rows.values())) if f not in db_util.GOLD_METADATA
+    }
+    fields = dwc_fields & gold_fields
+    if dwc_fields != gold_fields:
+        extra_dwc = sorted(dwc_fields - gold_fields)
+        extra_gold = sorted(gold_fields - dwc_fields)
+        warnings.warn(
+            "The Darwin Core and gold standard field lists are not the same. "
+            "The Darwin Core has these extra fields "
+            f"{' '.join(extra_dwc) if extra_dwc else 'None'} "
+            " and the gold standard has these "
+            f"{' '.join(extra_gold) if extra_gold else 'None'} fields.",
+            stacklevel=1,
+        )
+
+    # Validate OCR IDs
+    dwc_ocr_ids = set(dwc_rows)
+    gold_ocr_ids = set(gold_rows)
+    ocr_ids = dwc_ocr_ids & gold_ocr_ids
+    if dwc_ocr_ids != gold_ocr_ids:
+        warnings.warn(
+            f"The gold standard has {len(gold_ocr_ids)} records and the DwC has "
+            f"{len(dwc_ocr_ids)} records.",
+            stacklevel=1,
+        )
+
+    # Score
+    fields = sorted(fields)
+    ocr_ids = sorted(ocr_ids)
+    by_field = dict.fromkeys(fields, 0.0)
+
+    for i, ocr_id in enumerate(ocr_ids, 1):
+        dwc_row = dwc_rows[ocr_id]
+        gold_row = gold_rows[ocr_id]
+        text = text_rows[ocr_id]
+
+        print(f"\n\n{i}/{len(ocr_ids)}", "=" * 90, "\n")
+        print(text, "\n")
+
+        for field in fields:
+            dwc_val = dwc_row[field] or ""
+            if CAS_V1_POST.get(field):
+                dwc_val = CAS_V1_POST[field](dwc_val, text)
+
+            gold_val = gold_row[field] or ""
+
+            score = Levenshtein.ratio(dwc_val, gold_val)
+            by_field[field] += score
+
+            color = score_color(score)
+            rprint(f"[{color}]{field:>28} ({score:0.2f}) {gold_val} <=> {dwc_val}")
+
+        if args.pause:
+            input("\nPress Enter to continue.")
+
+    rprint(f"\n\n[blue]{'Field Totals':>28}")
+    grand = 0.0
+    for field in fields:
+        mean = by_field[field] / len(ocr_ids)
+        rprint(f"[{score_color(mean)}]{field:>28} {mean:0.2f}")
+        grand += mean
+
+    grand /= len(fields)
+    rprint(f"\n[{score_color(grand)}]{'Grand Total':>28} {grand:0.2f}\n")
+
+
+def score_color(score: float) -> str:
+    if score >= 1.0:
+        return "blue"
+    if score >= HAPPY:
+        return "green"
+    if score >= OK:
+        return "yellow"
+    return "red"
 
 
 def parse_args() -> argparse.Namespace:
@@ -271,6 +385,37 @@ def parse_args() -> argparse.Namespace:
         "--notes", help="""A breif description of the gold standard."""
     )
     import_csv_parser.set_defaults(func=import_csv_action)
+
+    # ------------------------------------------------------------
+    score_dwc_parser = subparsers.add_parser(
+        "score-dwc",
+        help="""Score a Darwin Core run against a gold standard.""",
+    )
+    score_dwc_parser.add_argument(
+        "--db-path",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Path to the database.""",
+    )
+    score_dwc_parser.add_argument(
+        "--dwc-run-id",
+        type=int,
+        required=True,
+        help="""Score this Darwin Core run.""",
+    )
+    score_dwc_parser.add_argument(
+        "--gold-run-id",
+        type=int,
+        required=True,
+        help="""Use this gold standard to score against.""",
+    )
+    score_dwc_parser.add_argument(
+        "--pause",
+        action="store_true",
+        help="""Pause between each sheet?""",
+    )
+    score_dwc_parser.set_defaults(func=score_dwc_action)
 
     # ------------------------------------------------------------
     split_parser = subparsers.add_parser(

@@ -60,7 +60,7 @@ class App(tk.Tk):
             if v.json_schema_extra["__dspy_field_type"] == "output"
         ]
 
-        self.rows: tuple[int] = tuple(range(8 + len(self.fields)))
+        self.rows: tuple[int, ...] = tuple(range(8 + len(self.fields)))
         self.row_span: int = len(self.rows) + 1
 
         self.curr_dir = "."

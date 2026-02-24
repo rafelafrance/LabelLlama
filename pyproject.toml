@@ -30,6 +30,7 @@ dependencies = [
     "polars>=1.35.2",
     "pyarrow>=22.0.0",
     "pydantic>=2.12.4",
+    "rapidfuzz>=3.14.3",
     "rich>=14.2.0",
     "sqlglot>=28.0.0",
     "tqdm>=4.67.1",

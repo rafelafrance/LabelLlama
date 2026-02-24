@@ -1,8 +1,21 @@
+from collections.abc import Callable
+
 from dspy import InputField, OutputField, Signature
+
+from llama.post_process import post_process as post
 
 
 class CasV1(Signature):
-    """Analyze text from herbarium sheets and extract this information."""
+    """
+    Analyze text from herbarium sheets and extract this information.
+
+    I need the text exactly as it appears in the text.
+    Do not change the text in any way.
+    Leave abbreviations exactly as they are.
+    If the data field is not found in the text return an empty list.
+    Do not add or delete any punctuation and do not add or delete any spaces.
+    Do not hallucinate.
+    """
 
     text: str = InputField()
 
@@ -113,3 +126,31 @@ class CasV1(Signature):
         default=[],
         desc="This contains all other observations",
     )
+
+
+CAS_V1_POST: dict[str, Callable[[str, str], str] | None] = {
+    "scientificName": post.scientific_name,
+    "scientificNameAuthorship": None,
+    "infraspecificEpithet": None,
+    "infraspecificNameAuthorship": None,
+    "family": post.family,
+    "associatedTaxa": post.associated_taxa,
+    "recordNumber": None,
+    "recordedBy": None,
+    "verbatimEventDate": None,
+    "identifiedBy": None,
+    "dateIdentified": None,
+    "country": None,
+    "stateProvince": None,
+    "county": post.county,
+    "municipality": None,
+    "verbatimElevation": post.elevation,
+    "verbatimLatitude": None,
+    "verbatimLongitude": None,
+    "geodeticDatum": None,
+    "trs": None,
+    "utm": None,
+    "locality": None,
+    "habitat": None,
+    "occurrenceRemarks": None,
+}

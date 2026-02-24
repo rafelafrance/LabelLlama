@@ -2,6 +2,9 @@ from pathlib import Path
 
 import duckdb
 
+DWC_METADATA = {"dwc_id", "dwc_run_id", "ocr_id"}
+GOLD_METADATA = {"gold_id", "gold_run_id", "ocr_id", "split"}
+
 
 def create_ocr_tables(db_path: Path) -> None:
     sql = """
@@ -38,13 +41,13 @@ def create_dwc_tables(db_path: Path) -> None:
         create sequence if not exists dwc_run_seq;
         create table if not exists dwc_run (
             dwc_run_id integer primary key default nextval('dwc_run_seq'),
-            dwc_run_name  char,
-            prompt        char,
-            model         char,
-            api_host      char,
-            notes         char,
-            temperature   float,
-            max_tokens    integer,
+            prompt      char,
+            model       char,
+            api_host    char,
+            signature   char,
+            notes       char,
+            temperature float,
+            max_tokens  integer,
             dwc_run_elapsed char,
             dwc_run_started timestamptz default current_localtimestamp(),
         );
@@ -68,9 +71,9 @@ def create_gold_tables(db_path: Path) -> None:
         create sequence if not exists gold_run_seq;
         create table if not exists gold_run (
             gold_run_id integer primary key default nextval('gold_run_seq'),
-            gold_run_name char,
-            notes         char,
-            src_path      char,
+            notes       char,
+            src_path    char,
+            signature   char,
             gold_run_created timestamptz default current_localtimestamp(),
         );
 

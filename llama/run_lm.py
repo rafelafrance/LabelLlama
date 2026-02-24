@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""Extract Darwin Core (DwC) fields from OCRed text."""
 
 import argparse
 import random
@@ -24,15 +23,7 @@ def list_action(args: argparse.Namespace) -> None:
 
 
 def extract_action(args: argparse.Namespace) -> None:
-    signature = SIGNATURES[args.signature]
-
-    names = ", ".join(f"{f}" for f in signature.output_fields)
-    vars_ = ", ".join(f"${f}" for f in signature.output_fields)
-    insert_dwc = f"""
-        insert into dwc_{args.signature}
-            (dwc_run_id, ocr_id, dwc_elapsed, {names})
-            values ($dwc_run_id, $ocr_id, $dwc_elapsed, {vars_});
-        """
+    create_dwc_tables(args.db_path)
 
     job_began = datetime.now()
 
@@ -56,19 +47,56 @@ def extract_action(args: argparse.Namespace) -> None:
     )
 
     with duckdb.connect(args.db_path) as cxn:
-        rows = select_ocr_recs(args.db_path, args.ocr_run_id, args.limit, args.seed)
+        ocr_recs = []
 
-        run_id = cxn.execute(
+        notes = args.notes or ""
+
+        # Get OCR records
+        if args.ocr_run_id:
+            ocr_ids = ", ".join(str(i) for i in args.ocr_run_id)
+            query = f"""
+                select distinct ocr_id, ocr_text
+                  from ocr where ocr_run_id in ({ocr_ids})
+                """
+            rows = cxn.execute(query).pl()
+            rows = rows.rows(named=True)
+            ocr_recs += rows
+            notes += f" OCR run IDs {ocr_ids} "
+
+        # Get OCR records via gold data
+        if args.gold_run_id:
+            gold_ids = ", ".join(str(i) for i in args.gold_run_id)
+            query = f"""
+                select distinct ocr_id, ocr_text
+                  from gold join ocr using (ocr_id)
+                 where gold_run_id in ({gold_ids});"""
+            rows = cxn.execute(query).pl()
+            rows = rows.rows(named=True)
+            ocr_recs += rows
+            notes += f" gold run IDs {gold_ids} "
+
+        # Limit and shuffle OCR records
+        if args.limit:
+            if args.seed is not None:
+                random.seed(args.seed)
+            random.shuffle(rows)
+            rows = rows[: args.limit]
+            notes += f" limit {args.limit} "
+
+        notes = notes.strip()
+
+        # Start adding DwC data
+        dwc_run_id = cxn.execute(
             """
             insert into dwc_run (
-                prompt, model, api_host, notes, temperature, max_tokens, specimen_type
+                prompt, model, api_host, notes, temperature, max_tokens, signature
             ) values (?, ?, ?, ?, ?, ?, ?) returning dwc_run_id;
             """,
             [
                 prompt,
                 args.model_name,
                 args.api_host,
-                args.notes.strip(),
+                notes,
                 args.temperature,
                 args.context_length,
                 args.signature,
@@ -76,45 +104,27 @@ def extract_action(args: argparse.Namespace) -> None:
         ).fetchone()[0]
 
         for ocr_rec in tqdm(rows):
-            rec_began = datetime.now()
-
             prediction = predictor(text=ocr_rec["ocr_text"])
 
-            cxn.execute(
-                insert_dwc,
-                {
-                    "dwc_run_id": run_id,
-                    "ocr_id": ocr_rec["ocr_id"],
-                    "dwc_elapsed": datetime.now() - rec_began,
-                }
-                | prediction.toDict(),
-            )
+            for field, value in prediction.toDict().items():
+                value = " ".join(value) if value else ""
+                cxn.execute(
+                    query="""
+                        insert into dwc (dwc_run_id, ocr_id, field, value)
+                        values ($dwc_run_id, $ocr_id, $field, $value);
+                        """,
+                    parameters={
+                        "dwc_run_id": dwc_run_id,
+                        "ocr_id": ocr_rec["ocr_id"],
+                        "field": field,
+                        "value": value,
+                    },
+                )
 
         cxn.execute(
             "update dwc_run set dwc_run_elapsed = ? where dwc_run_id = ?;",
-            [datetime.now() - job_began, run_id],
+            [str(datetime.now() - job_began), dwc_run_id],
         )
-
-
-def select_ocr_recs(
-    db_path: Path, ocr_run_id: list[int], limit: int = 0, seed: int | None = None
-) -> list[dict]:
-    run_ids = ", ".join(str(i) for i in ocr_run_id)
-    query = f"select ocr_id, ocr_text from ocr where ocr_run_id in ({run_ids})"
-
-    with duckdb.connect(db_path) as cxn:
-        ocr_recs = cxn.execute(query).pl()
-
-    rows = ocr_recs.rows(named=True)
-
-    if seed is not None:
-        random.seed(seed)
-        random.shuffle(rows)
-
-    if limit:
-        rows = rows[:limit]
-
-    return rows
 
 
 def parse_args() -> argparse.Namespace:
@@ -124,7 +134,6 @@ def parse_args() -> argparse.Namespace:
             """Extract Darwin Core (DwC) information from text."""
         ),
     )
-
     subparsers = arg_parser.add_subparsers(
         title="Subcommands", description="Actions for extracting Darwin Core records"
     )
@@ -134,7 +143,6 @@ def parse_args() -> argparse.Namespace:
         "list",
         help="""List data to help you decide which OCR runs to extract.""",
     )
-
     sigs = list(SIGNATURES.keys())
     list_parser.add_argument(
         "--signature",
@@ -142,7 +150,6 @@ def parse_args() -> argparse.Namespace:
         default=sigs[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
-
     list_parser.add_argument(
         "--db-path",
         type=Path,
@@ -150,14 +157,12 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Path to the database.""",
     )
-
     list_parser.set_defaults(func=list_action)
 
     # ------------------------------------------------------------
     extract_parser = subparsers.add_parser(
         "extract", help="""Extract DwC data from OCR records."""
     )
-
     extract_parser.add_argument(
         "--db-path",
         type=Path,
@@ -165,7 +170,6 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Path to the database.""",
     )
-
     sigs = list(SIGNATURES.keys())
     extract_parser.add_argument(
         "--signature",
@@ -173,69 +177,63 @@ def parse_args() -> argparse.Namespace:
         default=sigs[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
-
     extract_parser.add_argument(
         "--ocr-run-id",
         type=int,
-        required=True,
         action="append",
         help="""Parse records from this OCR run. You may do this more than once.""",
     )
-
+    extract_parser.add_argument(
+        "--gold-run-id",
+        type=int,
+        action="append",
+        help="""Parse records from this gold run. You may do this more than once.""",
+    )
     extract_parser.add_argument(
         "--model-name",
         default="lm_studio/google/gemma-3-27b",
         help="""Use this language model. (default: %(default)s)""",
     )
-
     extract_parser.add_argument(
         "--api-host",
         # default="http://localhost:1234/v1",
         help="""URL for the LM model.""",
     )
-
     extract_parser.add_argument(
         "--api-key",
         help="""API key.""",
     )
-
     extract_parser.add_argument(
         "--context-length",
         type=int,
         default=4096,
         help="""Model's context length. (default: %(default)s)""",
     )
-
     extract_parser.add_argument(
         "--temperature",
         type=float,
         help="""Model's temperature. (default: %(default)s)""",
     )
-
     extract_parser.add_argument(
         "--notes",
         default="",
         help="""Notes about this dataset.""",
     )
-
     extract_parser.add_argument(
         "--cache",
         action="store_true",
         help="""Use cached records?""",
     )
-
     extract_parser.add_argument(
         "--limit",
         type=int,
         help="""Limit the number of records to parse.""",
     )
-
     extract_parser.add_argument(
         "--seed",
         type=int,
         help="""Use this seed to select a random sample of limit records.""",
     )
-
     extract_parser.set_defaults(func=extract_action)
 
     # ------------------------------------------------------------

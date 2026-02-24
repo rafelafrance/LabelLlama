@@ -1,3 +1,5 @@
+from typing import Any
+
 import dspy
 import Levenshtein
 
@@ -33,7 +35,9 @@ class Metric:
         return grand
 
 
-def metric(example: dspy.Example, prediction: dspy.Prediction, trace=None) -> float:
+def metric(
+    example: dspy.Example, prediction: dspy.Prediction, _trace: Any = None
+) -> float:
     score: float = 0.0
     for field in example.labels():
         true: str = " ".join(example[field])
@@ -46,9 +50,9 @@ def metric(example: dspy.Example, prediction: dspy.Prediction, trace=None) -> fl
 def feedback_metric(
     example: dspy.Example,
     prediction: dspy.Prediction,
-    trace=None,
-    pred_name=None,
-    pred_trace=None,
+    _trace: Any = None,
+    _pred_name: Any = None,
+    _pred_trace: Any = None,
 ) -> dspy.Prediction:
     score: float = 0.0
     feedback = "Feedback for specimen:\n"
