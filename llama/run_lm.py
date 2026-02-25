@@ -16,7 +16,7 @@ from llama.signatures.all_signatures import SIGNATURES
 
 
 def list_action(args: argparse.Namespace) -> None:
-    create_dwc_tables(args.db_path, args.signature)
+    create_dwc_tables(args.db_path)
 
     display_runs(args.db_path, "ocr_run")
     display_runs(args.db_path, "dwc_run")
@@ -48,6 +48,7 @@ def extract_action(args: argparse.Namespace) -> None:
 
     with duckdb.connect(args.db_path) as cxn:
         ocr_recs = []
+        rows = []
 
         notes = args.notes or ""
 

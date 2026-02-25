@@ -10,14 +10,11 @@ from pathlib import Path
 
 import duckdb
 import Levenshtein
-from rich import print as rprint
+import pandas as pd
 
 from llama.pylib import db_util
+from llama.signatures.all_signatures import SIGNATURES
 from llama.signatures.cas_v1 import CAS_V1_POST
-
-EXACT = 1.0  # Scores equaling this are blue
-HAPPY = 0.9  # Scores above this are green
-OK = 0.75  # Scores below this are red
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -90,13 +87,14 @@ def import_csv_action(args: argparse.Namespace) -> None:
         ocr_rows = ocr_rows.rows(named=True)
         ocr_ids = {Path(r["image_path"]).stem: r["ocr_id"] for r in ocr_rows}
 
-        gold_run_id = cxn.execute(
+        result = cxn.execute(
             """
-            insert into gold_run (notes, src_path) values (?, ?, ?)
+            insert into gold_run (notes, src_path, signature) values (?, ?, ?)
             returning gold_run_id;
             """,
-            [args.notes, str(args.gold_csv)],
-        ).fetchone()[0]
+            [args.notes, str(args.gold_csv), args.signature],
+        ).fetchone()
+        gold_run_id = result[0] if result else None
 
         for row in gold:
             ocr_id = ocr_ids[Path(row[args.file_name]).stem]
@@ -153,9 +151,9 @@ def score_dwc_action(args: argparse.Namespace) -> None:
         with run as (select * from gold where gold_run_id = {args.gold_run_id})
         pivot run on field using first(value) group by ocr_id;
         """
-    select_text = """
-        select distinct ocr_id, ocr_text from gold join ocr using (ocr_id)
-        where gold_run_id = ?;
+    select_ocr = """
+        select distinct ocr_id, ocr_text, image_path from gold join ocr using (ocr_id)
+        where gold_run_id = ? order by image_path;
         """
 
     with duckdb.connect(args.db_path) as cxn:
@@ -167,9 +165,9 @@ def score_dwc_action(args: argparse.Namespace) -> None:
         gold_rows = gold_rows.rows(named=True)
         gold_rows = {r["ocr_id"]: r for r in gold_rows}
 
-        text_rows = cxn.execute(select_text, [args.gold_run_id]).pl()
-        text_rows = text_rows.rows(named=True)
-        text_rows = {r["ocr_id"]: r["ocr_text"] for r in text_rows}
+        ocr_rows = cxn.execute(select_ocr, [args.gold_run_id]).pl()
+        ocr_rows = ocr_rows.rows(named=True)
+        ocr_rows = {r["ocr_id"]: r for r in ocr_rows}
 
     # Validate fields
     dwc_fields = {
@@ -206,50 +204,50 @@ def score_dwc_action(args: argparse.Namespace) -> None:
     fields = sorted(fields)
     ocr_ids = sorted(ocr_ids)
     by_field = dict.fromkeys(fields, 0.0)
+    df_data = []
 
-    for i, ocr_id in enumerate(ocr_ids, 1):
+    for ocr_id in ocr_ids:
         dwc_row = dwc_rows[ocr_id]
         gold_row = gold_rows[ocr_id]
-        text = text_rows[ocr_id]
+        ocr_info = ocr_rows[ocr_id]
+        image_path = Path(ocr_info["image_path"]).name
 
-        print(f"\n\n{i}/{len(ocr_ids)}", "=" * 90, "\n")
-        print(text, "\n")
+        row1 = {"image_path": image_path, "type": f"gold run {args.gold_run_id}"}
+        row2 = {"image_path": "", "type": f"dwc run {args.dwc_run_id}"}
+        row3 = {"image_path": "", "type": "score"}
 
         for field in fields:
-            dwc_val = dwc_row[field] or ""
-            if CAS_V1_POST.get(field):
-                dwc_val = CAS_V1_POST[field](dwc_val, text)
-
             gold_val = gold_row[field] or ""
+
+            dwc_val = dwc_row[field] or ""
+            if func := CAS_V1_POST.get(field):
+                dwc_val = func(dwc_val, ocr_info["ocr_text"])
 
             score = Levenshtein.ratio(dwc_val, gold_val)
             by_field[field] += score
 
-            color = score_color(score)
-            rprint(f"[{color}]{field:>28} ({score:0.2f}) {gold_val} <=> {dwc_val}")
+            row1[field] = gold_val
+            row2[field] = dwc_val
+            row3[field] = score
 
-        if args.pause:
-            input("\nPress Enter to continue.")
+        df_data.append(row1)
+        df_data.append(row2)
+        df_data.append(row3)
 
-    rprint(f"\n\n[blue]{'Field Totals':>28}")
+    row = {"image_path": "", "type": "totals"}
     grand = 0.0
     for field in fields:
         mean = by_field[field] / len(ocr_ids)
-        rprint(f"[{score_color(mean)}]{field:>28} {mean:0.2f}")
         grand += mean
-
+        row[field] = mean
+    df_data.append(row)
     grand /= len(fields)
-    rprint(f"\n[{score_color(grand)}]{'Grand Total':>28} {grand:0.2f}\n")
+    df_data.append({"image_path": "", "type": "grand total", fields[0]: grand})
 
-
-def score_color(score: float) -> str:
-    if score >= 1.0:
-        return "blue"
-    if score >= HAPPY:
-        return "green"
-    if score >= OK:
-        return "yellow"
-    return "red"
+    if args.results_ods:
+        df = pd.DataFrame(df_data)
+        with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
+            df.to_excel(writer, sheet_name="compare", index=False)
 
 
 def parse_args() -> argparse.Namespace:
@@ -373,6 +371,13 @@ def parse_args() -> argparse.Namespace:
         metavar="COLUMN",
         help="""The file name column used to link OCR records.""",
     )
+    sigs = list(SIGNATURES.keys())
+    list_parser.add_argument(
+        "--signature",
+        choices=sigs,
+        default=sigs[0],
+        help="""What type of data are you extracting? What is its signature?""",
+    )
     import_csv_parser.add_argument(
         "--skip",
         action="append",
@@ -411,9 +416,10 @@ def parse_args() -> argparse.Namespace:
         help="""Use this gold standard to score against.""",
     )
     score_dwc_parser.add_argument(
-        "--pause",
-        action="store_true",
-        help="""Pause between each sheet?""",
+        "--results-ods",
+        type=Path,
+        metavar="PATH",
+        help="""Write the results to this spreadsheet.""",
     )
     score_dwc_parser.set_defaults(func=score_dwc_action)
 

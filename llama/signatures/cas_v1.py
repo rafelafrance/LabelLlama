@@ -45,7 +45,10 @@ class CasV1(Signature):
     )
     recordNumber: list[str] = OutputField(
         default=[],
-        desc="The number used to identify the specimen",
+        desc=(
+            "The number used to identify the specimen. The record number is often "
+            "found just after the recorded by names.",
+        ),
     )
     recordedBy: list[str] = OutputField(
         default=[],
@@ -135,21 +138,21 @@ CAS_V1_POST: dict[str, Callable[[str, str], str] | None] = {
     "infraspecificNameAuthorship": None,
     "family": post.family,
     "associatedTaxa": post.associated_taxa,
-    "recordNumber": None,
+    "recordNumber": post.record_number,
     "recordedBy": None,
     "verbatimEventDate": None,
     "identifiedBy": None,
     "dateIdentified": None,
-    "country": None,
-    "stateProvince": None,
+    "country": post.country,
+    "stateProvince": post.state_province,
     "county": post.county,
     "municipality": None,
     "verbatimElevation": post.elevation,
     "verbatimLatitude": None,
     "verbatimLongitude": None,
     "geodeticDatum": None,
-    "trs": None,
-    "utm": None,
+    "trs": post.trs,
+    "utm": post.utm,
     "locality": None,
     "habitat": None,
     "occurrenceRemarks": None,

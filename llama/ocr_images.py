@@ -50,7 +50,10 @@ def ocr_images(args: argparse.Namespace) -> None:
                 args.temperature,
                 args.context_length,
             ],
-        ).fetchone()[0]
+        ).fetchone()
+        if not run_id:
+            raise ValueError(f"Could not find the given ocr-run-id {args.ocr_run_id}")
+        run_id = run_id[0]
 
         model = client.llm.model(
             args.model_name,

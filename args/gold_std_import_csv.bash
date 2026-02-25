@@ -2,7 +2,7 @@
 
 uv run ./llama/gold_std.py import-csv \
   --db-path data/herbarium/labelllama_herbarium.duckdb \
-  --gold-csv data/herbarium/CAS_Goldstandard_2026-01-26.csv \
+  --gold-csv data/herbarium/CAS_Goldstandard_2026-02-24.csv \
   --file-name "filename" \
   --skip "ElevationUnits" \
   --skip "MaxElevation" \

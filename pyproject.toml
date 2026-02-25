@@ -25,6 +25,7 @@ dependencies = [
     "lmstudio>=1.5.0",
     "marimo>=0.18.1",
     "msgspec>=0.20.0",
+    "odfpy>=1.4.1",
     "pandas>=2.3.3",
     "pillow>=12.0.0",
     "polars>=1.35.2",
@@ -82,12 +83,14 @@ ignore = [
     "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
     "DTZ011",  # datetime.date.today() used
     "ERA001",  # Remove commented-out code
+    "EM102",   # Exception must not use an f-string literal, assign to variable first
     "FIX002",  # Line contains TODO
     "G004",    # Logging statement uses f-string
     "LOG015",  # Use own logger instead
     "N815",    # Variable in class scope should not be mixedCase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+    "PLR0915", # Too many statements (x > 50)
     "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
     "PT009",   # Use a regular assert instead of unittest-style {assertion}
@@ -103,6 +106,7 @@ ignore = [
     "T201",    # print found
     "TD002",   # Missing author in TODO
     "TD003",   # Missing issue link on the line following this TODO
+    "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
 [tool.ty.rules]
