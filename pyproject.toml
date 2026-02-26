@@ -13,9 +13,11 @@ copyright = "Copyright (C) 2025 by Raphael LaFrance"
 requires-python = ">=3.13"
 dependencies = [
     "altair>=6.0.0",
+    "charset-normalizer>=3.4.4",
     "dspy>=3.0.4",
     "duckdb>=1.4.1",
     "flet[all]>=0.28.3",
+    "ftfy>=6.3.1",
     "jinja2>=3.1.6",
     "jupyter>=1.1.1",
     "lab>=8.8",
@@ -28,13 +30,17 @@ dependencies = [
     "odfpy>=1.4.1",
     "pandas>=2.3.3",
     "pillow>=12.0.0",
+    "pip>=26.0.1",
     "polars>=1.35.2",
     "pyarrow>=22.0.0",
     "pydantic>=2.12.4",
     "rapidfuzz>=3.14.3",
+    "requests>=2.32.5",
     "rich>=14.2.0",
+    "spacy>=3.8.11",
     "sqlglot>=28.0.0",
     "tqdm>=4.67.1",
+    "urllib3>=2.6.3",
 ]
 
 [dependency-groups]

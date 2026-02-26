@@ -69,6 +69,7 @@ def clean_text(text: str) -> str:
 
 class DwcExtract(dspy.Module):
     def __init__(self, signature: str) -> None:
+        super().__init__()
         self.signature = SIGNATURES[signature]
         self.predictor = dspy.Predict(self.signature)
 

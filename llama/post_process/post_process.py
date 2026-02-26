@@ -1,101 +1,135 @@
 import re
+from typing import Any
+
+from spacy import Language
+
+from llama.traiter.rules.elevation import Elevation
+from llama.traiter.rules.number import Number
+
+ENABLE_PIPES: list[str] = ["tagger", "parser", "attribute_ruler", "lemmatizer"]
 
 
 def remove_chars(
-    value: str, *, leading: str = "", trailing: str = "", anywhere: str = ""
+    dwc_field: str, *, leading: str = "", trailing: str = "", anywhere: str = ""
 ) -> str:
-    value = value or ""
+    dwc_field = dwc_field or ""
     for char in leading:
-        value = value.removeprefix(char)
+        dwc_field = dwc_field.removeprefix(char)
     for char in trailing:
-        value = value.removesuffix(char)
+        dwc_field = dwc_field.removesuffix(char)
     for char in anywhere:
-        value = value.replace(char, "")
-    return value
+        dwc_field = dwc_field.replace(char, "")
+    return dwc_field
 
 
-def no_hallucination(value: str, text: str) -> str:
-    return value if value in text else ""
+def no_hallucination(dwc_field: str, ocr_text: str) -> str:
+    return dwc_field if dwc_field in ocr_text else ""
 
 
 # #############################################################################
-def associated_taxa(value: str, _text: str) -> str:
-    return remove_chars(value, trailing=".", anywhere="*")
+def associated_taxa(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
+    return remove_chars(dwc_field, trailing=".", anywhere="*")
 
 
-def county(value: str, _text: str) -> str:
-    value = remove_chars(value, trailing=".")
+def county(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
+    dwc_field = remove_chars(dwc_field, trailing=".")
     # Remove label
-    value = re.sub(r"\s(co\.?|county)$", "", value, flags=re.IGNORECASE)
-    return value.title()
+    dwc_field = re.sub(r"\s(co\.?|county)$", "", dwc_field, flags=re.IGNORECASE)
+    return dwc_field.title()
 
 
-def country(value: str, text: str) -> str:
-    value = remove_chars(value, trailing=".")
-    value = no_hallucination(value, text)
-    value = "U.S.A." if value == "U.S.A" else value  # Keep the dot in this case
-    return value
+def country(
+    dwc_field: str, _dwc_row: dict[str, Any], ocr_text: str, _nlp: Language
+) -> str:
+    dwc_field = remove_chars(dwc_field, trailing=".")
+    dwc_field = no_hallucination(dwc_field, ocr_text)
+    dwc_field = "U.S.A." if dwc_field == "U.S.A" else dwc_field  # Keep dot in this case
+    return dwc_field
 
 
-def elevation(value: str, _text: str) -> str:
-    value = value or ""
+def elevation(
+    dwc_field: str, dwc_row: dict[str, Any], _ocr_text: str, nlp: Language
+) -> str:
+    enable_pipes = ENABLE_PIPES + Elevation.enable_pipes + Number.enable_pipes
+    with nlp.select_pipes(enable=enable_pipes):
+        doc = nlp(dwc_field)
+
+    dwc_row |= doc.ents[0]._.trait.to_dict()
+
     # Remove label
-    value = re.sub(
+    dwc_field = re.sub(
         r"\s*(elevation|elev[.:]*|el[.:]*|altitude|alt[.:]*)\s*",
         "",
-        value,
+        dwc_field,
         flags=re.IGNORECASE,
     )
-    return value
+    return dwc_field
 
 
-def event_date(value: str, _text: str) -> str:
-    value = value or ""
+def event_date(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
     # Remove label
-    value = re.sub(r"\s*(date[.:]*)\s*", "", value, flags=re.IGNORECASE)
-    return value
+    dwc_field = re.sub(r"\s*(date[.:]*)\s*", "", dwc_field, flags=re.IGNORECASE)
+    return dwc_field
 
 
-def family(value: str, text: str) -> str:
-    value = remove_chars(value, trailing=".")
-    value = value.split().pop() if value else ""
-    value = no_hallucination(value, text)
-    return value.title()
+def family(
+    dwc_field: str, _dwc_row: dict[str, Any], ocr_text: str, _nlp: Language
+) -> str:
+    dwc_field = remove_chars(dwc_field, trailing=".")
+    dwc_field = dwc_field.split().pop() if dwc_field else ""
+    dwc_field = no_hallucination(dwc_field, ocr_text)
+    return dwc_field.title()
 
 
-def habitat(value: str, _text: str) -> str:
-    value = value or ""
+def habitat(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
     # Remove label
-    value = re.sub(r"\s*(habitat[:,;]*)\s*", "", value, flags=re.IGNORECASE)
-    return value
+    dwc_field = re.sub(r"\s*(habitat[:,;]*)\s*", "", dwc_field, flags=re.IGNORECASE)
+    return dwc_field
 
 
-def record_number(value: str, _text: str) -> str:
-    value = value or ""
+def record_number(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
     # Remove label
-    value = re.sub(r"\s*(No[:,;]*)\s*", "", value, flags=re.IGNORECASE)
-    return value
+    dwc_field = re.sub(r"\s*(No[:,;]*)\s*", "", dwc_field, flags=re.IGNORECASE)
+    return dwc_field
 
 
-def scientific_name(value: str, _text: str) -> str:
-    value = remove_chars(value, trailing=".")
-    if not value:
+def scientific_name(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
+    dwc_field = remove_chars(dwc_field, trailing=".")
+    if not dwc_field:
         return ""
-    genus, species = value.split()[:2]  # Remove authors & subspecies etc.
+    genus, species = dwc_field.split()[:2]  # Remove authors & subspecies etc.
     genus = genus.title()
     species = species.lower()
     return f"{genus} {species}"
 
 
-def state_province(value: str, text: str) -> str:
-    value = remove_chars(value, trailing=".")
-    value = no_hallucination(value, text)
-    return value.title()
+def state_province(
+    dwc_field: str, _dwc_row: dict[str, Any], ocr_text: str, _nlp: Language
+) -> str:
+    dwc_field = remove_chars(dwc_field, trailing=".")
+    dwc_field = no_hallucination(dwc_field, ocr_text)
+    return dwc_field.title()
 
 
-def trs(value: str, _text: str) -> str:
-    return remove_chars(value, trailing=".")
+def trs(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
+    return remove_chars(dwc_field, trailing=".")
 
 
-def utm(value: str, _text: str) -> str:
-    return remove_chars(value, leading="(", trailing=").")
+def utm(
+    dwc_field: str, _dwc_row: dict[str, Any], _ocr_text: str, _nlp: Language
+) -> str:
+    return remove_chars(dwc_field, leading="(", trailing=").")

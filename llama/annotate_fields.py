@@ -54,7 +54,7 @@ class App(tk.Tk):
 
         self.signature = SIGNATURES[args.signature]
         sig = self.signature.model_fields
-        self.fields = [
+        self.fields: list[str] = [
             k
             for k, v in sig.items()
             if v.json_schema_extra["__dspy_field_type"] == "output"
@@ -360,11 +360,11 @@ def parse_args() -> argparse.Namespace:
         ),
     )
 
-    sigs = list(SIGNATURES.keys())
+    signatures = list(SIGNATURES.keys())
     arg_parser.add_argument(
         "--signature",
-        choices=sigs,
-        default=sigs[0],
+        choices=signatures,
+        default=signatures[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
 

@@ -130,7 +130,7 @@ def filter_images(args: argparse.Namespace) -> list[Path]:
     """
     Filter images.
 
-    - Missing images. The job crashed and you want all remaining images using the
+    - Missing images. The job crashed, and you want all remaining images using the
       --missing flag.
     - The --retry flag only selects images that have never successfully OCRed, i.e.
       they always errored out. I use this to try a different model and/or parameters

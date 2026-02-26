@@ -105,7 +105,7 @@ def display_runs(db_path: Path, table: str) -> None:
 
         for row in rows:
             for key, value in row.items():
-                if key not in ("prompt"):
+                if key != "prompt":
                     print(f"{key:>30} {value}")
 
             child = table.removesuffix("_run")

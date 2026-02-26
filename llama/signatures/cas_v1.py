@@ -1,6 +1,7 @@
 from collections.abc import Callable
 
 from dspy import InputField, OutputField, Signature
+from spacy import Language
 
 from llama.post_process import post_process as post
 
@@ -131,7 +132,7 @@ class CasV1(Signature):
     )
 
 
-CAS_V1_POST: dict[str, Callable[[str, str], str] | None] = {
+CAS_V1_POST: dict[str, Callable[[str, str, Language], str] | None] = {
     "scientificName": post.scientific_name,
     "scientificNameAuthorship": None,
     "infraspecificEpithet": None,

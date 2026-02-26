@@ -144,11 +144,11 @@ def parse_args() -> argparse.Namespace:
         "list",
         help="""List data to help you decide which OCR runs to extract.""",
     )
-    sigs = list(SIGNATURES.keys())
+    signatures = list(SIGNATURES.keys())
     list_parser.add_argument(
         "--signature",
-        choices=sigs,
-        default=sigs[0],
+        choices=signatures,
+        default=signatures[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
     list_parser.add_argument(
@@ -171,11 +171,11 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Path to the database.""",
     )
-    sigs = list(SIGNATURES.keys())
+    signatures = list(SIGNATURES.keys())
     extract_parser.add_argument(
         "--signature",
-        choices=sigs,
-        default=sigs[0],
+        choices=signatures,
+        default=signatures[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
     extract_parser.add_argument(

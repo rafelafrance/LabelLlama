@@ -5,13 +5,14 @@ import csv
 import json
 import random
 import textwrap
-import warnings
 from pathlib import Path
+from typing import Any
 
 import duckdb
 import Levenshtein
 import pandas as pd
 
+from llama.post_process import pipeline
 from llama.pylib import db_util
 from llama.signatures.all_signatures import SIGNATURES
 from llama.signatures.cas_v1 import CAS_V1_POST
@@ -44,33 +45,33 @@ def import_json_action(args: argparse.Namespace) -> None:
 
     raise NotImplementedError
 
-    with args.gold_json.open() as fp:
-        sheets = json.load(fp)
-
-    with duckdb.connect(args.db_path) as cxn:
-        gold_run_id = cxn.execute(
-            """
-            insert into gold_run (notes, src_path) values (?, ?, ?)
-            returning gold_run_id;
-            """,
-            [args.notes, str(args.gold_json)],
-        ).fetchone()[0]
-
-        insert_gold = """
-            insert into gold (gold_run_id, ocr_id, split, field, value)
-                values ($gold_run_id, $ocr_id, '', $field, $value);
-            """
-
-        for sheet in sheets:
-            cxn.execute(
-                query=insert_gold,
-                parameters={
-                    "gold_run_id": gold_run_id,
-                    "ocr_id": sheet["ocr_id"],
-                    "field": None,
-                    "value": None,
-                },
-            )
+    # with args.gold_json.open() as fp:
+    #     sheets = json.load(fp)
+    #
+    # with duckdb.connect(args.db_path) as cxn:
+    #     gold_run_id = cxn.execute(
+    #         """
+    #         insert into gold_run (notes, src_path) values (?, ?, ?)
+    #         returning gold_run_id;
+    #         """,
+    #         [args.notes, str(args.gold_json)],
+    #     ).fetchone()[0]
+    #
+    #     insert_gold = """
+    #         insert into gold (gold_run_id, ocr_id, split, field, value)
+    #             values ($gold_run_id, $ocr_id, '', $field, $value);
+    #         """
+    #
+    #     for sheet in sheets:
+    #         cxn.execute(
+    #             query=insert_gold,
+    #             parameters={
+    #                 "gold_run_id": gold_run_id,
+    #                 "ocr_id": sheet["ocr_id"],
+    #                 "field": None,
+    #                 "value": None,
+    #             },
+    #         )
 
 
 def import_csv_action(args: argparse.Namespace) -> None:
@@ -169,72 +170,54 @@ def score_dwc_action(args: argparse.Namespace) -> None:
         ocr_rows = ocr_rows.rows(named=True)
         ocr_rows = {r["ocr_id"]: r for r in ocr_rows}
 
-    # Validate fields
-    dwc_fields = {
-        f for f in next(iter(dwc_rows.values())) if f not in db_util.DWC_METADATA
-    }
     gold_fields = {
         f for f in next(iter(gold_rows.values())) if f not in db_util.GOLD_METADATA
     }
-    fields = dwc_fields & gold_fields
-    if dwc_fields != gold_fields:
-        extra_dwc = sorted(dwc_fields - gold_fields)
-        extra_gold = sorted(gold_fields - dwc_fields)
-        warnings.warn(
-            "The Darwin Core and gold standard field lists are not the same. "
-            "The Darwin Core has these extra fields "
-            f"{' '.join(extra_dwc) if extra_dwc else 'None'} "
-            " and the gold standard has these "
-            f"{' '.join(extra_gold) if extra_gold else 'None'} fields.",
-            stacklevel=1,
-        )
 
-    # Validate OCR IDs
-    dwc_ocr_ids = set(dwc_rows)
-    gold_ocr_ids = set(gold_rows)
-    ocr_ids = dwc_ocr_ids & gold_ocr_ids
-    if dwc_ocr_ids != gold_ocr_ids:
-        warnings.warn(
-            f"The gold standard has {len(gold_ocr_ids)} records and the DwC has "
-            f"{len(dwc_ocr_ids)} records.",
-            stacklevel=1,
-        )
+    nlp = pipeline.build()
 
     # Score
-    fields = sorted(fields)
-    ocr_ids = sorted(ocr_ids)
+    fields = sorted(gold_fields)
     by_field = dict.fromkeys(fields, 0.0)
     df_data = []
+
+    ocr_ids = list(ocr_rows.keys())
+    if args.limit:
+        ocr_ids = ocr_ids[: args.limit]
 
     for ocr_id in ocr_ids:
         dwc_row = dwc_rows[ocr_id]
         gold_row = gold_rows[ocr_id]
-        ocr_info = ocr_rows[ocr_id]
-        image_path = Path(ocr_info["image_path"]).name
+        ocr_row = ocr_rows[ocr_id]
+        image_path = Path(ocr_row["image_path"]).name
 
-        row1 = {"image_path": image_path, "type": f"gold run {args.gold_run_id}"}
-        row2 = {"image_path": "", "type": f"dwc run {args.dwc_run_id}"}
-        row3 = {"image_path": "", "type": "score"}
+        row1: dict[str, str] = {
+            "image_path": image_path,
+            "type": f"gold run {args.gold_run_id}",
+        }
+        row2: dict[str, str] = {"image_path": "", "type": f"dwc run {args.dwc_run_id}"}
+        row3: dict[str, Any] = {"image_path": "", "type": "score"}
 
         for field in fields:
-            gold_val = gold_row[field] or ""
+            dwc_field = dwc_row[field] or ""
+            gold_field = gold_row[field] or ""
 
-            dwc_val = dwc_row[field] or ""
-            if func := CAS_V1_POST.get(field):
-                dwc_val = func(dwc_val, ocr_info["ocr_text"])
+            func = CAS_V1_POST.get(field)
+            if func and dwc_field:
+                dwc_field = func(dwc_field, dwc_row, ocr_row["ocr_text"], nlp)
 
-            score = Levenshtein.ratio(dwc_val, gold_val)
+            score = Levenshtein.ratio(dwc_field, gold_field)
             by_field[field] += score
 
-            row1[field] = gold_val
-            row2[field] = dwc_val
+            row1[field] = gold_field
+            row2[field] = dwc_field
             row3[field] = score
 
         df_data.append(row1)
         df_data.append(row2)
         df_data.append(row3)
 
-    row = {"image_path": "", "type": "totals"}
+    row: dict[str, Any] = {"image_path": "", "type": "totals"}
     grand = 0.0
     for field in fields:
         mean = by_field[field] / len(ocr_ids)
@@ -341,8 +324,8 @@ def parse_args() -> argparse.Namespace:
     #         column name.""",
     # )
     # import_json_parser.add_argument(
-    #     "--notes", help="""A breif description of the gold standard."""
-    # )
+    #     "--notes", help="""A brief description of the gold standard."""
+    #
     # import_json_parser.set_defaults(func=import_json_action)
 
     # ------------------------------------------------------------
@@ -371,11 +354,11 @@ def parse_args() -> argparse.Namespace:
         metavar="COLUMN",
         help="""The file name column used to link OCR records.""",
     )
-    sigs = list(SIGNATURES.keys())
+    signatures = list(SIGNATURES.keys())
     list_parser.add_argument(
         "--signature",
-        choices=sigs,
-        default=sigs[0],
+        choices=signatures,
+        default=signatures[0],
         help="""What type of data are you extracting? What is its signature?""",
     )
     import_csv_parser.add_argument(
@@ -387,7 +370,7 @@ def parse_args() -> argparse.Namespace:
             column name.""",
     )
     import_csv_parser.add_argument(
-        "--notes", help="""A breif description of the gold standard."""
+        "--notes", help="""A brief description of the gold standard."""
     )
     import_csv_parser.set_defaults(func=import_csv_action)
 
@@ -421,6 +404,11 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Write the results to this spreadsheet.""",
     )
+    score_dwc_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit the number of records to export.""",
+    )
     score_dwc_parser.set_defaults(func=score_dwc_action)
 
     # ------------------------------------------------------------
@@ -453,7 +441,7 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.5,
         metavar="FLOAT",
-        help="""What fraction of the records to use for valiation.
+        help="""What fraction of the records to use for validation.
             (default: %(default)s)""",
     )
     split_parser.add_argument(
