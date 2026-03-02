@@ -10,9 +10,11 @@ import dspy
 import duckdb
 from tqdm import tqdm
 
-from llama.modules.dwc_extract import DwcExtract
-from llama.pylib.db_util import create_dwc_tables, display_runs
-from llama.signatures.all_signatures import SIGNATURES
+from llama.parse1_text.dwc_extract import DwcExtract
+from llama.parse2_fields.field_extract import FieldExtract
+from llama.common.db_util import create_dwc_tables, display_runs
+from llama.parse1_text.all_signatures import SIGNATURES
+from llama.parse2_fields.all_signatures import FIELD_SIGNATURES
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -128,6 +130,64 @@ def extract_action(args: argparse.Namespace) -> None:
         )
 
 
+def field_action(args: argparse.Namespace) -> None:
+    lm = dspy.LM(
+        args.model_name,
+        api_base=args.api_host,
+        api_key=args.api_key,
+        temperature=args.temperature,
+        max_tokens=args.context_length,
+        cache=args.cache,
+    )
+    dspy.configure(lm=lm)
+
+    dwc_query = """
+        select dwc_id, value from dwc
+         where dwc_run_id = ? and field = ? and value <> '';
+        """
+    gold_query = """
+        select dwc_id, value from gold
+         where gold_run_id = ? and field = ? and value <> '';
+        """
+    dwc_fields_query = """select distinct field from dwc where dwc_run_id = ?;"""
+    gold_fields_query = """select distinct field from gold where gold_run_id = ?;"""
+
+    with duckdb.connect(args.db_path) as cxn:
+        fields = set()
+        if args.dwc_run_id:
+            rows = cxn.execute(dwc_fields_query, [args.dwc_run_id]).pl()
+            rows = {f["field"] for f in rows.rows(named=True)}
+            fields |= rows
+
+        if args.gold_run_id:
+            rows = cxn.execute(gold_fields_query, [args.gold_run_id]).pl()
+            rows = {f["field"] for f in rows.rows(named=True)}
+            fields |= rows
+
+        for field in sorted(fields):
+            recs = []
+            if not FIELD_SIGNATURES.get(field):
+                continue
+
+            predictor = FieldExtract(field)
+
+            # Get field records
+            if args.dwc_run_id:
+                rows = cxn.execute(dwc_query, [args.dwc_run_id, field]).pl()
+                rows = rows.rows(named=True)
+                recs += rows
+
+            # Get OCR records via gold data
+            if args.gold_run_id:
+                rows = cxn.execute(gold_query, [args.gold_run_id, field]).pl()
+                rows = rows.rows(named=True)
+                recs += rows
+
+            for rec in recs:
+                prediction = predictor(text=rec["value"])
+                print(f"{rec['value']}", prediction.toDict())
+
+
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
@@ -179,10 +239,10 @@ def parse_args() -> argparse.Namespace:
         help="""What type of data are you extracting? What is its signature?""",
     )
     extract_parser.add_argument(
-        "--ocr-run-id",
+        "--dwc-run-id",
         type=int,
         action="append",
-        help="""Parse records from this OCR run. You may do this more than once.""",
+        help="""Parse records from this DwC run. You may do this more than once.""",
     )
     extract_parser.add_argument(
         "--gold-run-id",
@@ -207,7 +267,7 @@ def parse_args() -> argparse.Namespace:
     extract_parser.add_argument(
         "--context-length",
         type=int,
-        default=4096,
+        default=65536,
         help="""Model's context length. (default: %(default)s)""",
     )
     extract_parser.add_argument(
@@ -236,6 +296,74 @@ def parse_args() -> argparse.Namespace:
         help="""Use this seed to select a random sample of limit records.""",
     )
     extract_parser.set_defaults(func=extract_action)
+
+    # ------------------------------------------------------------
+    field_parser = subparsers.add_parser(
+        "fields", help="""Extract subfields from extracted DwC data."""
+    )
+    field_parser.add_argument(
+        "--db-path",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""Path to the database.""",
+    )
+    field_parser.add_argument(
+        "--dwc-run-id",
+        type=int,
+        help="""Parse fields from this DwC run.""",
+    )
+    field_parser.add_argument(
+        "--gold-run-id",
+        type=int,
+        help="""Parse fields from this gold run.""",
+    )
+    field_parser.add_argument(
+        "--model-name",
+        default="lm_studio/google/gemma-3-27b",
+        help="""Use this language model. (default: %(default)s)""",
+    )
+    field_parser.add_argument(
+        "--api-host",
+        default="http://localhost:1234/v1",
+        help="""URL for the LM model.""",
+    )
+    field_parser.add_argument(
+        "--api-key",
+        help="""API key.""",
+    )
+    field_parser.add_argument(
+        "--context-length",
+        type=int,
+        default=16384,
+        help="""Model's context length. (default: %(default)s)""",
+    )
+    field_parser.add_argument(
+        "--temperature",
+        type=float,
+        help="""Model's temperature. (default: %(default)s)""",
+    )
+    field_parser.add_argument(
+        "--notes",
+        default="",
+        help="""Notes about this dataset.""",
+    )
+    field_parser.add_argument(
+        "--cache",
+        action="store_true",
+        help="""Use cached records?""",
+    )
+    field_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit the number of records to parse.""",
+    )
+    field_parser.add_argument(
+        "--seed",
+        type=int,
+        help="""Use this seed to select a random sample of limit records.""",
+    )
+    field_parser.set_defaults(func=field_action)
 
     # ------------------------------------------------------------
 

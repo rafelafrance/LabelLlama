@@ -1795,6 +1795,7 @@ source = { editable = "." }
 dependencies = [
     { name = "altair" },
     { name = "charset-normalizer" },
+    { name = "diskcache" },
     { name = "dspy" },
     { name = "duckdb" },
     { name = "flet", extra = ["all"] },
@@ -1836,6 +1837,7 @@ dev = [
 requires-dist = [
     { name = "altair", specifier = ">=6.0.0" },
     { name = "charset-normalizer", specifier = ">=3.4.4" },
+    { name = "diskcache", specifier = ">=5.6.3" },
     { name = "dspy", specifier = ">=3.0.4" },
     { name = "duckdb", specifier = ">=1.4.1" },
     { name = "flet", extras = ["all"], specifier = ">=0.28.3" },

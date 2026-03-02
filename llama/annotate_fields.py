@@ -9,7 +9,7 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from llama.signatures.all_signatures import SIGNATURES
+from llama.parse1_text.all_signatures import SIGNATURES
 
 FONT = ("liberation sans", 16)
 FONT_I = ("liberation sans", 16, "italic bold")

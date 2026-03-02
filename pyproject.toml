@@ -14,6 +14,7 @@ requires-python = ">=3.13"
 dependencies = [
     "altair>=6.0.0",
     "charset-normalizer>=3.4.4",
+    "diskcache>=5.6.3",
     "dspy>=3.0.4",
     "duckdb>=1.4.1",
     "flet[all]>=0.28.3",

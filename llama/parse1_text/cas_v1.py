@@ -3,7 +3,7 @@ from collections.abc import Callable
 from dspy import InputField, OutputField, Signature
 from spacy import Language
 
-from llama.post_process import post_process as post
+from llama.parse2_fields import post_process as post
 
 
 class CasV1(Signature):

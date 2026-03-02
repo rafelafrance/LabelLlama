@@ -12,10 +12,10 @@ import duckdb
 import Levenshtein
 import pandas as pd
 
-from llama.post_process import pipeline
-from llama.pylib import db_util
-from llama.signatures.all_signatures import SIGNATURES
-from llama.signatures.cas_v1 import CAS_V1_POST
+from old.post_process import pipeline
+from llama.common import db_util
+from llama.parse1_text.all_signatures import SIGNATURES
+from llama.parse1_text.cas_v1 import CAS_V1_POST
 
 
 def list_action(args: argparse.Namespace) -> None:

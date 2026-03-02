@@ -11,7 +11,7 @@ import lmstudio as lms
 import polars as pl
 from tqdm import tqdm
 
-from llama.pylib.db_util import create_ocr_tables
+from llama.common.db_util import create_ocr_tables
 
 # A reasonable starting prompt. I will parameterize and try variations on this later.
 PROMPT = " ".join(

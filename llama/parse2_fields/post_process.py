@@ -3,8 +3,8 @@ from typing import Any
 
 from spacy import Language
 
-from llama.traiter.rules.elevation import Elevation
-from llama.traiter.rules.number import Number
+from old.traiter.rules.elevation import Elevation
+from old.traiter.rules.number import Number
 
 ENABLE_PIPES: list[str] = ["tagger", "parser", "attribute_ruler", "lemmatizer"]
 
