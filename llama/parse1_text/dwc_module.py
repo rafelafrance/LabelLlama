@@ -1,14 +1,12 @@
 from typing import Any
 
 import dspy
-from dspy import Prediction
 
 from llama.common.preprocess import clean_text
 from llama.parse1_text.all_signatures import SIGNATURES
 
 
-
-class DwcExtract(dspy.Module):
+class DwcModule(dspy.Module):
     def __init__(self, signature: str) -> None:
         super().__init__()
         self.signature = SIGNATURES[signature]
@@ -19,7 +17,7 @@ class DwcExtract(dspy.Module):
         self.input_names: list[str] = list(self.input_fields.keys())
         self.output_names: list[str] = list(self.output_fields.keys())
 
-    def forward(self, text: str) -> Prediction:
+    def forward(self, text: str) -> dspy.Prediction:
         text = clean_text(text)
         prediction = self.predictor(text=text)
         return prediction

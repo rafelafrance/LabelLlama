@@ -6,16 +6,14 @@ import json
 import random
 import textwrap
 from pathlib import Path
-from typing import Any
 
+# from typing import Any
 import duckdb
-import Levenshtein
-import pandas as pd
 
-from old.post_process import pipeline
+# import Levenshtein
+# import pandas as pd
 from llama.common import db_util
 from llama.parse1_text.all_signatures import SIGNATURES
-from llama.parse1_text.cas_v1 import CAS_V1_POST
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -144,93 +142,94 @@ def split_action(args: argparse.Namespace) -> None:
 
 
 def score_dwc_action(args: argparse.Namespace) -> None:
-    select_dwc = f"""
-        with run as (select * from dwc where dwc_run_id = {args.dwc_run_id})
-        pivot run on field using first(value) group by ocr_id;
-        """
-    select_gold = f"""
-        with run as (select * from gold where gold_run_id = {args.gold_run_id})
-        pivot run on field using first(value) group by ocr_id;
-        """
-    select_ocr = """
-        select distinct ocr_id, ocr_text, image_path from gold join ocr using (ocr_id)
-        where gold_run_id = ? order by image_path;
-        """
-
-    with duckdb.connect(args.db_path) as cxn:
-        dwc_rows = cxn.execute(select_dwc).pl()
-        dwc_rows = dwc_rows.rows(named=True)
-        dwc_rows = {r["ocr_id"]: r for r in dwc_rows}
-
-        gold_rows = cxn.execute(select_gold).pl()
-        gold_rows = gold_rows.rows(named=True)
-        gold_rows = {r["ocr_id"]: r for r in gold_rows}
-
-        ocr_rows = cxn.execute(select_ocr, [args.gold_run_id]).pl()
-        ocr_rows = ocr_rows.rows(named=True)
-        ocr_rows = {r["ocr_id"]: r for r in ocr_rows}
-
-    gold_fields = {
-        f for f in next(iter(gold_rows.values())) if f not in db_util.GOLD_METADATA
-    }
-
-    nlp = pipeline.build()
-
-    # Score
-    fields = sorted(gold_fields)
-    by_field = dict.fromkeys(fields, 0.0)
-    df_data = []
-
-    ocr_ids = list(ocr_rows.keys())
-    if args.limit:
-        ocr_ids = ocr_ids[: args.limit]
-
-    for ocr_id in ocr_ids:
-        dwc_row = dwc_rows[ocr_id]
-        gold_row = gold_rows[ocr_id]
-        ocr_row = ocr_rows[ocr_id]
-        image_path = Path(ocr_row["image_path"]).name
-
-        row1: dict[str, str] = {
-            "image_path": image_path,
-            "type": f"gold run {args.gold_run_id}",
-        }
-        row2: dict[str, str] = {"image_path": "", "type": f"dwc run {args.dwc_run_id}"}
-        row3: dict[str, Any] = {"image_path": "", "type": "score"}
-
-        for field in fields:
-            dwc_field = dwc_row[field] or ""
-            gold_field = gold_row[field] or ""
-
-            func = CAS_V1_POST.get(field)
-            if func and dwc_field:
-                dwc_field = func(dwc_field, dwc_row, ocr_row["ocr_text"], nlp)
-
-            score = Levenshtein.ratio(dwc_field, gold_field)
-            by_field[field] += score
-
-            row1[field] = gold_field
-            row2[field] = dwc_field
-            row3[field] = score
-
-        df_data.append(row1)
-        df_data.append(row2)
-        df_data.append(row3)
-
-    row: dict[str, Any] = {"image_path": "", "type": "totals"}
-    grand = 0.0
-    for field in fields:
-        mean = by_field[field] / len(ocr_ids)
-        grand += mean
-        row[field] = mean
-    df_data.append(row)
-    grand /= len(fields)
-    df_data.append({"image_path": "", "type": "grand total", fields[0]: grand})
-
-    if args.results_ods:
-        df = pd.DataFrame(df_data)
-        with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
-            df.to_excel(writer, sheet_name="compare", index=False)
+    raise NotImplementedError
+    # select_dwc = f"""
+    #     with run as (select * from dwc where dwc_run_id = {args.dwc_run_id})
+    #     pivot run on field using first(value) group by ocr_id;
+    #     """
+    # select_gold = f"""
+    #     with run as (select * from gold where gold_run_id = {args.gold_run_id})
+    #     pivot run on field using first(value) group by ocr_id;
+    #     """
+    # select_ocr = """
+    #     select distinct ocr_id, ocr_text, image_path from gold join ocr using (ocr_id)
+    #     where gold_run_id = ? order by image_path;
+    #     """
+    #
+    # with duckdb.connect(args.db_path) as cxn:
+    #     dwc_rows = cxn.execute(select_dwc).pl()
+    #     dwc_rows = dwc_rows.rows(named=True)
+    #     dwc_rows = {r["ocr_id"]: r for r in dwc_rows}
+    #
+    #     gold_rows = cxn.execute(select_gold).pl()
+    #     gold_rows = gold_rows.rows(named=True)
+    #     gold_rows = {r["ocr_id"]: r for r in gold_rows}
+    #
+    #     ocr_rows = cxn.execute(select_ocr, [args.gold_run_id]).pl()
+    #     ocr_rows = ocr_rows.rows(named=True)
+    #     ocr_rows = {r["ocr_id"]: r for r in ocr_rows}
+    #
+    # gold_fields = {
+    #     f for f in next(iter(gold_rows.values())) if f not in db_util.GOLD_METADATA
+    # }
+    #
+    # nlp = pipeline.build()
+    #
+    # # Score
+    # fields = sorted(gold_fields)
+    # by_field = dict.fromkeys(fields, 0.0)
+    # df_data = []
+    #
+    # ocr_ids = list(ocr_rows.keys())
+    # if args.limit:
+    #     ocr_ids = ocr_ids[: args.limit]
+    #
+    # for ocr_id in ocr_ids:
+    #     dwc_row = dwc_rows[ocr_id]
+    #     gold_row = gold_rows[ocr_id]
+    #     ocr_row = ocr_rows[ocr_id]
+    #     image_path = Path(ocr_row["image_path"]).name
+    #
+    #     row1: dict[str, str] = {
+    #         "image_path": image_path,
+    #         "type": f"gold run {args.gold_run_id}",
+    #     }
+    #    row2: dict[str, str] = {"image_path": "", "type": f"dwc run {args.dwc_run_id}"}
+    #     row3: dict[str, Any] = {"image_path": "", "type": "score"}
+    #
+    #     for field in fields:
+    #         dwc_field = dwc_row[field] or ""
+    #         gold_field = gold_row[field] or ""
+    #
+    #         func = CAS_V1_POST.get(field)
+    #         if func and dwc_field:
+    #             dwc_field = func(dwc_field, dwc_row, ocr_row["ocr_text"], nlp)
+    #
+    #         score = Levenshtein.ratio(dwc_field, gold_field)
+    #         by_field[field] += score
+    #
+    #         row1[field] = gold_field
+    #         row2[field] = dwc_field
+    #         row3[field] = score
+    #
+    #     df_data.append(row1)
+    #     df_data.append(row2)
+    #     df_data.append(row3)
+    #
+    # row: dict[str, Any] = {"image_path": "", "type": "totals"}
+    # grand = 0.0
+    # for field in fields:
+    #     mean = by_field[field] / len(ocr_ids)
+    #     grand += mean
+    #     row[field] = mean
+    # df_data.append(row)
+    # grand /= len(fields)
+    # df_data.append({"image_path": "", "type": "grand total", fields[0]: grand})
+    #
+    # if args.results_ods:
+    #     df = pd.DataFrame(df_data)
+    #     with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
+    #         df.to_excel(writer, sheet_name="compare", index=False)
 
 
 def parse_args() -> argparse.Namespace:

@@ -3,18 +3,20 @@
 import argparse
 import random
 import textwrap
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
+from pprint import pp
 
 import dspy
 import duckdb
+import pandas as pd
 from tqdm import tqdm
 
-from llama.parse1_text.dwc_extract import DwcExtract
-from llama.parse2_fields.field_extract import FieldExtract
 from llama.common.db_util import create_dwc_tables, display_runs
 from llama.parse1_text.all_signatures import SIGNATURES
-from llama.parse2_fields.all_signatures import FIELD_SIGNATURES
+from llama.parse1_text.dwc_module import DwcModule
+from llama.parse2_fields.all_actions import FIELD_ACTIONS
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -39,7 +41,7 @@ def extract_action(args: argparse.Namespace) -> None:
     )
     dspy.configure(lm=lm)
 
-    predictor = DwcExtract(args.signature)
+    predictor = DwcModule(args.signature)
 
     adapter = dspy.ChatAdapter()
     prompt = adapter.format(
@@ -142,50 +144,54 @@ def field_action(args: argparse.Namespace) -> None:
     dspy.configure(lm=lm)
 
     dwc_query = """
-        select dwc_id, value from dwc
+        select ocr_id, ocr_text, dwc_id, value from dwc join ocr using (ocr_id)
          where dwc_run_id = ? and field = ? and value <> '';
         """
     gold_query = """
-        select dwc_id, value from gold
+        select ocr_id, ocr_text, gold_id, value from gold join ocr using (ocr_id)
          where gold_run_id = ? and field = ? and value <> '';
         """
     dwc_fields_query = """select distinct field from dwc where dwc_run_id = ?;"""
     gold_fields_query = """select distinct field from gold where gold_run_id = ?;"""
 
     with duckdb.connect(args.db_path) as cxn:
-        fields = set()
+        # Get list of fields
         if args.dwc_run_id:
-            rows = cxn.execute(dwc_fields_query, [args.dwc_run_id]).pl()
-            rows = {f["field"] for f in rows.rows(named=True)}
-            fields |= rows
+            fields = cxn.execute(dwc_fields_query, [args.dwc_run_id]).pl()
+        elif args.gold_run_id:
+            fields = cxn.execute(gold_fields_query, [args.gold_run_id]).pl()
+        fields = {f["field"] for f in fields.rows(named=True)}
 
-        if args.gold_run_id:
-            rows = cxn.execute(gold_fields_query, [args.gold_run_id]).pl()
-            rows = {f["field"] for f in rows.rows(named=True)}
-            fields |= rows
+        fields = fields & {args.field} if args.field else fields
+        fields = sorted(fields)
 
-        for field in sorted(fields):
-            recs = []
-            if not FIELD_SIGNATURES.get(field):
+        data = defaultdict(dict)
+
+        for field in fields:
+            if not FIELD_ACTIONS.get(field):
                 continue
+            print(field)
 
-            predictor = FieldExtract(field)
+            actions = FIELD_ACTIONS[field](verbatim=field)
 
-            # Get field records
+            # Get field values
             if args.dwc_run_id:
                 rows = cxn.execute(dwc_query, [args.dwc_run_id, field]).pl()
-                rows = rows.rows(named=True)
-                recs += rows
-
-            # Get OCR records via gold data
-            if args.gold_run_id:
+            elif args.gold_run_id:
                 rows = cxn.execute(gold_query, [args.gold_run_id, field]).pl()
-                rows = rows.rows(named=True)
-                recs += rows
+            rows = rows.rows(named=True)
 
-            for rec in recs:
-                prediction = predictor(text=rec["value"])
-                print(f"{rec['value']}", prediction.toDict())
+            for i, row in enumerate(rows):
+                if args.limit and i >= args.limit:
+                    break
+                prediction = actions(text=row["value"], ocr_text=row["ocr_text"])
+                data[row["ocr_id"]] |= prediction
+                pp(prediction)
+                print()
+
+        df = pd.DataFrame(data)
+        with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
+            df.to_excel(writer, sheet_name="compare", index=False)
 
 
 def parse_args() -> argparse.Namespace:
@@ -309,6 +315,12 @@ def parse_args() -> argparse.Namespace:
         help="""Path to the database.""",
     )
     field_parser.add_argument(
+        "--results-ods",
+        type=Path,
+        metavar="PATH",
+        help="""Write the results to this spreadsheet.""",
+    )
+    field_parser.add_argument(
         "--dwc-run-id",
         type=int,
         help="""Parse fields from this DwC run.""",
@@ -354,14 +366,13 @@ def parse_args() -> argparse.Namespace:
         help="""Use cached records?""",
     )
     field_parser.add_argument(
-        "--limit",
-        type=int,
-        help="""Limit the number of records to parse.""",
+        "--field",
+        help="""Just parse one field. Used for debugging.""",
     )
     field_parser.add_argument(
-        "--seed",
+        "--limit",
         type=int,
-        help="""Use this seed to select a random sample of limit records.""",
+        help="""Limit the number of records to parse per field. For debugging.""",
     )
     field_parser.set_defaults(func=field_action)
 

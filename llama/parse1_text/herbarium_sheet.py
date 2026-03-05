@@ -139,12 +139,12 @@ class HerbariumSheet(Signature):
         desc="What are the colors of the fruits?",
         alias="dwc:dynamicProperties:fruit_color",
     )
-    height: list[str] = OutputField(
+    plant_height: list[str] = OutputField(
         default=[],
         desc="How tall is the specimen?",
         alias="dwc:dynamicProperties:plant_height",
     )
-    size: list[str] = OutputField(
+    plant_size: list[str] = OutputField(
         default=[],
         desc="Other specimen sizes?",
         alias="dwc:dynamicProperties:plant_size",
