@@ -2,6 +2,7 @@ from typing import Any
 
 from llama.parse2_fields.associated_taxa import AssociatedTaxa
 from llama.parse2_fields.country import Country
+from llama.parse2_fields.county import County
 from llama.parse2_fields.date_identified import DateIdentified
 from llama.parse2_fields.elevation import Elevation
 from llama.parse2_fields.event_date import EventDate
@@ -27,31 +28,34 @@ from llama.parse2_fields.trs import Trs
 from llama.parse2_fields.utm import Utm
 
 FIELD_ACTIONS: dict[str, Any] = {
-    "associatedTaxa": AssociatedTaxa,
-    "country": Country,
-    "county": Country,
-    "dateIdentified": DateIdentified,
-    "family": Family,
-    "geodeticDatum": GeodeticDatum,
-    "habitat": Habitat,
-    "identifiedBy": IdentifiedBy,
-    "infraspecificEpithet": InfraspecificEpithet,
-    "infraspecificNameAuthorship": InfraspecificNameAuthorship,
-    "locality": Locality,
-    "municipality": Municipality,
-    "occurrenceRemarks": OccurrenceRemarks,
-    "recordNumber": RecordNumber,
-    "recordedBy": RecordedBy,
     "scientificName": ScientificName,
     "scientificNameAuthorship": ScientificNameAuthorship,
+    "infraspecificEpithet": InfraspecificEpithet,
+    "infraspecificNameAuthorship": InfraspecificNameAuthorship,
+    "family": Family,
+    "associatedTaxa": AssociatedTaxa,
+    #
+    "recordNumber": RecordNumber,
+    "verbatimEventDate": EventDate,
+    "recordedBy": RecordedBy,
+    "identifiedBy": IdentifiedBy,
+    "dateIdentified": DateIdentified,
+    #
+    "habitat": Habitat,
+    "occurrenceRemarks": OccurrenceRemarks,
+    #
+    "locality": Locality,
+    "country": Country,
     "stateProvince": StateProvince,
+    "county": County,
+    "municipality": Municipality,
+    "geodeticDatum": GeodeticDatum,
     "trs": Trs,
     "utm": Utm,
-    "verbatimElevation": Elevation,
-    "verbatimEventDate": EventDate,
     "verbatimLatitude": Latitude,
     "verbatimLongitude": Longitude,
-
+    "verbatimElevation": Elevation,
+    #
     # elevationValues: 1,
     # elevationUnits: 1,
     # elevationEstimated: 1,

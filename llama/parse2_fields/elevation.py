@@ -47,6 +47,9 @@ class Elevation(FieldAction):
         values = subfields["elevationValues"]
         units = subfields["elevationUnits"]
 
+        if not units:
+            return {}
+
         if len(values) > len(units):
             units = [u for u in units for _ in range(2)]
 

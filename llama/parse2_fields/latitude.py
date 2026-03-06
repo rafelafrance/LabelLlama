@@ -6,5 +6,6 @@ from llama.parse2_fields.field_action import FieldAction
 
 class Latitude(FieldAction):
     def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
-        postprocess.clean_empties(subfields)
-        return subfields
+        rec = {"verbatimLatitude": subfields["latitude"]}
+        postprocess.clean_empties(rec)
+        return rec

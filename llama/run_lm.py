@@ -6,7 +6,7 @@ import textwrap
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from pprint import pp
+# from pprint import pp
 
 import dspy
 import duckdb
@@ -144,11 +144,13 @@ def field_action(args: argparse.Namespace) -> None:
     dspy.configure(lm=lm)
 
     dwc_query = """
-        select ocr_id, ocr_text, dwc_id, value from dwc join ocr using (ocr_id)
+        select ocr_id, ocr_text, image_path, dwc_id, value
+          from dwc join ocr using (ocr_id)
          where dwc_run_id = ? and field = ? and value <> '';
         """
     gold_query = """
-        select ocr_id, ocr_text, gold_id, value from gold join ocr using (ocr_id)
+        select ocr_id, ocr_text, image_path, gold_id, value
+          from gold join ocr using (ocr_id)
          where gold_run_id = ? and field = ? and value <> '';
         """
     dwc_fields_query = """select distinct field from dwc where dwc_run_id = ?;"""
@@ -163,13 +165,11 @@ def field_action(args: argparse.Namespace) -> None:
         fields = {f["field"] for f in fields.rows(named=True)}
 
         fields = fields & {args.field} if args.field else fields
-        fields = sorted(fields)
+        fields = [f for f in FIELD_ACTIONS.keys() if f in fields]
 
         data = defaultdict(dict)
 
         for field in fields:
-            if not FIELD_ACTIONS.get(field):
-                continue
             print(field)
 
             actions = FIELD_ACTIONS[field](verbatim=field)
@@ -181,17 +181,22 @@ def field_action(args: argparse.Namespace) -> None:
                 rows = cxn.execute(gold_query, [args.gold_run_id, field]).pl()
             rows = rows.rows(named=True)
 
-            for i, row in enumerate(rows):
+            for i, row in tqdm(enumerate(rows)):
                 if args.limit and i >= args.limit:
                     break
+                # print(f"{row['value']=}")
                 prediction = actions(text=row["value"], ocr_text=row["ocr_text"])
-                data[row["ocr_id"]] |= prediction
-                pp(prediction)
-                print()
+                data[row["image_path"]] |= prediction
 
-        df = pd.DataFrame(data)
+                # pp(prediction)
+                # print()
+
+        for path, row in data.items():
+            row["image_path"] = Path(path).name
+
+        df = pd.DataFrame(data.values()).set_index("image_path").sort_index()
         with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
-            df.to_excel(writer, sheet_name="compare", index=False)
+            df.to_excel(writer, sheet_name="compare")
 
 
 def parse_args() -> argparse.Namespace:

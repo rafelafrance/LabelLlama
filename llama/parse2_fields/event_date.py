@@ -12,6 +12,6 @@ class EventDate(FieldAction):
             field = [s for s in field if not s.lower().startswith("date")]
             field = " ".join(field)
 
-        rec = {"verbatimEventDate": text, "eventDate": field}
+        rec = {"verbatimEventDate": field}
         postprocess.clean_empties(rec)
         return rec
