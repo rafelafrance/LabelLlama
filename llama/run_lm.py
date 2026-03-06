@@ -57,16 +57,17 @@ def extract_action(args: argparse.Namespace) -> None:
         notes = args.notes or ""
 
         # Get OCR records
-        if args.ocr_run_id:
-            ocr_ids = ", ".join(str(i) for i in args.ocr_run_id)
+        if args.dwc_run_id:
+            dwc_ids = ", ".join(str(i) for i in args.dwc_run_id)
             query = f"""
                 select distinct ocr_id, ocr_text
-                  from ocr where ocr_run_id in ({ocr_ids})
+                  from dwc join ocr using (ocr_id)
+                 where ocr_run_id in ({dwc_ids})
                 """
             rows = cxn.execute(query).pl()
             rows = rows.rows(named=True)
             ocr_recs += rows
-            notes += f" OCR run IDs {ocr_ids} "
+            notes += f" OCR run IDs {dwc_ids} "
 
         # Get OCR records via gold data
         if args.gold_run_id:
@@ -112,7 +113,9 @@ def extract_action(args: argparse.Namespace) -> None:
             prediction = predictor(text=ocr_rec["ocr_text"])
 
             for field, value in prediction.toDict().items():
-                value = " ".join(value) if value else ""
+                if isinstance(value, list):
+                    value = " ".join(value) if len(value) > 0 else ""
+
                 cxn.execute(
                     query="""
                         insert into dwc (dwc_run_id, ocr_id, field, value)
