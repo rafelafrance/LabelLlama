@@ -139,14 +139,12 @@ def parse_args() -> argparse.Namespace:
     ocr_parser.add_argument(
         "--spreadsheet",
         type=Path,
-        metavar="PATH",
         help="""Path to the ODS spreadsheet.""",
     )
     ocr_parser.add_argument(
         "--image-dir",
         type=Path,
         required=True,
-        metavar="PATH",
         help="""Directory containing all of the images to OCR.""",
     )
     ocr_parser.add_argument(
