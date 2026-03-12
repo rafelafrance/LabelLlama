@@ -6,29 +6,23 @@ import textwrap
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-# from pprint import pp
 
 import dspy
 import duckdb
 import pandas as pd
 from tqdm import tqdm
 
-from llama.common.db_util import create_dwc_tables, display_runs
+from llama.common import db_util
 from llama.parse1_text.all_signatures import SIGNATURES
 from llama.parse1_text.dwc_module import DwcModule
 from llama.parse2_fields.all_actions import FIELD_ACTIONS
 
 
 def list_action(args: argparse.Namespace) -> None:
-    create_dwc_tables(args.db_path)
-
-    display_runs(args.db_path, "ocr_run")
-    display_runs(args.db_path, "dwc_run")
+    db_util.display_jobs(args.db_path)
 
 
 def extract_action(args: argparse.Namespace) -> None:
-    create_dwc_tables(args.db_path)
-
     job_began = datetime.now()
 
     lm = dspy.LM(
@@ -92,7 +86,7 @@ def extract_action(args: argparse.Namespace) -> None:
         notes = notes.strip()
 
         # Start adding DwC data
-        dwc_run_id = cxn.execute(
+        row = cxn.execute(
             """
             insert into dwc_run (
                 prompt, model, api_host, notes, temperature, max_tokens, signature
@@ -107,7 +101,10 @@ def extract_action(args: argparse.Namespace) -> None:
                 args.context_length,
                 args.signature,
             ],
-        ).fetchone()[0]
+        ).fetchone()
+        if not row:
+            raise ValueError
+        dwc_run_id = row[0]
 
         for ocr_rec in tqdm(rows):
             prediction = predictor(text=ocr_rec["ocr_text"])
@@ -163,12 +160,12 @@ def field_action(args: argparse.Namespace) -> None:
         # Get list of fields
         if args.dwc_run_id:
             fields = cxn.execute(dwc_fields_query, [args.dwc_run_id]).pl()
-        elif args.gold_run_id:
+        else:
             fields = cxn.execute(gold_fields_query, [args.gold_run_id]).pl()
         fields = {f["field"] for f in fields.rows(named=True)}
 
         fields = fields & {args.field} if args.field else fields
-        fields = [f for f in FIELD_ACTIONS.keys() if f in fields]
+        fields = [f for f in FIELD_ACTIONS if f in fields]
 
         data = defaultdict(dict)
 
@@ -180,7 +177,7 @@ def field_action(args: argparse.Namespace) -> None:
             # Get field values
             if args.dwc_run_id:
                 rows = cxn.execute(dwc_query, [args.dwc_run_id, field]).pl()
-            elif args.gold_run_id:
+            else:
                 rows = cxn.execute(gold_query, [args.gold_run_id, field]).pl()
             rows = rows.rows(named=True)
 
@@ -392,4 +389,5 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
+    db_util.create_tables(ARGS.db_path)
     ARGS.func(ARGS)

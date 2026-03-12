@@ -1,148 +1,84 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
-import json
-import random
 import textwrap
+from dataclasses import dataclass, field
 from pathlib import Path
 
-# from typing import Any
 import duckdb
+
+from llama.common import db_util
 
 # import Levenshtein
 # import pandas as pd
-from llama.common import db_util
-from llama.parse1_text.all_signatures import SIGNATURES
 
 
-def list_action(args: argparse.Namespace) -> None:
-    db_util.display_runs(args.db_path, "dwc_run")
-    db_util.display_runs(args.db_path, "gold_run")
+@dataclass
+class Pair:
+    ocr_id: int
+    ocr_text: str
+    dwc1: dict = field(default_factory=dict)
+    dwc2: dict = field(default_factory=dict)
 
 
-def init_from_dwc_action(args: argparse.Namespace) -> None:
-    db_util.create_dwc_tables(args.db_path)
-    db_util.create_gold_tables(args.db_path)
-
-    select = """
-        with run as (select * from dwc where dwc_run_id = ?)
-        pivot run on field using first(value) group by ocr_id limit ?;
-        """
-
+def import_action(args: argparse.Namespace) -> None:
     with duckdb.connect(args.db_path) as cxn:
-        rows = cxn.execute(select, [args.dwc_run_id, args.limit]).pl()
-        rows = rows.rows(named=True)
+        job_id, job_started = db_util.add_job(cxn, __file__, args=args)
 
-    with args.gold_json.open("w") as fp:
-        json.dump(rows, fp, indent=4)
+        if args.gold_csv:
+            gold = duckdb.read_csv(args.gold_csv).fetchall().pl()
+        else:
+            gold = duckdb.read_json(args.gold_json).fetchall().pl()
+        gold = gold.rows(named=True)
 
-
-def import_json_action(args: argparse.Namespace) -> None:
-    db_util.create_gold_tables(args.db_path)
-
-    raise NotImplementedError
-
-    # with args.gold_json.open() as fp:
-    #     sheets = json.load(fp)
-    #
-    # with duckdb.connect(args.db_path) as cxn:
-    #     gold_run_id = cxn.execute(
-    #         """
-    #         insert into gold_run (notes, src_path) values (?, ?, ?)
-    #         returning gold_run_id;
-    #         """,
-    #         [args.notes, str(args.gold_json)],
-    #     ).fetchone()[0]
-    #
-    #     insert_gold = """
-    #         insert into gold (gold_run_id, ocr_id, split, field, value)
-    #             values ($gold_run_id, $ocr_id, '', $field, $value);
-    #         """
-    #
-    #     for sheet in sheets:
-    #         cxn.execute(
-    #             query=insert_gold,
-    #             parameters={
-    #                 "gold_run_id": gold_run_id,
-    #                 "ocr_id": sheet["ocr_id"],
-    #                 "field": None,
-    #                 "value": None,
-    #             },
-    #         )
-
-
-def import_csv_action(args: argparse.Namespace) -> None:
-    db_util.create_gold_tables(args.db_path)
-
-    with args.gold_csv.open() as fp:
-        reader = csv.DictReader(fp)
-        gold = [dict(r) for r in reader]
-
-    select_ocr = """select image_path, ocr_id from ocr order by ocr_run_id, ocr_id;"""
-
-    with duckdb.connect(args.db_path) as cxn:
+        select_ocr = "select image_path, ocr_id from ocr order by ocr_run_id, ocr_id;"
         ocr_rows = cxn.execute(select_ocr).pl()
         ocr_rows = ocr_rows.rows(named=True)
         ocr_ids = {Path(r["image_path"]).stem: r["ocr_id"] for r in ocr_rows}
 
-        result = cxn.execute(
-            """
-            insert into gold_run (notes, src_path, signature) values (?, ?, ?)
-            returning gold_run_id;
-            """,
-            [args.notes, str(args.gold_csv), args.signature],
-        ).fetchone()
-        gold_run_id = result[0] if result else None
-
         for row in gold:
-            ocr_id = ocr_ids[Path(row[args.file_name]).stem]
+            ocr_key = Path(row[args.file_name]).stem
+            ocr_id = ocr_ids[ocr_key]
             for field, value in row.items():
                 if field in args.skip:
                     continue
                 cxn.execute(
                     query="""
-                        insert into gold (gold_run_id, ocr_id, split, field, value)
-                        values ($gold_run_id, $ocr_id, '', $field, $value);
+                        insert into dwc (job_id, ocr_id, field, value)
+                        values ($job_id, $ocr_id, $field, $value);
                         """,
                     parameters={
-                        "gold_run_id": gold_run_id,
+                        "job_id": job_id,
                         "ocr_id": ocr_id,
                         "field": field,
                         "value": value,
                     },
                 )
 
-
-def split_action(args: argparse.Namespace) -> None:
-    with duckdb.connect(args.db_path) as cxn:
-        query = "select gold_id from gold where gold_run_id = ?"
-        df = cxn.execute(query, [args.gold_run_id]).pl()
-        rows = df.rows(named=True)
-
-        random.seed(args.seed)
-        random.shuffle(rows)
-
-        total: int = len(rows)
-        split1: int = round(total * args.train_fract)
-        split2: int = split1 + round(total * args.val_fract)
-
-        row_splits: dict[str, list] = {
-            "train": rows[:split1],
-            "val": rows[split1:split2],
-            "test": rows[split2:],
-        }
-
-        updates: list[tuple[str, int]] = []
-        for split, recs in row_splits.items():
-            updates.extend([(split, r["gold_id"]) for r in recs])
-
-        sql = "update gold set split = ? where gold_id = ?"
-        cxn.executemany(sql, updates)
+        db_util.update_elapsed(cxn, job_id, job_started)
 
 
-def score_dwc_action(args: argparse.Namespace) -> None:
-    raise NotImplementedError
+def score_action(args: argparse.Namespace) -> None:
+    result = duckdb.read_csv(args.in_tsv)
+    print(result)
+    # select_fields = """select distinct field from dwc where job_id = ?;"""
+    # select_ocr_ids = """select distinct ocr_id from dwc where job_id = ?;"""
+    #
+    # select_dwc = """
+    #     with job as (select * from dwc join ocr using(ocr_id) where job_id = ?)
+    #     pivot job on field using first(value) group by ocr_id;
+    #     """
+    #
+    # fields = set()
+    # with duckdb.connect(args.db_path) as cxn:
+    #     for job_id in args.job_id:
+    #         rows = cxn.execute(select_dwc, [job_id]).pl()
+    #         dwc = rows.rows(named=True)
+    #
+    #         rows = cxn.execute(select_fields, [job_id]).pl()
+    #         fields |= {f["field"] for f in rows.rows(named=True)}
+    #
+    # raise NotImplementedError
     # select_dwc = f"""
     #     with run as (select * from dwc where dwc_run_id = {args.dwc_run_id})
     #     pivot run on field using first(value) group by ocr_id;
@@ -237,222 +173,99 @@ def parse_args() -> argparse.Namespace:
         allow_abbrev=True,
         description=textwrap.dedent("""Manipulate annotated specimen metadata."""),
     )
-
     subparsers = arg_parser.add_subparsers(
-        title="Subcommands", description="Actions on gold standard records"
+        title="Subcommands",
+        description="Actions on gold standard records",
+        dest="action",
     )
 
     # ------------------------------------------------------------
-    list_parser = subparsers.add_parser(
-        "list",
-        help="""List data to help you decide which DwC run to use as a basis for a
-            gold standard.""",
+    import_parser = subparsers.add_parser(
+        "import",
+        help="""Import a gold standard from a CSV or JSON file.""",
     )
-
-    list_parser.add_argument(
+    import_parser.add_argument(
         "--db-path",
         type=Path,
         required=True,
         metavar="PATH",
         help="""Path to the database.""",
     )
-
-    list_parser.set_defaults(func=list_action)
-
-    # ------------------------------------------------------------
-    init_from_dwc_parser = subparsers.add_parser(
-        "init-from-dwc",
-        help="""Create a new starter gold standard from a DwC run. It is often easier
-            to modify an existing gold standard than create a new one. You can update
-            the annotations using the annotate_fields.py utility.""",
-    )
-    init_from_dwc_parser.add_argument(
-        "--db-path",
+    import_parser.add_argument(
+        "--gold-csv",
         type=Path,
-        required=True,
         metavar="PATH",
-        help="""Path to the database.""",
+        help="""Import data from this CSV file.""",
     )
-    init_from_dwc_parser.add_argument(
+    import_parser.add_argument(
         "--gold-json",
         type=Path,
-        required=True,
         metavar="PATH",
-        help="""Export the data to this JSON file.""",
+        help="""Import data from this JSON file.""",
     )
-    init_from_dwc_parser.add_argument(
-        "--dwc-run-id",
-        type=int,
+    import_parser.add_argument(
+        "--file-name",
         required=True,
-        help="""Make a gold standard template from this dwc-run.
-            Note: It's only using the dwc-run as a starter not the data itself.""",
+        metavar="COLUMN",
+        help="""The file name field used to link OCR records to the gold data.""",
     )
-    init_from_dwc_parser.add_argument(
-        "--limit",
-        type=int,
-        help="""Limit the number of records to export.""",
+    import_parser.add_argument(
+        "--skip",
+        action="append",
+        metavar="COLUMN",
+        help="""Skip this column in the CSV file or field in the JSON field.
+            You may use this argument more than once.
+            Quote this argument if there are odd characters or spaces in the
+            column name.""",
     )
-    init_from_dwc_parser.set_defaults(func=init_from_dwc_action)
+    import_parser.add_argument(
+        "--notes", help="""A brief description of the gold standard."""
+    )
+    import_parser.set_defaults(func=import_action)
 
     # ------------------------------------------------------------
-    # import_json_parser = subparsers.add_parser(
-    #     "import-json",
-    #     help="""Import a gold standard JSON file. These typically come from
-    #         the annotate_gold.py utility.""",
-    # )
-    # import_json_parser.add_argument(
+    score_parser = subparsers.add_parser(
+        "score",
+        help="""Score a 2 Darwin Core jobs against each other.
+            Note: You can only compare fields that are in both jobs against
+            OCR IDs that are also in both jobs. So, mismatched columns are
+            excluded and mismatched OCR IDs are also excluded.""",
+    )
+    score_parser.add_argument(
+        "--in-csv",
+        type=Path,
+        required=True,
+        help="""Nothing to see here.""",
+    )
+    # score_parser.add_argument(
     #     "--db-path",
     #     type=Path,
     #     required=True,
     #     metavar="PATH",
     #     help="""Path to the database.""",
     # )
-    # import_json_parser.add_argument(
-    #     "--gold-json",
+    # score_parser.add_argument(
+    #     "--job-id",
+    #     type=int,
+    #     nargs=2,
+    #     help="""The 2 job IDs to compare. Typically one is the gold standard and the
+    #         other is the Darwin Core job to compare against the gold standard.""",
+    # )
+    # score_parser.add_argument(
+    #     "--output-csv",
     #     type=Path,
     #     required=True,
     #     metavar="PATH",
-    #     help="""Import data from this JSON file.""",
+    #     help="""Write the results to this CSV file.""",
     # )
-    # import_json_parser.add_argument(
-    #     "--skip",
-    #     action="append",
-    #     metavar="COLUMN",
-    #     help="""Skip this column in the CSV file. You may use this argument more than
-    #         once. Quote this argument if there are odd characters or spaces in the
-    #         column name.""",
+    # score_parser.add_argument(
+    #     "--limit",
+    #     type=int,
+    #     help="""Limit the number of records to export.""",
     # )
-    # import_json_parser.add_argument(
-    #     "--notes", help="""A brief description of the gold standard."""
-    #
-    # import_json_parser.set_defaults(func=import_json_action)
+    score_parser.set_defaults(func=score_action)
 
     # ------------------------------------------------------------
-    import_csv_parser = subparsers.add_parser(
-        "import-csv",
-        help="""Import a gold standard CSV file. These typically come from
-            outside sources.""",
-    )
-    import_csv_parser.add_argument(
-        "--db-path",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Path to the database.""",
-    )
-    import_csv_parser.add_argument(
-        "--gold-csv",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Import data from this CSV file.""",
-    )
-    import_csv_parser.add_argument(
-        "--file-name",
-        required=True,
-        metavar="COLUMN",
-        help="""The file name column used to link OCR records.""",
-    )
-    signatures = list(SIGNATURES.keys())
-    list_parser.add_argument(
-        "--signature",
-        choices=signatures,
-        default=signatures[0],
-        help="""What type of data are you extracting? What is its signature?""",
-    )
-    import_csv_parser.add_argument(
-        "--skip",
-        action="append",
-        metavar="COLUMN",
-        help="""Skip this column in the CSV file. You may use this argument more than
-            once. Quote this argument if there are odd characters or spaces in the
-            column name.""",
-    )
-    import_csv_parser.add_argument(
-        "--notes", help="""A brief description of the gold standard."""
-    )
-    import_csv_parser.set_defaults(func=import_csv_action)
-
-    # ------------------------------------------------------------
-    score_dwc_parser = subparsers.add_parser(
-        "score-dwc",
-        help="""Score a Darwin Core run against a gold standard.""",
-    )
-    score_dwc_parser.add_argument(
-        "--db-path",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Path to the database.""",
-    )
-    score_dwc_parser.add_argument(
-        "--dwc-run-id",
-        type=int,
-        required=True,
-        help="""Score this Darwin Core run.""",
-    )
-    score_dwc_parser.add_argument(
-        "--gold-run-id",
-        type=int,
-        required=True,
-        help="""Use this gold standard to score against.""",
-    )
-    score_dwc_parser.add_argument(
-        "--results-ods",
-        type=Path,
-        metavar="PATH",
-        help="""Write the results to this spreadsheet.""",
-    )
-    score_dwc_parser.add_argument(
-        "--limit",
-        type=int,
-        help="""Limit the number of records to export.""",
-    )
-    score_dwc_parser.set_defaults(func=score_dwc_action)
-
-    # ------------------------------------------------------------
-    split_parser = subparsers.add_parser(
-        "split", help="Split a gold_run into training, validation, and test datasets"
-    )
-    split_parser.add_argument(
-        "--db-path",
-        type=Path,
-        required=True,
-        metavar="PATH",
-        help="""Path to the database.""",
-    )
-    split_parser.add_argument(
-        "--gold-run-id",
-        type=int,
-        required=True,
-        help="""Split this gold-run into training, validation, and testing datasets.""",
-    )
-    split_parser.add_argument(
-        "--train-fract",
-        type=float,
-        default=0.1,
-        metavar="FLOAT",
-        help="""What fraction of the records to use for training.
-            (default: %(default)s)""",
-    )
-    split_parser.add_argument(
-        "--val-fract",
-        type=float,
-        default=0.5,
-        metavar="FLOAT",
-        help="""What fraction of the records to use for validation.
-            (default: %(default)s)""",
-    )
-    split_parser.add_argument(
-        "--seed",
-        type=int,
-        default=992583,
-        help="""Seed for the random number generator. (default: %(default)s)""",
-    )
-    split_parser.set_defaults(func=split_action)
-
-    # ------------------------------------------------------------
-
     args = arg_parser.parse_args()
     return args
 

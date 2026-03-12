@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""OCR a directory of images."""
 
 import argparse
 import textwrap
@@ -11,7 +10,7 @@ import lmstudio as lms
 import polars as pl
 from tqdm import tqdm
 
-from llama.common.db_util import create_ocr_tables
+from llama.common import db_util
 
 # A reasonable starting prompt. I will parameterize and try variations on this later.
 PROMPT = " ".join(
@@ -26,34 +25,14 @@ PROMPT = " ".join(
 )
 
 
-def ocr_images(args: argparse.Namespace) -> None:
+def ocr_action(args: argparse.Namespace) -> None:
     """OCR all images in the directory."""
-    create_ocr_tables(args.db_path)
-
-    job_began = datetime.now()
-
     with lms.Client(args.api_host) as client, duckdb.connect(args.db) as cxn:
         image_paths = filter_images(args)
 
-        run_id = cxn.execute(
-            """
-            insert into ocr_run
-                (prompt, model, api_host, notes, temperature, context_length)
-                values (?, ?, ?, ?, ?, ?)
-                returning ocr_run_id;
-            """,
-            [
-                PROMPT,
-                args.model_name,
-                args.api_host,
-                args.notes.strip(),
-                args.temperature,
-                args.context_length,
-            ],
-        ).fetchone()
-        if not run_id:
-            raise ValueError(f"Could not find the given ocr-run-id {args.ocr_run_id}")
-        run_id = run_id[0]
+        job_id, job_started = db_util.add_job(
+            cxn, __file__, args=args, params={"prompt": PROMPT}
+        )
 
         model = client.llm.model(
             args.model_name,
@@ -78,29 +57,19 @@ def ocr_images(args: argparse.Namespace) -> None:
 
             cxn.execute(
                 """
-                insert into ocr
-                    (ocr_run_id, image_path, ocr_text, ocr_error, elapsed)
-                    values (?, ?, ?, ?, ?);
+                insert into ocr (job_id, image_path, ocr_text, ocr_error, elapsed)
+                values (?, ?, ?, ?, ?);
                 """,
                 [
-                    run_id,
+                    job_id,
                     str(image_path),
                     str(ocr_text),
                     ocr_error,
-                    datetime.now() - rec_began,
+                    str(datetime.now() - rec_began),
                 ],
             )
 
-        job_elapsed = datetime.now() - job_began
-        cxn.execute(
-            "update ocr_run set elapsed = ? where ocr_run_id = ?;",
-            [job_elapsed, run_id],
-        )
-
-
-def get_all_records(db_path: Path) -> pl.DataFrame:
-    with duckdb.connect(db_path) as cxn:
-        return cxn.execute("select * from ocr;").pl()
+        db_util.update_elapsed(cxn, job_id, job_started)
 
 
 def get_all_images(db_path: Path) -> pl.DataFrame:
@@ -117,11 +86,11 @@ def get_all_errors(db_path: Path) -> pl.DataFrame:
     attempts,typically with changed model parameters or a different model.
     """
     sql = """
-        select image_path, max(ocr_text) as top
-            from ocr
-            group by image_path
-            having top = '';
-        """
+          select image_path, max(ocr_text) as top
+          from ocr
+          group by image_path
+          having top = '';
+          """
     with duckdb.connect(db_path) as cxn:
         return cxn.execute(sql).pl()
 
@@ -154,73 +123,78 @@ def filter_images(args: argparse.Namespace) -> list[Path]:
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("""OCR all images in a directory."""),
+        description=textwrap.dedent("""OCR images."""),
+    )
+    subparsers = arg_parser.add_subparsers(
+        title="Subcommands",
+        description="Actions on gold standard records",
+        dest="action",
     )
 
-    arg_parser.add_argument(
-        "--db-path",
+    # ------------------------------------------------------------
+    ocr_parser = subparsers.add_parser(
+        "ocr",
+        help="""Import a gold standard from a CSV or JSON file.""",
+    )
+    ocr_parser.add_argument(
+        "--spreadsheet",
         type=Path,
-        required=True,
         metavar="PATH",
-        help="""Path to the database.""",
+        help="""Path to the ODS spreadsheet.""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--image-dir",
         type=Path,
         required=True,
         metavar="PATH",
         help="""Directory containing all of the images to OCR.""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--model",
         default="noctrex/Chandra-OCR-GGUF/Chandra-OCR-Q4_K_S.gguf",
         help="""Use this language model. (default: %(default)s)""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--api-host",
         default="http://localhost:1234",
         help="""URL for the language model. (default: %(default)s)""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--context-length",
         type=int,
         default=4096,
         help="""Model's context length. (default: %(default)s)""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--temperature",
         type=float,
         default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--notes",
         default="",
         help="""Notes about this dataset.""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--missing",
         action="store_true",
-        help="""Process all images in image dir but not in the database.""",
+        help="""Process all images in image dir but not in the database.
+            Use this when you want to restart a job after is crashes.""",
     )
-
-    arg_parser.add_argument(
+    ocr_parser.add_argument(
         "--retry",
         action="store_true",
-        help="""Retry all images where all previous attempts errored out.""",
+        help="""Retry all images where all previous attempts errored out.
+            Use this to try the OCR with a different model and/or parameters.""",
     )
+    ocr_parser.set_defaults(func=ocr_action)
 
+    # ------------------------------------------------------------
     args = arg_parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    ocr_images(ARGS)
+    ARGS.func(ARGS)
