@@ -26,7 +26,7 @@ PROMPT = " ".join(
 
 
 def ocr_action(args: argparse.Namespace) -> None:
-    """OCR all images in the directory."""
+    """OCR images in a directory."""
     with lms.Client(args.api_host) as client, duckdb.connect(args.db) as cxn:
         image_paths = filter_images(args)
 
@@ -34,7 +34,6 @@ def ocr_action(args: argparse.Namespace) -> None:
             cxn, __file__, args=args, params={"prompt": PROMPT}
         )
 
-        # noinspection PyTypeChecker
         model = client.llm.model(
             args.model_name,
             config={
@@ -50,22 +49,22 @@ def ocr_action(args: argparse.Namespace) -> None:
             chat = lms.Chat()
             chat.add_user_message(PROMPT, images=[handle])
 
-            ocr_text, ocr_error = "", ""
+            doc_text, doc_error = "", ""
             try:
-                ocr_text = model.respond(chat)
+                doc_text = model.respond(chat)
             except lms.LMStudioServerError as err:
-                ocr_error = f"Server error: {err}"
+                doc_error = f"Server error: {err}"
 
             cxn.execute(
                 """
-                insert into ocr (job_id, image_path, ocr_text, ocr_error, elapsed)
+                insert into docs (job_id, src_path, doc_text, doc_error, doc_elapsed)
                 values (?, ?, ?, ?, ?);
                 """,
                 [
                     job_id,
                     str(image_path),
-                    str(ocr_text),
-                    ocr_error,
+                    str(doc_text),
+                    doc_error,
                     str(datetime.now() - rec_began),
                 ],
             )

@@ -3,137 +3,222 @@
 import argparse
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import duckdb
 import Levenshtein
 import pandas as pd
+from duckdb import DuckDBPyConnection
 
 from llama.common import db_util
 from llama.lm.all_signatures import SIGNATURES
 
 
+# ------------------------------------------------------------------------------
 def list_action(args: argparse.Namespace) -> None:
+    """List jobs so you can choose a pair for scoring."""
     with duckdb.connect(args.db_path) as cxn:
-        gold_jobs = cxn.execute(
-            "select * from job where script = ? and action = ?",
-            ["gold_std.py", "import"],
-        ).pl()
-        gold_jobs = gold_jobs.rows(named=True)
-        print("=" * 80)
-        print("Gold jobs\n")
-        for job in gold_jobs:
-            for field, value in job.items():
-                print(f"{field:>12}: {value}")
-            print()
-
-        dwc_jobs = cxn.execute("select * from job where script = ?", ["run_lm.py"]).pl()
-        dwc_jobs = dwc_jobs.rows(named=True)
-        print("=" * 80)
-        print("DwC jobs\n")
-        for job in dwc_jobs:
-            for field, value in job.items():
-                print(f"{field:>12}: {value}")
-            print()
+        list_gold_std_jobs(cxn)
+        list_lm_jobs(cxn)
 
 
+def list_lm_jobs(cxn: DuckDBPyConnection):
+    dwc_jobs = cxn.execute(
+        "select * from jobs where script = ?", ["run_lm.py"]
+    ).pl()
+    dwc_jobs = dwc_jobs.rows(named=True)
+    print("=" * 80)
+    print("fields jobs\n")
+    for job in dwc_jobs:
+        for field, value in job.items():
+            print(f"{field:>12}: {value}")
+        print()
+
+
+def list_gold_std_jobs(cxn: DuckDBPyConnection):
+    gold_jobs = cxn.execute(
+        "select * from jobs where script = ? and action = ?",
+        ["gold_std.py", "import"],
+    ).pl()
+    gold_jobs = gold_jobs.rows(named=True)
+    print("=" * 80)
+    print("Gold jobs\n")
+    for job in gold_jobs:
+        for field, value in job.items():
+            print(f"{field:>12}: {value}")
+        print()
+
+
+# ------------------------------------------------------------------------------
 def import_action(args: argparse.Namespace) -> None:
     with duckdb.connect(args.db_path) as cxn:
         job_id, job_started = db_util.add_job(cxn, __file__, args=args)
 
         if args.gold_csv:
-            gold = duckdb.read_csv(args.gold_csv).pl()
+            new_gold_data = duckdb.read_csv(args.gold_csv).pl()
         else:
-            gold = duckdb.read_json(args.gold_json).pl()
-        gold = gold.rows(named=True)
+            new_gold_data = duckdb.read_json(args.gold_json).pl()
+        new_gold_data = new_gold_data.rows(named=True)
 
-        select_ocr = "select image_path, ocr_id from ocr order by ocr_run_id, ocr_id;"
-        ocr_rows = cxn.execute(select_ocr).pl()
-        ocr_rows = ocr_rows.rows(named=True)
-        ocr_ids = {Path(r["image_path"]).stem: r["ocr_id"] for r in ocr_rows}
+        path_to_doc_id_map = get_path_to_doc_id_map(cxn)
 
-        values = []
-        for row in gold:
-            ocr_key = Path(row[args.file_name]).stem
-            ocr_id = ocr_ids[ocr_key]
-            values += [
-                [job_id, ocr_id, f, v] for f, v in row.items() if f not in args.skip
-            ]
-
-        cxn.executemany(
-            "insert into dwc (job_id, ocr_id, field, value) values (?, ?, ?, ?)", values
+        write_new_fields(
+            cxn, new_gold_data, args.file_name, path_to_doc_id_map, job_id, args.skip
         )
 
         db_util.update_elapsed(cxn, job_id, job_started)
 
 
+def write_new_fields(
+    cxn: DuckDBPyConnection,
+    new_gold_data: list[dict],
+    file_name_field: str,
+    path_to_doc_id_map: dict[str, int],
+    job_id: int,
+    skip: list[str],
+) -> None:
+    """Write new data fields to the database."""
+    values = []
+    for row in new_gold_data:
+        path = Path(row[file_name_field]).stem
+        doc_id = path_to_doc_id_map[path]
+        values += [[job_id, doc_id, f, v] for f, v in row.items() if f not in skip]
+
+    cxn.executemany(
+        "insert into fields (job_id, doc_id, field, value) values (?, ?, ?, ?)",
+        values,
+    )
+
+
+def get_path_to_doc_id_map(cxn: DuckDBPyConnection) -> dict[str, int]:
+    """Input rows are indexed by file name we need to convert those into doc_ids."""
+    select_ocr = "select src_path, doc_id from docs order by job_id, doc_id"
+    doc_rows = cxn.execute(select_ocr).pl()
+    doc_rows = doc_rows.rows(named=True)
+    path_to_doc_id_map = {Path(r["src_path"]).stem: r["doc_id"] for r in doc_rows}
+    return path_to_doc_id_map
+
+
+# ------------------------------------------------------------------------------
 def score_action(args: argparse.Namespace) -> None:
-    df_data = []
-
     with duckdb.connect(args.db_path) as cxn:
-        gold_rows = cxn.execute(
-            f"""
-            with piv as (
-                with run as (select * from dwc where job_id = {args.gold_job_id})
-                pivot run on field using first(value) group by ocr_id)
-            select * from piv join ocr using (ocr_id) order by image_path
+        gold_rows = get_gold_std_rows(cxn, args.gold_job_id)
+        field_rows = get_lm_field_rows(cxn, args.gold_job_id, args.lm_job_id)
+
+        compare = pair_gold_lm_rows(gold_rows, field_rows)
+
+        field_order = get_field_order(
+            cxn, args.signature, args.gold_job_id, args.lm_job_id
+        )
+
+        df_data = score_fields(compare, field_order)
+
+        # Write the comparison to a spreadsheet
+        df = pd.DataFrame(df_data)
+        with pd.ExcelWriter(args.output, engine="odf") as writer:
+            df.to_excel(writer, sheet_name="compare", index=False)
+
+
+def score_fields(
+    compare: dict[Any, list[dict[str, str]]],  field_order: list[str]
+) -> list[dict]:
+    """Score the fields and add a new row with the field scores."""
+    df_data: list[dict[str, str]] = []
+
+    for gold, lm in compare.values():
+        row1: dict[str, str] = {
+            "source": Path(gold["src_path"]).name,
+            "doc_text": gold["doc_text"],
+            "row": "gold",
+        }
+        row2: dict[str, str] = {"source": "", "doc_text": "", "row": "lm"}
+        row3: dict[str, float | str] = {
+            "source": "",
+            "doc_text": "",
+            "row": "score",
+        }
+
+        for field in field_order:
+            row1[field] = gold.get(field, "")
+            row2[field] = lm.get(field, "")
+            row3[field] = Levenshtein.ratio(row1[field], row2[field])
+
+        df_data += [row1, row2, row3]
+    return df_data
+
+
+def get_field_order(
+    cxn: DuckDBPyConnection, signature: str, gold_job_id: int, lm_job_id: int
+) -> list[str]:
+    """Get the report output field order across the page to help report usefulness."""
+    output_fields = SIGNATURES[signature].output_fields.keys()
+    field_order = cxn.execute(
+        f"""
+            with
+            fld1 as (
+                select distinct field from fields where job_id = {gold_job_id}),
+            fld2 as (
+                select distinct field from fields where job_id = {lm_job_id})
+            select fld1.field from fld1 join fld2 using (field)
             """
-        ).pl()
-        gold_rows = gold_rows.rows(named=True)
+    ).fetchall()
+    field_order = [f[0] for f in field_order]
+    field_order = [f for f in output_fields if f in field_order]
+    return field_order
 
-        compare = {g["ocr_id"]: [g] for g in gold_rows}
 
-        dwc_rows = cxn.execute(
-            f"""
+def pair_gold_lm_rows(
+    gold_rows: list[dict], field_rows: list[dict]
+) -> dict[int, list[dict]]:
+    """Pair gold and LM field output for comparison."""
+    # Setup rows for comparison - start with the gold data
+    compare = {g["doc_id"]: [g] for g in gold_rows}
+
+    # Add align the gold standard rows with the LM rows
+    for row in field_rows:
+        if row["doc_id"] in compare:
+            compare[row["doc_id"]].append(row)
+
+    # Only keep the row pairs if there is actually a pair
+    compare = {k: v for k, v in compare.items() if len(v) == 2}
+    return compare
+
+
+def get_lm_field_rows(
+    cxn: DuckDBPyConnection, gold_job_id: int, lm_job_id: int
+) -> list[dict]:
+    """Get the LM fields to compare against the gold standard as a fat table."""
+    field_rows = cxn.execute(
+        f"""
             with piv as (
                 with run as (
-                    select * from dwc where job_id = {args.dwc_job_id}
-                       and ocr_id in (
-                        select ocr_id from dwc where job_id = {args.gold_job_id})
+                    select * from fields where job_id = {lm_job_id}
+                       and doc_id in (
+                        select doc_id from fields where job_id = {gold_job_id})
                        )
-                pivot run on field using first(value) group by ocr_id)
-            select * from piv join ocr using (ocr_id)
+                pivot run on field using first(value) group by doc_id)
+            select * from piv join docs using (doc_id)
             """
-        ).pl()
-        dwc_rows = dwc_rows.rows(named=True)
-
-        for row in dwc_rows:
-            if row["ocr_id"] in compare:
-                compare[row["ocr_id"]].append(row)
-
-        compare = {k: v for k, v in compare.items() if len(v) == 2}
-
-        # Ordering the fields is annoying
-        field_order = SIGNATURES[args.signature].output_fields.keys()
-        fields = cxn.execute(f"""
-            with
-            fld1 as (select distinct field from dwc where job_id = {args.gold_job_id}),
-            fld2 as (select distinct field from dwc where job_id = {args.dwc_job_id})
-            select fld1.field from fld1 join fld2 using (field)
-            """).fetchall()
-        fields = [f[0] for f in fields]
-        fields = [f for f in field_order if f in fields]
-
-        for gold, dwc in compare.values():
-            row1: dict[str, str] = {
-                "image": Path(gold["image_path"]).name,
-                "ocr_text": gold["ocr_text"],
-                "row": "gold",
-            }
-            row2: dict[str, str] = {"image": "", "ocr_text": "", "row": "dwc"}
-            row3: dict[str, float | str] = {"image": "", "ocr_text": "", "row": "score"}
-
-            for field in fields:
-                row1[field] = gold.get(field, "")
-                row2[field] = dwc.get(field, "")
-                row3[field] = Levenshtein.ratio(row1[field], row2[field])
-
-            df_data += [row1, row2, row3]
-
-    df = pd.DataFrame(df_data)
-    with pd.ExcelWriter(args.output, engine="odf") as writer:
-        df.to_excel(writer, sheet_name="compare", index=False)
+    ).pl()
+    field_rows = field_rows.rows(named=True)
+    return field_rows
 
 
+def get_gold_std_rows(cxn: DuckDBPyConnection, gold_job_id) -> list[dict]:
+    """Get gold standard data as a fat table."""
+    gold_rows = cxn.execute(
+        f"""
+            with piv as (
+                with run as (select * from fields where job_id = {gold_job_id})
+                pivot run on field using first(value) group by doc_id)
+            select * from piv join docs using (doc_id) order by src_path
+            """
+    ).pl()
+    gold_rows = gold_rows.rows(named=True)
+    return gold_rows
+
+
+# ------------------------------------------------------------------------------
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
@@ -148,7 +233,8 @@ def parse_args() -> argparse.Namespace:
     # ------------------------------------------------------------
     list_parser = subparsers.add_parser(
         "list",
-        help="""List gold standard jobs and DwC jobs so you choose their IDs.""",
+        help="""List gold standard jobs and fields jobs so you choose their IDs
+            for scoring against each other.""",
     )
     list_parser.add_argument(
         "--db-path",
@@ -215,11 +301,10 @@ def parse_args() -> argparse.Namespace:
         help="""The job ID for the gold dataset.""",
     )
     score_parser.add_argument(
-        "--dwc-job-id",
+        "--lm-job-id",
         type=int,
-        # action="append",
         required=True,
-        help="""The job ID for the DwC dataset. You may use this more than once.""",
+        help="""The job ID for the LM fields dataset.""",
     )
     score_parser.add_argument(
         "--output",

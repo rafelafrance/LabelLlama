@@ -59,23 +59,18 @@ def add_job(
     args = vars(args) if args else {}
     args |= params or {}
 
-    script = Path(script).name
-    action = args.get("action", "")
-
     result = cxn.execute(
-        """insert into job (script, action) values (?, ?) returning job_id;""",
-        [script, action],
+        "insert into jobs (script, action, notes) values (?, ?, ?) returning job_id",
+        [Path(script).name, args.get("action"), args.get("notes")],
     ).fetchone()
     if not result:
-        err = "Could not insert new job"
-        raise RuntimeError(err)
+        raise RuntimeError
     job_id = result[0]
 
-    for field, value in args.items():
+    for arg, value in args.items():
         cxn.execute(
-            """insert into arg (job_id, field, value)
-               values (?, ?, ?);""",
-            [job_id, field, value],
+            "insert into arg (job_id, arg, value) values (?, ?, ?)",
+            [job_id, arg, value],
         )
 
     job_started = datetime.now()
@@ -88,6 +83,6 @@ def update_elapsed(
 ) -> None:
     elapsed = str(datetime.now() - job_started)
     cxn.execute(
-        """update job set elapsed=? where job_id=?;""",
+        "update job set job_elapsed=? where job_id=?",
         [elapsed, job_id],
     )
