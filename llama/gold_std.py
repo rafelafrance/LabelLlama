@@ -9,7 +9,7 @@ import Levenshtein
 import pandas as pd
 
 from llama.common import db_util
-from llama.parse1_text.all_signatures import SIGNATURES
+from llama.lm.all_signatures import SIGNATURES
 
 
 def list_action(args: argparse.Namespace) -> None:
@@ -41,9 +41,9 @@ def import_action(args: argparse.Namespace) -> None:
         job_id, job_started = db_util.add_job(cxn, __file__, args=args)
 
         if args.gold_csv:
-            gold = duckdb.read_csv(args.gold_csv).fetchall().pl()
+            gold = duckdb.read_csv(args.gold_csv).pl()
         else:
-            gold = duckdb.read_json(args.gold_json).fetchall().pl()
+            gold = duckdb.read_json(args.gold_json).pl()
         gold = gold.rows(named=True)
 
         select_ocr = "select image_path, ocr_id from ocr order by ocr_run_id, ocr_id;"
@@ -114,13 +114,13 @@ def score_action(args: argparse.Namespace) -> None:
         fields = [f for f in field_order if f in fields]
 
         for gold, dwc in compare.values():
-            row1 = {
+            row1: dict[str, str] = {
                 "image": Path(gold["image_path"]).name,
                 "ocr_text": gold["ocr_text"],
                 "row": "gold",
             }
-            row2 = {"image": "", "ocr_text": "", "row": "dwc"}
-            row3 = {"image": "", "ocr_text": "", "row": "score"}
+            row2: dict[str, str] = {"image": "", "ocr_text": "", "row": "dwc"}
+            row3: dict[str, float | str] = {"image": "", "ocr_text": "", "row": "score"}
 
             for field in fields:
                 row1[field] = gold.get(field, "")

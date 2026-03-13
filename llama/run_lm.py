@@ -13,13 +13,21 @@ import pandas as pd
 from tqdm import tqdm
 
 from llama.common import db_util
-from llama.parse1_text.all_signatures import SIGNATURES
-from llama.parse1_text.dwc_module import DwcModule
-from llama.parse2_fields.all_actions import FIELD_ACTIONS
+from llama.lm.all_signatures import SIGNATURES
+from llama.lm.dwc_module import DwcModule
+from llama.postprocess.all_actions import FIELD_ACTIONS
 
 
 def list_action(args: argparse.Namespace) -> None:
-    db_util.display_jobs(args.db_path)
+    with duckdb.connect(args.db_path) as cxn:
+        ocr_jobs = cxn.execute("select * from job where action = ?", ["ocr"]).pl()
+        ocr_jobs = ocr_jobs.rows(named=True)
+        print("=" * 80)
+        print("OCR jobs\n")
+        for job in ocr_jobs:
+            for field, value in job.items():
+                print(f"{field:>12}: {value}")
+            print()
 
 
 def extract_action(args: argparse.Namespace) -> None:
@@ -88,9 +96,9 @@ def extract_action(args: argparse.Namespace) -> None:
         # Start adding DwC data
         row = cxn.execute(
             """
-            insert into dwc_run (
-                prompt, model, api_host, notes, temperature, max_tokens, signature
-            ) values (?, ?, ?, ?, ?, ?, ?) returning dwc_run_id;
+            insert into dwc_run (prompt, model, api_host, notes, temperature,
+                                 max_tokens, signature)
+            values (?, ?, ?, ?, ?, ?, ?) returning dwc_run_id;
             """,
             [
                 prompt,
@@ -115,9 +123,9 @@ def extract_action(args: argparse.Namespace) -> None:
 
                 cxn.execute(
                     query="""
-                        insert into dwc (dwc_run_id, ocr_id, field, value)
-                        values ($dwc_run_id, $ocr_id, $field, $value);
-                        """,
+                          insert into dwc (dwc_run_id, ocr_id, field, value)
+                          values ($dwc_run_id, $ocr_id, $field, $value);
+                          """,
                     parameters={
                         "dwc_run_id": dwc_run_id,
                         "ocr_id": ocr_rec["ocr_id"],
@@ -144,17 +152,27 @@ def field_action(args: argparse.Namespace) -> None:
     dspy.configure(lm=lm)
 
     dwc_query = """
-        select ocr_id, ocr_text, image_path, dwc_id, value
-          from dwc join ocr using (ocr_id)
-         where dwc_run_id = ? and field = ? and value <> '';
-        """
+                select ocr_id, ocr_text, image_path, dwc_id, value
+                from dwc
+                         join ocr using (ocr_id)
+                where dwc_run_id = ?
+                  and field = ?
+                  and value <> '';
+                """
     gold_query = """
-        select ocr_id, ocr_text, image_path, gold_id, value
-          from gold join ocr using (ocr_id)
-         where gold_run_id = ? and field = ? and value <> '';
-        """
-    dwc_fields_query = """select distinct field from dwc where dwc_run_id = ?;"""
-    gold_fields_query = """select distinct field from gold where gold_run_id = ?;"""
+                 select ocr_id, ocr_text, image_path, gold_id, value
+                 from gold
+                          join ocr using (ocr_id)
+                 where gold_run_id = ?
+                   and field = ?
+                   and value <> '';
+                 """
+    dwc_fields_query = """select distinct field
+                          from dwc
+                          where dwc_run_id = ?;"""
+    gold_fields_query = """select distinct field
+                           from gold
+                           where gold_run_id = ?;"""
 
     with duckdb.connect(args.db_path) as cxn:
         # Get list of fields
@@ -203,24 +221,17 @@ def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Extract Darwin Core (DwC) information from text."""
+            """Extract Darwin Core (DwC) information from text.""",
         ),
     )
     subparsers = arg_parser.add_subparsers(
-        title="Subcommands", description="Actions for extracting Darwin Core records"
+        title="Subcommands", description="Actions for extracting Darwin Core records",
     )
 
     # ------------------------------------------------------------
     list_parser = subparsers.add_parser(
         "list",
         help="""List data to help you decide which OCR runs to extract.""",
-    )
-    signatures = list(SIGNATURES.keys())
-    list_parser.add_argument(
-        "--signature",
-        choices=signatures,
-        default=signatures[0],
-        help="""What type of data are you extracting? What is its signature?""",
     )
     list_parser.add_argument(
         "--db-path",
@@ -233,7 +244,7 @@ def parse_args() -> argparse.Namespace:
 
     # ------------------------------------------------------------
     extract_parser = subparsers.add_parser(
-        "extract", help="""Extract DwC data from OCR records."""
+        "extract", help="""Extract DwC data from OCR records.""",
     )
     extract_parser.add_argument(
         "--db-path",
@@ -310,7 +321,7 @@ def parse_args() -> argparse.Namespace:
 
     # ------------------------------------------------------------
     field_parser = subparsers.add_parser(
-        "fields", help="""Extract subfields from extracted DwC data."""
+        "fields", help="""Extract subfields from extracted DwC data.""",
     )
     field_parser.add_argument(
         "--db-path",

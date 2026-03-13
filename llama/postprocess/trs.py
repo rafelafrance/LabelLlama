@@ -4,8 +4,8 @@ from typing import Any
 import dspy
 from dspy import InputField, OutputField, Signature
 
-from llama.parse2_fields import postprocess
-from llama.parse2_fields.field_action import FieldAction
+from llama.postprocess import postprocess
+from llama.postprocess.field_action import FieldAction
 
 
 class TrsSig(Signature):

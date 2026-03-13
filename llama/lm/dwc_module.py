@@ -3,7 +3,7 @@ from typing import Any
 import dspy
 
 from llama.common.preprocess import clean_text
-from llama.parse1_text.all_signatures import SIGNATURES
+from llama.lm.all_signatures import SIGNATURES
 
 
 class DwcModule(dspy.Module):

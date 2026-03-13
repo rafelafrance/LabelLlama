@@ -1,6 +1,6 @@
 import re
 
-from llama.parse1_text.preprocess import filter_lines
+from llama.lm.preprocess import filter_lines
 
 
 def join_lines(text: str) -> str:

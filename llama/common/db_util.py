@@ -8,7 +8,7 @@ import duckdb
 def create_tables(db_path: Path) -> None:
     sql = """
         create sequence if not exists job_seq;
-        create table if not exists job (
+        create table if not exists jobs (
             job_id integer primary key default nextval('job_seq'),
             script      char,
             action      char,
@@ -18,30 +18,31 @@ def create_tables(db_path: Path) -> None:
         );
 
         create sequence if not exists arg_seq;
-        create table if not exists arg (
+        create table if not exists args (
             arg_id integer primary key default nextval('arg_seq'),
-            job_id integer, -- references job(job_id),
-            field  char,
+            job_id integer, -- references jobs(job_id),
+            arg    char,
             value  char,
         );
 
-        create sequence if not exists ocr_seq;
-        create table if not exists ocr (
-            ocr_id integer primary key default nextval('ocr_seq'),
-            job_id      integer, -- references job(job_id),
-            image_path  char,
-            ocr_text    char,
-            ocr_error   char,
-            ocr_elapsed char,
+        create sequence if not exists doc_seq;
+        create table if not exists docs (
+            doc_id integer primary key default nextval('doc_seq'),
+            job_id      integer, -- references jobs(job_id),
+            src_path    char,    -- Path to the source file or image
+            src_id      char,    -- An ID in the source file for CSV or JSON etc.
+            doc_text    char,    -- The OCRed or imported text
+            doc_error   char,    -- OCR error message
+            doc_elapsed char,    -- Used to time OCR
         );
 
-        create sequence if not exists dwc_seq;
-        create table if not exists dwc (
-            dwc_id integer primary key default nextval('dwc_seq'),
-            job_id integer, -- references job(job_id),
-            ocr_id integer, -- references ocr(ocr_id),
-            field  char,
-            value  char,
+        create sequence if not exists field_seq;
+        create table if not exists fields (
+            field_id integer primary key default nextval('field_seq'),
+            job_id   integer, -- references jobs(job_id),
+            doc_id   integer, -- references docs(doc_id),
+            field    char,
+            value    char,
         );
         """
 
@@ -54,7 +55,7 @@ def add_job(
     script: str,
     args: Namespace | None = None,
     params: dict | None = None,
-) -> tuple[int, int]:
+) -> tuple[int, datetime]:
     args = vars(args) if args else {}
     args |= params or {}
 

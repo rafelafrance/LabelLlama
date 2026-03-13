@@ -34,6 +34,7 @@ def ocr_action(args: argparse.Namespace) -> None:
             cxn, __file__, args=args, params={"prompt": PROMPT}
         )
 
+        # noinspection PyTypeChecker
         model = client.llm.model(
             args.model_name,
             config={
@@ -134,7 +135,7 @@ def parse_args() -> argparse.Namespace:
     # ------------------------------------------------------------
     ocr_parser = subparsers.add_parser(
         "ocr",
-        help="""Import a gold standard from a CSV or JSON file.""",
+        help="""OCR images.""",
     )
     ocr_parser.add_argument(
         "--spreadsheet",

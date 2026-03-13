@@ -1,8 +1,8 @@
 import re
 from typing import Any
 
-from llama.parse2_fields import postprocess
-from llama.parse2_fields.field_action import FieldAction
+from llama.postprocess import postprocess
+from llama.postprocess.field_action import FieldAction
 
 
 class County(FieldAction):
