@@ -28,15 +28,15 @@ def setup_filter_pattern() -> re.Pattern:
 FILTER_PATTERN: re.Pattern[str] = setup_filter_pattern()
 
 
-def filter_lines(text: str) -> str:
+def filter_lines(doc_text: str) -> str:
     """
     Remove lines in the text that have certain words or phrases.
 
     These words/phrases are typically label headers or footers and "confuse"
     the language model with irrelevant data, so I remove them.
     """
-    lines = [ln for ln in text.splitlines() if not FILTER_PATTERN.search(ln)]
-    text = "\n".join(lines)
-    return text
+    lines = [ln for ln in doc_text.splitlines() if not FILTER_PATTERN.search(ln)]
+    doc_text = "\n".join(lines)
+    return doc_text
 
 

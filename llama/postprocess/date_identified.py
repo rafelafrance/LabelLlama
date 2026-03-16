@@ -5,7 +5,7 @@ from llama.postprocess.field_action import FieldAction
 
 
 class DateIdentified(FieldAction):
-    def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
+    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
         field = subfields["dateIdentified"]
         if field:
             field = field.split()

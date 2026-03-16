@@ -14,7 +14,7 @@ class ElevationSig(Signature):
     Do not hallucinate.
     """
 
-    text: str = InputField()
+    doc_text = InputField()
 
     elevationValues: list[float] = OutputField(
         default=[],
@@ -42,7 +42,7 @@ class Elevation(FieldAction):
         self.verbatim = verbatim
         self.predictor = dspy.Predict(ElevationSig)
 
-    def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
+    def postprocess(self, subfields: dict[str, Any], doc_text: str) -> dict[str, Any]:
         """Remove feet measurements if both meters and feet are given."""
         values = subfields["elevationValues"]
         units = subfields["elevationUnits"]
@@ -64,7 +64,7 @@ class Elevation(FieldAction):
             ]
 
         return {
-            "verbatimElevation": text,
+            "verbatimElevation": doc_text,
             "elevation": pairs[0][0],
             "maxElevation": pairs[1][0] if len(pairs) > 1 else "",
             "elevationUnits": pairs[0][1],

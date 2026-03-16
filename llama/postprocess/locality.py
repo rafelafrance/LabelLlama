@@ -11,7 +11,7 @@ from llama.postprocess.field_action import FieldAction
 #     Do not hallucinate.
 #     """
 #
-#     text: str = InputField()
+#     doc_text = InputField()
 #
 #     locality: list[str] = OutputField(
 #         default=[],
@@ -27,7 +27,7 @@ class Locality(FieldAction):
         super().__init__(verbatim)
         self.verbatim = verbatim
 
-    def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
+    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
         locality = {"locality": " ".join(subfields["locality"].split())}
         postprocess.clean_empties(locality)
         return locality

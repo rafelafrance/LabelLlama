@@ -16,7 +16,7 @@ class UtmSig(Signature):
     Do not hallucinate.
     """
 
-    text: str = InputField()
+    doc_text = InputField()
 
     northing: str = OutputField(
         default="",
@@ -51,10 +51,11 @@ class Utm(FieldAction):
         self.verbatim = verbatim
         self.predictor = dspy.Predict(UtmSig)
 
-    def preprocess(self, text: str, ocr_text: str) -> str:
-        return re.sub(r"(?<!\s)-", " ", text)
+    def preprocess(self, field_value: str, _doc_text: str) -> str:
+        return re.sub(r"(?<!\s)-", " ", field_value)
 
-    def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
+    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
+        utm = subfields["utm"]
         northing = subfields["northing"]
         easting = subfields["easting"]
 
@@ -66,6 +67,6 @@ class Utm(FieldAction):
             zone = [z for z in zone if z.lower() not in ("z", "z.")]
             zone = " ".join(zone)
 
-        utm = {"utm": text, "zone": zone, "northing": northing, "easting": easting}
-        postprocess.clean_empties(utm)
-        return utm
+        data = {"utm": utm, "zone": zone, "northing": northing, "easting": easting}
+        postprocess.clean_empties(data)
+        return data

@@ -4,7 +4,7 @@ from dspy import InputField, OutputField, Signature
 class HerbariumSheet(Signature):
     """Analyze text from a herbarium sheets and extract information."""
 
-    text: str = InputField()
+    doc_text = InputField()
 
     scientific_name: list[str] = OutputField(
         default=[],

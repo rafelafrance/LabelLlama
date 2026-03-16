@@ -79,8 +79,10 @@ def add_job(
 
 
 def update_elapsed(
-    cxn: duckdb.DuckDBPyConnection, job_id: int, job_started: datetime
+    cxn: duckdb.DuckDBPyConnection, job_id: int | None, job_started: datetime | None
 ) -> None:
+    if job_id is None or job_started is None:
+        return
     elapsed = str(datetime.now() - job_started)
     cxn.execute(
         "update job set job_elapsed=? where job_id=?",

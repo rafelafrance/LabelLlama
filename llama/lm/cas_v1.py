@@ -14,7 +14,7 @@ class CasV1(Signature):
     Do not hallucinate.
     """
 
-    text: str = InputField()
+    doc_text = InputField()
 
     scientificName: str = OutputField(
         default="",

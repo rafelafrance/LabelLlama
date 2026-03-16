@@ -14,7 +14,7 @@ class OccurrenceRemarksSig(Signature):
     Do not hallucinate.
     """
 
-    text: str = InputField()
+    doc_text = InputField()
 
     occurrenceRemarksSig: list[float] = OutputField(
         default=[],
@@ -30,6 +30,6 @@ class OccurrenceRemarks(FieldAction):
         self.verbatim = verbatim
         # self.predictor = dspy.Predict(OccurrenceRemarksSig)
 
-    def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
+    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
         postprocess.clean_empties(subfields)
         return subfields

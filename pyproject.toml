@@ -62,7 +62,7 @@ module-name = "llama"
 non-subscriptable = "ignore"
 
 [tool.ruff]
-exclude = ["notebooks/**"]
+exclude = ["llama/notebooks/**"]
 
 show-fixes = true
 

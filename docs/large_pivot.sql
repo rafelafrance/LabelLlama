@@ -3,7 +3,7 @@ copy (
       with run as (select * from dwc where dwc_run_id = 7)
      pivot run on field using first(value) group by ocr_id
   )
-  select ocr_text, ocr_id, image_path, scientificName, scientificNameAuthorship,
+  select doc_text, ocr_id, image_path, scientificName, scientificNameAuthorship,
          infraspecificEpithet, infraspecificNameAuthorship, family, associatedTaxa,
          recordNumber, recordedBy, verbatimEventDate, identifiedBy, dateIdentified,
          country, stateProvince, county, municipality, verbatimElevation,

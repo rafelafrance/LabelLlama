@@ -16,7 +16,7 @@ class TrsSig(Signature):
     Do not hallucinate.
     """
 
-    text: str = InputField()
+    doc_text = InputField()
 
     township: str = OutputField(
         default="",
@@ -58,7 +58,7 @@ class Trs(FieldAction):
         self.verbatim = verbatim
         self.predictor = dspy.Predict(TrsSig)
 
-    def postprocess(self, subfields: dict[str, Any], text: str) -> dict[str, Any]:
+    def postprocess(self, subfields: dict[str, Any], doc_text: str) -> dict[str, Any]:
         """Remove TRS part labels."""
         township = re.sub(r"^t\s*", "", subfields["township"], flags=re.IGNORECASE)
         range_ = re.sub(r"^r\s*", "", subfields["range"], flags=re.IGNORECASE)
@@ -80,7 +80,7 @@ class Trs(FieldAction):
             quad = " ".join(quad)
 
         trs = {
-            "trs": text,
+            "trs": doc_text,
             "township": township,
             "range": range_,
             "section": sect,

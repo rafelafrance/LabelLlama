@@ -17,7 +17,7 @@ Of course things are a bit more complicated than just those 2 steps.
 
 ### OCR text on the images
 
-![OCRed Text](assets/show_ocr_text.png)
+![OCRed Text](assets/show_doc_text.png)
 
 OCRed text from the label on the lower right of the sheet.
 
