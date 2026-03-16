@@ -37,6 +37,7 @@ def extract_action(args: argparse.Namespace) -> None:
         api_key=args.api_key,
         temperature=args.temperature,
         max_tokens=args.context_length,
+        cache=not args.no_cache,
     )
     dspy.configure(lm=lm)
 
@@ -61,7 +62,7 @@ def extract_action(args: argparse.Namespace) -> None:
 
 def write_predicted_fields(
     cxn: DuckDBPyConnection, doc: dict[str, dict], job_id: int, prediction: Prediction
-):
+) -> None:
     values = []
     for field, value in prediction.toDict().items():
         if isinstance(value, list):
@@ -89,7 +90,7 @@ def get_docs(cxn: DuckDBPyConnection, doc_job_id: int) -> list[dict[str, Any]]:
     """Get docs to parse."""
     docs = cxn.execute(
         """select doc_id, doc_text from docs where job_id = ? doc_text is not null""",
-        [doc_job_id]
+        [doc_job_id],
     ).pl()
     if not docs:
         raise RuntimeError
@@ -180,9 +181,14 @@ def parse_args() -> argparse.Namespace:
         help="""Notes about this dataset.""",
     )
     extract_parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="""Don't use cached records?""",
+    )
+    extract_parser.add_argument(
         "--limit",
         type=int,
-        help="""Limit the number of records to parse.""",
+        help="""Limit the number of records to parse. Used for debugging.""",
     )
     extract_parser.set_defaults(func=extract_action)
 

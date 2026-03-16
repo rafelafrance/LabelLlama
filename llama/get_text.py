@@ -25,7 +25,7 @@ PROMPT = " ".join(
 )
 
 
-def ocr_action(args: argparse.Namespace) -> None:
+def ocr_images(args: argparse.Namespace) -> None:
     """OCR images in a directory."""
     with lms.Client(args.api_host) as client, duckdb.connect(args.db) as cxn:
         image_paths = filter_images(args)
@@ -75,7 +75,7 @@ def ocr_action(args: argparse.Namespace) -> None:
 def get_all_images(db_path: Path) -> pl.DataFrame:
     """Get all image paths in the database."""
     with duckdb.connect(db_path) as cxn:
-        all_images = cxn.execute("select distinct image_path from ocr;").pl()
+        all_images = cxn.execute("select distinct image_path from docs;").pl()
     return all_images
 
 
@@ -86,9 +86,9 @@ def get_all_errors(db_path: Path) -> pl.DataFrame:
     attempts,typically with changed model parameters or a different model.
     """
     sql = """
-          select image_path, max(ocr_text) as top
-          from ocr
-          group by image_path
+          select src_path, src_id, max(doc_text) as top
+          from docs
+          group by src_path, src_id
           having top = '';
           """
     with duckdb.connect(db_path) as cxn:
@@ -120,7 +120,7 @@ def filter_images(args: argparse.Namespace) -> list[Path]:
     return image_paths
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent("""OCR images."""),
@@ -137,9 +137,10 @@ def parse_args() -> argparse.Namespace:
         help="""OCR images.""",
     )
     ocr_parser.add_argument(
-        "--spreadsheet",
+        "--db-path",
         type=Path,
-        help="""Path to the ODS spreadsheet.""",
+        required=True,
+        help="""Path to the database.""",
     )
     ocr_parser.add_argument(
         "--image-dir",
@@ -172,7 +173,8 @@ def parse_args() -> argparse.Namespace:
     ocr_parser.add_argument(
         "--notes",
         default="",
-        help="""Notes about this dataset.""",
+        help="""Notes about this dataset. Use this so that you can easily identify the
+            this OCR job when you want to parse the OCRed text later.""",
     )
     ocr_parser.add_argument(
         "--missing",
@@ -186,10 +188,10 @@ def parse_args() -> argparse.Namespace:
         help="""Retry all images where all previous attempts errored out.
             Use this to try the OCR with a different model and/or parameters.""",
     )
-    ocr_parser.set_defaults(func=ocr_action)
+    ocr_parser.set_defaults(func=ocr_images)
 
     # ------------------------------------------------------------
-    args = arg_parser.parse_args()
+    args = arg_parser.parse_args(args)
     return args
 
 

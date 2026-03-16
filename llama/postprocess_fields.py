@@ -35,41 +35,23 @@ def postprocess_action(args: argparse.Namespace) -> None:
         api_key=args.api_key,
         temperature=args.temperature,
         max_tokens=args.context_length,
-        cache=args.cache,
+        cache=not args.no_cache,
     )
     dspy.configure(lm=lm)
 
-    dwc_query = """
-                select ocr_id, ocr_text, image_path, dwc_id, value
-                from dwc
-                         join ocr using (ocr_id)
-                where dwc_run_id = ?
-                  and field = ?
-                  and value <> '';
-                """
-    gold_query = """
-                 select ocr_id, ocr_text, image_path, gold_id, value
-                 from gold
-                          join ocr using (ocr_id)
-                 where gold_run_id = ?
-                   and field = ?
-                   and value <> '';
-                 """
-    dwc_fields_query = """select distinct field
-                          from dwc
-                          where dwc_run_id = ?;"""
-    gold_fields_query = """select distinct field
-                           from gold
-                           where gold_run_id = ?;"""
+    value_query = """
+        select doc_id, doc_text, src_path, src_id, field_id, value
+          from field join doc using (doc_id)
+         where job_id = ? and field = ? and value <> ''
+        """
+    fields_query = """select distinct field from fields where job_id = ?"""
 
     with duckdb.connect(args.db_path) as cxn:
         # Get list of fields
-        if args.dwc_run_id:
-            fields = cxn.execute(dwc_fields_query, [args.dwc_run_id]).pl()
-        else:
-            fields = cxn.execute(gold_fields_query, [args.gold_run_id]).pl()
+        fields = cxn.execute(fields_query, [args.fields_job_id]).pl()
         fields = {f["field"] for f in fields.rows(named=True)}
 
+        # Filter fields based on user input and available field actions
         fields = fields & {args.field} if args.field else fields
         fields = [f for f in FIELD_ACTIONS if f in fields]
 
@@ -81,18 +63,15 @@ def postprocess_action(args: argparse.Namespace) -> None:
             actions = FIELD_ACTIONS[field](verbatim=field)
 
             # Get field values
-            if args.dwc_run_id:
-                rows = cxn.execute(dwc_query, [args.dwc_run_id, field]).pl()
-            else:
-                rows = cxn.execute(gold_query, [args.gold_run_id, field]).pl()
+            rows = cxn.execute(value_query, [args.job_id, field]).pl()
             rows = rows.rows(named=True)
 
             for i, row in tqdm(enumerate(rows)):
                 if args.limit and i >= args.limit:
                     break
                 # print(f"{row['value']=}")
-                prediction = actions(text=row["value"], ocr_text=row["ocr_text"])
-                data[row["image_path"]] |= prediction
+                prediction = actions(text=row["value"], ocr_text=row["doc_text"])
+                data[row["src_path"], row["src_id"]] |= prediction
 
                 # pp(prediction)
                 # print()
@@ -100,7 +79,7 @@ def postprocess_action(args: argparse.Namespace) -> None:
         for path, row in data.items():
             row["image_path"] = Path(path).name
 
-        df = pd.DataFrame(data.values()).set_index("image_path").sort_index()
+        df = pd.DataFrame(data.values()).set_index(["src_path", "src_id"]).sort_index()
         with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
             df.to_excel(writer, sheet_name="compare")
 
@@ -186,13 +165,18 @@ def parse_args() -> argparse.Namespace:
         help="""Notes about this dataset.""",
     )
     postprocess_parser.add_argument(
-        "--cache",
+        "--no-cache",
         action="store_true",
-        help="""Use cached records?""",
+        help="""Don't use cached records?""",
     )
     postprocess_parser.add_argument(
         "--field",
         help="""Just parse one field. Used for debugging.""",
+    )
+    postprocess_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="""Don't write the results to the database. Used for debugging.""",
     )
     postprocess_parser.add_argument(
         "--limit",

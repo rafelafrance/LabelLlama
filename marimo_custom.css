@@ -1,0 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:wght@300..900&family=Fira+Code:wght@300..700&display=swap");
+
+:root {
+    --monospace-font: "Fira Code", monospace;
+}
+
+.paragraph {
+  font-size: 1.4rem;
+}
+
+.markdown {
+  font-size: 1.2rem;
+}
+
+.output {
+  font-size: 1.4rem;
+}

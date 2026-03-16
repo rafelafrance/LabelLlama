@@ -22,10 +22,8 @@ def list_action(args: argparse.Namespace) -> None:
         list_lm_jobs(cxn)
 
 
-def list_lm_jobs(cxn: DuckDBPyConnection):
-    dwc_jobs = cxn.execute(
-        "select * from jobs where script = ?", ["run_lm.py"]
-    ).pl()
+def list_lm_jobs(cxn: DuckDBPyConnection) -> None:
+    dwc_jobs = cxn.execute("select * from jobs where script = ?", ["run_lm.py"]).pl()
     dwc_jobs = dwc_jobs.rows(named=True)
     print("=" * 80)
     print("fields jobs\n")
@@ -35,7 +33,7 @@ def list_lm_jobs(cxn: DuckDBPyConnection):
         print()
 
 
-def list_gold_std_jobs(cxn: DuckDBPyConnection):
+def list_gold_std_jobs(cxn: DuckDBPyConnection) -> None:
     gold_jobs = cxn.execute(
         "select * from jobs where script = ? and action = ?",
         ["gold_std.py", "import"],
@@ -120,7 +118,7 @@ def score_action(args: argparse.Namespace) -> None:
 
 
 def score_fields(
-    compare: dict[Any, list[dict[str, str]]],  field_order: list[str]
+    compare: dict[Any, list[dict[str, str]]], field_order: list[str]
 ) -> list[dict]:
     """Score the fields and add a new row with the field scores."""
     df_data: list[dict[str, str]] = []
@@ -204,7 +202,7 @@ def get_lm_field_rows(
     return field_rows
 
 
-def get_gold_std_rows(cxn: DuckDBPyConnection, gold_job_id) -> list[dict]:
+def get_gold_std_rows(cxn: DuckDBPyConnection, gold_job_id: int) -> list[dict]:
     """Get gold standard data as a fat table."""
     gold_rows = cxn.execute(
         f"""
