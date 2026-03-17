@@ -52,7 +52,7 @@ dev = [
 ]
 
 [tool.marimo.display]
-custom_css = ["marimo_custom.css"]
+custom_css = ["custom.css"]
 
 [tool.uv.build-backend]
 module-root = "."
