@@ -42,8 +42,8 @@ class CasV1(Signature):
         default="",
         desc="Taxonomic family",
     )
-    associatedTaxa: list[str] = OutputField(
-        default=[],
+    associatedTaxa: str = OutputField(
+        default="",
         desc="Was the specimen found near, around, or on another species",
     )
     recordNumber: str = OutputField(
@@ -247,8 +247,7 @@ class CasV1(Signature):
     abundance: str = OutputField(
         default="",
         desc=(
-            "How common is the specimen? "
-            'Examples include "common", "scattered", "rare"'
+            'How common is the specimen? Examples include "common", "scattered", "rare"'
         ),
     )
     leafShape: str = OutputField(

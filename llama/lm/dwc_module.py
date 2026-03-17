@@ -2,8 +2,8 @@ from typing import Any
 
 import dspy
 
-from llama.common.preprocess import clean_text
 from llama.lm.all_signatures import SIGNATURES
+from llama.lm.preprocess import clean_text
 
 
 class DwcModule(dspy.Module):

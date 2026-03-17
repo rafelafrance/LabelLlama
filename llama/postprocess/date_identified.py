@@ -1,17 +1,22 @@
-from typing import Any
+from llama.postprocess.field_action import FieldAction, FieldData
 
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+# from dateutil import parser
+# from calendar import IllegalMonthError
 
 
 class DateIdentified(FieldAction):
-    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
-        field = subfields["dateIdentified"]
+    def postprocess(self, field_data: FieldData) -> None:
+        field = field_data.new[self.name]
         if field:
             field = field.split()
             field = [s for s in field if not s.lower().startswith("date")]
             field = " ".join(field)
 
-        rec = {"dateIdentified": field}
-        postprocess.clean_empties(rec)
-        return rec
+        # try:
+        #     date_ = parser.parse(field).date()
+        #     date_ = date_.isoformat()[:10]
+        # except parser.ParserError, IllegalMonthError:
+        #     date_ = ""
+
+        field_data.new[self.name] = field
+

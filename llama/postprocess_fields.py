@@ -3,18 +3,19 @@
 import argparse
 import textwrap
 from argparse import Namespace
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import dspy
 import duckdb
-import pandas as pd
-from _duckdb import DuckDBPyConnection
+from duckdb import DuckDBPyConnection
 from tqdm import tqdm
 
 from llama.common import db_util
 from llama.postprocess.all_actions import FIELD_ACTIONS
+from llama.postprocess.field_action import FieldData
+
+# import pandas as pd
 
 
 # ----------------------------------------------------------------------------------
@@ -35,41 +36,40 @@ def postprocess_action(args: argparse.Namespace) -> None:
     configure_lm(args)
 
     with duckdb.connect(args.db_path) as cxn:
-        job_id, job_started = None, None
+        # job_id, job_started = None, None
         # if not args.dry_run:
         #     job_id, job_started = db_util.add_job(cxn, __file__, args=args)
 
-        field_list = get_field_list(cxn, args.fields_job_id, args.job_id)
+        field_list = get_field_list(cxn, args.job_id, args.field)
 
-        data = defaultdict(dict)
+        dataset = [FieldData(old) for old in get_old_values(cxn, args.job_id)]
+        dataset = dataset[:args.limit] if args.limit else dataset
 
-        for field in field_list:
-            print(field)
+        for field_name in field_list:
+            print(field_name)
 
-            actions = FIELD_ACTIONS[field](verbatim=field)
-            rows = get_field_values(cxn, field, args.job_id)
+            actions = FIELD_ACTIONS[field_name](verbatim=field_name)
 
-            for i, row in tqdm(enumerate(rows)):
-                if args.limit and i >= args.limit:
-                    break
-                # print(f"{row['value']=}")
-                prediction = actions(text=row["value"], doc_text=row["doc_text"])
-                data[row["src_path"], row["src_id"]] |= prediction
+            for i, field_data in tqdm(enumerate(dataset), total=len(dataset)):
+                actions(field_data=field_data)
 
-                # pp(prediction)
+                # print()
+                # print(f"{'raw':>24} {field_row['value']}")
+                # for key, value in subfields.items():
+                #     print(f"{key:>24} {value}")
                 # print()
 
-        if args.dry_run:
-            return
-
-        db_util.update_elapsed(cxn, job_id, job_started)
-
-        for path, row in data.items():
-            row["src_path"] = Path(path).name
-
-        df = pd.DataFrame(data.values()).set_index(["src_path", "src_id"]).sort_index()
-        with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
-            df.to_excel(writer, sheet_name="compare")
+        # if args.dry_run:
+        #     return
+        #
+        # db_util.update_elapsed(cxn, job_id, job_started)
+        #
+        # for path, row in data.items():
+        #     row["src_path"] = Path(path).name
+        #
+        # df = pd.DataFrame(data.values()).set_index(["src_path", "src_id"]).sort_index()
+        # with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
+        #     df.to_excel(writer, sheet_name="compare")
 
 
 def configure_lm(args: Namespace) -> None:
@@ -84,25 +84,22 @@ def configure_lm(args: Namespace) -> None:
     dspy.configure(lm=lm)
 
 
-def get_field_values(
-    cxn: DuckDBPyConnection, field: str, job_id: int
-) -> list[dict[str, Any]]:
-    value_query = """
-        select doc_id, doc_text, src_path, src_id, field_id, value
-        from field join doc using (doc_id)
-        where job_id = ? and field = ? and value <> ''
+def get_old_values(cxn: DuckDBPyConnection, job_id: int) -> list[dict[str, Any]]:
+    value_query = f"""
+        with piv as (
+            with run as (select * from fields where job_id = {job_id})
+            pivot run on field using first(value) group by doc_id)
+        select * from piv join docs using (doc_id)
         """
-    rows = cxn.execute(value_query, [job_id, field]).pl()
+    rows = cxn.execute(value_query, [job_id]).pl()
     rows = rows.rows(named=True)
     return rows
 
 
-def get_field_list(
-    cxn: DuckDBPyConnection, fields_job_id: int, field: list[str]
-) -> list[str]:
+def get_field_list(cxn: DuckDBPyConnection, job_id: int, field: list[str]) -> list[str]:
     """Get a list of fields from a LM field extraction or previous postprocess job."""
     fields_query = "select distinct field from fields where job_id = ?"
-    field_list = cxn.execute(fields_query, [fields_job_id]).pl()
+    field_list = cxn.execute(fields_query, [job_id]).pl()
     field_list = {f["field"] for f in field_list.rows(named=True)}
 
     # Filter fields based on user input and available field actions
@@ -159,7 +156,7 @@ def parse_args() -> argparse.Namespace:
     postprocess_parser.add_argument(
         "--job-id",
         type=int,
-        help="""Post process fields from this LM or previous postprocessing job.""",
+        help="""Post process fields from this LM job or previous postprocessing job.""",
     )
     postprocess_parser.add_argument(
         "--model-name",
@@ -184,6 +181,7 @@ def parse_args() -> argparse.Namespace:
     postprocess_parser.add_argument(
         "--temperature",
         type=float,
+        default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
     )
     postprocess_parser.add_argument(
@@ -204,6 +202,12 @@ def parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="""Don't write the results to the database. Used for debugging.""",
+    )
+    postprocess_parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="""Do not print progress and model results to the console.""",
     )
     postprocess_parser.add_argument(
         "--limit",

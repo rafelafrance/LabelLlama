@@ -1,12 +1,9 @@
-from typing import Any
-
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from old.llama.pylib import postprocess
+from llama.postprocess.field_action import FieldAction, FieldData
 
 
 class RecordedBy(FieldAction):
-    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
-        field = subfields["recordedBy"]
-        rec = {"recordedBy": field.title()}
-        postprocess.clean_empties(rec)
-        return rec
+    def postprocess(self, field_data: FieldData) -> None:
+        field = field_data.new[self.name]
+        field_data.new[self.name] = field.title()
+

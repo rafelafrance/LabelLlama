@@ -1,7 +1,5 @@
-from typing import Any
-
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from old.llama.pylib import postprocess
+from llama.postprocess.field_action import FieldAction, FieldData
 
 # class LocalitySig(Signature):
 #     """
@@ -23,11 +21,4 @@ from llama.postprocess.field_action import FieldAction
 
 
 class Locality(FieldAction):
-    def __init__(self, verbatim: str) -> None:
-        super().__init__(verbatim)
-        self.verbatim = verbatim
-
-    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
-        locality = {"locality": " ".join(subfields["locality"].split())}
-        postprocess.clean_empties(locality)
-        return locality
+    pass

@@ -34,16 +34,16 @@ FIELD_ACTIONS: dict[str, Any] = {
     "infraspecificNameAuthorship": InfraspecificNameAuthorship,
     "family": Family,
     "associatedTaxa": AssociatedTaxa,
-    #
+    # --
     "recordNumber": RecordNumber,
     "verbatimEventDate": EventDate,
     "recordedBy": RecordedBy,
     "identifiedBy": IdentifiedBy,
     "dateIdentified": DateIdentified,
-    #
+    # --
     "habitat": Habitat,
     "occurrenceRemarks": OccurrenceRemarks,
-    #
+    # --
     "locality": Locality,
     "country": Country,
     "stateProvince": StateProvince,
@@ -55,7 +55,7 @@ FIELD_ACTIONS: dict[str, Any] = {
     "verbatimLatitude": Latitude,
     "verbatimLongitude": Longitude,
     "verbatimElevation": Elevation,
-    #
+    # --
     # elevationValues: 1,
     # elevationUnits: 1,
     # elevationEstimated: 1,

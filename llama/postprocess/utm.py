@@ -1,11 +1,10 @@
 import re
-from typing import Any
 
 import dspy
 from dspy import InputField, OutputField, Signature
 
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from old.llama.pylib import postprocess
+from llama.postprocess.field_action import FieldAction, FieldData
 
 
 class UtmSig(Signature):
@@ -48,25 +47,30 @@ class UtmSig(Signature):
 class Utm(FieldAction):
     def __init__(self, verbatim: str) -> None:
         super().__init__(verbatim)
-        self.verbatim = verbatim
         self.predictor = dspy.Predict(UtmSig)
 
-    def preprocess(self, field_value: str, _doc_text: str) -> str:
-        return re.sub(r"(?<!\s)-", " ", field_value)
+    def preprocess_field(self, field_data: FieldData) -> None:
+        field = field_data.new[self.verbatim]
+        field = re.sub(r"(?<!\s)-", " ", field)
+        field_data.new[self.verbatim] = field
 
-    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
-        utm = subfields["utm"]
-        northing = subfields["northing"]
-        easting = subfields["easting"]
+    def predict(self, field_data: FieldData) -> None:
+        predicted = {}
+        if not all(field_data.old.get(k) for k in UtmSig.output_fields):
+            predicted = self.predictor.predict(field_value=field_data.old[self.name])
 
-        # Remove section label
-        zone = subfields["zone"]
-        if zone:
-            zone = subfields["zone"].split()
-            zone = [z for z in zone if not z.lower().startswith("zone")]
-            zone = [z for z in zone if z.lower() not in ("z", "z.")]
-            zone = " ".join(zone)
+        field_data.new[self.verbatim] = field_data.new[self.verbatim]
 
-        data = {"utm": utm, "zone": zone, "northing": northing, "easting": easting}
-        postprocess.clean_empties(data)
-        return data
+        for key in UtmSig.output_fields:
+            field_data.old[key] = field_data.old.get(key) or predicted.get(key)
+
+    def postprocess(self, field_data: FieldData) -> None:
+        field = field_data.new[self.verbatim]
+
+        if field:
+            field = field.split()
+            field = [z for z in field if not z.lower().startswith("zone")]
+            field = [z for z in field if z.lower() not in ("z", "z.")]
+            field = " ".join(field)
+
+        field_data.new[self.verbatim] = field

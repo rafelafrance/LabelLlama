@@ -1,17 +1,11 @@
-from typing import Any
-
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from llama.postprocess.field_action import FieldAction, FieldData
 
 
 class Habitat(FieldAction):
-    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
-        habitat = subfields["habitat"]
-        if habitat:
-            habitat = habitat.split()
-            habitat = [s for s in habitat if not s.lower().startswith("habitat")]
-            habitat = " ".join(habitat)
-
-        rec = {"habitat": habitat}
-        postprocess.clean_empties(rec)
-        return rec
+    def postprocess(self, field_data: FieldData) -> None:
+        field = field_data.new[self.name]
+        if field:
+            field = field.split()
+            field = [s for s in field if not s.lower().startswith("habitat")]
+            field = " ".join(field)
+        field_data.new[self.name] = field

@@ -1,13 +1,8 @@
-from typing import Any
-
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from llama.postprocess.field_action import FieldAction, FieldData
 
 
 class Family(FieldAction):
-    def postprocess(self, subfields: dict[str, Any], doc_text: str) -> dict[str, Any]:
-        if subfields["family"] not in doc_text:
-            return subfields
-        subfields["family"] = subfields["family"].title()
-        postprocess.clean_empties(subfields)
-        return subfields
+    def postprocess(self, field_data: FieldData) -> None:
+        field = field_data.new[self.name]
+        if field in field_data.old["doc_text"]:
+            field_data.new[self.name] = field.title()

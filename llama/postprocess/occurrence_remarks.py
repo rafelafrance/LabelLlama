@@ -1,9 +1,7 @@
-from typing import Any
-
 from dspy import InputField, OutputField, Signature
 
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from old.llama.pylib import postprocess
+from llama.postprocess.field_action import FieldAction, FieldData
 
 
 class OccurrenceRemarksSig(Signature):
@@ -25,11 +23,4 @@ class OccurrenceRemarksSig(Signature):
 
 
 class OccurrenceRemarks(FieldAction):
-    def __init__(self, verbatim: str) -> None:
-        super().__init__(verbatim)
-        self.verbatim = verbatim
-        # self.predictor = dspy.Predict(OccurrenceRemarksSig)
-
-    def postprocess(self, subfields: dict[str, Any], _doc_text: str) -> dict[str, Any]:
-        postprocess.clean_empties(subfields)
-        return subfields
+    pass

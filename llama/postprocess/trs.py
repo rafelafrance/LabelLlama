@@ -1,11 +1,10 @@
 import re
-from typing import Any
 
 import dspy
 from dspy import InputField, OutputField, Signature
 
-from llama.postprocess import postprocess
-from llama.postprocess.field_action import FieldAction
+from old.llama.pylib import postprocess
+from llama.postprocess.field_action import FieldAction, FieldData
 
 
 class TrsSig(Signature):
@@ -55,36 +54,46 @@ class TrsSig(Signature):
 class Trs(FieldAction):
     def __init__(self, verbatim: str) -> None:
         super().__init__(verbatim)
-        self.verbatim = verbatim
         self.predictor = dspy.Predict(TrsSig)
 
-    def postprocess(self, subfields: dict[str, Any], doc_text: str) -> dict[str, Any]:
-        """Remove TRS part labels."""
-        township = re.sub(r"^t\s*", "", subfields["township"], flags=re.IGNORECASE)
-        range_ = re.sub(r"^r\s*", "", subfields["range"], flags=re.IGNORECASE)
+    def predict(self, field_data: FieldData) -> None:
+        predicted = {}
+        if not all(field_data.old.get(k) for k in TrsSig.output_fields):
+            predicted = self.predictor.predict(field_value=field_data.old[self.name])
+
+        field_data.new[self.verbatim] = field_data.new[self.verbatim]
+
+        for key in TrsSig.output_fields:
+            field_data.old[key] = field_data.old.get(key) or predicted.get(key)
+
+    def postprocess(self, field_data: FieldData) -> None:
+        field = field_data.new[self.verbatim]
 
         # Remove section label
-        sect = subfields["section"]
-        if sect:
-            sect = sect.split()
-            sect = [s for s in sect if not s.lower().startswith("sec")]
-            sect = [s for s in sect if s.lower() not in ("s", "s.")]
-            sect = " ".join(sect)
+        if field:
+            field = field.split()
+            field = [s for s in field if not s.lower().startswith("sec")]
+            field = [s for s in field if s.lower() not in ("s", "s.")]
+            field = " ".join(field)
 
         # Remove quad label
-        quad = subfields["quad"]
-        if quad:
-            quad = subfields["quad"].split()
-            quad = [q for q in quad if not q.lower().startswith("quad")]
-            quad = [q for q in quad if q.lower() not in ("q", "q.")]
-            quad = " ".join(quad)
+        if field:
+            field = field.split()
+            field = [q for q in field if not q.lower().startswith("quad")]
+            field = [q for q in field if q.lower() not in ("q", "q.")]
+            field = " ".join(field)
 
-        trs = {
-            "trs": doc_text,
-            "township": township,
-            "range": range_,
-            "section": sect,
-            "quad": quad,
-        }
-        postprocess.clean_empties(trs)
-        return trs
+        field_data.new[self.verbatim] = field
+
+        # township = re.sub(r"^t\s*", "", subfields["township"], flags=re.IGNORECASE)
+        # range_ = re.sub(r"^r\s*", "", subfields["range"], flags=re.IGNORECASE)
+
+        # trs = {
+        #     "trs": doc_text,
+        #     "township": township,
+        #     "range": range_,
+        #     "section": sect,
+        #     "quad": quad,
+        # }
+        # postprocess.clean_empties(trs)
+        # return trs

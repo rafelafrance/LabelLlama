@@ -7,7 +7,6 @@ from typing import Any
 
 import dspy
 import duckdb
-from _duckdb import DuckDBPyConnection
 from dspy import Prediction
 from tqdm import tqdm
 
@@ -61,7 +60,10 @@ def extract_action(args: argparse.Namespace) -> None:
 
 
 def write_predicted_fields(
-    cxn: DuckDBPyConnection, doc: dict[str, dict], job_id: int, prediction: Prediction
+    cxn: duckdb.DuckDBPyConnection,
+    doc: dict[str, dict],
+    job_id: int,
+    prediction: Prediction,
 ) -> None:
     values = []
     for field, value in prediction.toDict().items():
@@ -86,7 +88,7 @@ def get_prompt(predictor: DwcModule) -> Any:
     return prompt
 
 
-def get_docs(cxn: DuckDBPyConnection, doc_job_id: int) -> list[dict[str, Any]]:
+def get_docs(cxn: duckdb.DuckDBPyConnection, doc_job_id: int) -> list[dict[str, Any]]:
     """Get docs to parse."""
     docs = cxn.execute(
         """select doc_id, doc_text from docs where job_id = ? doc_text is not null""",
