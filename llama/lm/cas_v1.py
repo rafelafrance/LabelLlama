@@ -134,7 +134,7 @@ class CasV1(Signature):
             '"T.43.R.11W., south-east corner section 7"'
         ),
     )
-    township: str = OutputField(
+    trsTownship: str = OutputField(
         default="",
         desc=(
             'The township portion of the TRS. It will look like: "T28N" or "T 32 N". '
@@ -142,7 +142,7 @@ class CasV1(Signature):
             "direction."
         ),
     )
-    range: str = OutputField(
+    trsRange: str = OutputField(
         default="",
         desc=(
             'The range portion of the TRS. It will look like: "R23E" or "R 1 W". '
@@ -150,7 +150,7 @@ class CasV1(Signature):
             "direction."
         ),
     )
-    section: str = OutputField(
+    trsSection: str = OutputField(
         default="",
         desc=(
             'The section portion of the TRS. Examples look like "1/4 S10", '
@@ -158,7 +158,7 @@ class CasV1(Signature):
             '"S8 (SE¼)", "south-east corner section 7"'
         ),
     )
-    quad: str = OutputField(
+    trsQuad: str = OutputField(
         default="",
         desc=(
             "The quad (quadrangle) portion of the TRS. It may be at the beginning or "
@@ -176,7 +176,7 @@ class CasV1(Signature):
             '"Zone 11S; 3845372N 0729522E"'
         ),
     )
-    northing: str = OutputField(
+    utmNorthing: str = OutputField(
         default="",
         desc=(
             "The northing portion of the UTM. "
@@ -185,7 +185,7 @@ class CasV1(Signature):
             '"4057.6 N", "3968400 N", "N 4253279", "4N"'
         ),
     )
-    easting: str = OutputField(
+    utmEasting: str = OutputField(
         default="",
         desc=(
             "The easting portion of the UTM. "
@@ -194,7 +194,7 @@ class CasV1(Signature):
             '"509257E", "- 0484145E", "546936", "368.2 E", "6E"'
         ),
     )
-    zone: str = OutputField(
+    utmZone: str = OutputField(
         default="",
         desc=(
             'The zone portion of the UTM. It will look like: "10S", "11", "8N", '

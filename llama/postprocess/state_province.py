@@ -1,4 +1,4 @@
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.field_action import FieldAction
 
 
 class StateProvince(FieldAction):

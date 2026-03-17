@@ -1,5 +1,5 @@
 from llama.postprocess.field_action import FieldAction
 
 
-class OccurrenceRemarks(FieldAction):
+class FlowersPresent(FieldAction):
     pass

@@ -1,13 +1,22 @@
 from typing import Any
 
+from llama.postprocess.abundance import Abundance
 from llama.postprocess.associated_taxa import AssociatedTaxa
 from llama.postprocess.country import Country
 from llama.postprocess.county import County
 from llama.postprocess.date_identified import DateIdentified
 from llama.postprocess.elevation import Elevation
+from llama.postprocess.elevation_estimated import ElevationEstimated
+from llama.postprocess.elevation_units import ElevationUnits
+from llama.postprocess.elevation_values import ElevationValues
 from llama.postprocess.event_date import EventDate
 from llama.postprocess.family import Family
+from llama.postprocess.flower_color import FlowerColor
+from llama.postprocess.flower_present import FlowersPresent
+from llama.postprocess.fruit_color import FruitColor
+from llama.postprocess.fruit_present import FruitPresent
 from llama.postprocess.geodetic_datum import GeodeticDatum
+from llama.postprocess.habit import Habit
 from llama.postprocess.habitat import Habitat
 from llama.postprocess.identified_by import IdentifiedBy
 from llama.postprocess.infraspecific_epithet import InfraspecificEpithet
@@ -15,17 +24,28 @@ from llama.postprocess.infraspecific_name_authorship import (
     InfraspecificNameAuthorship,
 )
 from llama.postprocess.latitude import Latitude
+from llama.postprocess.leaf_margin import LeafMargin
+from llama.postprocess.leaf_shape import LeafShape
 from llama.postprocess.locality import Locality
 from llama.postprocess.longitude import Longitude
 from llama.postprocess.municipality import Municipality
 from llama.postprocess.occurrence_remarks import OccurrenceRemarks
+from llama.postprocess.plant_height import PlantHeight
+from llama.postprocess.plant_size import PlantSize
 from llama.postprocess.record_number import RecordNumber
 from llama.postprocess.recorded_by import RecordedBy
 from llama.postprocess.scientific_name import ScientificName
 from llama.postprocess.scientific_name_authorship import ScientificNameAuthorship
 from llama.postprocess.state_province import StateProvince
 from llama.postprocess.trs import Trs
+from llama.postprocess.trs_quad import TrsQuad
+from llama.postprocess.trs_range import TrsRange
+from llama.postprocess.trs_section import TrsSection
+from llama.postprocess.trs_township import TrsTownship
 from llama.postprocess.utm import Utm
+from llama.postprocess.utm_easting import UtmEasting
+from llama.postprocess.utm_northing import UtmNorthing
+from llama.postprocess.utm_zone import UtmZone
 
 FIELD_ACTIONS: dict[str, Any] = {
     "scientificName": ScientificName,
@@ -50,30 +70,34 @@ FIELD_ACTIONS: dict[str, Any] = {
     "county": County,
     "municipality": Municipality,
     "geodeticDatum": GeodeticDatum,
+    # --
     "trs": Trs,
+    "trsTownship": TrsTownship,
+    "trsRange": TrsRange,
+    "trsSection": TrsSection,
+    "trsQuad": TrsQuad,
+    # --
     "utm": Utm,
+    "utmNorthing": UtmNorthing,
+    "utmEasting": UtmEasting,
+    "utmZone": UtmZone,
+    # --
     "verbatimLatitude": Latitude,
     "verbatimLongitude": Longitude,
-    "verbatimElevation": Elevation,
     # --
-    # elevationValues: 1,
-    # elevationUnits: 1,
-    # elevationEstimated: 1,
-    # township: 1,
-    # range: 1,
-    # section: 1,
-    # quad: 1,
-    # northing: 1,
-    # easting: 1,
-    # zone: 1,
-    # flowersPresent: 1,
-    # fruitPresent: 1,
-    # flowerColor: 1,
-    # fruitColor: 1,
-    # plantHeight: 1,
-    # plantSize: 1,
-    # habit: 1,
-    # abundance: 1,
-    # leafShape: 1,
-    # leafMargin: 1,
+    "verbatimElevation": Elevation,
+    "elevationValues": ElevationValues,
+    "elevationUnits": ElevationUnits,
+    "elevationEstimated": ElevationEstimated,
+    # --
+    "abundance": Abundance,
+    "flowersPresent": FlowersPresent,
+    "flowerColor": FlowerColor,
+    "fruitPresent": FruitPresent,
+    "fruitColor": FruitColor,
+    "plantHeight": PlantHeight,
+    "plantSize": PlantSize,
+    "habit": Habit,
+    "leafShape": LeafShape,
+    "leafMargin": LeafMargin,
 }
