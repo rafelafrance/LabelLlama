@@ -1,5 +1,21 @@
 from typing import Any
 
+# @dataclass
+# class CliArgs:
+#     @classmethod
+#     def from_command_line(cls: CliArgs) -> CliArgs:
+#         parser = argparse.ArgumentParser()
+#
+#         for f in fields(cls):
+#             arg_name = f"--{f.name.replace('_', '-')}"
+#             if f.type is bool:
+#                 parser.add_argument(arg_name, action="store_true")
+#             else:
+#                 parser.add_argument(arg_name, type=f.type, default=f.default)
+#
+#         args = parser.parse_args()
+#         return cls(**vars(args))
+
 
 def to_args(func: Any, *args: list[Any], **kwargs: Any) -> list[str]:
     """
