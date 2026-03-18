@@ -1,5 +1,5 @@
-from llama.postprocess.field_action import FieldAction
+from llama.postprocess.base_action import BaseAction
 
 
-class PlantHeight(FieldAction):
+class PlantHeight(BaseAction):
     pass

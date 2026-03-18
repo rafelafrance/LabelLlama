@@ -4,13 +4,16 @@ import argparse
 import textwrap
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import duckdb
 import lmstudio as lms
-import polars as pl
 from tqdm import tqdm
 
 from llama.common import db_util
+
+if TYPE_CHECKING:
+    import polars as pl
 
 # A reasonable starting prompt. I will parameterize and try variations on this later.
 PROMPT = " ".join(

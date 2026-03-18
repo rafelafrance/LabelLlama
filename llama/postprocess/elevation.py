@@ -1,7 +1,7 @@
 import dspy
 from dspy import InputField, OutputField, Signature
 
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
 class ElevationSig(Signature):
@@ -34,23 +34,38 @@ class ElevationSig(Signature):
     )
 
 
-class Elevation(FieldAction):
-    def __init__(self, verbatim: str) -> None:
-        super().__init__(verbatim)
+class Elevation(BaseAction):
+    def __init__(self, input_name: str) -> None:
+        super().__init__(input_name)
         self.predictor = dspy.Predict(ElevationSig)
+
+    def all_output_names(self) -> list[str]:
+        return [
+            self.input_name,
+            "elevation",
+            "maxElevation",
+            "elevationUnits",
+            "elevationEstimated",
+        ]
 
     def predict(self, field_data: FieldData) -> None:
         predicted = {}
-        if not all(field_data.old.get(k) for k in ElevationSig.output_fields):
-            predicted = self.predictor.predict(field_value=field_data.old[self.name])
+        if not all(field_data.input_field.get(k) for k in ElevationSig.output_fields):
+            predicted = self.predictor.predict(
+                field_value=field_data.input_field[self.output_name]
+            )
 
-        field_data.new[self.verbatim] = field_data.new[self.verbatim]
+        field_data.output_field[self.input_name] = field_data.output_field[
+            self.input_name
+        ]
 
         for key in ElevationSig.output_fields:
-            field_data.old[key] = field_data.old.get(key) or predicted.get(key)
+            field_data.input_field[key] = (
+                field_data.input_field.get(key) or predicted.get(key)
+            )
 
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new[self.verbatim]
+        field = field_data.output_field[self.input_name]
 
         if field:
             field = field.split()
@@ -59,32 +74,31 @@ class Elevation(FieldAction):
             field = [w for w in field if not w.lower().startswith("blev")]
             field = " ".join(field)
 
-        field_data.new[self.verbatim] = field
+        field_data.output_field[self.input_name] = field
 
+        self.create_subfields(field_data)
 
-        # values = subfields["elevationValues"]
-        # units = subfields["elevationUnits"]
-        #
-        # if not units:
-        #     return {}
-        #
-        # if len(values) > len(units):
-        #     units = [u for u in units for _ in range(2)]
-        #
-        # pairs = list(zip(values, units, strict=False))
-        #
-        # # Remove feet values & units if there are any values in meters
-        # if any(u[0].lower() == "m" for u in units):
-        #     pairs = [
-        #         (v, u)
-        #         for v, u in zip(values, units, strict=False)
-        #         if u[0].lower() == "m"
-        #     ]
-        #
-        # return {
-        #     "verbatimElevation": subfields[self.field_name],
-        #     "elevation": pairs[0][0],
-        #     "maxElevation": pairs[1][0] if len(pairs) > 1 else "",
-        #     "elevationUnits": pairs[0][1],
-        #     "elevationEstimated": subfields["elevationEstimated"],
-        # }
+    @staticmethod
+    def create_subfields(field_data: FieldData) -> None:
+        values = field_data.input_field["elevationValues"]
+        units = field_data.input_field["elevationUnits"]
+
+        if len(values) > len(units):
+            units = [u for u in units for _ in range(2)]
+
+        pairs = list(zip(values, units, strict=False))
+
+        # Remove feet values & units if there are any values in meters
+        if any(u[0].lower() == "m" for u in units):
+            pairs = [
+                (v, u)
+                for v, u in zip(values, units, strict=False)
+                if u[0].lower() == "m"
+            ]
+
+        field_data.output_field["elevation"] = pairs[0][0]
+        field_data.output_field["maxElevation"] = pairs[1][0] if len(pairs) > 1 else ""
+        field_data.output_field["elevationUnits"] = pairs[0][1]
+        field_data.output_field["elevationEstimated"] = (
+            field_data.input_field["elevationEstimated"]
+        )

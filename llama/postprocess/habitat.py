@@ -1,11 +1,11 @@
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
-class Habitat(FieldAction):
+class Habitat(BaseAction):
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new[self.name]
+        field = field_data.output_field[self.output_name]
         if field:
             field = field.split()
             field = [s for s in field if not s.lower().startswith("habitat")]
             field = " ".join(field)
-        field_data.new[self.name] = field
+        field_data.output_field[self.output_name] = field

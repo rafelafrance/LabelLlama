@@ -2,12 +2,12 @@ from calendar import IllegalMonthError
 
 from dateutil import parser
 
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
-class EventDate(FieldAction):
+class EventDate(BaseAction):
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new["eventDate"]
+        field = field_data.output_field["eventDate"]
 
         if field:
             field = field.split()
@@ -20,5 +20,5 @@ class EventDate(FieldAction):
         except parser.ParserError, IllegalMonthError:
             date_ = ""
 
-        field_data.new["verbatimEventDate"] = field
-        field_data.new["eventDate"] = date_
+        field_data.output_field["verbatimEventDate"] = field
+        field_data.output_field["eventDate"] = date_

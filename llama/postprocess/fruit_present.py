@@ -1,5 +1,5 @@
-from llama.postprocess.field_action import FieldAction
+from llama.postprocess.base_action import BaseAction
 
 
-class FruitPresent(FieldAction):
+class FruitPresent(BaseAction):
     pass

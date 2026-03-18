@@ -1,7 +1,7 @@
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
-class GeodeticDatum(FieldAction):
+class GeodeticDatum(BaseAction):
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new[self.name]
-        field_data.new[self.name] = field.upper()
+        field = field_data.output_field[self.output_name]
+        field_data.output_field[self.output_name] = field.upper()

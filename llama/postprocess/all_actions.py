@@ -6,9 +6,6 @@ from llama.postprocess.country import Country
 from llama.postprocess.county import County
 from llama.postprocess.date_identified import DateIdentified
 from llama.postprocess.elevation import Elevation
-from llama.postprocess.elevation_estimated import ElevationEstimated
-from llama.postprocess.elevation_units import ElevationUnits
-from llama.postprocess.elevation_values import ElevationValues
 from llama.postprocess.event_date import EventDate
 from llama.postprocess.family import Family
 from llama.postprocess.flower_color import FlowerColor
@@ -38,14 +35,7 @@ from llama.postprocess.scientific_name import ScientificName
 from llama.postprocess.scientific_name_authorship import ScientificNameAuthorship
 from llama.postprocess.state_province import StateProvince
 from llama.postprocess.trs import Trs
-from llama.postprocess.trs_quad import TrsQuad
-from llama.postprocess.trs_range import TrsRange
-from llama.postprocess.trs_section import TrsSection
-from llama.postprocess.trs_township import TrsTownship
 from llama.postprocess.utm import Utm
-from llama.postprocess.utm_easting import UtmEasting
-from llama.postprocess.utm_northing import UtmNorthing
-from llama.postprocess.utm_zone import UtmZone
 
 FIELD_ACTIONS: dict[str, Any] = {
     "scientificName": ScientificName,
@@ -72,23 +62,24 @@ FIELD_ACTIONS: dict[str, Any] = {
     "geodeticDatum": GeodeticDatum,
     # --
     "trs": Trs,
-    "trsTownship": TrsTownship,
-    "trsRange": TrsRange,
-    "trsSection": TrsSection,
-    "trsQuad": TrsQuad,
+    # "trsTownship": TrsTownship,
+    # "trsRange": TrsRange,
+    # "trsSection": TrsSection,
+    # "trsQuad": TrsQuad,
     # --
     "utm": Utm,
-    "utmNorthing": UtmNorthing,
-    "utmEasting": UtmEasting,
-    "utmZone": UtmZone,
+    # "utmNorthing": UtmNorthing,
+    # "utmEasting": UtmEasting,
+    # "utmZone": UtmZone,
     # --
     "verbatimLatitude": Latitude,
     "verbatimLongitude": Longitude,
     # --
     "verbatimElevation": Elevation,
-    "elevationValues": ElevationValues,
-    "elevationUnits": ElevationUnits,
-    "elevationEstimated": ElevationEstimated,
+    # "elevation": ElevationValues
+    # "maxElevation": ElevationValues
+    # "elevationUnits": ElevationUnits,
+    # "elevationEstimated": ElevationEstimated,
     # --
     "abundance": Abundance,
     "flowersPresent": FlowersPresent,

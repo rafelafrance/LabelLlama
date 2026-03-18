@@ -149,7 +149,7 @@ def get_field_order(
     cxn: DuckDBPyConnection, signature: str, gold_job_id: int, lm_job_id: int
 ) -> list[str]:
     """Get the report output field order across the page to help report usefulness."""
-    output_fields = SIGNATURES[signature].output_fields.keys()
+    output_fields = SIGNATURES[signature].all_output_names.keys()
     field_order = cxn.execute(
         f"""
             with

@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from llama.common import db_util
 from llama.postprocess.all_actions import FIELD_ACTIONS
-from llama.postprocess.field_action import FieldData
+from llama.postprocess.base_action import FieldData
 
 # import pandas as pd
 
@@ -46,11 +46,14 @@ def postprocess_action(args: argparse.Namespace) -> None:
         dataset = dataset[:args.limit] if args.limit else dataset
 
         for field_name in field_list:
+            if field_name not in FIELD_ACTIONS:
+                continue
+
             print(field_name)
 
             actions = FIELD_ACTIONS[field_name](verbatim=field_name)
 
-            for i, field_data in tqdm(enumerate(dataset), total=len(dataset)):
+            for field_data in tqdm(dataset):
                 actions(field_data=field_data)
 
                 # print()
@@ -67,7 +70,7 @@ def postprocess_action(args: argparse.Namespace) -> None:
         # for path, row in data.items():
         #     row["src_path"] = Path(path).name
         #
-        # df = pd.DataFrame(data.values()).set_index(["src_path", "src_id"]).sort_index()
+        # df =pd.DataFrame(data.values()).set_index(["src_path", "src_id"]).sort_index()
         # with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
         #     df.to_excel(writer, sheet_name="compare")
 

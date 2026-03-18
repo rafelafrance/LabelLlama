@@ -1,9 +1,9 @@
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
-class AssociatedTaxa(FieldAction):
+class AssociatedTaxa(BaseAction):
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new[self.name]
+        field = field_data.output_field[self.output_name]
         field = field.replace("*", "")
         field = field.removesuffix(".")
-        field_data.new[self.name] = field
+        field_data.output_field[self.output_name] = field

@@ -1,5 +1,4 @@
-from old.llama.pylib import postprocess
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction
 
 # class LocalitySig(Signature):
 #     """
@@ -20,5 +19,5 @@ from llama.postprocess.field_action import FieldAction, FieldData
 #     )
 
 
-class Locality(FieldAction):
+class Locality(BaseAction):
     pass

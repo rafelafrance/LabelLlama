@@ -3,8 +3,7 @@ import re
 import dspy
 from dspy import InputField, OutputField, Signature
 
-from old.llama.pylib import postprocess
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
 class TrsSig(Signature):
@@ -51,49 +50,64 @@ class TrsSig(Signature):
     )
 
 
-class Trs(FieldAction):
-    def __init__(self, verbatim: str) -> None:
-        super().__init__(verbatim)
+class Trs(BaseAction):
+    def __init__(self, input_name: str) -> None:
+        super().__init__(input_name)
         self.predictor = dspy.Predict(TrsSig)
+
+    def all_output_names(self) -> list[str]:
+        return [
+            self.input_name, "trsTownship", "trsRange", "trsSection", "trsQuad"
+        ]
 
     def predict(self, field_data: FieldData) -> None:
         predicted = {}
-        if not all(field_data.old.get(k) for k in TrsSig.output_fields):
-            predicted = self.predictor.predict(field_value=field_data.old[self.name])
+        if not all(field_data.input_field.get(k) for k in TrsSig.output_fields):
+            predicted = self.predictor.predict(
+                field_value=field_data.input_field[self.output_name]
+            )
 
-        field_data.new[self.verbatim] = field_data.new[self.verbatim]
+        field_data.output_field[self.input_name] = field_data.output_field[
+            self.input_name
+        ]
 
         for key in TrsSig.output_fields:
-            field_data.old[key] = field_data.old.get(key) or predicted.get(key)
+            field_data.input_field[key] = (
+                field_data.input_field.get(key) or predicted.get(key)
+            )
 
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new[self.verbatim]
+        field = field_data.output_field[self.input_name]
+        field_data.output_field[self.input_name] = field
+
+        self.create_subfields(field_data)
+
+    @staticmethod
+    def create_subfields(field_data: FieldData) -> None:
+        township = re.sub(
+            r"^t\s*", "", field_data.input_field["township"], flags=re.IGNORECASE
+        )
+        range_ = re.sub(
+            r"^r\s*", "", field_data.input_field["range"], flags=re.IGNORECASE
+        )
 
         # Remove section label
-        if field:
-            field = field.split()
-            field = [s for s in field if not s.lower().startswith("sec")]
-            field = [s for s in field if s.lower() not in ("s", "s.")]
-            field = " ".join(field)
+        sect = field_data.input_field["section"]
+        if sect:
+            sect = sect.split()
+            sect = [s for s in sect if not s.lower().startswith("sec")]
+            sect = [s for s in sect if s.lower() not in ("s", "s.")]
+            sect = " ".join(sect)
 
         # Remove quad label
-        if field:
-            field = field.split()
-            field = [q for q in field if not q.lower().startswith("quad")]
-            field = [q for q in field if q.lower() not in ("q", "q.")]
-            field = " ".join(field)
+        quad = field_data.input_field["quad"]
+        if quad:
+            quad = quad.split()
+            quad = [q for q in quad if not q.lower().startswith("quad")]
+            quad = [q for q in quad if q.lower() not in ("q", "q.")]
+            quad = " ".join(quad)
 
-        field_data.new[self.verbatim] = field
-
-        # township = re.sub(r"^t\s*", "", subfields["township"], flags=re.IGNORECASE)
-        # range_ = re.sub(r"^r\s*", "", subfields["range"], flags=re.IGNORECASE)
-
-        # trs = {
-        #     "trs": doc_text,
-        #     "township": township,
-        #     "range": range_,
-        #     "section": sect,
-        #     "quad": quad,
-        # }
-        # postprocess.clean_empties(trs)
-        # return trs
+        field_data.output_field["trsTownship"] = township
+        field_data.output_field["trsRange"] = range_
+        field_data.output_field["trsSection"] = sect
+        field_data.output_field["trsQuad"] = quad

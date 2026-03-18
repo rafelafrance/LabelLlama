@@ -1,8 +1,11 @@
-from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import duckdb
+
+if TYPE_CHECKING:
+    from argparse import Namespace
 
 
 def create_tables(db_path: Path) -> None:

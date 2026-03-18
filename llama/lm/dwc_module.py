@@ -13,7 +13,7 @@ class DwcModule(dspy.Module):
         self.predictor = dspy.Predict(self.signature)
 
         self.input_fields = self.signature.input_fields
-        self.output_fields = self.signature.output_fields
+        self.output_fields = self.signature.all_output_names
         self.input_names: list[str] = list(self.input_fields.keys())
         self.output_names: list[str] = list(self.output_fields.keys())
 

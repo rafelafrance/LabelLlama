@@ -1,7 +1,7 @@
-from llama.postprocess.field_action import FieldAction, FieldData
+from llama.postprocess.base_action import BaseAction, FieldData
 
 
-class Longitude(FieldAction):
+class Longitude(BaseAction):
     def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.new[self.verbatim]
-        field_data.new[self.verbatim] = field
+        field = field_data.output_field[self.input_name]
+        field_data.output_field[self.input_name] = field

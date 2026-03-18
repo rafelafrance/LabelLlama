@@ -6,19 +6,20 @@ from typing import Any
 
 @dataclass
 class FieldData:
-    old: dict[str, Any]
-    new: dict[str, Any] = field(default_factory=dict)
+    input_field: dict[str, Any]
+    output_field: dict[str, Any] = field(default_factory=dict)
 
 
-class FieldAction:
-    def __init__(self, verbatim: str) -> None:
+class BaseAction:
+    def __init__(self, input_name: str) -> None:
         self.predictor = None
-        self.verbatim = verbatim
-        self.name = self.field_name()
+        self.input_name = input_name
 
-    def field_name(self) -> str:
         name = self.__class__.__name__
-        return name[0].lower() + name[1:]
+        self.output_name = name[0].lower() + name[1:]
+
+    def all_output_names(self) -> list[str]:
+        return [self.output_name]
 
     def preprocess_field(self, field_data: FieldData) -> None:
         pass
@@ -35,7 +36,7 @@ class FieldAction:
 
         Field specific preprocessing happens after this.
         """
-        field_value = field_data.old[self.name]
+        field_value = field_data.input_field[self.output_name]
 
         # Handle a stringified array
         if field_value.startswith("[") and field_value.endswith("]"):
@@ -63,7 +64,7 @@ class FieldAction:
             field_value = field_value.removeprefix('"')
             field_value = field_value.removesuffix('"')
 
-        field_data.new[self.name] = field_value
+        field_data.output_field[self.output_name] = field_value
 
     def __call__(self, field_data: FieldData) -> None:
         self.common_preprocess(field_data)
