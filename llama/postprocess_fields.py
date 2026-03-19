@@ -43,7 +43,7 @@ def postprocess_action(args: argparse.Namespace) -> None:
         field_list = get_field_list(cxn, args.job_id, args.field)
 
         dataset = [FieldData(old) for old in get_old_values(cxn, args.job_id)]
-        dataset = dataset[:args.limit] if args.limit else dataset
+        dataset = dataset[: args.limit] if args.limit else dataset
 
         for field_name in field_list:
             if field_name not in FIELD_ACTIONS:
@@ -51,16 +51,17 @@ def postprocess_action(args: argparse.Namespace) -> None:
 
             print(field_name)
 
-            actions = FIELD_ACTIONS[field_name](verbatim=field_name)
+            actions = FIELD_ACTIONS[field_name](input_name=field_name)
 
             for field_data in tqdm(dataset):
                 actions(field_data=field_data)
 
-                # print()
-                # print(f"{'raw':>24} {field_row['value']}")
-                # for key, value in subfields.items():
-                #     print(f"{key:>24} {value}")
-                # print()
+            print(field_data.output_field)
+            # print()
+            # print(f"{'raw':>24} {field_row['value']}")
+            # for key, value in subfields.items():
+            #     print(f"{key:>24} {value}")
+            # print()
 
         # if args.dry_run:
         #     return
@@ -94,7 +95,7 @@ def get_old_values(cxn: DuckDBPyConnection, job_id: int) -> list[dict[str, Any]]
             pivot run on field using first(value) group by doc_id)
         select * from piv join docs using (doc_id)
         """
-    rows = cxn.execute(value_query, [job_id]).pl()
+    rows = cxn.execute(value_query).pl()
     rows = rows.rows(named=True)
     return rows
 

@@ -89,7 +89,7 @@ class CasV1(Signature):
         default="",
         desc="The specimen was collected at this elevation or altitude",
     )
-    elevationValues: list[str] = OutputField(
+    elevationValues: list[float] = OutputField(
         default=[],
         desc=(
             "The elevation values. More than one value could be an elevation range "
@@ -213,12 +213,12 @@ class CasV1(Signature):
         default="",
         desc="Collected from this habitat or environment.",
     )
-    flowersPresent: str = OutputField(
-        default="",
+    flowersPresent: bool = OutputField(
+        default=False,
         desc="Are there flowers on the plant?",
     )
-    fruitPresent: str = OutputField(
-        default="",
+    fruitPresent: bool = OutputField(
+        default=False,
         desc="Is there fruit on the plant?",
     )
     flowerColor: str = OutputField(

@@ -21,6 +21,11 @@ class BaseAction:
     def all_output_names(self) -> list[str]:
         return [self.output_name]
 
+    def __call__(self, field_data: FieldData) -> None:
+        self.preprocess_field(field_data)
+        self.predict(field_data)
+        self.postprocess(field_data)
+
     def preprocess_field(self, field_data: FieldData) -> None:
         pass
 
@@ -31,12 +36,8 @@ class BaseAction:
         pass
 
     def common_preprocess(self, field_data: FieldData) -> None:
-        """
-        Fix common problems with strings after a language model mangles them.
-
-        Field specific preprocessing happens after this.
-        """
-        field_value = field_data.input_field[self.output_name]
+        """Fix common problems with strings after a language model mangles them."""
+        field_value = field_data.input_field[self.input_name]
 
         # Handle a stringified array
         if field_value.startswith("[") and field_value.endswith("]"):
@@ -65,9 +66,3 @@ class BaseAction:
             field_value = field_value.removesuffix('"')
 
         field_data.output_field[self.output_name] = field_value
-
-    def __call__(self, field_data: FieldData) -> None:
-        self.common_preprocess(field_data)
-        self.preprocess_field(field_data)
-        self.predict(field_data)
-        self.postprocess(field_data)

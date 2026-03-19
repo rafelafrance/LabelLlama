@@ -3,6 +3,7 @@ import re
 import dspy
 from dspy import InputField, OutputField, Signature
 
+from llama.common import fix_values
 from llama.postprocess.base_action import BaseAction, FieldData
 
 
@@ -55,6 +56,16 @@ class Utm(BaseAction):
         field = field_data.output_field[self.input_name]
         field = re.sub(r"(?<!\s)-", " ", field)
         field_data.output_field[self.input_name] = field
+
+        field_data.input_field["utmNorthing"] = fix_values.to_list_of_floats(
+            field_data.input_field["utmNorthing"]
+        )
+        field_data.input_field["utmEasting"] = fix_values.to_list_of_floats(
+            field_data.input_field["utmEasting"]
+        )
+        field_data.input_field["utmZone"] = fix_values.to_list_of_floats(
+            field_data.input_field["utmZone"]
+        )
 
     def predict(self, field_data: FieldData) -> None:
         predicted = {}

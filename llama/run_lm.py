@@ -67,9 +67,6 @@ def write_predicted_fields(
 ) -> None:
     values = []
     for field, value in prediction.toDict().items():
-        if isinstance(value, list):
-            value = " ".join(value) if len(value) > 0 else ""
-
         values.append([job_id, doc["doc_id"], field, value])
 
     cxn.executemany(

@@ -3,6 +3,7 @@ import re
 import dspy
 from dspy import InputField, OutputField, Signature
 
+from llama.common import fix_values
 from llama.postprocess.base_action import BaseAction, FieldData
 
 
@@ -59,6 +60,23 @@ class Trs(BaseAction):
         return [
             self.input_name, "trsTownship", "trsRange", "trsSection", "trsQuad"
         ]
+
+    def preprocess_field(self, field_data: FieldData) -> None:
+        field_value = field_data.input_field[self.input_name]
+        field_data.output_field[self.output_name] = fix_values.to_str(field_value)
+
+        field_data.input_field["trsTownship"] = fix_values.to_str(
+            field_data.input_field["trsTownship"]
+        )
+        field_data.input_field["trsRange"] = fix_values.to_str(
+            field_data.input_field["trsRange"]
+        )
+        field_data.input_field["trsSection"] = fix_values.to_str(
+            field_data.input_field["trsSection"]
+        )
+        field_data.input_field["trsQuad"] = fix_values.to_str(
+            field_data.input_field["trsQuad"]
+        )
 
     def predict(self, field_data: FieldData) -> None:
         predicted = {}

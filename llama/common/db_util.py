@@ -9,7 +9,9 @@ if TYPE_CHECKING:
 
 
 def create_tables(db_path: Path) -> None:
-    sql = """
+    union = "union(c char, i int, f float, b bool, cc char[], ii int[], ff float[])"
+
+    sql = f"""
         create sequence if not exists job_seq;
         create table if not exists jobs (
             job_id integer primary key default nextval('job_seq'),
@@ -25,7 +27,7 @@ def create_tables(db_path: Path) -> None:
             arg_id integer primary key default nextval('arg_seq'),
             job_id integer, -- references jobs(job_id),
             arg    char,
-            value  char,
+            value  {union},
         );
 
         create sequence if not exists doc_seq;
@@ -45,7 +47,7 @@ def create_tables(db_path: Path) -> None:
             job_id   integer, -- references jobs(job_id),
             doc_id   integer, -- references docs(doc_id),
             field    char,
-            value    char,
+            value    {union},
         );
         """
 
@@ -71,6 +73,8 @@ def add_job(
     job_id = result[0]
 
     for arg, value in args.items():
+        if not isinstance(value, (str, int, float, bool, list)):
+            value = str(value)
         cxn.execute(
             "insert into arg (job_id, arg, value) values (?, ?, ?)",
             [job_id, arg, value],
