@@ -1,15 +1,15 @@
 import re
+from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.postprocess.base_action import BaseAction, FieldData
+from llama.postprocess.base_field import BOTH, BaseField
 
 
-class County(BaseAction):
-    def preprocess_field(self, field_data: FieldData) -> None:
-        field_value = field_data.input_field[self.input_name]
-        field_data.output_field[self.output_name] = fix_values.to_str(field_value)
+@dataclass
+class County(BaseField):
+    county: str = field(default="", metadata=BOTH)
 
-    def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.output_field[self.output_name]
-        field = re.sub(r"\s(co\.?|county)$", "", field, flags=re.IGNORECASE)
-        field_data.output_field[self.output_name] = field
+    def __post_init__(self) -> None:
+        self.county = fix_values.to_str(self.county)
+        self.county = re.sub(r"\s(co\.?|county)$", "", self.county, flags=re.IGNORECASE)
+        self.county = self.county.title()

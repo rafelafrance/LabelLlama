@@ -1,8 +1,12 @@
+from dataclasses import dataclass, field
+
 from llama.common import fix_values
-from llama.postprocess.base_action import BaseAction, FieldData
+from llama.postprocess.base_field import BOTH, BaseField
 
 
-class FlowersPresent(BaseAction):
-    def preprocess_field(self, field_data: FieldData) -> None:
-        field_value = field_data.input_field[self.input_name]
-        field_data.output_field[self.output_name] = fix_values.to_bool(field_value)
+@dataclass
+class FlowersPresent(BaseField):
+    flowersPresent: bool = field(default=False, metadata=BOTH)
+
+    def __post_init__(self) -> None:
+        self.flowersPresent = fix_values.to_bool(self.flowersPresent)

@@ -1,12 +1,14 @@
-import re
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
-from llama.postprocess.base_action import BaseAction, FieldData
+from llama.postprocess.base_field import BOTH, BaseField
 
 
+@dataclass
 class UtmSig(Signature):
     """
     Analyze the text and extract this elevation information.
@@ -44,67 +46,32 @@ class UtmSig(Signature):
     )
 
 
-class Utm(BaseAction):
-    def __init__(self, input_name: str) -> None:
-        super().__init__(input_name)
-        self.predictor = dspy.Predict(UtmSig)
+class Utm(BaseField):
+    predictor: ClassVar[Any] = dspy.Predict(UtmSig)
 
-    def all_output_names(self) -> list[str]:
-        return [self.input_name, "utmNorthing", "utmEasting", "utmZone"]
+    utm: str = field(default="", metadata=BOTH)
+    utmNorthing: str = field(default="", metadata=BOTH)
+    utmEasting: str = field(default="", metadata=BOTH)
+    utmZone: str = field(default="", metadata=BOTH)
 
-    def preprocess_field(self, field_data: FieldData) -> None:
-        field = field_data.output_field[self.input_name]
-        field = re.sub(r"(?<!\s)-", " ", field)
-        field_data.output_field[self.input_name] = field
+    def __post_init__(self) -> None:
+        self.utm = fix_values.to_str(self.utm)
 
-        field_data.input_field["utmNorthing"] = fix_values.to_list_of_floats(
-            field_data.input_field["utmNorthing"]
-        )
-        field_data.input_field["utmEasting"] = fix_values.to_list_of_floats(
-            field_data.input_field["utmEasting"]
-        )
-        field_data.input_field["utmZone"] = fix_values.to_list_of_floats(
-            field_data.input_field["utmZone"]
-        )
+        if any(not getattr(self, name) for name in UtmSig.output_fields):
+            predicted = self.predictor(self.utm)
 
-    def predict(self, field_data: FieldData) -> None:
-        predicted = {}
-        if not all(field_data.input_field.get(k) for k in UtmSig.output_fields):
-            predicted = self.predictor.predict(
-                field_value=field_data.input_field[self.output_name]
-            )
+            self.utmNorthing = self.utmNorthing or predicted.get("northing", "")
+            self.utmEasting = self.utmEasting or predicted.get("easting", "")
+            self.utmZone = self.utmZone or predicted.get("zone", "")
 
-        field_data.output_field[self.input_name] = (
-            field_data.output_field[self.input_name]
-        )
+        self.utmNorthing = fix_values.to_str(self.utmNorthing)
+        self.utmEasting = fix_values.to_str(self.utmEasting)
+        self.utmZone = fix_values.to_str(self.utmZone)
 
-        for key in UtmSig.output_fields:
-            field_data.input_field[key] = (
-                field_data.input_field.get(key) or predicted.get(key)
-            )
+        self.utmNorthing = self.utmNorthing.lower().replace("n", "")
+        self.utmEasting = self.utmEasting.lower().replace("e", "")
 
-    def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.output_field[self.input_name]
-        field_data.output_field[self.input_name] = field
-
-        self.create_subfields(field_data)
-
-    @staticmethod
-    def create_subfields(field_data: FieldData) -> None:
-        northing = field_data.input_field["utmNorthing"].lower()
-        northing = northing.replace("n", "")
-
-        easting = field_data.input_field["utmEasting"].lower()
-        easting = easting.replace("e", "")
-
-        zone = field_data.input_field["utmZone"]
-        if zone:
-            zone = zone.split()
-            zone = [z for z in zone if not z.lower().startswith("zone")]
-            zone = [z for z in zone if z.lower() not in ("z", "z.")]
-            zone = " ".join(zone)
-
-        field_data.output_field["utmNorthing"] = northing
-        field_data.output_field["utmEasting"] = easting
-        field_data.output_field["utmZone"] = zone
-
+        words = self.utmZone.split()
+        words = [w for w in words if not w.lower().startswith("zone")]
+        words = [w for w in words if w.lower() not in ("z", "z.")]
+        self.utmZone = " ".join(words)

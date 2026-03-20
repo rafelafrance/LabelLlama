@@ -28,6 +28,7 @@ def to_int(value: Any) -> int | None:
 
     match type(value):
         case str():
+            value = clean_str(value)
             return str_to_int(value)
         case _:
             return int(value)
@@ -38,6 +39,7 @@ def to_float(value: Any) -> float | None:
 
     match type(value):
         case str():
+            value = clean_str(value)
             return str_to_float(value)
         case _:
             return float(value)
@@ -48,6 +50,7 @@ def to_bool(value: Any) -> bool:
 
     match type(value):
         case str():
+            value = clean_str(value)
             return value.lower() in ("true", "yes", "1")
         case _:
             return bool(value)
@@ -57,7 +60,10 @@ def to_list_of_strs(value: Any) -> list[str]:
     value = str_to_list(value)
 
     match type(value):
-        case str() | int() | float() | bool():
+        case str():
+            value = clean_str(value)
+            return [str(value)]
+        case int() | float() | bool():
             return [str(value)]
         case list():
             return [str(v) for v in value]
@@ -69,7 +75,10 @@ def to_list_of_ints(value: Any) -> list[int]:
     value = str_to_list(value)
 
     match type(value):
-        case str() | int() | float() | bool():
+        case str():
+            value = re.sub(r",", "", value)
+            return INT.findall(value)
+        case int() | float() | bool():
             return [int(value)]
         case list() if value[0] is str:
             return [c for v in value if (c := str_to_int(v))]
@@ -83,7 +92,10 @@ def to_list_of_floats(value: Any) -> list[float]:
     value = str_to_list(value)
 
     match type(value):
-        case str() | int() | float() | bool():
+        case str():
+            value = re.sub(r",", "", value)
+            return FLOAT.findall(value)
+        case int() | float() | bool():
             return [float(value)]
         case list() if value[0] is str:
             return [f for v in value if (f := str_to_float(v))]

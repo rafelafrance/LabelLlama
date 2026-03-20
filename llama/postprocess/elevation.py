@@ -1,8 +1,11 @@
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
+
 import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
-from llama.postprocess.base_action import BaseAction, FieldData
+from llama.postprocess.base_field import BOTH, IN, OUT, BaseField
 
 
 class ElevationSig(Signature):
@@ -35,84 +38,58 @@ class ElevationSig(Signature):
     )
 
 
-class Elevation(BaseAction):
-    def __init__(self, input_name: str) -> None:
-        super().__init__(input_name)
-        self.predictor = dspy.Predict(ElevationSig)
+@dataclass
+class Elevation(BaseField):
+    predictor: ClassVar[Any] = dspy.Predict(ElevationSig)
 
-    def all_output_names(self) -> list[str]:
-        return [
-            self.input_name,
-            "elevation",
-            "maxElevation",
-            "elevationUnits",
-            "elevationEstimated",
-        ]
+    verbatimElevation: str = field(default="", metadata=BOTH)
+    elevationValues: list[float] | None = field(default=None, metadata=IN)
+    elevation: float | None = field(default=None, metadata=OUT)
+    maxElevation: float | None = field(default=None, metadata=OUT)
+    elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
+    elevationEstimated: bool | None = field(default=None, metadata=BOTH)
 
-    def preprocess_field(self, field_data: FieldData) -> None:
-        field_value = field_data.input_field[self.input_name]
-        field_data.output_field[self.output_name] = fix_values.to_str(field_value)
+    def __post_init__(self) -> None:
+        self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
 
-        field_data.input_field["elevationValues"] = fix_values.to_list_of_floats(
-            field_data.input_field["elevationValues"]
-        )
-        field_data.input_field["elevationUnits"] = fix_values.to_list_of_strs(
-            field_data.input_field["elevationUnits"]
-        )
-        field_data.input_field["elevationEstimated"] = fix_values.to_bool(
-            field_data.input_field["elevationEstimated"]
-        )
-
-    def predict(self, field_data: FieldData) -> None:
-        predicted = {}
-        if not all(field_data.input_field.get(k) for k in ElevationSig.output_fields):
-            predicted = self.predictor(
-                field_value=field_data.output_field[self.output_name],
+        # Only run the model if an input field is empty
+        # Input for this class is actually an output from the LM moddel class
+        if any(not getattr(self, name) for name in ElevationSig.output_fields):
+            predicted = self.predictor(self.verbatimElevation)
+            # Only fill fields without a previous value
+            self.elevationValues = self.elevationValues or predicted.get(
+                "elevationValues", ""
+            )
+            self.elevationUnits = self.elevationUnits or predicted.get(
+                "elevationUnits", ""
+            )
+            self.elevationEstimated = self.elevationEstimated or predicted.get(
+                "elevationEstimated", ""
             )
 
-        for key in ElevationSig.output_fields:
-            field_data.input_field[key] = field_data.input_field.get(
-                key,
-            ) or predicted.get(key)
+        # Make sure the language model didn't do something silly
+        self.elevationValues = fix_values.to_list_of_floats(self.elevationValues)
+        self.elevationUnits = fix_values.to_list_of_strs(self.elevationUnits)
+        self.elevationEstimated = fix_values.to_bool(self.elevationEstimated)
 
-    def postprocess(self, field_data: FieldData) -> None:
-        print(field_data.input_field["elevationValues"])
-        print(field_data.input_field["elevationUnits"])
-        print(field_data.input_field["elevationEstimated"])
-        field = field_data.output_field[self.output_name]
+        # Remove the label from verbatimElevation
+        words = self.verbatimElevation.split()
+        words = [w for w in words if not w.lower().startswith("el")]
+        words = [w for w in words if not w.lower().startswith("alt")]
+        self.verbatimElevation = " ".join(words)
 
-        if field:
-            field = field.split()
-            field = [w for w in field if not w.lower().startswith("el")]
-            field = [w for w in field if not w.lower().startswith("alt")]
-            field = [w for w in field if not w.lower().startswith("blev")]
-            field = " ".join(field)
+        # Make sure every value has units
+        if len(self.elevationValues) > len(self.elevationUnits):
+            self.elevationUnits = [u for u in self.elevationUnits for _ in range(2)]
 
-        self.create_subfields(field_data)
+        # Pair up values and units
+        pairs = list(zip(self.elevationValues, self.elevationUnits, strict=False))
 
-        field_data.output_field[self.input_name] = field
+        # Remove any pairs that are not for meters, if there actually are meters
+        if any(p[1].lower().startswith("m") for p in pairs):
+            pairs = [(v, u) for v, u in pairs if u[0].lower().startswith("m")]
 
-    @staticmethod
-    def create_subfields(field_data: FieldData) -> None:
-        values = field_data.input_field["elevationValues"]
-        units = field_data.input_field["elevationUnits"]
-
-        if len(values) > len(units):
-            units = [u for u in units for _ in range(2)]
-
-        pairs = list(zip(values, units, strict=False))
-
-        # Remove feet values & units if there are any values in meters
-        if any(u[0].lower() == "m" for u in units):
-            pairs = [
-                (v, u)
-                for v, u in zip(values, units, strict=False)
-                if u[0].lower() == "m"
-            ]
-
-        field_data.output_field["elevation"] = pairs[0][0]
-        field_data.output_field["maxElevation"] = pairs[1][0] if len(pairs) > 1 else ""
-        field_data.output_field["elevationUnits"] = pairs[0][1]
-        field_data.output_field["elevationEstimated"] = field_data.input_field[
-            "elevationEstimated"
-        ]
+        # Now set the output fields
+        self.elevation = pairs[0][0]
+        self.maxElevation = pairs[1][0] if len(pairs) > 1 else None
+        self.elevationUnits = pairs[0][1]

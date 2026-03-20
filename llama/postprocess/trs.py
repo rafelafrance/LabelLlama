@@ -1,10 +1,12 @@
 import re
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
-from llama.postprocess.base_action import BaseAction, FieldData
+from llama.postprocess.base_field import BOTH, BaseField
 
 
 class TrsSig(Signature):
@@ -51,81 +53,43 @@ class TrsSig(Signature):
     )
 
 
-class Trs(BaseAction):
-    def __init__(self, input_name: str) -> None:
-        super().__init__(input_name)
-        self.predictor = dspy.Predict(TrsSig)
+@dataclass
+class Trs(BaseField):
+    predictor: ClassVar[Any] = dspy.Predict(TrsSig)
 
-    def all_output_names(self) -> list[str]:
-        return [
-            self.input_name, "trsTownship", "trsRange", "trsSection", "trsQuad"
-        ]
+    trs: str = field(default="", metadata=BOTH)
+    trsTownship: str = field(default="", metadata=BOTH)
+    trsRange: str = field(default="", metadata=BOTH)
+    trsSection: str = field(default="", metadata=BOTH)
+    trsQuad: str = field(default="", metadata=BOTH)
 
-    def preprocess_field(self, field_data: FieldData) -> None:
-        field_value = field_data.input_field[self.input_name]
-        field_data.output_field[self.output_name] = fix_values.to_str(field_value)
+    def __post_init__(self) -> None:
+        self.trs = fix_values.to_str(self.trs)
 
-        field_data.input_field["trsTownship"] = fix_values.to_str(
-            field_data.input_field["trsTownship"]
-        )
-        field_data.input_field["trsRange"] = fix_values.to_str(
-            field_data.input_field["trsRange"]
-        )
-        field_data.input_field["trsSection"] = fix_values.to_str(
-            field_data.input_field["trsSection"]
-        )
-        field_data.input_field["trsQuad"] = fix_values.to_str(
-            field_data.input_field["trsQuad"]
-        )
+        if any(not getattr(self, name) for name in TrsSig.output_fields):
+            predicted = self.predictor(self.trs)
 
-    def predict(self, field_data: FieldData) -> None:
-        predicted = {}
-        if not all(field_data.input_field.get(k) for k in TrsSig.output_fields):
-            predicted = self.predictor.predict(
-                field_value=field_data.input_field[self.output_name]
-            )
+            self.trsTownship = self.trsTownship or predicted.get("township", "")
+            self.trsRange = self.trsRange or predicted.get("range", "")
+            self.trsSection = self.trsSection or predicted.get("section", "")
+            self.trsQuad = self.trsQuad or predicted.get("quad", "")
 
-        field_data.output_field[self.input_name] = field_data.output_field[
-            self.input_name
-        ]
+        self.trsTownship = fix_values.to_str(self.trsTownship)
+        self.trsRange = fix_values.to_str(self.trsRange)
+        self.trsSection = fix_values.to_str(self.trsSection)
+        self.trsQuad = fix_values.to_str(self.trsQuad)
 
-        for key in TrsSig.output_fields:
-            field_data.input_field[key] = (
-                field_data.input_field.get(key) or predicted.get(key)
-            )
-
-    def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.output_field[self.input_name]
-        field_data.output_field[self.input_name] = field
-
-        self.create_subfields(field_data)
-
-    @staticmethod
-    def create_subfields(field_data: FieldData) -> None:
-        township = re.sub(
-            r"^t\s*", "", field_data.input_field["township"], flags=re.IGNORECASE
-        )
-        range_ = re.sub(
-            r"^r\s*", "", field_data.input_field["range"], flags=re.IGNORECASE
-        )
+        self.trsTownship = re.sub(r"^t\s*", "", self.trsTownship, flags=re.IGNORECASE)
+        self.trsRange = re.sub(r"^r\s*", "", self.trsRange, flags=re.IGNORECASE)
 
         # Remove section label
-        sect = field_data.input_field["section"]
-        if sect:
-            sect = sect.split()
-            sect = [s for s in sect if not s.lower().startswith("sec")]
-            sect = [s for s in sect if s.lower() not in ("s", "s.")]
-            sect = " ".join(sect)
+        words = self.trsSection.split()
+        words = [w for w in words if not w.lower().startswith("sec")]
+        words = [w for w in words if w.lower() not in ("s", "s.")]
+        self.trsSection = " ".join(words)
 
         # Remove quad label
-        quad = field_data.input_field["quad"]
-        if quad:
-            quad = quad.split()
-            quad = [q for q in quad if not q.lower().startswith("quad")]
-            quad = [q for q in quad if q.lower() not in ("q", "q.")]
-            quad = " ".join(quad)
-
-        field_data.output_field["trsTownship"] = township
-        field_data.output_field["trsRange"] = range_
-        field_data.output_field["trsSection"] = sect
-        field_data.output_field["trsQuad"] = quad
+        words = self.trsQuad.split()
+        words = [w for w in words if not w.lower().startswith("quad")]
+        words = [w for w in words if w.lower() not in ("q", "q.")]
+        self.trsQuad = " ".join(words)

@@ -103,8 +103,8 @@ class CasV1(Signature):
             "same value is reported in different units."
         ),
     )
-    elevationEstimated: str = OutputField(
-        default="",
+    elevationEstimated: bool = OutputField(
+        default=False,
         desc="Is this an estimated elevation?",
     )
     verbatimLatitude: str = OutputField(

@@ -1,26 +1,17 @@
+from dataclasses import dataclass, field
+
 from llama.common import fix_values
-from llama.postprocess.base_action import BaseAction, FieldData
-
-# from dateutil import parser
-# from calendar import IllegalMonthError
+from llama.postprocess.base_field import BOTH, BaseField
 
 
-class DateIdentified(BaseAction):
-    def preprocess_field(self, field_data: FieldData) -> None:
-        field_value = field_data.input_field[self.input_name]
-        field_data.output_field[self.output_name] = fix_values.to_str(field_value)
+@dataclass
+class DateIdentified(BaseField):
+    dateIdentified: str = field(default="", metadata=BOTH)
 
-    def postprocess(self, field_data: FieldData) -> None:
-        field = field_data.output_field[self.output_name]
-        if field:
-            field = field.split()
-            field = [s for s in field if not s.lower().startswith("date")]
-            field = " ".join(field)
+    def __post_init__(self) -> None:
+        self.dateIdentified = fix_values.to_str(self.dateIdentified)
 
-        # try:
-        #     date_ = parser.parse(field).date()
-        #     date_ = date_.isoformat()[:10]
-        # except parser.ParserError, IllegalMonthError:
-        #     date_ = ""
+        words = self.dateIdentified.split()
+        words = [w for w in words if not w.lower().startswith("date")]
 
-        field_data.output_field[self.output_name] = field
+        self.dateIdentified = " ".join(words)

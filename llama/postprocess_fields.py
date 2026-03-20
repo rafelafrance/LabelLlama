@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 from llama.common import db_util
 from llama.postprocess.all_actions import FIELD_ACTIONS
-from llama.postprocess.base_action import FieldData
+from llama.postprocess.base_field import FieldData
 
 # import pandas as pd
 
