@@ -18,7 +18,7 @@ def to_str(value: Any) -> str:
             return clean_str(value)
         case int() | float() | bool():
             return str(value)
-        case list() if isinstance(value[0], str):
+        case list() if len(value) > 0 and isinstance(value[0], str):
             return " ".join(c for v in value if (c := clean_str(v)))
         case list():
             return " ".join(str(v) for v in value)
@@ -58,7 +58,7 @@ def to_bool(value: Any) -> bool:
     match value:
         case str():
             value = clean_str(value)
-            return value.lower() in ("true", "yes", "1")
+            return value.lower() in ("true", "yes", "1", "on")
         case _:
             return bool(value)
 
@@ -72,7 +72,7 @@ def to_list_of_strs(value: Any) -> list[str]:
             return [value] if value else []
         case int() | float() | bool():
             return [str(value)]
-        case list():
+        case list() if len(value) > 0:
             return [str(v) for v in value if v]
         case _:
             return []
@@ -84,12 +84,12 @@ def to_list_of_ints(value: Any) -> list[int]:
     match value:
         case str():
             value = re.sub(r",", "", value)
-            return INT.findall(value)
+            return [int(v) for v in INT.findall(value)]
         case int() | float() | bool():
             return [int(value)]
-        case list() if value[0] is str:
+        case list() if len(value) > 1 and isinstance(value[0], str):
             return [c for v in value if (c := str_to_int(v))]
-        case list():
+        case list() if len(value) > 0:
             return [i for v in value if (i := int(v))]
         case _:
             return []
@@ -101,10 +101,10 @@ def to_list_of_floats(value: Any) -> list[float]:
     match value:
         case str():
             value = re.sub(r",", "", value)
-            return FLOAT.findall(value)
+            return [float(v) for v in FLOAT.findall(value)]
         case int() | float() | bool():
             return [float(value)]
-        case list() if value[0] is str:
+        case list() if len(value) > 0 and isinstance(value[0], str):
             return [f for v in value if (f := str_to_float(v))]
         case list():
             return [f for v in value if (f := float(v))]
@@ -125,7 +125,7 @@ def str_to_int(value: str) -> int | None:
 
 
 def str_to_list(value: Any) -> list[Any] | Any:
-    if value is str:
+    if isinstance(value, str):
         value = clean_str(value)
         value = stringified_list(value)
     return value
@@ -156,8 +156,8 @@ def clean_str(value: str) -> str:
 
 
 def list_to_item(value: Any) -> Any:
-    value = value[0] if value is list and len(value) > 0 else value
-    value = None if value is list and len(value) == 0 else value
+    value = value[0] if isinstance(value, list) and len(value) > 0 else value
+    value = None if isinstance(value, list) and len(value) == 0 else value
     return value
 
 

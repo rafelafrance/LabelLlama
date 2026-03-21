@@ -99,6 +99,62 @@ class TestFixValues(unittest.TestCase):
         self.assertEqual(fix_values.to_bool(0), False)
 
     # ---------------------------------------------------------------------
+    def test_to_list_of_strs_01(self) -> None:
+        self.assertEqual(fix_values.to_list_of_strs("one"), ["one"])
+
+    def test_to_list_of_strs_02(self) -> None:
+        self.assertEqual(fix_values.to_list_of_strs(11), ["11"])
+
+    def test_to_list_of_strs_03(self) -> None:
+        self.assertEqual(
+            fix_values.to_list_of_strs([1, 2.0, True]), ["1", "2.0", "True"]
+        )
+
+    def test_to_list_of_strs_04(self) -> None:
+        self.assertEqual(fix_values.to_list_of_strs(object()), [])
+
+    def test_to_list_of_strs_05(self) -> None:
+        self.assertEqual(fix_values.to_list_of_strs([]), [])
+
+    # ---------------------------------------------------------------------
+    def test_to_list_of_ints_01(self) -> None:
+        self.assertEqual(fix_values.to_list_of_ints("1,23"), [123])
+
+    def test_to_list_of_ints_02(self) -> None:
+        self.assertEqual(fix_values.to_list_of_ints(11), [11])
+
+    def test_to_list_of_ints_03(self) -> None:
+        self.assertEqual(fix_values.to_list_of_ints([1, 2.0, True]), [1, 2, 1])
+
+    def test_to_list_of_ints_04(self) -> None:
+        self.assertEqual(fix_values.to_list_of_ints(object()), [])
+
+    # ---------------------------------------------------------------------
+    def test_to_list_of_floats_01(self) -> None:
+        self.assertEqual(fix_values.to_list_of_floats("1,23.4"), [123.4])
+
+    def test_to_list_of_floats_02(self) -> None:
+        self.assertEqual(fix_values.to_list_of_floats(11), [11.0])
+
+    def test_to_list_of_floats_03(self) -> None:
+        self.assertEqual(fix_values.to_list_of_floats([1, 2.3, True]), [1.0, 2.3, 1.0])
+
+    def test_to_list_of_floats_04(self) -> None:
+        self.assertEqual(fix_values.to_list_of_floats(object()), [])
+
+    # ---------------------------------------------------------------------
+    def test_str_to_float_01(self) -> None:
+        self.assertEqual(fix_values.str_to_float("1,2,3.4"), 123.4)
+
+    # ---------------------------------------------------------------------
+    def test_str_to_int_01(self) -> None:
+        self.assertEqual(fix_values.str_to_int("1,2,3.4"), 123)
+
+    # ---------------------------------------------------------------------
+    def test_stringified_list_01(self) -> None:
+        self.assertEqual(fix_values.stringified_list("[1, 2]"), [1, 2])
+
+    # ---------------------------------------------------------------------
     def test_clean_str_01(self) -> None:
         self.assertEqual(fix_values.clean_str("''"), "")
 
