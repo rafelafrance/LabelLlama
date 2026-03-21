@@ -18,7 +18,7 @@ def to_str(value: Any) -> str:
             return clean_str(value)
         case int() | float() | bool():
             return str(value)
-        case list() if value[0] is str:
+        case list() if isinstance(value[0], str):
             return " ".join(c for v in value if (c := clean_str(v)))
         case list():
             return " ".join(str(v) for v in value)
@@ -33,8 +33,10 @@ def to_int(value: Any) -> int | None:
         case str():
             value = clean_str(value)
             return str_to_int(value)
-        case _:
+        case int() | float() | bool():
             return int(value)
+        case _:
+            return None
 
 
 def to_float(value: Any) -> float | None:
@@ -44,8 +46,10 @@ def to_float(value: Any) -> float | None:
         case str():
             value = clean_str(value)
             return str_to_float(value)
-        case _:
+        case int() | float() | bool():
             return float(value)
+        case _:
+            return None
 
 
 def to_bool(value: Any) -> bool:
