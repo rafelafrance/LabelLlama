@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from llama.common import fix_values
@@ -9,4 +10,8 @@ class FlowersPresent(BaseField):
     flowersPresent: bool = field(default=False, metadata=BOTH)
 
     def __post_init__(self) -> None:
+        string = fix_values.to_str(self.flowersPresent)
+        self.flowersPresent = bool(
+            re.search(r"(fls|flower|fl)", string, flags=re.IGNORECASE)
+        )
         self.flowersPresent = fix_values.to_bool(self.flowersPresent)

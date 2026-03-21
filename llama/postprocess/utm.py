@@ -17,9 +17,9 @@ class UtmSig(Signature):
     Do not hallucinate.
     """
 
-    doc_text = InputField()
+    utm = InputField()
 
-    northing: str = OutputField(
+    utmNorthing: str = OutputField(
         default="",
         desc=(
             "The northing portion of the UTM. "
@@ -28,16 +28,16 @@ class UtmSig(Signature):
             '"4057.6 N", "3968400 N", "N 4253279", "4N"'
         ),
     )
-    easting: str = OutputField(
+    utmEasting: str = OutputField(
         default="",
         desc=(
             "The easting portion of the UTM. "
             'It is a number (possibly negative, or a decimal) followed by an "E". '
-            'Examples look like "E 642700", '
+            'Examples look like "E 642700", "E66", '
             '"509257E", "- 0484145E", "546936", "368.2 E", "6E"'
         ),
     )
-    zone: str = OutputField(
+    utmZone: str = OutputField(
         default="",
         desc=(
             'The zone portion of the UTM. It will look like: "10S", "11", "8N", '
@@ -46,6 +46,7 @@ class UtmSig(Signature):
     )
 
 
+@dataclass
 class Utm(BaseField):
     predictor: ClassVar[Any] = dspy.Predict(UtmSig)
 
@@ -57,12 +58,12 @@ class Utm(BaseField):
     def __post_init__(self) -> None:
         self.utm = fix_values.to_str(self.utm)
 
-        if any(not getattr(self, name) for name in UtmSig.output_fields):
-            predicted = self.predictor(self.utm)
+        if self.utm and any(not getattr(self, name) for name in UtmSig.output_fields):
+            predicted = self.predictor(utm=self.utm)
 
-            self.utmNorthing = self.utmNorthing or predicted.get("northing", "")
-            self.utmEasting = self.utmEasting or predicted.get("easting", "")
-            self.utmZone = self.utmZone or predicted.get("zone", "")
+            self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
+            self.utmEasting = self.utmEasting or predicted.get("utmEasting", "")
+            self.utmZone = self.utmZone or predicted.get("utmZone", "")
 
         self.utmNorthing = fix_values.to_str(self.utmNorthing)
         self.utmEasting = fix_values.to_str(self.utmEasting)

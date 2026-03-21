@@ -16,7 +16,7 @@ class ElevationSig(Signature):
     Do not hallucinate.
     """
 
-    field_value = InputField()
+    verbatimElevation = InputField()
 
     elevationValues: list[float] = OutputField(
         default=[],
@@ -54,8 +54,10 @@ class Elevation(BaseField):
 
         # Only run the model if an input field is empty
         # Input for this class is actually an output from the LM moddel class
-        if any(not getattr(self, name) for name in ElevationSig.output_fields):
-            predicted = self.predictor(self.verbatimElevation)
+        if self.verbatimElevation and not (
+            self.elevationValues and self.elevationUnits
+        ):
+            predicted = self.predictor(verbatimElevation=self.verbatimElevation)
             # Only fill fields without a previous value
             self.elevationValues = self.elevationValues or predicted.get(
                 "elevationValues", ""

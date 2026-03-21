@@ -15,3 +15,5 @@ class DateIdentified(BaseField):
         words = [w for w in words if not w.lower().startswith("date")]
 
         self.dateIdentified = " ".join(words)
+
+        self.dateIdentified = fix_values.date_to_iso(self.dateIdentified)

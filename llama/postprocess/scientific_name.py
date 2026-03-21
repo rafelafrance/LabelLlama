@@ -9,6 +9,12 @@ class ScientificName(BaseField):
     scientificName: str = field(default="", metadata=BOTH)
 
     def __post_init__(self) -> None:
-        self.scientificName = fix_values.to_str(self.scientificName)
-        genus, species, *_ = self.scientificName.split()
-        self.scientificName = f"{genus.title()} {species.lower()}"
+        words = fix_values.to_str(self.scientificName).split()
+        print(f"{len(words)=} {words=}")
+        if len(words) == 0:
+            self.scientificName = ""
+        elif len(words) == 1:
+            self.scientificName = words[0].title()
+        else:
+            genus, species, *_ = words
+            self.scientificName = f"{genus.title()} {species.lower()}"

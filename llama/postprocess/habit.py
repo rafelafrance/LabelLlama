@@ -10,3 +10,4 @@ class Habit(BaseField):
 
     def __post_init__(self) -> None:
         self.habit = fix_values.to_str(self.habit)
+        self.flowerColor = fix_values.remove_trailing_punct(self.habit)

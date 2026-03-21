@@ -17,9 +17,9 @@ class TrsSig(Signature):
     Do not hallucinate.
     """
 
-    doc_text = InputField()
+    trs = InputField()
 
-    township: str = OutputField(
+    trsTownship: str = OutputField(
         default="",
         desc=(
             'The township portion of the TRS. It will look like: "T28N" or "T 32 N". '
@@ -27,7 +27,7 @@ class TrsSig(Signature):
             "direction."
         ),
     )
-    range: str = OutputField(
+    trsRange: str = OutputField(
         default="",
         desc=(
             'The range portion of the TRS. It will look like: "R23E" or "R 1 W". '
@@ -35,7 +35,7 @@ class TrsSig(Signature):
             "direction."
         ),
     )
-    section: str = OutputField(
+    trsSection: str = OutputField(
         default="",
         desc=(
             'The section portion of the TRS. Examples look like "1/4 S10", '
@@ -43,7 +43,7 @@ class TrsSig(Signature):
             '"S8 (SE¼)", "south-east corner section 7"'
         ),
     )
-    quad: str = OutputField(
+    trsQuad: str = OutputField(
         default="",
         desc=(
             "The quad (quadrangle) portion of the TRS. It may be at the beginning or "
@@ -66,13 +66,13 @@ class Trs(BaseField):
     def __post_init__(self) -> None:
         self.trs = fix_values.to_str(self.trs)
 
-        if any(not getattr(self, name) for name in TrsSig.output_fields):
-            predicted = self.predictor(self.trs)
+        if self.trs and not (self.trsTownship and self.trsRange and self.trsSection):
+            predicted = self.predictor(trs=self.trs)
 
-            self.trsTownship = self.trsTownship or predicted.get("township", "")
-            self.trsRange = self.trsRange or predicted.get("range", "")
-            self.trsSection = self.trsSection or predicted.get("section", "")
-            self.trsQuad = self.trsQuad or predicted.get("quad", "")
+            self.trsTownship = self.trsTownship or predicted.get("trsTownship", "")
+            self.trsRange = self.trsRange or predicted.get("trsRange", "")
+            self.trsSection = self.trsSection or predicted.get("trsSection", "")
+            self.trsQuad = self.trsQuad or predicted.get("trsQuad", "")
 
         self.trsTownship = fix_values.to_str(self.trsTownship)
         self.trsRange = fix_values.to_str(self.trsRange)

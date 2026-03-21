@@ -37,50 +37,32 @@ from llama.postprocess.state_province import StateProvince
 from llama.postprocess.trs import Trs
 from llama.postprocess.utm import Utm
 
-FIELD_ACTIONS: dict[str, Any] = {
+# This also is the base order of fields in reports
+ALL_ACTIONS: dict[str, Any] = {
     "scientificName": ScientificName,
     "scientificNameAuthorship": ScientificNameAuthorship,
     "infraspecificEpithet": InfraspecificEpithet,
     "infraspecificNameAuthorship": InfraspecificNameAuthorship,
     "family": Family,
     "associatedTaxa": AssociatedTaxa,
-    # --
     "recordNumber": RecordNumber,
     "verbatimEventDate": EventDate,
     "recordedBy": RecordedBy,
     "identifiedBy": IdentifiedBy,
     "dateIdentified": DateIdentified,
-    # --
     "habitat": Habitat,
     "occurrenceRemarks": OccurrenceRemarks,
-    # --
     "locality": Locality,
     "country": Country,
     "stateProvince": StateProvince,
     "county": County,
     "municipality": Municipality,
     "geodeticDatum": GeodeticDatum,
-    # --
     "trs": Trs,
-    # "trsTownship": TrsTownship,
-    # "trsRange": TrsRange,
-    # "trsSection": TrsSection,
-    # "trsQuad": TrsQuad,
-    # --
     "utm": Utm,
-    # "utmNorthing": UtmNorthing,
-    # "utmEasting": UtmEasting,
-    # "utmZone": UtmZone,
-    # --
     "verbatimLatitude": Latitude,
     "verbatimLongitude": Longitude,
-    # --
     "verbatimElevation": Elevation,
-    # "elevation": ElevationValues
-    # "maxElevation": ElevationValues
-    # "elevationUnits": ElevationUnits,
-    # "elevationEstimated": ElevationEstimated,
-    # --
     "abundance": Abundance,
     "flowersPresent": FlowersPresent,
     "flowerColor": FlowerColor,

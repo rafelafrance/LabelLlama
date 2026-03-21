@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass, field
 
 from llama.common import fix_values
@@ -11,4 +10,4 @@ class FruitColor(BaseField):
 
     def __post_init__(self) -> None:
         self.fruitColor = fix_values.to_str(self.fruitColor)
-        self.fruitColor = re.sub(r"[.,;:]$", "", self.fruitColor)
+        self.fruitColor = fix_values.remove_trailing_punct(self.fruitColor)

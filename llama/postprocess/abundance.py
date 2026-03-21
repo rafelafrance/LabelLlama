@@ -10,3 +10,4 @@ class Abundance(BaseField):
 
     def __post_init__(self) -> None:
         self.abundance = fix_values.to_str(self.abundance)
+        self.abundance = fix_values.remove_trailing_punct(self.abundance)

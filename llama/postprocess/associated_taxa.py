@@ -11,4 +11,4 @@ class AssociatedTaxa(BaseField):
     def __post_init__(self) -> None:
         self.associatedTaxa = fix_values.to_str(self.associatedTaxa)
         self.associatedTaxa = self.associatedTaxa.replace("*", "")
-        self.associatedTaxa = self.associatedTaxa.removesuffix(".")
+        self.associatedTaxa = fix_values.remove_trailing_punct(self.associatedTaxa)

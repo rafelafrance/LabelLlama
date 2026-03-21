@@ -12,10 +12,7 @@ from duckdb import DuckDBPyConnection
 from tqdm import tqdm
 
 from llama.common import db_util
-from llama.postprocess.all_actions import FIELD_ACTIONS
-from llama.postprocess.base_field import FieldData
-
-# import pandas as pd
+from llama.postprocess.all_fields import ALL_ACTIONS
 
 
 # ----------------------------------------------------------------------------------
@@ -42,26 +39,25 @@ def postprocess_action(args: argparse.Namespace) -> None:
 
         field_list = get_field_list(cxn, args.job_id, args.field)
 
-        dataset = [FieldData(old) for old in get_old_values(cxn, args.job_id)]
-        dataset = dataset[: args.limit] if args.limit else dataset
+        input_rows = get_input_rows(cxn, args.job_id, args.limit)
 
-        for field_name in field_list:
-            if field_name not in FIELD_ACTIONS:
-                continue
+        for field in field_list:
+            action = ALL_ACTIONS[field]
+            in_fields = action.get_input_fields()
+            out_fields = action.get_output_fields()
 
-            print(field_name)
+            for row in tqdm(input_rows):
+                in_data = {k: row[k] for k in in_fields}
+                print(f" {in_data=}")
+                result = action(**in_data)
+                out_data = {k: getattr(result, k) for k in out_fields}
+                print(f"{out_data=}\n")
 
-            actions = FIELD_ACTIONS[field_name](input_name=field_name)
-
-            for field_data in tqdm(dataset):
-                actions(field_data=field_data)
-
-            print(field_data.output_field)
-            # print()
-            # print(f"{'raw':>24} {field_row['value']}")
-            # for key, value in subfields.items():
-            #     print(f"{key:>24} {value}")
-            # print()
+        # print()
+        # print(f"{'raw':>24} {field_row['value']}")
+        # for key, value in subfields.items():
+        #     print(f"{key:>24} {value}")
+        # print()
 
         # if args.dry_run:
         #     return
@@ -88,28 +84,36 @@ def configure_lm(args: Namespace) -> None:
     dspy.configure(lm=lm)
 
 
-def get_old_values(cxn: DuckDBPyConnection, job_id: int) -> list[dict[str, Any]]:
+def get_input_rows(
+    cxn: DuckDBPyConnection, job_id: int, limit: int
+) -> list[dict[str, Any]]:
     value_query = f"""
         with piv as (
             with run as (select * from fields where job_id = {job_id})
             pivot run on field using first(value) group by doc_id)
         select * from piv join docs using (doc_id)
         """
-    rows = cxn.execute(value_query).pl()
-    rows = rows.rows(named=True)
+    if limit:
+        value_query += f" limit {limit}"
+    rows = cxn.execute(value_query).df().to_dict("records")
+    # rows = pl.DataFrame(rows, orient="row", infer_schema_length=None)
+    # rows = rows.rows(named=True)
     return rows
 
 
 def get_field_list(cxn: DuckDBPyConnection, job_id: int, field: list[str]) -> list[str]:
     """Get a list of fields from a LM field extraction or previous postprocess job."""
     fields_query = "select distinct field from fields where job_id = ?"
-    field_list = cxn.execute(fields_query, [job_id]).pl()
-    field_list = {f["field"] for f in field_list.rows(named=True)}
+    field_recs = cxn.execute(fields_query, [job_id]).pl()
 
-    # Filter fields based on user input and available field actions
-    field_list = field_list & {field} if field else field_list
-    fields = [f for f in FIELD_ACTIONS if f in field_list]
-    return fields
+    # Handle debugging a single field
+    field_set = {f["field"] for f in field_recs.rows(named=True)}
+    field_set = field_set & {field} if field else field_set
+
+    # The fields should be in ALL_ACTIONS order
+    field_list = [f for f in ALL_ACTIONS if f in field_set]
+
+    return field_list
 
 
 # ----------------------------------------------------------------------------------
