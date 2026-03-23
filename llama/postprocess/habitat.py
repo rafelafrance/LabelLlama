@@ -10,6 +10,8 @@ class Habitat(BaseField):
 
     def __post_init__(self) -> None:
         self.habitat = fix_values.to_str(self.habitat)
+
+        # Remove the habitat label
         words = self.habitat.split()
         words = [s for s in words if not s.lower().startswith("habitat")]
         self.habitat = " ".join(words)

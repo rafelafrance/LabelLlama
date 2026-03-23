@@ -56,22 +56,29 @@ class Utm(BaseField):
     utmZone: str = field(default="", metadata=BOTH)
 
     def __post_init__(self) -> None:
+        # Setup the utm so it is valid input for further processing
         self.utm = fix_values.to_str(self.utm)
 
+        # Only run the model if an input field is empty
+        # Input for this class is actually an output from the LM moddel class
         if self.utm and any(not getattr(self, name) for name in UtmSig.output_fields):
             predicted = self.predictor(utm=self.utm)
 
+            # Only fill fields without a previous value, i.e. default to previous LLM
             self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
             self.utmEasting = self.utmEasting or predicted.get("utmEasting", "")
             self.utmZone = self.utmZone or predicted.get("utmZone", "")
 
+        # Make sure a language model didn't do something silly
         self.utmNorthing = fix_values.to_str(self.utmNorthing)
         self.utmEasting = fix_values.to_str(self.utmEasting)
         self.utmZone = fix_values.to_str(self.utmZone)
 
+        # Remove the E or N for the easting or northing field
         self.utmNorthing = self.utmNorthing.lower().replace("n", "")
         self.utmEasting = self.utmEasting.lower().replace("e", "")
 
+        # Remove the zone label
         words = self.utmZone.split()
         words = [w for w in words if not w.lower().startswith("zone")]
         words = [w for w in words if w.lower() not in ("z", "z.")]

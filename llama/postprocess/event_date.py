@@ -12,6 +12,7 @@ class EventDate(BaseField):
     def __post_init__(self) -> None:
         self.verbatimEventDate = fix_values.to_str(self.verbatimEventDate)
 
+        # Remove the event date label
         words = self.verbatimEventDate.split()
         words = [w for w in words if not w.lower().startswith("date")]
         self.verbatimEventDate = " ".join(words)

@@ -50,6 +50,7 @@ class Elevation(BaseField):
     elevationEstimated: bool | None = field(default=None, metadata=BOTH)
 
     def __post_init__(self) -> None:
+        # Setup the verbatimElevation so it is valid input for further processing
         self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
 
         # Only run the model if an input field is empty
@@ -58,7 +59,8 @@ class Elevation(BaseField):
             self.elevationValues and self.elevationUnits
         ):
             predicted = self.predictor(verbatimElevation=self.verbatimElevation)
-            # Only fill fields without a previous value
+
+            # Only fill fields without a previous value, i.e. default to previous LLM
             self.elevationValues = self.elevationValues or predicted.get(
                 "elevationValues", ""
             )
@@ -91,7 +93,11 @@ class Elevation(BaseField):
         if any(p[1].lower().startswith("m") for p in pairs):
             pairs = [(v, u) for v, u in pairs if u[0].lower().startswith("m")]
 
-        # Now set the output fields
+        # If there are no pairs then something went wrong, usually with a model
+        if not pairs:
+            return
+
+        # Now set the output fields based on the pairs or values and units
         self.elevation = pairs[0][0]
         self.maxElevation = pairs[1][0] if len(pairs) > 1 else None
         self.elevationUnits = pairs[0][1]

@@ -10,7 +10,6 @@ class ScientificName(BaseField):
 
     def __post_init__(self) -> None:
         words = fix_values.to_str(self.scientificName).split()
-        print(f"{len(words)=} {words=}")
         if len(words) == 0:
             self.scientificName = ""
         elif len(words) == 1:

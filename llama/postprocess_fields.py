@@ -8,6 +8,7 @@ from typing import Any
 
 import dspy
 import duckdb
+import pandas as pd
 from duckdb import DuckDBPyConnection
 from tqdm import tqdm
 
@@ -33,43 +34,54 @@ def postprocess_action(args: argparse.Namespace) -> None:
     configure_lm(args)
 
     with duckdb.connect(args.db_path) as cxn:
-        # job_id, job_started = None, None
-        # if not args.dry_run:
-        #     job_id, job_started = db_util.add_job(cxn, __file__, args=args)
+        job_id, job_started = None, None
+        if args.db_write:
+            job_id, job_started = db_util.add_job(cxn, __file__, args=args)
 
         field_list = get_field_list(cxn, args.job_id, args.field)
 
         input_rows = get_input_rows(cxn, args.job_id, args.limit)
+        report_rows = {
+            r["doc_id"]: {
+                "src_path": r["src_path"],
+                "src_id": r["src_id"],
+                "doc_id": r["doc_id"],
+                "doc_text": r["doc_text"],
+            }
+            for r in input_rows
+        }
+        db_rows = []
 
         for field in field_list:
             action = ALL_ACTIONS[field]
             in_fields = action.get_input_fields()
             out_fields = action.get_output_fields()
 
-            for row in tqdm(input_rows):
+            for row in tqdm(input_rows, desc=field):
                 in_data = {k: row[k] for k in in_fields}
-                print(f" {in_data=}")
+
                 result = action(**in_data)
+
                 out_data = {k: getattr(result, k) for k in out_fields}
-                print(f"{out_data=}\n")
 
-        # print()
-        # print(f"{'raw':>24} {field_row['value']}")
-        # for key, value in subfields.items():
-        #     print(f"{key:>24} {value}")
-        # print()
+                db_rows += [[job_id, row["doc_id"], f, v] for f, v in out_data.items()]
+                report_rows[row["doc_id"]] |= out_data
 
-        # if args.dry_run:
-        #     return
-        #
-        # db_util.update_elapsed(cxn, job_id, job_started)
-        #
-        # for path, row in data.items():
-        #     row["src_path"] = Path(path).name
-        #
-        # df =pd.DataFrame(data.values()).set_index(["src_path", "src_id"]).sort_index()
-        # with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
-        #     df.to_excel(writer, sheet_name="compare")
+        if args.db_write:
+            cxn.executemany(
+                "insert into fields (job_id, doc_id, field, value) values (?, ?, ?, ?)",
+                db_rows,
+            )
+            db_util.update_elapsed(cxn, job_id, job_started)
+
+        if args.results_ods:
+            df = (
+                pd.DataFrame(report_rows.values())
+                .set_index(["src_path", "src_id"])
+                .sort_index()
+            )
+            with pd.ExcelWriter(args.results_ods, engine="odf") as writer:
+                df.to_excel(writer, sheet_name="compare")
 
 
 def configure_lm(args: Namespace) -> None:
@@ -96,8 +108,6 @@ def get_input_rows(
     if limit:
         value_query += f" limit {limit}"
     rows = cxn.execute(value_query).df().to_dict("records")
-    # rows = pl.DataFrame(rows, orient="row", infer_schema_length=None)
-    # rows = rows.rows(named=True)
     return rows
 
 
@@ -207,15 +217,9 @@ def parse_args() -> argparse.Namespace:
         help="""Just parse one field. Used for debugging.""",
     )
     postprocess_parser.add_argument(
-        "--dry-run",
+        "--db-write",
         action="store_true",
-        help="""Don't write the results to the database. Used for debugging.""",
-    )
-    postprocess_parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="""Do not print progress and model results to the console.""",
+        help="""Write the results to the database.""",
     )
     postprocess_parser.add_argument(
         "--limit",

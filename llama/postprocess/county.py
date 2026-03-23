@@ -11,5 +11,8 @@ class County(BaseField):
 
     def __post_init__(self) -> None:
         self.county = fix_values.to_str(self.county)
+
+        # Remove the county label
         self.county = re.sub(r"\s(co\.?|county)$", "", self.county, flags=re.IGNORECASE)
+
         self.county = self.county.title()

@@ -64,21 +64,27 @@ class Trs(BaseField):
     trsQuad: str = field(default="", metadata=BOTH)
 
     def __post_init__(self) -> None:
+        # Setup the trs so it is valid input for further processing
         self.trs = fix_values.to_str(self.trs)
 
+        # Only run the model if an important input field is empty
+        # Input for this class is actually an output from the LM moddel class
         if self.trs and not (self.trsTownship and self.trsRange and self.trsSection):
             predicted = self.predictor(trs=self.trs)
 
+            # Only fill fields without a previous value, i.e. default to previous LLM
             self.trsTownship = self.trsTownship or predicted.get("trsTownship", "")
             self.trsRange = self.trsRange or predicted.get("trsRange", "")
             self.trsSection = self.trsSection or predicted.get("trsSection", "")
             self.trsQuad = self.trsQuad or predicted.get("trsQuad", "")
 
+        # Make sure a language model didn't do something silly
         self.trsTownship = fix_values.to_str(self.trsTownship)
         self.trsRange = fix_values.to_str(self.trsRange)
         self.trsSection = fix_values.to_str(self.trsSection)
         self.trsQuad = fix_values.to_str(self.trsQuad)
 
+        # Remove the T or R from the township and range
         self.trsTownship = re.sub(r"^t\s*", "", self.trsTownship, flags=re.IGNORECASE)
         self.trsRange = re.sub(r"^r\s*", "", self.trsRange, flags=re.IGNORECASE)
 

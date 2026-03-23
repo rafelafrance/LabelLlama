@@ -9,7 +9,10 @@ if TYPE_CHECKING:
 
 
 def create_tables(db_path: Path) -> None:
-    union = "union(c char, i int, f float, b bool, cc char[], ii int[], ff float[])"
+    union = (
+        "union(c char, i int, f float, b bool, d double, "
+        "cc char[], ii int[], ff float[], dd double[])"
+    )
 
     sql = f"""
         create sequence if not exists job_seq;
@@ -76,7 +79,7 @@ def add_job(
         if not isinstance(value, (str, int, float, bool, list)):
             value = str(value)
         cxn.execute(
-            "insert into arg (job_id, arg, value) values (?, ?, ?)",
+            "insert into args (job_id, arg, value) values (?, ?, ?)",
             [job_id, arg, value],
         )
 
@@ -92,6 +95,6 @@ def update_elapsed(
         return
     elapsed = str(datetime.now() - job_started)
     cxn.execute(
-        "update job set job_elapsed=? where job_id=?",
+        "update jobs set job_elapsed=? where job_id=?",
         [elapsed, job_id],
     )
