@@ -189,3 +189,11 @@ def date_to_iso(value: str) -> str:
 
 def remove_trailing_punct(value: str) -> str:
     return re.sub(r"[.,;:]$", "", value)
+
+
+def reduce_list(value: list[Any]) -> list[Any] | Any | None:
+    if not value:
+        return None
+    if len(value) == 1:
+        return value[0]
+    return value

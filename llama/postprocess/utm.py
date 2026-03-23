@@ -48,27 +48,38 @@ class UtmSig(Signature):
 
 @dataclass
 class Utm(BaseField):
-    predictor: ClassVar[Any] = dspy.Predict(UtmSig)
+    predictor: ClassVar[Any] = None
 
     utm: str = field(default="", metadata=BOTH)
     utmNorthing: str = field(default="", metadata=BOTH)
     utmEasting: str = field(default="", metadata=BOTH)
     utmZone: str = field(default="", metadata=BOTH)
 
+    @classmethod
+    def setup_field_model(cls) -> None:
+        cls.predictor = dspy.Predict(UtmSig)
+
     def __post_init__(self) -> None:
         # Setup the utm so it is valid input for further processing
         self.utm = fix_values.to_str(self.utm)
+        self.clean_subfields()
 
+    def run_field_model(self) -> None:
         # Only run the model if an input field is empty
         # Input for this class is actually an output from the LM moddel class
-        if self.utm and any(not getattr(self, name) for name in UtmSig.output_fields):
-            predicted = self.predictor(utm=self.utm)
+        if not self.utm or (self.utmNorthing and self.utmEasting and self.utmZone):
+            return
 
-            # Only fill fields without a previous value, i.e. default to previous LLM
-            self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
-            self.utmEasting = self.utmEasting or predicted.get("utmEasting", "")
-            self.utmZone = self.utmZone or predicted.get("utmZone", "")
+        predicted = self.predictor(utm=self.utm)
 
+        # Only fill fields without a previous value, i.e. default to previous LLM
+        self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
+        self.utmEasting = self.utmEasting or predicted.get("utmEasting", "")
+        self.utmZone = self.utmZone or predicted.get("utmZone", "")
+
+        self.clean_subfields()
+
+    def clean_subfields(self) -> None:
         # Make sure a language model didn't do something silly
         self.utmNorthing = fix_values.to_str(self.utmNorthing)
         self.utmEasting = fix_values.to_str(self.utmEasting)

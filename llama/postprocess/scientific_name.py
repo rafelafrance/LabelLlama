@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from llama.common import fix_values
@@ -9,7 +10,10 @@ class ScientificName(BaseField):
     scientificName: str = field(default="", metadata=BOTH)
 
     def __post_init__(self) -> None:
-        words = fix_values.to_str(self.scientificName).split()
+        self.scientificName = fix_values.to_str(self.scientificName)
+        self.scientificName = re.sub(r"[^\w\s]", "", self.scientificName).strip()
+
+        words = self.scientificName.split()
         if len(words) == 0:
             self.scientificName = ""
         elif len(words) == 1:

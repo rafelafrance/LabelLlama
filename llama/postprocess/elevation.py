@@ -5,7 +5,7 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
-from llama.postprocess.base_field import BOTH, IN, OUT, BaseField
+from llama.postprocess.base_field import BOTH, IN, BaseField
 
 
 class ElevationSig(Signature):
@@ -40,41 +40,51 @@ class ElevationSig(Signature):
 
 @dataclass
 class Elevation(BaseField):
-    predictor: ClassVar[Any] = dspy.Predict(ElevationSig)
+    predictor: ClassVar[Any] = None
 
     verbatimElevation: str = field(default="", metadata=BOTH)
     elevationValues: list[float] | None = field(default=None, metadata=IN)
-    elevation: float | None = field(default=None, metadata=OUT)
-    maxElevation: float | None = field(default=None, metadata=OUT)
+    elevation: float | None = field(default=None, metadata=BOTH)
+    maxElevation: float | None = field(default=None, metadata=BOTH)
     elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
     elevationEstimated: bool | None = field(default=None, metadata=BOTH)
+
+    @classmethod
+    def setup_field_model(cls) -> None:
+        cls.predictor = dspy.Predict(ElevationSig)
 
     def __post_init__(self) -> None:
         # Setup the verbatimElevation so it is valid input for further processing
         self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
+        self.clean_subfields()
 
+    def run_field_model(self) -> None:
         # Only run the model if an input field is empty
         # Input for this class is actually an output from the LM moddel class
-        if self.verbatimElevation and not (
-            self.elevationValues and self.elevationUnits
-        ):
-            predicted = self.predictor(verbatimElevation=self.verbatimElevation)
+        if not self.verbatimElevation or (self.elevationValues and self.elevationUnits):
+            return
 
-            # Only fill fields without a previous value, i.e. default to previous LLM
-            self.elevationValues = self.elevationValues or predicted.get(
-                "elevationValues", ""
-            )
-            self.elevationUnits = self.elevationUnits or predicted.get(
-                "elevationUnits", ""
-            )
-            self.elevationEstimated = self.elevationEstimated or predicted.get(
-                "elevationEstimated", ""
-            )
+        predicted = self.predictor(verbatimElevation=self.verbatimElevation)
 
+        # Only fill fields without a previous value, i.e. default to previous LLM
+        self.elevationValues = self.elevationValues or predicted.get(
+            "elevationValues", ""
+        )
+        self.elevationUnits = self.elevationUnits or predicted.get("elevationUnits", "")
+        self.elevationEstimated = self.elevationEstimated or predicted.get(
+            "elevationEstimated", ""
+        )
+
+        self.clean_subfields()
+
+    def clean_subfields(self) -> None:
         # Make sure the language model didn't do something silly
         self.elevationValues = fix_values.to_list_of_floats(self.elevationValues)
         self.elevationUnits = fix_values.to_list_of_strs(self.elevationUnits)
         self.elevationEstimated = fix_values.to_bool(self.elevationEstimated)
+
+        # Format boolean as None or True
+        self.elevationEstimated = self.elevationEstimated or None
 
         # Remove the label from verbatimElevation
         words = self.verbatimElevation.split()
@@ -93,8 +103,11 @@ class Elevation(BaseField):
         if any(p[1].lower().startswith("m") for p in pairs):
             pairs = [(v, u) for v, u in pairs if u[0].lower().startswith("m")]
 
-        # If there are no pairs then something went wrong, usually with a model
+        # If there are no pairs then something went wrong
         if not pairs:
+            self.elevation = None
+            self.maxElevation = None
+            self.elevationUnits = None
             return
 
         # Now set the output fields based on the pairs or values and units

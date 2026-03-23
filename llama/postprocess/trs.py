@@ -55,7 +55,7 @@ class TrsSig(Signature):
 
 @dataclass
 class Trs(BaseField):
-    predictor: ClassVar[Any] = dspy.Predict(TrsSig)
+    predictor: ClassVar[Any] = None
 
     trs: str = field(default="", metadata=BOTH)
     trsTownship: str = field(default="", metadata=BOTH)
@@ -66,18 +66,29 @@ class Trs(BaseField):
     def __post_init__(self) -> None:
         # Setup the trs so it is valid input for further processing
         self.trs = fix_values.to_str(self.trs)
+        self.clean_subfields()
 
+    @classmethod
+    def setup_field_model(cls) -> None:
+        cls.predictor = dspy.Predict(TrsSig)
+
+    def run_field_model(self) -> None:
         # Only run the model if an important input field is empty
         # Input for this class is actually an output from the LM moddel class
-        if self.trs and not (self.trsTownship and self.trsRange and self.trsSection):
-            predicted = self.predictor(trs=self.trs)
+        if not self.trs or (self.trsTownship and self.trsRange and self.trsSection):
+            return
 
-            # Only fill fields without a previous value, i.e. default to previous LLM
-            self.trsTownship = self.trsTownship or predicted.get("trsTownship", "")
-            self.trsRange = self.trsRange or predicted.get("trsRange", "")
-            self.trsSection = self.trsSection or predicted.get("trsSection", "")
-            self.trsQuad = self.trsQuad or predicted.get("trsQuad", "")
+        predicted = self.predictor(trs=self.trs)
 
+        # Only fill fields without a previous value, i.e. default to previous LLM
+        self.trsTownship = self.trsTownship or predicted.get("trsTownship", "")
+        self.trsRange = self.trsRange or predicted.get("trsRange", "")
+        self.trsSection = self.trsSection or predicted.get("trsSection", "")
+        self.trsQuad = self.trsQuad or predicted.get("trsQuad", "")
+
+        self.clean_subfields()
+
+    def clean_subfields(self) -> None:
         # Make sure a language model didn't do something silly
         self.trsTownship = fix_values.to_str(self.trsTownship)
         self.trsRange = fix_values.to_str(self.trsRange)

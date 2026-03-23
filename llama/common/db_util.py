@@ -61,7 +61,7 @@ def create_tables(db_path: Path) -> None:
 def add_job(
     cxn: duckdb.DuckDBPyConnection,
     script: str,
-    args: Namespace | None = None,
+    args: Namespace | dict | None = None,
     params: dict | None = None,
 ) -> tuple[int, datetime]:
     args = vars(args) if args else {}

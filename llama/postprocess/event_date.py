@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.postprocess.base_field import BOTH, OUT, BaseField
+from llama.postprocess.base_field import BOTH, BaseField
 
 
 @dataclass
 class EventDate(BaseField):
     verbatimEventDate: str = field(default="", metadata=BOTH)
-    eventDate: str = field(default="", metadata=OUT)
+    eventDate: str = field(default="", metadata=BOTH)
 
     def __post_init__(self) -> None:
         self.verbatimEventDate = fix_values.to_str(self.verbatimEventDate)
@@ -17,4 +17,6 @@ class EventDate(BaseField):
         words = [w for w in words if not w.lower().startswith("date")]
         self.verbatimEventDate = " ".join(words)
 
-        self.eventDate = fix_values.date_to_iso(self.verbatimEventDate)
+        self.eventDate = self.eventDate or fix_values.date_to_iso(
+            self.verbatimEventDate
+        )

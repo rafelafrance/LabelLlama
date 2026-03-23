@@ -16,6 +16,13 @@ BOTH = {"in_out": InOut.BOTH}
 @dataclass
 class BaseField:
     @classmethod
+    def setup_field_model(cls) -> None:
+        pass
+
+    def run_field_model(self) -> None:
+        pass
+
+    @classmethod
     def get_input_fields(cls) -> list[str]:
         return [
             f.name

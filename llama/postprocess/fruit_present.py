@@ -7,9 +7,16 @@ from llama.postprocess.base_field import BOTH, BaseField
 
 @dataclass
 class FruitPresent(BaseField):
-    fruitPresent: bool = field(default=False, metadata=BOTH)
+    fruitPresent: bool | None = field(default=False, metadata=BOTH)
 
     def __post_init__(self) -> None:
-        string = fix_values.to_str(self.fruitPresent)
-        self.fruitPresent = bool(re.search(r"(fr|fruit)", string, flags=re.IGNORECASE))
         self.fruitPresent = fix_values.to_bool(self.fruitPresent)
+
+        # Handle the case where the word "fruits" is being used as true
+        if not self.fruitPresent:
+            string = fix_values.to_str(self.fruitPresent)
+            self.fruitPresent = bool(
+                re.search(r"(fr|fruit)", string, flags=re.IGNORECASE)
+            )
+
+        self.fruitPresent = self.fruitPresent or None
