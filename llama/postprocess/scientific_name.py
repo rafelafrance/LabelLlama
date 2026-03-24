@@ -7,17 +7,25 @@ from llama.postprocess.base_field import BOTH, BaseField
 
 @dataclass
 class ScientificName(BaseField):
-    scientificName: str = field(default="", metadata=BOTH)
+    scientificName: list[str] | str | None = field(default_factory=list, metadata=BOTH)
 
     def __post_init__(self) -> None:
-        self.scientificName = fix_values.to_str(self.scientificName)
-        self.scientificName = re.sub(r"[^\w\s]", "", self.scientificName).strip()
+        self.scientificName = fix_values.to_list_of_strs(self.scientificName)
+        self.scientificName = [c for n in self.scientificName if (c := self.clean(n))]
+        self.scientificName = fix_values.reduce_list(self.scientificName)
 
-        words = self.scientificName.split()
+    @staticmethod
+    def clean(value: str) -> str:
+        value = fix_values.to_str(value)
+        value = re.sub(r"[^\w\s]", "", value).strip()
+
+        words = value.split()
         if len(words) == 0:
-            self.scientificName = ""
+            value = ""
         elif len(words) == 1:
-            self.scientificName = words[0].title()
+            value = words[0].title()
         else:
             genus, species, *_ = words
-            self.scientificName = f"{genus.title()} {species.lower()}"
+            value = f"{genus.title()} {species.lower()}"
+
+        return value

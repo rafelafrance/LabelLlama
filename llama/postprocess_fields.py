@@ -15,7 +15,7 @@ from llama.postprocess.all_fields import ALL_ACTIONS
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args)
 
-    df = pd.read_csv(args.input_tsv, sep="\t")
+    df = pd.read_csv(args.lm_tsv, sep="\t")
     field_list = [c for c in ALL_ACTIONS if c in df.columns]
     input_rows = df.to_dict("records")
 
@@ -62,11 +62,11 @@ def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Extract Darwin Core (DwC) information from text.""",
+            """Format and validate language model extracted text.""",
         ),
     )
     arg_parser.add_argument(
-        "--input-tsv",
+        "--lm-tsv",
         type=Path,
         metavar="PATH",
         help="""Write the results to this spreadsheet.""",

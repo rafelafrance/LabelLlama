@@ -13,6 +13,7 @@ from llama.common import log
 from llama.lm.all_signatures import SIGNATURES
 from llama.lm.dwc_module import DwcModule
 
+
 def lm_extraction(args: argparse.Namespace) -> None:
     log.started(args)
 

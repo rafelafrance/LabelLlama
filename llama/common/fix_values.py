@@ -133,7 +133,7 @@ def str_to_list(value: Any) -> list[Any] | Any:
 
 def stringified_list(value: str) -> list[Any] | str:
     if value.startswith("[") and value.endswith("]"):
-        if len(value) > 1 and value[1] == "'":
+        if value[1] == "'":
             value = value.replace('"', r"\"")
             value = value.replace("'", '"')
 
