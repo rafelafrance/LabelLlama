@@ -8,19 +8,22 @@ from pathlib import Path
 import Levenshtein
 import pandas as pd
 
+from llama.common import log
 from llama.postprocess.all_fields import ALL_ACTIONS
 
 
-def score(args: argparse.Namespace) -> None:
+def score_extracts(args: argparse.Namespace) -> None:
+    log.started(args)
+
     gold_df = pd.read_csv(args.gold_tsv, sep="\t").fillna("")
     lm_df = pd.read_csv(args.lm_tsv, sep="\t").fillna("")
 
     gold_data = gold_df.to_dict("records")
     lm_data = lm_df.to_dict("records")
 
-    compare = {r["src_path"]: [r] for r in gold_data}
+    compare = {r["source"]: [r] for r in gold_data}
     for row in lm_data:
-        key = row["src_path"]
+        key = row["source"]
         if key in compare:
             compare[key].append(row)
     compare = [p for p in compare.values() if len(p) == 2]
@@ -33,18 +36,18 @@ def score(args: argparse.Namespace) -> None:
 
     for gold, lm in compare:
         row1: dict[str, str] = {
-            "source": Path(gold["src_path"]).name,
-            "doc_text": gold["doc_text"],
+            "source": Path(gold["source"]).name,
+            "text": gold["text"],
             "row": "gold",
         }
         row2: dict[str, str] = {
             "source": "",
-            "doc_text": "",
+            "text": "",
             "row": "lm",
         }
         row3: dict[str, float | str] = {
             "source": "",
-            "doc_text": "",
+            "text": "",
             "row": "score",
         }
 
@@ -62,6 +65,8 @@ def score(args: argparse.Namespace) -> None:
     for field, score in avg.items():
         print(f"{field},{score / len(gold_data):0.2f}")
 
+    log.finished()
+
 
 # ------------------------------------------------------------------------------
 def parse_args() -> argparse.Namespace:
@@ -75,7 +80,7 @@ def parse_args() -> argparse.Namespace:
         "--gold-tsv",
         type=Path,
         required=True,
-        help="""The gold standard to score againt.""",
+        help="""The gold standard to score against.""",
     )
     arg_parser.add_argument(
         "--lm-tsv",
@@ -97,4 +102,4 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    score(ARGS)
+    score_extracts(ARGS)

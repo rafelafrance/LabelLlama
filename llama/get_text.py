@@ -1,41 +1,47 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
+import logging
 import textwrap
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-import duckdb
 import lmstudio as lms
 from tqdm import tqdm
 
-from llama.common import db_util
-
-if TYPE_CHECKING:
-    import polars as pl
+from llama.common import log
 
 # A reasonable starting prompt. I will parameterize and try variations on this later.
-PROMPT = " ".join(
+PROMPT_V1 = " ".join(
     """
     You are given an image of a museum specimen with labels.
     I want you to extract all of the text from every label on the specimen.
     This includes text from both typewritten and handwritten labels.
     Do not get confused by the specimen itself which is in the center of the image.
-    I want plain text without HTML or markdown tags.
+    I want plain text without HTML tags, HTML entities, MATHML tags, or markdown tags.
     Do not hallucinate.
-    """.split()
+    """.split(),
 )
 
 
 def ocr_images(args: argparse.Namespace) -> None:
-    """OCR images in a directory."""
-    with lms.Client(args.api_host) as client, duckdb.connect(args.db) as cxn:
-        image_paths = filter_images(args)
+    log.started(args)
 
-        job_id, job_started = db_util.add_job(
-            cxn, __file__, args=args, params={"prompt": PROMPT}
-        )
+    field_names = ["source", "text", "elapsed"]
+    mode = "w"
+    done = []
+
+    if args.doc_tsv.exists():
+        mode = "a"
+        with args.doc_tsv.open() as tsv:
+            reader = csv.DictReader(tsv, delimiter="\t")
+            done = [r["source"] for r in reader]
+
+    image_paths = sorted(args.image_dir.glob("*.jpg"))
+
+    with lms.Client(args.api_host) as client, args.doc_tsv.open(mode) as tsv:
+        writer = csv.DictWriter(tsv, fieldnames=field_names, delimiter="\t")
 
         model = client.llm.model(
             args.model_name,
@@ -46,81 +52,27 @@ def ocr_images(args: argparse.Namespace) -> None:
         )
 
         for image_path in tqdm(image_paths):
+            if image_path in done:
+                continue
+
             rec_began = datetime.now()
 
             handle = client.files.prepare_image(image_path)
             chat = lms.Chat()
-            chat.add_user_message(PROMPT, images=[handle])
+            chat.add_user_message(PROMPT_V1, images=[handle])
 
-            doc_text, doc_error = "", ""
             try:
-                doc_text = model.respond(chat)
-            except lms.LMStudioServerError as err:
-                doc_error = f"Server error: {err}"
+                text = model.respond(chat)
+            except lms.LMStudioServerError:
+                logging.exception("Server error:")
+                continue
 
-            cxn.execute(
-                """
-                insert into docs (job_id, src_path, doc_text, doc_error, doc_elapsed)
-                values (?, ?, ?, ?, ?);
-                """,
-                [
-                    job_id,
-                    str(image_path),
-                    str(doc_text),
-                    doc_error,
-                    str(datetime.now() - rec_began),
-                ],
+            elapsed = str(datetime.now() - rec_began)
+            writer.writerow(
+                {"source": str(image_path), "text": text, "elapsed": elapsed},
             )
 
-        db_util.update_elapsed(cxn, job_id, job_started)
-
-
-def get_all_images(db_path: Path) -> pl.DataFrame:
-    """Get all image paths in the database."""
-    with duckdb.connect(db_path) as cxn:
-        all_images = cxn.execute("select distinct image_path from docs;").pl()
-    return all_images
-
-
-def get_all_errors(db_path: Path) -> pl.DataFrame:
-    """
-    Get records that only have errors. I.e. not successfully OCRed even once.
-    Note that errors do not go away they are "overwritten" by later successful OCR
-    attempts,typically with changed model parameters or a different model.
-    """
-    sql = """
-          select src_path, src_id, max(doc_text) as top
-          from docs
-          group by src_path, src_id
-          having top = '';
-          """
-    with duckdb.connect(db_path) as cxn:
-        return cxn.execute(sql).pl()
-
-
-def filter_images(args: argparse.Namespace) -> list[Path]:
-    """
-    Filter images.
-
-    - Missing images. The job crashed, and you want all remaining images using the
-      --missing flag.
-    - The --retry flag only selects images that have never successfully OCRed, i.e.
-      they always errored out. I use this to try a different model and/or parameters
-      on the problem images.
-    """
-    image_paths = sorted(args.image_dir.glob("*.jpg"))
-
-    # Only get --missing image paths, images not already in the DB
-    if args.missing:
-        completed = {r[0] for r in get_all_images(args.db).rows()}
-        image_paths = [p for p in image_paths if str(p) not in completed]
-
-    # Get images to --retry, images with only errors
-    if args.retry:
-        errored = {r[0] for r in get_all_errors(args.db).rows()}
-        image_paths = [p for p in image_paths if str(p) in errored]
-
-    return image_paths
+    log.finished()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -128,70 +80,40 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         allow_abbrev=True,
         description=textwrap.dedent("""OCR images."""),
     )
-    subparsers = arg_parser.add_subparsers(
-        title="Subcommands",
-        description="Actions on gold standard records",
-        dest="action",
-    )
-
-    # ------------------------------------------------------------
-    ocr_parser = subparsers.add_parser(
-        "ocr",
-        help="""OCR images.""",
-    )
-    ocr_parser.add_argument(
-        "--db-path",
-        type=Path,
-        required=True,
-        help="""Path to the database.""",
-    )
-    ocr_parser.add_argument(
+    arg_parser.add_argument(
         "--image-dir",
         type=Path,
         required=True,
         help="""Directory containing all of the images to OCR.""",
     )
-    ocr_parser.add_argument(
+    arg_parser.add_argument(
+        "--doc-tsv",
+        type=Path,
+        required=True,
+        help="""Put OCRed text into this TSV file.""",
+    )
+    arg_parser.add_argument(
         "--model",
         default="noctrex/Chandra-OCR-GGUF/Chandra-OCR-Q4_K_S.gguf",
         help="""Use this language model. (default: %(default)s)""",
     )
-    ocr_parser.add_argument(
+    arg_parser.add_argument(
         "--api-host",
         default="http://localhost:1234",
         help="""URL for the language model. (default: %(default)s)""",
     )
-    ocr_parser.add_argument(
+    arg_parser.add_argument(
         "--context-length",
         type=int,
         default=4096,
         help="""Model's context length. (default: %(default)s)""",
     )
-    ocr_parser.add_argument(
+    arg_parser.add_argument(
         "--temperature",
         type=float,
         default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
     )
-    ocr_parser.add_argument(
-        "--notes",
-        default="",
-        help="""Notes about this dataset. Use this so that you can easily identify the
-            this OCR job when you want to parse the OCRed text later.""",
-    )
-    ocr_parser.add_argument(
-        "--missing",
-        action="store_true",
-        help="""Process all images in image dir but not in the database.
-            Use this when you want to restart a job after is crashes.""",
-    )
-    ocr_parser.add_argument(
-        "--retry",
-        action="store_true",
-        help="""Retry all images where all previous attempts errored out.
-            Use this to try the OCR with a different model and/or parameters.""",
-    )
-    ocr_parser.set_defaults(func=ocr_images)
 
     # ------------------------------------------------------------
     args = arg_parser.parse_args(args)
@@ -200,4 +122,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    ARGS.func(ARGS)
+    ocr_images(ARGS)

@@ -17,8 +17,8 @@ class DwcModule(dspy.Module):
         self.input_names: list[str] = list(self.input_fields.keys())
         self.output_names: list[str] = list(self.output_fields.keys())
 
-    def forward(self, doc_text: str) -> dspy.Prediction:
-        text = clean_text(doc_text)
+    def forward(self, text: str) -> dspy.Prediction:
+        text = clean_text(text)
         prediction = self.predictor(text=text)
         return prediction
 

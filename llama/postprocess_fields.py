@@ -8,10 +8,13 @@ import dspy
 import pandas as pd
 from tqdm import tqdm
 
+from llama.common import log
 from llama.postprocess.all_fields import ALL_ACTIONS
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
+    log.started(args)
+
     df = pd.read_csv(args.input_tsv, sep="\t")
     field_list = [c for c in ALL_ACTIONS if c in df.columns]
     input_rows = df.to_dict("records")
@@ -30,12 +33,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             ALL_ACTIONS[field_name].setup_field_model()
 
     output_rows = {
-        (r["src_path"], r["src_id"]): {
-            "src_path": r["src_path"],
-            "src_id": r.get("src_id"),
-            "doc_text": r["doc_text"],
-        }
-        for r in input_rows
+        r["source"]: {"source": r["source"], "text": r["text"]} for r in input_rows
     }
 
     for field_name in field_list:
@@ -52,15 +50,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
             out_data = {k: getattr(field, k) for k in out_fields}
 
-            output_rows[row["src_path"], row["src_id"]] |= out_data
+            output_rows[row["source"]] |= out_data
 
-    df = (
-        pd.DataFrame(output_rows.values())
-        .fillna("")
-        .set_index(["src_path", "src_id"])
-        .sort_index()
-    )
+    df = pd.DataFrame(output_rows.values()).fillna("").set_index("source").sort_index()
     df.to_csv(args.output_tsv, sep="\t")
+
+    log.finished()
 
 
 def parse_args() -> argparse.Namespace:

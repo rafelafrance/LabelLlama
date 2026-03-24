@@ -28,19 +28,19 @@ def setup_filter_pattern() -> re.Pattern:
 FILTER_PATTERN: re.Pattern[str] = setup_filter_pattern()
 
 
-def filter_lines(doc_text: str) -> str:
+def filter_lines(text: str) -> str:
     """
     Remove lines in the text that have certain words or phrases.
 
     These words/phrases are typically label headers or footers and "confuse"
     the language model with irrelevant data, so I remove them.
     """
-    lines = [ln for ln in doc_text.splitlines() if not FILTER_PATTERN.search(ln)]
-    doc_text = "\n".join(lines)
-    return doc_text
+    lines = [ln for ln in text.splitlines() if not FILTER_PATTERN.search(ln)]
+    text = "\n".join(lines)
+    return text
 
 
-def join_lines(doc_text: str) -> str:
+def join_lines(text: str) -> str:
     """
     Join lines of text.
 
@@ -49,13 +49,13 @@ def join_lines(doc_text: str) -> str:
     If there are two or more line breaks in a row then the break is likely to have
     semantic meaning.
     """
-    doc_text = re.sub(r"\n\s*\n", "<br>", doc_text)
-    doc_text = doc_text.replace("\n", " ")
-    doc_text = doc_text.replace("<br>", "\n\n")
-    return doc_text
+    text = re.sub(r"\n\s*\n", "<br>", text)
+    text = text.replace("\n", " ")
+    text = text.replace("<br>", "\n\n")
+    return text
 
 
-def clean_text(doc_text: str) -> str:
-    doc_text = filter_lines(doc_text)
-    doc_text = join_lines(doc_text)
-    return doc_text
+def clean_text(text: str) -> str:
+    text = filter_lines(text)
+    text = join_lines(text)
+    return text
