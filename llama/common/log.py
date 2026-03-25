@@ -1,7 +1,10 @@
 import logging
 import sys
-from argparse import Namespace
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from argparse import Namespace
 
 
 def setup_logger(file_name: str | Path | None = None) -> None:
