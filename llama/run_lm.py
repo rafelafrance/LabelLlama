@@ -2,12 +2,10 @@
 
 import argparse
 import textwrap
-from datetime import datetime
 from pathlib import Path
 
 import dspy
 import pandas as pd
-from tqdm import tqdm
 
 from llama.common import log
 from llama.lm.all_signatures import SIGNATURES
@@ -15,7 +13,7 @@ from llama.lm.dwc_module import DwcModule
 
 
 def lm_extraction(args: argparse.Namespace) -> None:
-    log.started(args)
+    log.started(args.log_file, args=args)
 
     lm = dspy.LM(
         args.model_name,
@@ -28,19 +26,13 @@ def lm_extraction(args: argparse.Namespace) -> None:
     dspy.configure(lm=lm)
 
     predictor = DwcModule(args.signature)
+    parallel = dspy.Parallel(num_threads=args.threads)
 
-    docs = pd.read_csv(args.gold_tsv, sep="\t").fillna("").to_dict("records")
+    docs = pd.read_csv(args.doc_tsv, sep="\t").fillna("").to_dict("records")
+    docs = docs[: args.limit]
+    exec_pairs = [(predictor, {"text": d["text"], "source": d["source"]}) for d in docs]
 
-    results = []
-
-    for doc in tqdm(docs):
-        rec_began = datetime.now()
-        prediction = predictor(text=doc["text"])
-        elapsed = str(datetime.now() - rec_began)
-
-        rec = {"source": doc["source"], "text": doc["text"], "elapsed": elapsed}
-        rec |= prediction
-        results.append(rec)
+    results = parallel(exec_pairs)
 
     df = pd.DataFrame(results)
     df.to_csv(args.lm_tsv, sep="\t", index=False)
@@ -74,6 +66,12 @@ def parse_args() -> argparse.Namespace:
         help="""Write the LM results to this TSV file.""",
     )
     arg_parser.add_argument(
+        "--threads",
+        type=int,
+        default=10,
+        help="""How many parallel threads to run. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
         "--model-name",
         default="lm_studio/google/gemma-3-27b",
         help="""Use this language model. (default: %(default)s)""",
@@ -102,6 +100,16 @@ def parse_args() -> argparse.Namespace:
         "--no-cache",
         action="store_true",
         help="""Don't use cached records?""",
+    )
+    arg_parser.add_argument(
+        "--log-file",
+        type=Path,
+        help="""Append logging notices to this file.""",
+    )
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit the number of records to parse.""",
     )
     args = arg_parser.parse_args()
     return args

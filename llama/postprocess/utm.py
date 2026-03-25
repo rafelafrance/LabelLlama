@@ -56,7 +56,7 @@ class Utm(BaseField):
     utmZone: str = field(default="", metadata=BOTH)
 
     @classmethod
-    def setup_field_model(cls) -> None:
+    def setup_field(cls) -> None:
         cls.predictor = dspy.Predict(UtmSig)
 
     def __post_init__(self) -> None:

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any
 
 import dspy
@@ -12,16 +13,17 @@ class DwcModule(dspy.Module):
         self.signature = SIGNATURES[signature]
         self.predictor = dspy.Predict(self.signature)
 
-        self.input_fields = self.signature.input_fields
-        self.output_fields = self.signature.all_output_names
-        self.input_names: list[str] = list(self.input_fields.keys())
-        self.output_names: list[str] = list(self.output_fields.keys())
-
-    def forward(self, text: str) -> dspy.Prediction:
+    def forward(self, text: str, source: str) -> dict[str, Any]:
+        began = datetime.now()
         text = clean_text(text)
         prediction = self.predictor(text=text)
-        return prediction
+        return {
+            "source": source,
+            "text": text,
+            "elapsed": str(datetime.now() - began),
+            **prediction,
+        }
 
-    def dict2example(self, dct: dict[str, Any]) -> dspy.Example:
-        example: dspy.Example = dspy.Example(**dct).with_inputs(*self.input_names)
-        return example
+    # def dict2example(self, dct: dict[str, Any]) -> dspy.Example:
+    #     example: dspy.Example = dspy.Example(**dct).with_inputs(*self.input_names)
+    #     return example

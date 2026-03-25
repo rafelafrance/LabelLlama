@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from rapidfuzz import fuzz
+
 from llama.common import fix_values
 from llama.postprocess.base_field import BOTH, BaseField
 
@@ -15,3 +17,7 @@ class Habitat(BaseField):
         words = self.habitat.split()
         words = [s for s in words if not s.lower().startswith("habitat")]
         self.habitat = " ".join(words)
+
+    @staticmethod
+    def fuzzy_score(expect: str, actual: str) -> float:
+        return fuzz.partial_ratio(expect, actual)

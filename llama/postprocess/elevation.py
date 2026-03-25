@@ -50,7 +50,7 @@ class Elevation(BaseField):
     elevationEstimated: bool | None = field(default=None, metadata=BOTH)
 
     @classmethod
-    def setup_field_model(cls) -> None:
+    def setup_field(cls) -> None:
         cls.predictor = dspy.Predict(ElevationSig)
 
     def __post_init__(self) -> None:

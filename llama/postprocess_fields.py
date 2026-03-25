@@ -13,7 +13,7 @@ from llama.postprocess.all_fields import ALL_ACTIONS
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
-    log.started(args)
+    log.started(args.log_file, args=args)
 
     df = pd.read_csv(args.lm_tsv, sep="\t")
     field_list = [c for c in ALL_ACTIONS if c in df.columns]
@@ -30,7 +30,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         )
         dspy.configure(lm=lm)
         for field_name in field_list:
-            ALL_ACTIONS[field_name].setup_field_model()
+            ALL_ACTIONS[field_name].setup_field()
 
     output_rows = {
         r["source"]: {"source": r["source"], "text": r["text"]} for r in input_rows
@@ -118,7 +118,11 @@ def parse_args() -> argparse.Namespace:
         "--field",
         help="""Just parse one field. Used for debugging.""",
     )
-
+    arg_parser.add_argument(
+        "--log-file",
+        type=Path,
+        help="""Append logging notices to this file.""",
+    )
     args = arg_parser.parse_args()
     return args
 

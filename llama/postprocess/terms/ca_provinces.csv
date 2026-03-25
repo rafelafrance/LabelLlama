@@ -1,0 +1,63 @@
+province,replace
+alberta,Alberta
+AB,Alberta
+alta.,Alberta
+alb.,Alberta
+british columbia,British Columbia
+BC,British Columbia
+b.c.,British Columbia
+c.b.,British Columbia
+c.-b.,British Columbia
+c-b,British Columbia
+manitoba,Manitoba
+MB,Manitoba
+man.,Manitoba
+new brunswick,New Brunswick
+NB,New Brunswick
+n.b.,New Brunswick
+n.-b.,New Brunswick
+n-b,New Brunswick
+newfoundland and labrador,Newfoundland and Labrador
+NL,Newfoundland and Labrador
+nfld.,Newfoundland
+lab.,Labrador
+n.l.,Newfoundland and Labrador
+t.-n.-l,Newfoundland and Labrador
+t-n-l,Newfoundland and Labrador
+NF,Newfoundland
+LB,Labrador
+northwest territories,Northwest Territories
+NT,Northwest Territories
+n.w.t.,Northwest Territories
+t.n.-o.,Northwest Territories
+t.n-o,Northwest Territories
+nova scotia,Nova Scotia
+NS,Nova Scotia
+n.s.,Nova Scotia
+n.-e.,Nova Scotia
+n-e,Nova Scotia
+nunavut,Nunavut
+NU,Nunavut
+nvt.,Nunavut
+nt.,Nunavut
+ontario,Ontario
+ON,Ontario
+ont.,Ontario
+prince edward island,Prince Edward Island
+PE,Prince Edward Island
+p.e.i.,Prince Edward Island
+i.-p.-e.,Prince Edward Island
+i-p-e.,Prince Edward Island
+quebec,Quebec
+QC,Quebec
+PQ,Quebec
+que.,Quebec
+p.q.,Quebec
+saskatchewan,Saskatchewan
+SK,Saskatchewan
+Sask.,Saskatchewan
+yukon,Yukon
+YT,Yukon
+YK,Yukon
+yuk.,Yukon
+yn.,Yukon

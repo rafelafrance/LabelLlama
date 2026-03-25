@@ -69,7 +69,7 @@ class Trs(BaseField):
         self.clean_subfields()
 
     @classmethod
-    def setup_field_model(cls) -> None:
+    def setup_field(cls) -> None:
         cls.predictor = dspy.Predict(TrsSig)
 
     def run_field_model(self) -> None:

@@ -1,5 +1,6 @@
 from dataclasses import dataclass, fields
 from enum import Enum
+from typing import Any
 
 
 class InOut(Enum):
@@ -16,11 +17,21 @@ BOTH = {"in_out": InOut.BOTH}
 @dataclass
 class BaseField:
     @classmethod
-    def setup_field_model(cls) -> None:
+    def setup_field(cls) -> None:
         pass
 
     def run_field_model(self) -> None:
         pass
+
+    @classmethod
+    def cross_field_score(
+        cls, expect: Any, actual: Any, actual_record: dict[str, Any]
+    ) -> float:
+        return 0.0
+
+    @staticmethod
+    def fuzzy_score(expect: str, actual: str) -> float:
+        return 0.0
 
     @classmethod
     def get_input_fields(cls) -> list[str]:

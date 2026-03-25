@@ -26,7 +26,7 @@ PROMPT_V1 = " ".join(
 
 
 def ocr_images(args: argparse.Namespace) -> None:
-    log.started(args)
+    log.started(args.log_file, args=args)
 
     field_names = ["source", "text", "elapsed"]
     mode = "w"
@@ -114,8 +114,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
     )
+    arg_parser.add_argument(
+        "--log-file",
+        type=Path,
+        help="""Append logging notices to this file.""",
+    )
 
-    # ------------------------------------------------------------
     args = arg_parser.parse_args(args)
     return args
 
