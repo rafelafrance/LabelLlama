@@ -20,4 +20,4 @@ class Habitat(BaseField):
 
     @staticmethod
     def fuzzy_score(expect: str, actual: str) -> float:
-        return fuzz.partial_ratio(expect, actual)
+        return fuzz.partial_ratio(expect, actual) / 100.0

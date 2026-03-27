@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def to_args(func: Any, *args: list[Any], **kwargs: Any) -> list[str]:
+def to_args(func: Any, *args: str, **kwargs: Any) -> list[str]:
     """
     Simplify adding arguments to script calls in a notebook.
 

@@ -35,6 +35,15 @@ class TestFixValues(unittest.TestCase):
     def test_to_str_10(self) -> None:
         self.assertEqual(fix_values.to_str(object()), "")
 
+    def test_to_str_11(self) -> None:
+        self.assertEqual(fix_values.to_str(float("nan")), "")
+
+    def test_to_str_12(self) -> None:
+        self.assertEqual(fix_values.to_str(float("inf")), "")
+
+    def test_to_str_13(self) -> None:
+        self.assertEqual(fix_values.to_str(float("-inf")), "")
+
     # ---------------------------------------------------------------------
     def test_to_int_01(self) -> None:
         self.assertEqual(fix_values.to_int("test"), None)
@@ -51,6 +60,12 @@ class TestFixValues(unittest.TestCase):
     def test_to_int_05(self) -> None:
         self.assertEqual(fix_values.to_int(object()), None)
 
+    def test_to_int_06(self) -> None:
+        self.assertEqual(fix_values.to_int(float("nan")), None)
+
+    def test_to_int_07(self) -> None:
+        self.assertEqual(fix_values.to_int(float("inf")), None)
+
     # ---------------------------------------------------------------------
     def test_to_float_01(self) -> None:
         self.assertEqual(fix_values.to_float("test"), None)
@@ -66,6 +81,12 @@ class TestFixValues(unittest.TestCase):
 
     def test_to_float_05(self) -> None:
         self.assertEqual(fix_values.to_float(object()), None)
+
+    def test_to_float_06(self) -> None:
+        self.assertEqual(fix_values.to_float(float("nan")), None)
+
+    def test_to_float_07(self) -> None:
+        self.assertEqual(fix_values.to_float(float("inf")), None)
 
     # ---------------------------------------------------------------------
     def test_to_bool_01(self) -> None:
@@ -98,6 +119,12 @@ class TestFixValues(unittest.TestCase):
     def test_to_bool_10(self) -> None:
         self.assertEqual(fix_values.to_bool(0), False)
 
+    def test_to_bool_11(self) -> None:
+        self.assertEqual(fix_values.to_bool(float("nan")), False)
+
+    def test_to_bool_12(self) -> None:
+        self.assertEqual(fix_values.to_bool(float("inf")), False)
+
     # ---------------------------------------------------------------------
     def test_to_list_of_strs_01(self) -> None:
         self.assertEqual(fix_values.to_list_of_strs("one"), ["one"])
@@ -107,7 +134,8 @@ class TestFixValues(unittest.TestCase):
 
     def test_to_list_of_strs_03(self) -> None:
         self.assertEqual(
-            fix_values.to_list_of_strs([1, 2.0, True]), ["1", "2.0", "True"]
+            fix_values.to_list_of_strs([1, 2.0, True, float("nan")]),
+            ["1", "2.0", "True", ""],
         )
 
     def test_to_list_of_strs_04(self) -> None:
@@ -124,7 +152,9 @@ class TestFixValues(unittest.TestCase):
         self.assertEqual(fix_values.to_list_of_ints(11), [11])
 
     def test_to_list_of_ints_03(self) -> None:
-        self.assertEqual(fix_values.to_list_of_ints([1, 2.0, True]), [1, 2, 1])
+        self.assertEqual(
+            fix_values.to_list_of_ints([1, 2.0, True, float("inf")]), [1, 2, 1]
+        )
 
     def test_to_list_of_ints_04(self) -> None:
         self.assertEqual(fix_values.to_list_of_ints(object()), [])
@@ -137,7 +167,9 @@ class TestFixValues(unittest.TestCase):
         self.assertEqual(fix_values.to_list_of_floats(11), [11.0])
 
     def test_to_list_of_floats_03(self) -> None:
-        self.assertEqual(fix_values.to_list_of_floats([1, 2.3, True]), [1.0, 2.3, 1.0])
+        self.assertEqual(
+            fix_values.to_list_of_floats([1, 2.3, True, float("nan")]), [1.0, 2.3, 1.0]
+        )
 
     def test_to_list_of_floats_04(self) -> None:
         self.assertEqual(fix_values.to_list_of_floats(object()), [])

@@ -5,18 +5,19 @@ import textwrap
 from pathlib import Path
 
 import dspy
-import pandas as pd
 from tqdm import tqdm
 
-from llama.common import log
+from llama.common import io_util, log
 from llama.postprocess.all_fields import ALL_ACTIONS
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    df = pd.read_csv(args.lm_tsv, sep="\t")
+    df = io_util.read_df(args.in_file)
     field_list = [c for c in ALL_ACTIONS if c in df.columns]
+    if args.field:
+        field_list = [args.field]
     input_rows = df.to_dict("records")
 
     if args.run_field_models:
@@ -52,13 +53,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
             output_rows[row["source"]] |= out_data
 
-    df = pd.DataFrame(output_rows.values()).fillna("").set_index("source").sort_index()
-    df.to_csv(args.output_tsv, sep="\t")
+    io_util.output_file(args.out_file, list(output_rows.values()))
 
     log.finished()
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
@@ -66,16 +66,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     arg_parser.add_argument(
-        "--lm-tsv",
+        "--in-file",
         type=Path,
         metavar="PATH",
-        help="""Write the results to this spreadsheet.""",
+        help="""Get the language model results to postprocess from this file.""",
     )
     arg_parser.add_argument(
-        "--output-tsv",
+        "--out-file",
         type=Path,
-        metavar="PATH",
-        help="""Write the results to this spreadsheet.""",
+        help="""Write the LM results to this file. (.json, .csv, .tsv, .html)""",
     )
     arg_parser.add_argument(
         "--model-name",
@@ -121,10 +120,11 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--log-file",
         type=Path,
-        help="""Append logging notices to this file.""",
+        help="""Append logging notices to this file. It also logs the script arguments
+            so you may use this to keep track of what you did.""",
     )
-    args = arg_parser.parse_args()
-    return args
+    ns = arg_parser.parse_args(args)
+    return ns
 
 
 if __name__ == "__main__":

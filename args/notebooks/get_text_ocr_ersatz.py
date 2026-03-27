@@ -9,7 +9,9 @@ def _(mo):
     mo.md(r"""
     # OCR images of herbarium sheets
 
-    **Note** These OCR job parameters are reconstructed after the fact. They are here to give you an idea of how I went about creating this data not as a 100% accurate reprentation of what happened -- that ship has sailed.
+    **Note** These OCR job parameters are reconstructed after the fact.
+    They are here to give you an idea of how I went about creating this data not as a
+    100% accurate reprentation of what happened -- that ship has sailed.
     """)
     return
 
@@ -63,7 +65,12 @@ def _(get_text, to_args):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    Firefox keeps dying on me. It's happened with both jupyter and marimo. It appears to be related to a memory leak with lmstudio [bug](https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/1209). The server is holding onto data. I've created the `--missing` parameter so I can restart a job without overwriting the data that aleady exists.
+    Firefox keeps dying on me. It's happened with both jupyter and marimo.
+    It appears to be related to a memory leak with lmstudio
+    [bug](https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/1209).
+    The server is holding onto data.
+    I've created the `--missing` parameter so I can restart a job without overwriting
+    the data that aleady exists.
     """)
     return
 
@@ -113,7 +120,9 @@ def _(get_text, to_args):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    A new tranche of 33 images dropped (2025-11-18). Add them to the dataset. They're all supposed to have either a TRS or a UTM. It looks like it's almost exclusively TRSs.
+    A new tranche of 33 images dropped (2025-11-18). Add them to the dataset.
+    They're all supposed to have either a TRS or a UTM.
+    It looks like it's almost exclusively TRSs.
     """)
     return
 
@@ -135,7 +144,9 @@ def _(get_text, to_args):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    There were 3/33 records that errored out. That's a very high percentage. Now try tweaking the parameters and using a different model.
+    There were 3/33 records that errored out.
+    That's a very high percentage.
+    Now try tweaking the parameters and using a different model.
     """)
     return
 
@@ -182,7 +193,8 @@ def _(get_text, to_args):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    _Mea culpa_. I forgot to prevent my computer from sleeping, so the job died part of the way thru. Restarting.
+    _Mea culpa_. I forgot to prevent my computer from sleeping,
+    so the job died part of the way thru. Restarting.
     """)
     return
 

@@ -90,7 +90,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--doc-tsv",
         type=Path,
         required=True,
-        help="""Put OCRed text into this TSV file.""",
+        help="""Put OCRed text into this TSV file.
+            This appends data to the file.""",
     )
     arg_parser.add_argument(
         "--model",
@@ -117,11 +118,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--log-file",
         type=Path,
-        help="""Append logging notices to this file.""",
+        help="""Append logging notices to this file. It also logs the script arguments
+            so you may use this to keep track of what you did.""",
     )
-
-    args = arg_parser.parse_args(args)
-    return args
+    ns: argparse.Namespace = arg_parser.parse_args(args)
+    return ns
 
 
 if __name__ == "__main__":

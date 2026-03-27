@@ -5,9 +5,8 @@ import textwrap
 from pathlib import Path
 
 import dspy
-import pandas as pd
 
-from llama.common import log
+from llama.common import io_util, log
 from llama.lm.all_signatures import SIGNATURES
 from llama.lm.dwc_module import DwcModule
 
@@ -28,20 +27,17 @@ def lm_extraction(args: argparse.Namespace) -> None:
     predictor = DwcModule(args.signature)
     parallel = dspy.Parallel(num_threads=args.threads)
 
-    docs = pd.read_csv(args.doc_tsv, sep="\t").fillna("").to_dict("records")
-    docs = docs[: args.limit]
+    docs = io_util.read_dict(args.doc_in, fill_na="", limit=args.limit)
     exec_pairs = [(predictor, {"text": d["text"], "source": d["source"]}) for d in docs]
 
     results = parallel(exec_pairs)
 
-    df = pd.DataFrame(results)
-    df.to_csv(args.lm_tsv, sep="\t", index=False)
+    io_util.output_file(args.out_file, results)
 
     log.finished()
 
 
-# ----------------------------------------------------------------------------------
-def parse_args() -> argparse.Namespace:
+def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
@@ -56,14 +52,15 @@ def parse_args() -> argparse.Namespace:
         help="""What type of data are you extracting? What is its signature?""",
     )
     arg_parser.add_argument(
-        "--doc-tsv",
+        "--doc-in",
         type=Path,
-        help="""Parse doc records from this TSV file.""",
+        help="""Parse doc text from this file. We need only 'source' and 'text'
+            columns for valid input.""",
     )
     arg_parser.add_argument(
-        "--lm-tsv",
+        "--out-file",
         type=Path,
-        help="""Write the LM results to this TSV file.""",
+        help="""Write the LM results to this file. (.json, .csv, .tsv, .html)""",
     )
     arg_parser.add_argument(
         "--threads",
@@ -104,15 +101,17 @@ def parse_args() -> argparse.Namespace:
     arg_parser.add_argument(
         "--log-file",
         type=Path,
-        help="""Append logging notices to this file.""",
+        help="""Append logging notices to this file. It also logs the script arguments
+            so you may use this to keep track of what you did.""",
     )
     arg_parser.add_argument(
         "--limit",
         type=int,
-        help="""Limit the number of records to parse.""",
+        help="""Append logging notices to this file. It also logs the script arguments
+            so you may use this to keep track of what you did.""",
     )
-    args = arg_parser.parse_args()
-    return args
+    ns = arg_parser.parse_args(args)
+    return ns
 
 
 if __name__ == "__main__":

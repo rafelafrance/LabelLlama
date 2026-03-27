@@ -2,6 +2,7 @@
 
 import contextlib
 import json
+import math
 import re
 from calendar import IllegalMonthError
 from typing import Any
@@ -16,6 +17,8 @@ def to_str(value: Any) -> str:
     match value:
         case str():
             return clean_str(value)
+        case float() if math.isnan(value) or math.isinf(value):
+            return ""
         case int() | float() | bool():
             return str(value)
         case list() if len(value) > 0 and isinstance(value[0], str):
@@ -33,6 +36,8 @@ def to_int(value: Any) -> int | None:
         case str():
             value = clean_str(value)
             return str_to_int(value)
+        case float() if math.isnan(value) or math.isinf(value):
+            return None
         case int() | float() | bool():
             return int(value)
         case _:
@@ -46,6 +51,8 @@ def to_float(value: Any) -> float | None:
         case str():
             value = clean_str(value)
             return str_to_float(value)
+        case float() if math.isnan(value) or math.isinf(value):
+            return None
         case int() | float() | bool():
             return float(value)
         case _:
@@ -59,6 +66,8 @@ def to_bool(value: Any) -> bool:
         case str():
             value = clean_str(value)
             return value.lower() in ("true", "yes", "1", "on")
+        case float() if math.isnan(value) or math.isinf(value):
+            return False
         case _:
             return bool(value)
 
@@ -70,10 +79,12 @@ def to_list_of_strs(value: Any) -> list[str]:
         case str():
             value = clean_str(value)
             return [value] if value else []
+        case float() if math.isnan(value) or math.isinf(value):
+            return []
         case int() | float() | bool():
             return [str(value)]
         case list() if len(value) > 0:
-            return [str(v) for v in value if v]
+            return [to_str(v) for v in value if v]
         case _:
             return []
 
@@ -85,12 +96,14 @@ def to_list_of_ints(value: Any) -> list[int]:
         case str():
             value = re.sub(r",", "", value)
             return [int(v) for v in INT.findall(value)]
+        case float() if math.isnan(value) or math.isinf(value):
+            return []
         case int() | float() | bool():
             return [int(value)]
         case list() if len(value) > 1 and isinstance(value[0], str):
             return [c for v in value if (c := str_to_int(v))]
         case list() if len(value) > 0:
-            return [i for v in value if (i := int(v))]
+            return [i for v in value if (i := to_int(v))]
         case _:
             return []
 
@@ -107,7 +120,7 @@ def to_list_of_floats(value: Any) -> list[float]:
         case list() if len(value) > 0 and isinstance(value[0], str):
             return [f for v in value if (f := str_to_float(v))]
         case list():
-            return [f for v in value if (f := float(v))]
+            return [f for v in value if (f := to_float(v))]
         case _:
             return []
 
