@@ -2,8 +2,8 @@
 """
 Build taxon terms from downloaded data.
 
-1. [ITIS sqlite database](https://www.itis.gov/downloads/index.html)
-2. [Plant of the World Online](http://sftp.kew.org/pub/data-repositories/WCVP/)
+1. ITIS sqlite database: www.itis.gov/downloads/index.html
+2. Plant of the World Online: sftp.kew.org/pub/data-repositories/WCVP/
 """
 
 import argparse
@@ -85,7 +85,7 @@ def read_itis_taxa(itis_db: Path) -> dict[str, str]:
 def parse_args() -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
-        description=textwrap.dedent("""Get plant familiy and genus names."""),
+        description=textwrap.dedent("""Get plant family and genus names."""),
     )
     arg_parser.add_argument(
         "--itis-db",

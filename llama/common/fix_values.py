@@ -10,7 +10,7 @@ from typing import Any
 from dateutil import parser
 
 INT = re.compile(r"\d+")
-FLOAT = re.compile(r" (?: \d+ (?: \.\d* )? | \.\d+ )", flags=re.VERBOSE)
+FLOAT = re.compile(r" \d+ (?: \.\d* )? | \.\d+", flags=re.VERBOSE)
 
 
 def to_str(value: Any) -> str:

@@ -64,7 +64,7 @@ class Trs(BaseField):
     trsQuad: str = field(default="", metadata=BOTH)
 
     def __post_init__(self) -> None:
-        # Setup the trs so it is valid input for further processing
+        # Set up the trs so it is valid input for further processing
         self.trs = fix_values.to_str(self.trs)
         self.clean_subfields()
 

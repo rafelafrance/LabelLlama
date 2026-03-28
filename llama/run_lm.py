@@ -7,7 +7,7 @@ from pathlib import Path
 import dspy
 
 from llama.common import io_util, log
-from llama.lm.all_signatures import SIGNATURES
+from llama.lm.all_signatures import ALL_SIGNATURES
 from llama.lm.dwc_module import DwcModule
 
 
@@ -44,7 +44,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             """Use a language model (LM) to extract information from text."""
         ),
     )
-    signatures = list(SIGNATURES.keys())
+    signatures = list(ALL_SIGNATURES.keys())
     arg_parser.add_argument(
         "--signature",
         choices=signatures,
@@ -55,12 +55,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--doc-in",
         type=Path,
         help="""Parse doc text from this file. We need only 'source' and 'text'
-            columns for valid input.""",
+            columns for valid input, so any file with those columns are fine.""",
     )
     arg_parser.add_argument(
         "--out-file",
         type=Path,
-        help="""Write the LM results to this file. (.json, .csv, .tsv, .html)""",
+        help="""Write the LM results to this file.
+           Handles (.json, .jsonl, .csv, .tsv)""",
     )
     arg_parser.add_argument(
         "--threads",

@@ -43,13 +43,8 @@ def ocr_images(args: argparse.Namespace) -> None:
     with lms.Client(args.api_host) as client, args.doc_tsv.open(mode) as tsv:
         writer = csv.DictWriter(tsv, fieldnames=field_names, delimiter="\t")
 
-        model = client.llm.model(
-            args.model_name,
-            config={
-                "temperature": args.temperature,
-                "contextLength": args.context_length,
-            },
-        )
+        config = lms.LlmLoadModelConfigDict(contextLength=args.context_length)
+        model = client.llm.model(args.model_name, config=config)
 
         for image_path in tqdm(image_paths):
             if image_path in done:
@@ -62,7 +57,10 @@ def ocr_images(args: argparse.Namespace) -> None:
             chat.add_user_message(PROMPT_V1, images=[handle])
 
             try:
-                text = model.respond(chat)
+                text = model.respond(
+                    chat,
+                    {"temperature": args.temperature, "maxTokens": args.max_tokens},
+                )
             except lms.LMStudioServerError:
                 logging.exception("Server error:")
                 continue
@@ -106,8 +104,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--context-length",
         type=int,
-        default=4096,
-        help="""Model's context length. (default: %(default)s)""",
+        help="""Model's context length. Combined input and output.
+            (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        help="""The responses maximum tokens. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--temperature",

@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def to_args(func: Any, *args: str, **kwargs: Any) -> list[str]:
+def to_args(*args: str, **kwargs: Any) -> list[str]:
     """
     Simplify adding arguments to script calls in a notebook.
 
@@ -9,9 +9,6 @@ def to_args(func: Any, *args: str, **kwargs: Any) -> list[str]:
     Yes, it's a brutal hack.
     """
     args_out = []
-
-    if func:
-        args_out.append(func)
 
     args_out += [f"--{a.replace('_', '-')}" for a in args]
 

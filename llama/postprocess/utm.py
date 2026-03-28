@@ -60,13 +60,13 @@ class Utm(BaseField):
         cls.predictor = dspy.Predict(UtmSig)
 
     def __post_init__(self) -> None:
-        # Setup the utm so it is valid input for further processing
+        # Set up the utm so it is valid input for further processing
         self.utm = fix_values.to_str(self.utm)
         self.clean_subfields()
 
     def run_field_model(self) -> None:
         # Only run the model if an input field is empty
-        # Input for this class is actually an output from the LM moddel class
+        # Input for this class is actually an output from the LM model class
         if not self.utm or (self.utmNorthing and self.utmEasting and self.utmZone):
             return
 

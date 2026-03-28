@@ -77,7 +77,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--out-file",
         type=Path,
-        help="""Write the LM results to this file. (.json, .csv, .tsv, .html)""",
+        help="""Write the postprocessing results to this file.
+           Handles (.json, .jsonl, .csv, .tsv, .html)""",
     )
     arg_parser.add_argument(
         "--model-name",
