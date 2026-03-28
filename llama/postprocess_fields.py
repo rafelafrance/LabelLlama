@@ -8,14 +8,14 @@ import dspy
 from tqdm import tqdm
 
 from llama.common import io_util, log
-from llama.postprocess.all_fields import ALL_ACTIONS
+from llama.postprocess.all_fields import ALL_FIELDS
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    df = io_util.read_df(args.in_file)
-    field_list = [c for c in ALL_ACTIONS if c in df.columns]
+    df = io_util.read_to_df(args.in_file)
+    field_list = [c for c in ALL_FIELDS if c in df.columns]
     if args.field:
         field_list = [args.field]
     input_rows = df.to_dict("records")
@@ -30,26 +30,29 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             cache=not args.no_cache,
         )
         dspy.configure(lm=lm)
+
         for field_name in field_list:
-            ALL_ACTIONS[field_name].setup_field()
+            ALL_FIELDS[field_name].setup_field()
 
     output_rows = {
         r["source"]: {"source": r["source"], "text": r["text"]} for r in input_rows
     }
 
     for field_name in field_list:
-        field_action = ALL_ACTIONS[field_name]
-        in_fields = field_action.get_input_fields()
-        out_fields = field_action.get_output_fields()
+        field_action = ALL_FIELDS[field_name]
+        in_subfields = field_action.get_input_subfields()
+        out_subfields = field_action.get_output_subfields()
 
         for row in tqdm(input_rows, desc=field_name):
-            in_data = {k: row.get(k) for k in in_fields}
+            in_data = {k: row.get(k) for k in in_subfields}
 
             field = field_action(**in_data)
             if args.run_field_models:
                 field.run_field_model()
 
-            out_data = {k: getattr(field, k) for k in out_fields}
+            field.cross_field_update(row)
+
+            out_data = {k: getattr(field, k) for k in out_subfields}
 
             output_rows[row["source"]] |= out_data
 

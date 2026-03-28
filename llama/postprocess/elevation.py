@@ -54,13 +54,13 @@ class Elevation(BaseField):
         cls.predictor = dspy.Predict(ElevationSig)
 
     def __post_init__(self) -> None:
-        # Setup the verbatimElevation so it is valid input for further processing
+        # Set up the verbatimElevation so it is valid input for further processing
         self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
         self.clean_subfields()
 
     def run_field_model(self) -> None:
         # Only run the model if an input field is empty
-        # Input for this class is actually an output from the LM moddel class
+        # Input for this class is actually an output from the LM model class
         if not self.verbatimElevation or (self.elevationValues and self.elevationUnits):
             return
 

@@ -3,44 +3,18 @@
 import argparse
 import textwrap
 from collections import defaultdict
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
-
-import Levenshtein
 
 from llama.common import io_util, log
-from llama.postprocess.all_fields import ALL_ACTIONS
-
-
-@dataclass
-class FieldScore:
-    field: str
-    expect: Any
-    actual: Any = None
-    edit_dist: float = 0.0
-    fuzzy_score: float = 0.0
-    cross_field: float = 0.0
-
-    @property
-    def score(self) -> float:
-        return max(self.edit_dist, self.fuzzy_score, self.cross_field)
-
-
-@dataclass
-class Row:
-    source: str
-    text: str
-    edit_dist: float | None = None
-    scores: list[FieldScore] = field(default_factory=list)
-    actual_record: dict[str, Any] = field(default_factory=dict)
+from llama.postprocess.all_fields import ALL_FIELDS
+from llama.score.all_scorers import get_scorer
 
 
 def score_extracts(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    gold_df = io_util.read_df(args.gold_in)
-    lm_df = io_util.read_df(args.lm_in)
+    gold_df = io_util.read_to_df(args.gold_in)
+    lm_df = io_util.read_to_df(args.lm_in)
 
     gold_data = gold_df.fillna("").to_dict("records")
     lm_data = lm_df.fillna("").to_dict("records")
@@ -52,10 +26,7 @@ def score_extracts(args: argparse.Namespace) -> None:
             compare[key].append(row)
     compare = [p for p in compare.values() if len(p) == 2]
 
-    field_list = [c for c in ALL_ACTIONS if c in gold_df.columns and c in lm_df.columns]
-
-    for field_name in field_list:
-        ALL_ACTIONS[field_name].setup_field()
+    field_list = [c for c in ALL_FIELDS if c in gold_df.columns and c in lm_df.columns]
 
     rows = []
     df_rows = []
@@ -63,7 +34,7 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     # Build field data and get edit distance scores
     for gold, lm in compare:
-        row = Row(source=gold["source"], text=gold["text"], actual_record=lm)
+        row = {"source": gold["source"], "text": gold["text"]}
         rows.append(row)
 
         df_row1: dict[str, str] = {
@@ -88,30 +59,20 @@ def score_extracts(args: argparse.Namespace) -> None:
         }
 
         for field_name in field_list:
-            expect = gold.get(field_name, "")
-            actual = lm.get(field_name, "")
-            expect_str = str(expect)
-            actual_str = str(actual)
+            expect = gold.get(field_name)
+            actual = lm.get(field_name)
 
-            field_action = ALL_ACTIONS[field_name]
-
-            field_score = FieldScore(
-                field=field_name,
-                expect=expect,
-                actual=actual,
-                edit_dist=Levenshtein.ratio(expect_str, actual_str),
-                fuzzy_score=field_action.fuzzy_score(expect_str, actual_str),
-                cross_field=field_action.cross_field_score(
-                    expect, actual, row.actual_record
-                ),
-            )
+            scorer = get_scorer(field_name)
+            scorer.edit_distance(expect, actual)
+            scorer.fuzzy_score(expect, actual)
+            scorer.cross_field(expect, actual, lm)
 
             df_row1[field_name] = ""
             df_row2[field_name] = expect
             df_row3[field_name] = actual
-            df_row4[field_name] = field_score.score
+            df_row4[field_name] = scorer.score
 
-            avg[field_name] += field_score.score
+            avg[field_name] += scorer.score
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 

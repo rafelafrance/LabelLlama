@@ -2,176 +2,298 @@ from dspy import InputField, OutputField, Signature
 
 
 class HerbariumSheet(Signature):
-    """Analyze text from a herbarium sheets and extract information."""
+    """
+    Analyze text from herbarium sheets and extract this information.
+
+    I need the text exactly as it appears in the text.
+    Do not change the text in any way.
+    Leave abbreviations exactly as they are.
+    Use UTF-8 characters only. No MathML.
+    If the data field is not found in the text return the default value.
+    Do not add or delete any punctuation and do not add or delete any spaces.
+    Do not hallucinate.
+    """
 
     text = InputField()
 
-    scientific_name: list[str] = OutputField(
-        default=[],
-        desc="Scientific name or species",
-        alias="dwc:scientificName",
+    scientificName: str = OutputField(
+        default="",
+        desc=(
+            "Scientific name or species given as a list of 'Genus species' names. "
+            "Do not include subspecies or varieties and do not include author names. "
+        ),
     )
-    scientific_name_authority: list[str] = OutputField(
-        default=[],
-        desc="Scientific name authority",
-        alias="dwc:scientificNameAuthority",
+    scientificNameAuthorship: str = OutputField(
+        default="",
+        desc=(
+            "Scientific name authorship. There is often more than one author per "
+            "scientific name. Authors may be abbreviated, sometimes as a single letter."
+        ),
     )
-    family: list[str] = OutputField(
-        default=[],
+    infraspecificEpithet: str = OutputField(
+        default="",
+        desc="Contains the subspecies or variety portion of the scientific name",
+    )
+    infraspecificNameAuthorship: str = OutputField(
+        default="",
+        desc="The author (authority) who coined the infraspecific name.",
+    )
+    family: str = OutputField(
+        default="",
         desc="Taxonomic family",
-        alias="dwc:family",
     )
-    associated_taxa: list[str] = OutputField(
-        default=[],
+    associatedTaxa: str = OutputField(
+        default="",
         desc="Was the specimen found near, around, or on another species",
-        alias="dwc:associatedTaxa",
     )
-    occurrence_id: list[str] = OutputField(
-        default=[],
-        desc="The numbers used to identify the specimen",
-        alias="dwc:occurrenceID",
+    recordNumber: str = OutputField(
+        default="",
+        desc=(
+            """
+            The number used to identify the specimen. The record number is often
+            found just after the collectors' name (recorded by).
+
+    re record number, I agree with AI:
+    Usually, the collector number ends up on the main specimen label,
+    most often in the lower part of the sheet because the whole label is commonly
+    mounted in the bottom right or sometimes bottom center area.
+    Older herbarium-label guidance explicitly says the collector and number belong
+    together at the bottom of the label, with the number immediately following the
+    collector’s name.
+    Modern prep guides also commonly place the label itself at the bottom right corner
+    of the sheet.
+    Bottom right, inside the main printed label — probably the most common arrangement
+    on modern sheets.
+    Bottom center or lower sheet, still within the label block — also common,
+    especially on older sheets or when barcodes/packets compete for space.
+    Immediately after the collector’s name on the label — this is the usual textual
+    placement even when the label layout varies.
+    Penciled on the bottom right before the formal label is attached — some preparation
+    workflows tell staff to write the collection number there first,
+    because that is where the finished label will go.
+    A useful distinction: the collector number is not usually a separate sticker
+    floating somewhere on the sheet. It is typically part of the label data block,
+    near the collector name and date. During field prep it may also be written on the
+    newspaper, tag, or packet to keep duplicates matched, but on the finished mounted
+    herbarium sheet it is generally incorporated into the label.
+    Key to me is this: the collector number is not usually a separate sticker floating
+    somewhere on the sheet. It is typically part of the label data block, near the
+    collector name and date.
+            """
+        ),
     )
-    event_date: list[str] = OutputField(
-        default=[],
-        desc="When was the specimen collected",
-        alias="dwc:eventDate",
-    )
-    recorded_by: list[str] = OutputField(
-        default=[],
+    recordedBy: str = OutputField(
+        default="",
         desc="The person or people who collected the specimen",
-        alias="dwc:recordedBy",
     )
-    recorded_by_id: list[str] = OutputField(
-        default=[],
-        desc="What ID did the collector(s) use to identify themself",
-        alias="dwc:recordedByID",
+    verbatimEventDate: str = OutputField(
+        default="",
+        desc="When was the specimen collected",
     )
-    identified_by: list[str] = OutputField(
-        default=[],
+    identifiedBy: str = OutputField(
+        default="",
         desc="Who identified or verified the species",
-        alias="dwc:identifiedBy",
     )
-    identified_by_id: list[str] = OutputField(
-        default=[],
-        desc="The ID did the determiner(s) used to identify themself",
-        alias="dwc:identifiedByID",
+    dateIdentified: str = OutputField(
+        default="",
+        desc="When was the specimen identified or verified?",
     )
-    elevation: list[str] = OutputField(
-        default=[],
-        desc="The specimen was collected at this elevation or altitude",
-        alias="dwc:elevation",
-    )
-    coordinates: list[str] = OutputField(
-        default=[],
-        desc="The specimen was collected at this latitude and longitude",
-        alias="dwc:coordinates",
-    )
-    country: list[str] = OutputField(
-        default=[],
+    country: str = OutputField(
+        default="",
         desc="The country where the specimen was collected",
-        alias="dwc:country",
     )
-    state_province: list[str] = OutputField(
-        default=[],
+    stateProvince: str = OutputField(
+        default="",
         desc="The state or province where the specimen was collected",
-        alias="dwc:stateProvince",
     )
-    county: list[str] = OutputField(
-        default=[],
+    county: str = OutputField(
+        default="",
         desc="The county where the specimen was collected",
-        alias="dwc:county",
     )
-    municipality: list[str] = OutputField(
-        default=[],
+    municipality: str = OutputField(
+        default="",
         desc="Collected from this municipality",
-        alias="dwc:municipality",
     )
-    occurrence_remarks: list[str] = OutputField(
-        default=[],
-        desc="This contains all other observations",
-        alias="dwc:occurrenceRemarks",
+    verbatimElevation: str = OutputField(
+        default="",
+        desc="The specimen was collected at this elevation or altitude",
     )
-    trs: list[str] = OutputField(
+    elevationValues: list[float] = OutputField(
         default=[],
         desc=(
-            "Township Range Section (TRS), "
-            'Examples "T8N R17W", "T4S R3E Sec 27", "T3N R7W SW/4 section 20", '
-            '"S.14, T12S, R4W"'
+            "The elevation values. More than one value could be an elevation range "
+            "or it could be the same elevation reported in different units."
         ),
-        alias="TRS",
     )
-    utm: list[str] = OutputField(
+    elevationUnits: list[str] = OutputField(
         default=[],
         desc=(
-            "Universal Transverse Mercator (UTM)"
+            "The elevation units. There may be more than one units reported when the "
+            "same value is reported in different units."
+        ),
+    )
+    elevationEstimated: bool = OutputField(
+        default=False,
+        desc="Is this an estimated elevation?",
+    )
+    verbatimLatitude: str = OutputField(
+        default="",
+        desc="The specimen was collected at this latitude.",
+    )
+    verbatimLongitude: str = OutputField(
+        default="",
+        desc="The specimen was collected at this longitude.",
+    )
+    geodeticDatum: str = OutputField(
+        default="",
+        desc=(
+            "What geodetic datum is the latitude, longitude, TRS, or UTM using "
+            'Examples "NAD27", "NAD83", "WGS84"'
+        ),
+    )
+    trs: str = OutputField(
+        default="",
+        desc=(
+            "Township Range Section (TRS). There may be a quad (quadrangle) associated "
+            "with the TRS. The quad may come before or after the other fields. "
+            'Examples "Bodie Quadrangle; T4N R25E S36", "T41N R15E NW 1/4 S10"'
+            '"T7S, R1W SE 1/4 sec. 33", "SW 1/4 sec. 34.", '
+            '"T23N R14E se1/4 ne1/4 sec 12 Reconnaissance quad", '
+            '"S27, T 48 N , R 7 W Mt. Diablo Mer.", '
+            '"T.43.R.11W., south-east corner section 7"'
+        ),
+    )
+    trsTownship: str = OutputField(
+        default="",
+        desc=(
+            'The township portion of the TRS. It will look like: "T28N" or "T 32 N". '
+            'The letter "T" followed by a few digits and then an "N" or "S" compass '
+            "direction."
+        ),
+    )
+    trsRange: str = OutputField(
+        default="",
+        desc=(
+            'The range portion of the TRS. It will look like: "R23E" or "R 1 W". '
+            'The letter "R" followed by a few digits and then an "E" or "W" compass '
+            "direction."
+        ),
+    )
+    trsSection: str = OutputField(
+        default="",
+        desc=(
+            'The section portion of the TRS. Examples look like "1/4 S10", '
+            '"se1/4 ne1/4  sec 12", "SE ¼ Section 17", "NW¼ of sec. 8", "section 18" '
+            '"S8 (SE¼)", "south-east corner section 7"'
+        ),
+    )
+    trsQuad: str = OutputField(
+        default="",
+        desc=(
+            "The quad (quadrangle) portion of the TRS. It may be at the beginning or "
+            'end of the TRS. Examples look like: "USGS Wahtoke 7 1/2 quad", '
+            '"Yountville Quad", "Chicken Hawk Hill quadrangle", "Mt. Ingalls quad."'
+        ),
+    )
+    utm: str = OutputField(
+        default="",
+        desc=(
+            "Universal Transverse Mercator (UTM) "
             'Examples  "33T 500000 4649776", "Z12 N7874900 E768500", '
-            '"11S 316745.14 3542301.90"'
+            '"11S 316745.14 3542301.90", "10 3756206N, 0769161E", '
+            '"11S - 0484145E, 3741382N", "10S, 709280 E, 3913480 N"'
+            '"Zone 11S; 3845372N 0729522E"'
         ),
-        alias="UTM",
+    )
+    utmNorthing: str = OutputField(
+        default="",
+        desc=(
+            "The northing portion of the UTM. "
+            'It is a number (possibly negative, or a decimal) followed by an "N". '
+            'It will look like: "3845372N", '
+            '"4057.6 N", "3968400 N", "N 4253279", "4N"'
+        ),
+    )
+    utmEasting: str = OutputField(
+        default="",
+        desc=(
+            "The easting portion of the UTM. "
+            'It is a number (possibly negative, or a decimal) followed by an "E". '
+            'Examples look like "E 642700", '
+            '"509257E", "- 0484145E", "546936", "368.2 E", "6E"'
+        ),
+    )
+    utmZone: str = OutputField(
+        default="",
+        desc=(
+            'The zone portion of the UTM. It will look like: "10S", "11", "8N", '
+            '"Zone 11S;", "NH", "16P", "LJ".'
+        ),
     )
     locality: list[str] = OutputField(
         default=[],
-        desc="A description of where the specimen was collected",
-        alias="dwc:locality",
+        desc=(
+            "Get the locality from input text string. "
+            "There may be multiple phrases that describe the locality. "
+            "Exclude the TRS, UTM, elevation, and county."
+        ),
     )
-    habitat: list[str] = OutputField(
-        default=[],
-        desc="Collected from this habitat, or environment",
-        alias="dwc:habitat",
+    habitat: str = OutputField(
+        default="",
+        desc="Collected from this habitat or environment.",
     )
-    flowers_present: list[str] = OutputField(
-        default=[],
+    flowersPresent: bool = OutputField(
+        default=False,
         desc="Are there flowers on the plant?",
-        alias="dwc:dynamicProperties:flowers_present",
     )
-    fruit_present: list[str] = OutputField(
-        default=[],
+    fruitPresent: bool = OutputField(
+        default=False,
         desc="Is there fruit on the plant?",
-        alias="dwc:dynamicProperties:fruit_present",
     )
-    flower_color: list[str] = OutputField(
-        default=[],
+    flowerColor: str = OutputField(
+        default="",
         desc="What are the colors of the flowers?",
-        alias="dwc:dynamicProperties:flower_color",
     )
-    fruit_color: list[str] = OutputField(
-        default=[],
+    fruitColor: str = OutputField(
+        default="",
         desc="What are the colors of the fruits?",
-        alias="dwc:dynamicProperties:fruit_color",
     )
-    plant_height: list[str] = OutputField(
-        default=[],
+    plantHeight: str = OutputField(
+        default="",
         desc="How tall is the specimen?",
-        alias="dwc:dynamicProperties:plant_height",
     )
-    plant_size: list[str] = OutputField(
+    plantSize: list[str] = OutputField(
         default=[],
         desc="Other specimen sizes?",
-        alias="dwc:dynamicProperties:plant_size",
     )
-    habit: list[str] = OutputField(
-        default=[],
-        desc="What is the specimen habit? Examples herbaceous, woody, decumbent, erect",
-        alias="dwc:dynamicProperties:plant_habit",
+    habit: str = OutputField(
+        default="",
+        desc=(
+            "What is the specimen habit? "
+            'Examples "herbaceous", "woody", "decumbent", "erect"'
+        ),
     )
-    abundance: list[str] = OutputField(
-        default=[],
-        desc="How common is the specimen? Examples include common, scattered, rare",
-        alias="dwc:dynamicProperties:plant_abundance",
+    abundance: str = OutputField(
+        default="",
+        desc=(
+            'How common is the specimen? Examples include "common", "scattered", "rare"'
+        ),
     )
-    leaf_shape: list[str] = OutputField(
-        default=[],
+    leafShape: str = OutputField(
+        default="",
         desc=(
             "What is the shape of the specimen's leaf? "
-            "Examples acute, caudate, elliptic, lobed"
+            'Examples "acute", "caudate", "elliptic", "lobed"'
         ),
-        alias="dwc:dynamicProperties:leaf_shape",
     )
-    leaf_margin: list[str] = OutputField(
-        default=[],
+    leafMargin: str = OutputField(
+        default="",
         desc=(
             "Description of the specimen's leaf margins. "
-            "Examples entire, crenate, dentate, serrate"
+            'Examples "entire", "crenate", "dentate", "serrate"'
         ),
-        alias="dwc:dynamicProperties:leaf_margin",
+    )
+    occurrenceRemarks: list[str] = OutputField(
+        default=[],
+        desc="This contains all other observations not in the other fields",
     )

@@ -23,18 +23,11 @@ class BaseField:
     def run_field_model(self) -> None:
         pass
 
-    @classmethod
-    def cross_field_score(
-        cls, expect: Any, actual: Any, actual_record: dict[str, Any]
-    ) -> float:
-        return 0.0
-
-    @staticmethod
-    def fuzzy_score(expect: str, actual: str) -> float:
-        return 0.0
+    def cross_field_update(self, record: dict[str, Any]) -> None:
+        pass
 
     @classmethod
-    def get_input_fields(cls) -> list[str]:
+    def get_input_subfields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)
@@ -42,7 +35,7 @@ class BaseField:
         ]
 
     @classmethod
-    def get_output_fields(cls) -> list[str]:
+    def get_output_subfields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)

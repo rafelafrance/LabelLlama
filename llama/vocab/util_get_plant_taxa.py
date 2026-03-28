@@ -13,7 +13,6 @@ import textwrap
 from pathlib import Path
 
 from llama.common import log
-from llama.postprocess import terms
 
 ITIS_SPECIES_ID = 220
 
@@ -33,7 +32,7 @@ def get_taxa(args: argparse.Namespace) -> None:
 
 
 def write_csv(taxa: dict[str, str]) -> None:
-    path = Path(terms.__file__).parent / "genus_to_family.csv"
+    path = Path(__file__).parent / "terms" / "genus_to_family.csv"
 
     with path.open("w") as out:
         writer = csv.writer(out)

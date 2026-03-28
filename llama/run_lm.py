@@ -27,7 +27,7 @@ def lm_extraction(args: argparse.Namespace) -> None:
     predictor = DwcModule(args.signature)
     parallel = dspy.Parallel(num_threads=args.threads)
 
-    docs = io_util.read_dict(args.doc_in, fill_na="", limit=args.limit)
+    docs = io_util.read_to_dict(args.doc_in, fill_na="", limit=args.limit)
     exec_pairs = [(predictor, {"text": d["text"], "source": d["source"]}) for d in docs]
 
     results = parallel(exec_pairs)

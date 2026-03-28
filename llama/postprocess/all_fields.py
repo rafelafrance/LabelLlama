@@ -38,7 +38,7 @@ from llama.postprocess.trs import Trs
 from llama.postprocess.utm import Utm
 
 # This also is the base order of fields in reports
-ALL_ACTIONS: dict[str, Any] = {
+ALL_FIELDS: dict[str, Any] = {
     "scientificName": ScientificName,
     "scientificNameAuthorship": ScientificNameAuthorship,
     "infraspecificEpithet": InfraspecificEpithet,
