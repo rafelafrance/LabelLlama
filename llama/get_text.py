@@ -10,44 +10,47 @@ from pathlib import Path
 import lmstudio as lms
 from tqdm import tqdm
 
-from llama.common import log
+from llama.common import io_util, log
 
 # A reasonable starting prompt. I will parameterize and try variations on this later.
-PROMPT_V1 = " ".join(
-    """
+PROMPT_V1 = """
     You are given an image of a museum specimen with labels.
     I want you to extract all of the text from every label on the specimen.
     This includes text from both typewritten and handwritten labels.
-    Do not get confused by the specimen itself which is in the center of the image.
-    I want plain text without HTML tags, HTML entities, MATHML tags, or markdown tags.
-    Do not hallucinate.
-    """.split(),
-)
+    ❌ DO NOT get confused by the specimen itself which is in the center of the image.
+
+    I want plain text:
+      ✅ Use UTF-8 characters only.
+📌    ❌ DO NOT add or infer any new information.
+      ❌ DO NOT include HTML tags
+      ❌ DO NOT include HTML entities
+      ❌ DO NOT include MATHML tags,
+      ❌ DO NOT include markdown tags.
+      ❌ DO NOT rephrase, summarize, or infer meaning.
+      ❌ DO NOT turn phrases into lists or categories.
+      ✅ Use exact phrases from the label text only.
+
+    ❌ Do not hallucinate!
+    """
 
 
 def ocr_images(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    field_names = ["source", "text", "elapsed"]
-    mode = "w"
-    done = []
-
-    if args.doc_tsv.exists():
-        mode = "a"
-        with args.doc_tsv.open() as tsv:
-            reader = csv.DictReader(tsv, delimiter="\t")
-            done = [r["source"] for r in reader]
+    already_read = get_docs_read(args.doc_tsv)
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
 
-    with lms.Client(args.api_host) as client, args.doc_tsv.open(mode) as tsv:
-        writer = csv.DictWriter(tsv, fieldnames=field_names, delimiter="\t")
+    with lms.Client(args.api_host) as client, args.doc_tsv.open("a") as tsv:
+        writer = csv.DictWriter(
+            tsv, fieldnames=["source", "text", "elapsed"], delimiter="\t"
+        )
 
         config = lms.LlmLoadModelConfigDict(contextLength=args.context_length)
         model = client.llm.model(args.model_name, config=config)
 
         for image_path in tqdm(image_paths):
-            if image_path in done:
+            if image_path in already_read:
                 continue
 
             rec_began = datetime.now()
@@ -72,6 +75,14 @@ def ocr_images(args: argparse.Namespace) -> None:
             )
 
     log.finished()
+
+
+def get_docs_read(doc_tsv: Path) -> list[Path]:
+    done = []
+    if doc_tsv.exists():
+        records = io_util.read_list_of_dicts(doc_tsv)
+        done = [Path(r["source"]) for r in records]
+    return done
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -124,6 +135,10 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--notes",
+        help="""Notes for logging.""",
     )
     ns: argparse.Namespace = arg_parser.parse_args(args)
     return ns

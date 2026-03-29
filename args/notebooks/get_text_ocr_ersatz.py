@@ -1,7 +1,7 @@
 import marimo
 
-__generated_with = "0.20.4"
-app = marimo.App(width="medium", css_file="")
+__generated_with = "0.21.1"
+app = marimo.App(width="full", css_file="")
 
 
 @app.cell(hide_code=True)
@@ -25,12 +25,20 @@ def _():
 
 @app.cell
 def _():
+    from pathlib import Path
     from typing import Any
 
     from llama import get_text
+    from llama.common import io_util
     from llama.common.args_util import to_args
 
-    return get_text, to_args
+    return Path, get_text, to_args
+
+
+@app.cell
+def _(Path):
+    doc_tsv = Path("data/herbarium/ocr_text.tsv")
+    return (doc_tsv,)
 
 
 @app.cell(hide_code=True)
@@ -50,11 +58,10 @@ def _(mo):
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args1 = get_text.parse_args(
         to_args(
-            "ocr",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/sheets_001",
         )
     )
@@ -69,19 +76,16 @@ def _(mo):
     It appears to be related to a memory leak with lmstudio
     [bug](https://github.com/lmstudio-ai/lmstudio-bug-tracker/issues/1209).
     The server is holding onto data.
-    I've created the `--missing` parameter so I can restart a job without overwriting
     the data that aleady exists.
     """)
     return
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args2 = get_text.parse_args(
         to_args(
-            "ocr",
-            "missing",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/sheets_001",
             notes=(
                 "The job keeps crashing on me due to an lmstudio bug. "
@@ -101,20 +105,20 @@ def _(mo):
     return
 
 
-@app.cell
-def _(get_text, to_args):
+app._unparsable_cell(
+    r"""
     args3 = get_text.parse_args(
         to_args(
-            "ocr",
-            "retry",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv",
             image_dir="./data/herbarium/sheets_001",
             model="google/gemma-3-27b",
             notes="Try a difference model on sheets that errored before on jobs 1 & 2.",
         )
     )
     # get_text.ocr_images(args3)
-    return
+    """,
+    name="_"
+)
 
 
 @app.cell(hide_code=True)
@@ -128,11 +132,10 @@ def _(mo):
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args4 = get_text.parse_args(
         to_args(
-            "ocr",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/sheets_001",
             notes="""A new group of sheet images.""",
         )
@@ -152,12 +155,10 @@ def _(mo):
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args5 = get_text.parse_args(
         to_args(
-            "ocr",
-            "retry",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/CoordinateExamplesNov25",
             model="google/gemma-3-27b",
             context_length=8192,
@@ -177,11 +178,10 @@ def _(mo):
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args6 = get_text.parse_args(
         to_args(
-            "ocr",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/utm_trs_test",
             notes="""A set of herbarium sheets that contain TRS & UTM notations.""",
         )
@@ -200,12 +200,10 @@ def _(mo):
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args7 = get_text.parse_args(
         to_args(
-            "ocr",
-            "missing",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/utm_trs_test",
             notes="""A set of herbarium sheets that contain TRS & UTM notations.
                 continued""",
@@ -224,12 +222,10 @@ def _(mo):
 
 
 @app.cell
-def _(get_text, to_args):
+def _(doc_tsv, get_text, to_args):
     args8 = get_text.parse_args(
         to_args(
-            "ocr",
-            "retry",
-            db_path="./data/herbarium/cas_v1.duckdb",
+            doc_tsv=doc_tsv,
             image_dir="./data/herbarium/utm_trs_test",
             model="google/gemma-3-27b",
             context_length=8192,
@@ -243,15 +239,23 @@ def _(get_text, to_args):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    No errors remain.
+    Did I OCR all of the images?
     """)
     return
 
 
 @app.cell
-def _(get_text):
-    db_path = "./data/herbarium/cas_v1.duckdb"
-    len(get_text.get_all_errors(db_path))
+def _(Path, doc_tsv, get_text):
+    actual = set(get_text.get_docs_read(doc_tsv))
+
+    expected = set(Path("./data/herbarium/sheets_001/").glob("*.jpg"))
+    expected |= set(Path("./data/herbarium/CoordinateExamplesNov25/").glob("*.jpg"))
+    expected |= set(Path("./data/herbarium/utm_trs_test/").glob("*.jpg"))
+
+    print(f"{len(actual)=}")
+    print(f"{len(expected)=}")
+
+    len(actual) == len(expected)
     return
 
 

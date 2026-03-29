@@ -29,6 +29,11 @@ def read_to_df(path: Path) -> pd.DataFrame:
             df = pd.read_json(path)
         case ".jsonl":
             df = pd.read_json(path, lines=True)
+        case ".html":
+            dfs = pd.read_html(path)
+            if not dfs:
+                raise ValueError(f"HTML did not contain any tables")
+            df = dfs[0]
         case _:
             raise ValueError(f"Unrecognized file extension: {path.suffix}")
     return df
