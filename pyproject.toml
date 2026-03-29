@@ -59,7 +59,7 @@ module-root = "."
 module-name = "llama"
 
 [tool.ty.rules]
-non-subscriptable = "ignore"
+not-subscriptable = "ignore"
 
 [tool.ruff]
 exclude = ["llama/notebooks/**"]

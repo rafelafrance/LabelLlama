@@ -57,10 +57,11 @@ def ocr_images(args: argparse.Namespace) -> None:
             chat.add_user_message(PROMPT_V1, images=[handle])
 
             try:
-                text = model.respond(
-                    chat,
-                    {"temperature": args.temperature, "maxTokens": args.max_tokens},
+                config = lms.LlmPredictionConfigDict(
+                    temperature=args.temperature,
+                    maxTokens=args.max_tokens,
                 )
+                text = model.respond(chat, config=config)
             except lms.LMStudioServerError:
                 logging.exception("Server error:")
                 continue

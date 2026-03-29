@@ -204,9 +204,17 @@ def remove_trailing_punct(value: str) -> str:
     return re.sub(r"[.,;:]$", "", value)
 
 
-def reduce_list(value: list[Any]) -> list[Any] | Any | None:
+def reduce_list(value: list[Any]) -> Any | None:
     if not value:
         return None
     if len(value) == 1:
         return value[0]
     return value
+
+
+def reduce_str_list(value: list[str] | str) -> str:
+    if not value:
+        return ""
+    if len(value) == 1:
+        return value[0]
+    return str(value)

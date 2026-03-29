@@ -295,7 +295,7 @@ class App(tk.Tk):
             self.text.tag_add(field, tag_beg, tag_end)
 
     def save(self) -> None:
-        path = tk.filedialog.asksaveasfilename(
+        path = filedialog.asksaveasfilename(
             initialdir=self.curr_dir,
             title="Save annotations",
             filetypes=(("json", "*.json"), ("all files", "*")),

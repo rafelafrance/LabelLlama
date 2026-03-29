@@ -14,10 +14,12 @@ class BaseScorer:
     def cross_field_score(
         self, expect: Any, actual: Any, actual_record: dict[str, Any]
     ) -> float:
+        del expect, actual, actual_record
         self.cross_field = 0.0
         return self.cross_field
 
     def fuzzy_score(self, expect: Any, actual: Any) -> float:
+        del expect, actual
         self.fuzzy_dist = 0.0
         return self.fuzzy_dist
 

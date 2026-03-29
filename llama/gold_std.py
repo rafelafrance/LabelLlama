@@ -65,11 +65,11 @@ def score_extracts(args: argparse.Namespace) -> None:
             scorer = get_scorer(field_name)
             scorer.edit_distance(expect, actual)
             scorer.fuzzy_score(expect, actual)
-            scorer.cross_field(expect, actual, lm)
+            scorer.cross_field_score(expect, actual, lm)
 
             df_row1[field_name] = ""
-            df_row2[field_name] = expect
-            df_row3[field_name] = actual
+            df_row2[field_name] = str(expect)
+            df_row3[field_name] = str(actual)
             df_row4[field_name] = scorer.score
 
             avg[field_name] += scorer.score
@@ -117,7 +117,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--out-file",
         type=Path,
         help="""Write the comparison results to this file.
-           Handles (.json, .jsonl, .csv, .tsv, .html), .hml is most useful.""",
+           Handles (.json, .jsonl, .csv, .tsv, .html)""",
     )
     arg_parser.add_argument(
         "--log-file",

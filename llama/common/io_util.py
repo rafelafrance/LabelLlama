@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def read_to_dict(
+def read_list_of_dicts(
     path: Path, *, fill_na: Any = None, limit: int | None = None
 ) -> list[dict[str, Any]]:
     df = read_to_df(path)
