@@ -18,7 +18,7 @@ def read_list_of_dicts(
     return data
 
 
-def read_to_df(path: Path) -> pd.DataFrame:
+def read_to_df(path: Path, *, limit: int | None = None) -> pd.DataFrame:
     df = None
     match path.suffix:
         case ".csv":
@@ -32,10 +32,12 @@ def read_to_df(path: Path) -> pd.DataFrame:
         case ".html":
             dfs = pd.read_html(path)
             if not dfs:
-                raise ValueError(f"HTML did not contain any tables")
+                raise ValueError(f"Could not find a table in {path}")
             df = dfs[0]
         case _:
             raise ValueError(f"Unrecognized file extension: {path.suffix}")
+    if limit:
+        df = df.head(limit)
     return df
 
 
@@ -60,7 +62,7 @@ def output_file(path: Path, data: list[dict[str, Any]]) -> None:
 def html_template(df: pd.DataFrame) -> str:
     swap = ["text", "source"]
     cols = swap + [c for c in df.columns if c not in swap]
-    df = df[cols]
+    df = df.reindex(cols, axis=1)
     html = df.to_html(
         index=False,
         border=1,

@@ -14,5 +14,5 @@ ALL_SCORERS: dict[str, type[Scorer]] = {
 }
 
 
-def get_scorer(field_name: str) ->  type[Scorer]:
-    return ALL_SCORERS.get(field_name, BaseScorer)
+def get_scorer(field_name: str) -> Scorer:
+    return ALL_SCORERS.get(field_name, BaseScorer)()

@@ -23,7 +23,6 @@ class BaseScorer:
         self.fuzzy_dist = 0.0
         return self.fuzzy_dist
 
-
     def edit_distance(self, expect: Any, actual: Any) -> float:
         expect = str(expect)
         actual = str(actual)

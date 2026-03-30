@@ -15,7 +15,9 @@ class Country(BaseField):
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         self.country = USA.get(self.country, self.country)
-        us_county = record.get("county", "").lower() in US_COUNTY
-        us_state = record.get("stateProvince", "").lower() in US_STATE
+        us_county = fix_values.to_str(record.get("county", ""))
+        us_county = us_county.lower() in US_COUNTY
+        us_state = fix_values.to_str(record.get("stateProvince", ""))
+        us_state = us_state.lower() in US_STATE
         if not self.country and (us_county or us_state):
             self.country = "USA"

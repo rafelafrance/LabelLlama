@@ -5,7 +5,9 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
+from llama.common.str_util import compress
 from llama.postprocess.base_field import BOTH, IN, BaseField
+from llama.vocab import units
 
 
 class ElevationSig(Signature):
@@ -20,17 +22,19 @@ class ElevationSig(Signature):
 
     elevationValues: list[float] = OutputField(
         default=[],
-        desc=(
-            "The elevation values. More than one value could be an elevation range "
-            "or it could be the same elevation reported in different units."
-        ),
+        desc=compress("""
+            The elevation values.
+            More than one value could be an elevation range or it could be the same
+            elevation reported in different units.
+            """),
     )
     elevationUnits: list[str] = OutputField(
         default=[],
-        desc=(
-            "The elevation units. There may be more than one units reported when the "
-            "same value is reported in different units."
-        ),
+        desc=compress("""
+            The elevation units.
+            There may be more than one units reported when the same value is reported
+            in different units.
+            """),
     )
     elevationEstimated: bool = OutputField(
         default=False,
@@ -84,7 +88,7 @@ class Elevation(BaseField):
         self.elevationEstimated = fix_values.to_bool(self.elevationEstimated)
 
         # Format boolean as None or True
-        self.elevationEstimated = self.elevationEstimated or None
+        self.elevationEstimated = self.elevationEstimated or False
 
         # Remove the label from verbatimElevation
         words = self.verbatimElevation.split()
@@ -113,4 +117,4 @@ class Elevation(BaseField):
         # Now set the output fields based on the pairs or values and units
         self.elevation = pairs[0][0]
         self.maxElevation = pairs[1][0] if len(pairs) > 1 else None
-        self.elevationUnits = pairs[0][1]
+        self.elevationUnits = units.elevation(pairs[0][1])

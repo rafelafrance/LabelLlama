@@ -1,5 +1,8 @@
 #!/bin/bash
 
 uv run llama/postprocess_fields.py \
-  --in-file data/herbarium/lm_gpt_nano_2026-03-23.tsv \
-  --out-file data/herbarium/lm_gpt_nano_2026-03-23_post.tsv
+  --in-file data/herbarium/gold_std_2026-03-30.tsv \
+  --log-file data/herbarium/history.log \
+  --run-field-models \
+  --no-cache \
+  --out-file data/herbarium/gold_std_2026-03-30_post.tsv

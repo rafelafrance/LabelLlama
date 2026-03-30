@@ -15,6 +15,7 @@ class Family(BaseField):
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         if not self.family:
-            genus = record.get("scientificName", "").split()
-            genus = genus[0] if len(genus) > 0 else ""
+            sci_name = fix_values.to_str(record.get("scientificName", ""))
+            words = sci_name.split()
+            genus = words[0] if len(words) > 0 else ""
             self.family = GENUS_TO_FAMILY.get(genus, "")

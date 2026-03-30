@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import textwrap
 from pathlib import Path
 
@@ -14,10 +15,12 @@ from llama.postprocess.all_fields import ALL_FIELDS
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    df = io_util.read_to_df(args.in_file)
+    df = io_util.read_to_df(args.in_file, limit=args.limit)
     field_list = [c for c in ALL_FIELDS if c in df.columns]
+
     if args.field:
-        field_list = [args.field]
+        field_list = args.field
+
     input_rows = df.to_dict("records")
 
     if args.run_field_models:
@@ -32,7 +35,15 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         dspy.configure(lm=lm)
 
         for field_name in field_list:
-            ALL_FIELDS[field_name].setup_field()
+            field_action = ALL_FIELDS[field_name]
+            field_action.setup_field()
+
+            # Record prompts for later use
+            if args.log_file and hasattr(field_action, "predictor"):
+                prompt = dspy.ChatAdapter().format_system_message(
+                    field_action.predictor.signature
+                )
+                logging.info(prompt)
 
     output_rows = {
         r["source"]: {"source": r["source"], "text": r["text"]} for r in input_rows
@@ -53,6 +64,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             field.cross_field_update(row)
 
             out_data = {k: getattr(field, k) for k in out_subfields}
+
+            # Print debug info
+            if args.field or args.limit:
+                for field_name, value in out_data.items():
+                    print(f"{field_name:>28}: {value}")
+                print()
 
             output_rows[row["source"]] |= out_data
 
@@ -118,14 +135,20 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Don't use cached records?""",
     )
     arg_parser.add_argument(
-        "--field",
-        help="""Just parse one field. Used for debugging.""",
-    )
-    arg_parser.add_argument(
         "--log-file",
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--field",
+        action="append",
+        help="""Just parse one field. Used for debugging.""",
+    )
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit to this many records. Used for debugging.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

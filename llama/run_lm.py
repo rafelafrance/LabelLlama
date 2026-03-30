@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import textwrap
 from pathlib import Path
 
@@ -25,6 +26,12 @@ def lm_extraction(args: argparse.Namespace) -> None:
     dspy.configure(lm=lm)
 
     predictor = DwcModule(args.signature)
+
+    # Record the prompt for later use
+    if args.log_file:
+        prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
+        logging.info(prompt)
+
     parallel = dspy.Parallel(num_threads=args.threads)
 
     docs = io_util.read_list_of_dicts(args.doc_in, fill_na="", limit=args.limit)

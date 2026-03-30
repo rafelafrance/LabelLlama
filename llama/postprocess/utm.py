@@ -5,6 +5,7 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
+from llama.common.str_util import compress
 from llama.postprocess.base_field import BOTH, BaseField
 
 
@@ -21,28 +22,29 @@ class UtmSig(Signature):
 
     utmNorthing: str = OutputField(
         default="",
-        desc=(
-            "The northing portion of the UTM. "
-            'It is a number (possibly negative, or a decimal) followed by an "N". '
-            'It will look like: "3845372N", '
-            '"4057.6 N", "3968400 N", "N 4253279", "4N"'
-        ),
+        desc=compress("""
+            The northing portion of the UTM.
+            It is a number (possibly negative, or a decimal) followed by an "N".
+            It will look like: "3845372N", "4057.6 N", "3968400 N", "N 4253279", "4N".
+            Northing is never negative so dashes are separators and not minus signs.
+            """),
     )
     utmEasting: str = OutputField(
         default="",
-        desc=(
-            "The easting portion of the UTM. "
-            'It is a number (possibly negative, or a decimal) followed by an "E". '
-            'Examples look like "E 642700", "E66", '
-            '"509257E", "- 0484145E", "546936", "368.2 E", "6E"'
-        ),
+        desc=compress("""
+            The easting portion of the UTM.
+            It is a number (possibly negative, or a decimal) followed by an "E".
+            Examples look like "E 642700", "509257E", "0484145E", "546936",
+            "368.2 E", "6E".
+            Easting is never negative so dashes are separators and not minus signs.
+            """),
     )
     utmZone: str = OutputField(
         default="",
-        desc=(
-            'The zone portion of the UTM. It will look like: "10S", "11", "8N", '
-            '"Zone 11S;", "NH", "16P", "LJ".'
-        ),
+        desc=compress("""
+            The zone portion of the UTM.
+            It will look like: "10S", "11", "8N", "Zone 11S;", "NH", "16P", "LJ".
+            """),
     )
 
 

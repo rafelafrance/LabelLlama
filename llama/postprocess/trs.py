@@ -6,6 +6,7 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
+from llama.common.str_util import compress
 from llama.postprocess.base_field import BOTH, BaseField
 
 
@@ -21,35 +22,37 @@ class TrsSig(Signature):
 
     trsTownship: str = OutputField(
         default="",
-        desc=(
-            'The township portion of the TRS. It will look like: "T28N" or "T 32 N". '
-            'The letter "T" followed by a few digits and then an "N" or "S" compass '
-            "direction."
-        ),
+        desc=compress("""
+            The township portion of the TRS. It will look like: "T28N", "T 32 N", or
+            "T.43".
+            The letter "T" followed by possible punctuation and then a few digits and
+            then an "N" or "S" compass direction.
+            """),
     )
     trsRange: str = OutputField(
         default="",
-        desc=(
-            'The range portion of the TRS. It will look like: "R23E" or "R 1 W". '
-            'The letter "R" followed by a few digits and then an "E" or "W" compass '
-            "direction."
-        ),
+        desc=compress("""
+            The range portion of the TRS. It will look like: "R23E", "R 1 W", "R.11W".
+            The letter "R" followed by possible punctuation then a few digits and
+            then an "E" or "W" compass direction.
+            """),
     )
     trsSection: str = OutputField(
         default="",
-        desc=(
-            'The section portion of the TRS. Examples look like "1/4 S10", '
-            '"se1/4 ne1/4  sec 12", "SE ¼ Section 17", "NW¼ of sec. 8", "section 18" '
-            '"S8 (SE¼)", "south-east corner section 7"'
-        ),
+        desc=compress("""
+            The section portion of the TRS. Examples look like "1/4 S10",
+            '"se1/4 ne1/4  sec 12", "SE ¼ Section 17", "NW¼ of sec. 8", "section 18",
+            "S8 (SE¼)", "south-east corner section 7", "w½ne¼ sec 27", "S 12°".
+            """),
     )
     trsQuad: str = OutputField(
         default="",
-        desc=(
-            "The quad (quadrangle) portion of the TRS. It may be at the beginning or "
-            'end of the TRS. Examples look like: "USGS Wahtoke 7 1/2 quad", '
-            '"Yountville Quad", "Chicken Hawk Hill quadrangle", "Mt. Ingalls quad."'
-        ),
+        desc=compress("""
+            The quad (quadrangle) portion of the TRS. It may be at the beginning or
+            end of the TRS.
+            Examples look like: "USGS Wahtoke 7 1/2 quad", "Yountville Quad",
+            "Chicken Hawk Hill quadrangle", "Mt. Ingalls quad."
+            """),
     )
 
 

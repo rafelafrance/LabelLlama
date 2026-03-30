@@ -24,7 +24,7 @@ class BaseField:
         pass
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
-        pass
+        del record
 
     @classmethod
     def get_input_subfields(cls) -> list[str]:

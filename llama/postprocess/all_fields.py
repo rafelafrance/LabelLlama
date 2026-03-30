@@ -2,6 +2,8 @@ from typing import Any
 
 from llama.postprocess.abundance import Abundance
 from llama.postprocess.associated_taxa import AssociatedTaxa
+from llama.postprocess.collector import Collector
+from llama.postprocess.collector_number import CollectorNumber
 from llama.postprocess.country import Country
 from llama.postprocess.county import County
 from llama.postprocess.date_identified import DateIdentified
@@ -29,8 +31,6 @@ from llama.postprocess.municipality import Municipality
 from llama.postprocess.occurrence_remarks import OccurrenceRemarks
 from llama.postprocess.plant_height import PlantHeight
 from llama.postprocess.plant_size import PlantSize
-from llama.postprocess.record_number import RecordNumber
-from llama.postprocess.recorded_by import RecordedBy
 from llama.postprocess.scientific_name import ScientificName
 from llama.postprocess.scientific_name_authorship import ScientificNameAuthorship
 from llama.postprocess.state_province import StateProvince
@@ -45,9 +45,11 @@ ALL_FIELDS: dict[str, Any] = {
     "infraspecificNameAuthorship": InfraspecificNameAuthorship,
     "family": Family,
     "associatedTaxa": AssociatedTaxa,
-    "recordNumber": RecordNumber,
     "verbatimEventDate": EventDate,
-    "recordedBy": RecordedBy,
+    "collector": Collector,
+    "recordedBy": Collector,
+    "collectorNumber": CollectorNumber,
+    "recordNumber": CollectorNumber,
     "identifiedBy": IdentifiedBy,
     "dateIdentified": DateIdentified,
     "habitat": Habitat,
