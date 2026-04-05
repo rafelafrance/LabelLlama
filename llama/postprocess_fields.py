@@ -105,7 +105,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--api-host",
         default="http://localhost:1234/v1",
-        help="""URL for the LM model.""",
+        help="""URL for the language model. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--api-key",

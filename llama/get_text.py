@@ -21,7 +21,7 @@ PROMPT_V1 = """
 
     I want plain text:
       ✅ Use UTF-8 characters only.
-📌    ❌ DO NOT add or infer any new information.
+      ❌ DO NOT add or infer any new information.
       ❌ DO NOT include HTML tags
       ❌ DO NOT include HTML entities
       ❌ DO NOT include MATHML tags,
@@ -105,7 +105,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     arg_parser.add_argument(
         "--model",
-        default="noctrex/Chandra-OCR-GGUF/Chandra-OCR-Q4_K_S.gguf",
+        default="chandra-ocr-2",
         help="""Use this language model. (default: %(default)s)""",
     )
     arg_parser.add_argument(

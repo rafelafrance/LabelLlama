@@ -115,6 +115,8 @@ def to_list_of_floats(value: Any) -> list[float]:
         case str():
             value = re.sub(r",", "", value)
             return [float(v) for v in FLOAT.findall(value)]
+        case float() if math.isnan(value) or math.isinf(value):
+            return []
         case int() | float() | bool():
             return [float(value)]
         case list() if len(value) > 0 and isinstance(value[0], str):
@@ -139,7 +141,6 @@ def str_to_int(value: str) -> int | None:
 
 def str_to_list(value: Any) -> list[Any] | Any:
     if isinstance(value, str):
-        value = clean_str(value)
         value = stringified_list(value)
     return value
 

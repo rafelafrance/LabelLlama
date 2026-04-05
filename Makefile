@@ -1,4 +1,4 @@
-.PHONY: test clean install
+.PHONY: test clean spacy
 .ONESHELL:
 
 test:

@@ -97,6 +97,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Model's context length. (default: %(default)s)""",
     )
     arg_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        default=32768,
+        help="""Model's max tokens for output. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
         "--temperature",
         type=float,
         help="""Model's temperature. (default: %(default)s)""",

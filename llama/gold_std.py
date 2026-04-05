@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import textwrap
 from collections import defaultdict
 from pathlib import Path
@@ -85,7 +86,7 @@ def score_extracts(args: argparse.Namespace) -> None:
     for field_name, score in avg.items():
         norm = score / len(gold_data)
         avg_row[field_name] = f"{norm:0.2f}"
-        print(f"{field_name:>28}: {norm:0.2f}")
+        logging.info(f"{field_name:>28}: {norm:0.2f}")
 
     df_rows.append(avg_row)
 
