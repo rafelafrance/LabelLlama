@@ -99,7 +99,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     arg_parser.add_argument(
         "--model-name",
-        default="lm_studio/google/gemma-3-27b",
+        default="lm_studio/google/gemma-4-26b-a4b",
         help="""Use this language model. (default: %(default)s)""",
     )
     arg_parser.add_argument(

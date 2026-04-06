@@ -13,7 +13,8 @@ HIPCXX="$(hipconfig -l)/clang" HIP_PATH="$(hipconfig -R)" \
 # I needed to install the nightly for ROCm v7.0 and set the following environment variable
 export TORCH_ROCM_AOTRITON_ENABLE_EXPERIMENTAL=1
 # uv pip install --upgrade --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm7.1
-uv pip install --upgrade --pre torch torchvision --index-url https://rocm.nightlies.amd.com/v2/gfx1151/
+# uv pip install --upgrade --pre torch torchvision --index-url https://rocm.nightlies.amd.com/v2/gfx1151/
+uv pip install --upgrade torch torchvision --index-url https://download.pytorch.org/whl/rocm7.2
 
 # llama-cpp-python
 CMAKE_ARGS="-DGGML_HIPBLAS=on" uv pip install llama-cpp-python

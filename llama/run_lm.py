@@ -10,6 +10,7 @@ import dspy
 from llama.common import io_util, log
 from llama.lm.all_signatures import ALL_SIGNATURES
 from llama.lm.dwc_module import DwcModule
+from llama.lm.preprocess import clean_text
 
 
 def lm_extraction(args: argparse.Namespace) -> None:
@@ -35,7 +36,11 @@ def lm_extraction(args: argparse.Namespace) -> None:
     parallel = dspy.Parallel(num_threads=args.threads)
 
     docs = io_util.read_list_of_dicts(args.doc_in, fill_na="", limit=args.limit)
-    exec_pairs = [(predictor, {"text": d["text"], "source": d["source"]}) for d in docs]
+
+    exec_pairs = [
+        (predictor, {"text": clean_text(d["text"]), "source": d["source"]})
+        for d in docs
+    ]
 
     results = parallel(exec_pairs)
 
@@ -78,7 +83,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     arg_parser.add_argument(
         "--model-name",
-        default="lm_studio/google/gemma-3-27b",
+        default="lm_studio/google/gemma-4-26b-a4b",
         help="""Use this language model. (default: %(default)s)""",
     )
     arg_parser.add_argument(
@@ -93,19 +98,17 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--context-length",
         type=int,
-        default=65536,
-        help="""Model's context length. (default: %(default)s)""",
+        help="""Model's context length.""",
     )
     arg_parser.add_argument(
         "--max-tokens",
         type=int,
-        default=32768,
-        help="""Model's max tokens for output. (default: %(default)s)""",
+        help="""Model's max tokens for output.""",
     )
     arg_parser.add_argument(
         "--temperature",
         type=float,
-        help="""Model's temperature. (default: %(default)s)""",
+        help="""Model's temperature.""",
     )
     arg_parser.add_argument(
         "--no-cache",

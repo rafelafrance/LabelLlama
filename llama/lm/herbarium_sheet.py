@@ -75,7 +75,6 @@ class HerbariumSheet(Signature):
             The collector number is almost always found just after or before the
             collector's name or event date.
             It is closely associated with the collector's name.
-            It is NOT the number after a "No.", "Number", or "Nº" label.
             """),
     )
     identifiedBy: str = OutputField(

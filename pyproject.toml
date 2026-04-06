@@ -11,32 +11,33 @@ license = { file = "LICENSE" }
 authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.14"
 dependencies = [
-    "charset-normalizer>=3.4.6",
-    "dspy>=3.0.4",
-    "levenshtein>=0.27.3",
-    "litellm>=1.79.3",
-    "llama-cpp-python>=0.3.16",
-    "lmstudio>=1.5.0",
-    "lxml>=6.0.2",
-    "marimo[lsp]>=0.18.1",
-    "pandas>=2.3.3",
-    "pillow>=12.0.0",
-    "pip>=26.0.1",
-    "polars>=1.35.2",
-    "pyarrow>=22.0.0",
-    "pydantic>=2.12.4",
-    "pytz>=2026.1.post1",
-    "rapidfuzz>=3.14.3",
-    "tqdm>=4.67.1",
+  "beautifulsoup4>=4.14.3",
+  "charset-normalizer>=3.4.6",
+  "dspy>=3.0.4",
+  "levenshtein>=0.27.3",
+  "litellm>=1.79.3",
+  "llama-cpp-python>=0.3.16",
+  "lmstudio>=1.5.0",
+  "lxml>=6.0.2",
+  "marimo[lsp]>=0.18.1",
+  "pandas>=2.3.3",
+  "pillow>=12.0.0",
+  "pip>=26.0.1",
+  "polars>=1.35.2",
+  "pyarrow>=22.0.0",
+  "pydantic>=2.12.4",
+  "pytz>=2026.1.post1",
+  "rapidfuzz>=3.14.3",
+  "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
 dev = [
-    "pre-commit>=4.3.0",
-    "ruff>=0.15.8",
-    "sqlglot>=30.1.0",
-    "ty>=0.0.1a27",
-    "uv-build>=0.9.5",
+  "pre-commit>=4.3.0",
+  "ruff>=0.15.8",
+  "sqlglot>=30.1.0",
+  "ty>=0.0.1a27",
+  "uv-build>=0.9.5",
 ]
 
 [tool.marimo.display]
@@ -50,7 +51,7 @@ module-name = "llama"
 not-subscriptable = "ignore"
 
 [tool.ruff]
-exclude = ["llama/notebooks/**"]
+exclude = ["llama/notebooks/**", "arg/notebooks/**"]
 
 show-fixes = true
 
@@ -62,43 +63,43 @@ docstring-code-format = true
 select = ["ALL"]
 
 ignore = [
-    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
-    "COM812",  # Trailing comma missing
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
-    "D102",    # Missing docstring in public method
-    "D103",    # Missing docstring in public function
-    "D104",    # Missing docstring in public package
-    "D105",    # Missing docstring in public method
-    "D107",    # Missing docstring in public __init__
-    "D203",    # 1 blank line required before class docstring
-    "D205",    # 1 blank line required between summary line and description
-    "D212",    # Multi-line docstring summary should start at the first line
-    "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
-    "DTZ011",  # datetime.date.today() used
-    "ERA001",  # Remove commented-out code
-    "EM102",   # Exception must not use an f-string literal, assign to variable first
-    "FIX002",  # Line contains TODO
-    "G004",    # Logging statement uses f-string
-    "LOG015",  # Use own logger instead
-    "N815",    # Variable in class scope should not be mixedCase
-    "N818",    # Exception name {name} should be named with an Error suffix
-    "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
-    "PLR0915", # Too many statements (x > 50)
-    "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
-    "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
-    "PT009",   # Use a regular assert instead of unittest-style {assertion}
-    "RET504",  # Unnecessary assignment to {name} before return statement
-    "RUF001",  # Ambiguous quote character in string
-    "RUF002",  # Docstring contains ambiguous `‘`
-    "S602",    # subprocess` call with `shell=True` identified, security issue
-    "S607",    # Starting a process with a partial executable path
-    "S608",    # Possible SQL injection vector through string-based query construction
-    "SIM114",  # Combine if branches using logical or operator
-    "SIM905",  # Consider using a list literal instead of `str.split`
-    "SLF001",  # Private member accessed: {access}
-    "T201",    # print found
-    "TD002",   # Missing author in TODO
-    "TD003",   # Missing issue link on the line following this TODO
-    "TRY003",  # Avoid specifying long messages outside the exception class
+  "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+  "COM812",  # Trailing comma missing
+  "D100",    # Missing docstring in public module
+  "D101",    # Missing docstring in public class
+  "D102",    # Missing docstring in public method
+  "D103",    # Missing docstring in public function
+  "D104",    # Missing docstring in public package
+  "D105",    # Missing docstring in public method
+  "D107",    # Missing docstring in public __init__
+  "D203",    # 1 blank line required before class docstring
+  "D205",    # 1 blank line required between summary line and description
+  "D212",    # Multi-line docstring summary should start at the first line
+  "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
+  "DTZ011",  # datetime.date.today() used
+  "ERA001",  # Remove commented-out code
+  "EM102",   # Exception must not use an f-string literal, assign to variable first
+  "FIX002",  # Line contains TODO
+  "G004",    # Logging statement uses f-string
+  "LOG015",  # Use own logger instead
+  "N815",    # Variable in class scope should not be mixedCase
+  "N818",    # Exception name {name} should be named with an Error suffix
+  "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+  "PLR0915", # Too many statements (x > 50)
+  "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
+  "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
+  "PT009",   # Use a regular assert instead of unittest-style {assertion}
+  "RET504",  # Unnecessary assignment to {name} before return statement
+  "RUF001",  # Ambiguous quote character in string
+  "RUF002",  # Docstring contains ambiguous `‘`
+  "S602",    # subprocess` call with `shell=True` identified, security issue
+  "S607",    # Starting a process with a partial executable path
+  "S608",    # Possible SQL injection vector through string-based query construction
+  "SIM114",  # Combine if branches using logical or operator
+  "SIM905",  # Consider using a list literal instead of `str.split`
+  "SLF001",  # Private member accessed: {access}
+  "T201",    # print found
+  "TD002",   # Missing author in TODO
+  "TD003",   # Missing issue link on the line following this TODO
+  "TRY003",  # Avoid specifying long messages outside the exception class
 ]

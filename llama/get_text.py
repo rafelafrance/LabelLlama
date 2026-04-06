@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
 import csv
 import logging
 import textwrap
@@ -8,46 +9,35 @@ from datetime import datetime
 from pathlib import Path
 
 import lmstudio as lms
+import pandas as pd
 from tqdm import tqdm
 
-from llama.common import io_util, log
-
-# A reasonable starting prompt. I will parameterize and try variations on this later.
-PROMPT_V1 = """
-    You are given an image of a museum specimen with labels.
-    I want you to extract all of the text from every label on the specimen.
-    This includes text from both typewritten and handwritten labels.
-    ❌ DO NOT get confused by the specimen itself which is in the center of the image.
-
-    I want plain text:
-      ✅ Use UTF-8 characters only.
-      ❌ DO NOT add or infer any new information.
-      ❌ DO NOT include HTML tags
-      ❌ DO NOT include HTML entities
-      ❌ DO NOT include MATHML tags,
-      ❌ DO NOT include markdown tags.
-      ❌ DO NOT rephrase, summarize, or infer meaning.
-      ❌ DO NOT turn phrases into lists or categories.
-      ✅ Use exact phrases from the label text only.
-
-    ❌ Do not hallucinate!
-    """
+from llama.common import io_util, log, str_util
+from llama.ocr.all_ocr_prompts import ALL_OCR
 
 
 def ocr_images(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    already_read = get_docs_read(args.doc_tsv)
+    already_read = get_docs_read(args.doc_csv)
+
+    prompt = ALL_OCR[args.prompt]
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
 
-    with lms.Client(args.api_host) as client, args.doc_tsv.open("a") as tsv:
-        writer = csv.DictWriter(
-            tsv, fieldnames=["source", "text", "elapsed"], delimiter="\t"
-        )
+    with lms.Client() as client, args.doc_csv.open("a") as tsv:
+        writer = csv.writer(tsv)
 
-        config = lms.LlmLoadModelConfigDict(contextLength=args.context_length)
-        model = client.llm.model(args.model_name, config=config)
+        if not already_read:
+            writer.writerow(["source", "elapsed", "text"])
+
+        model_config = lms.LlmLoadModelConfigDict(contextLength=args.context_length)
+        model = client.llm.model(args.model_name, config=model_config)
+
+        response_config = lms.LlmPredictionConfigDict(
+            temperature=args.temperature,
+            maxTokens=args.max_tokens,
+        )
 
         for image_path in tqdm(image_paths):
             if image_path in already_read:
@@ -57,31 +47,29 @@ def ocr_images(args: argparse.Namespace) -> None:
 
             handle = client.files.prepare_image(image_path)
             chat = lms.Chat()
-            chat.add_user_message(PROMPT_V1, images=[handle])
+            chat.add_user_message(prompt, images=[handle])
 
             try:
-                config = lms.LlmPredictionConfigDict(
-                    temperature=args.temperature,
-                    maxTokens=args.max_tokens,
-                )
-                text = model.respond(chat, config=config)
+                response = model.respond(chat, config=response_config)
             except lms.LMStudioServerError:
                 logging.exception("Server error:")
                 continue
 
+            text = str_util.clean_response(str(response))
+
             elapsed = str(datetime.now() - rec_began)
-            writer.writerow(
-                {"source": str(image_path), "text": text, "elapsed": elapsed},
-            )
+            writer.writerow([str(image_path), elapsed, text])
+            tsv.flush()
 
     log.finished()
 
 
-def get_docs_read(doc_tsv: Path) -> list[Path]:
+def get_docs_read(doc_csv: Path) -> list[Path]:
     done = []
-    if doc_tsv.exists():
-        records = io_util.read_list_of_dicts(doc_tsv)
-        done = [Path(r["source"]) for r in records]
+    if doc_csv.exists():
+        with contextlib.suppress(pd.errors.EmptyDataError):
+            records = io_util.read_list_of_dicts(doc_csv)
+            done = [Path(r["source"]) for r in records if r.get("source")]
     return done
 
 
@@ -97,20 +85,26 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Directory containing all of the images to OCR.""",
     )
     arg_parser.add_argument(
-        "--doc-tsv",
+        "--doc-csv",
         type=Path,
         required=True,
-        help="""Put OCRed text into this TSV file.
-            This appends data to the file.""",
+        help="""Put OCRed text into this CSV file. This appends data to the file.""",
     )
     arg_parser.add_argument(
-        "--model",
-        default="chandra-ocr-2",
+        "--model-name",
+        default="prithivMLmods/chandra-ocr-2",
         help="""Use this language model. (default: %(default)s)""",
+    )
+    prompts = list(ALL_OCR.keys())
+    arg_parser.add_argument(
+        "--prompt",
+        choices=prompts,
+        default=prompts[0],
+        help="""What type of data are you extracting?""",
     )
     arg_parser.add_argument(
         "--api-host",
-        default="http://localhost:1234",
+        default="http://localhost:1234/v1",
         help="""URL for the language model. (default: %(default)s)""",
     )
     arg_parser.add_argument(
@@ -139,6 +133,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--notes",
         help="""Notes for logging.""",
+    )
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Only read this many records.""",
     )
     ns: argparse.Namespace = arg_parser.parse_args(args)
     return ns

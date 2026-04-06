@@ -13,7 +13,6 @@ def _(mo):
     They are here to give you an idea of how I went about creating this data not as a
     100% accurate reprentation of what happened -- that ship has sailed.
     """)
-    return
 
 
 @app.cell
@@ -26,10 +25,8 @@ def _():
 @app.cell
 def _():
     from pathlib import Path
-    from typing import Any
 
     from llama import get_text
-    from llama.common import io_util
     from llama.common.args_util import to_args
 
     return Path, get_text, to_args
@@ -46,7 +43,6 @@ def _(mo):
     mo.md(r"""
     ## OCR jobs
     """)
-    return
 
 
 @app.cell(hide_code=True)
@@ -54,7 +50,6 @@ def _(mo):
     mo.md(r"""
     The initial run.
     """)
-    return
 
 
 @app.cell
@@ -66,7 +61,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args1)
-    return
 
 
 @app.cell(hide_code=True)
@@ -78,7 +72,6 @@ def _(mo):
     The server is holding onto data.
     the data that aleady exists.
     """)
-    return
 
 
 @app.cell
@@ -94,7 +87,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args2)
-    return
 
 
 @app.cell(hide_code=True)
@@ -102,7 +94,6 @@ def _(mo):
     mo.md(r"""
     Let's see if we can pick up some of those errors using a gemma-3 model.
     """)
-    return
 
 
 app._unparsable_cell(
@@ -128,7 +119,6 @@ def _(mo):
     They're all supposed to have either a TRS or a UTM.
     It looks like it's almost exclusively TRSs.
     """)
-    return
 
 
 @app.cell
@@ -141,7 +131,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args4)
-    return
 
 
 @app.cell(hide_code=True)
@@ -151,7 +140,6 @@ def _(mo):
     That's a very high percentage.
     Now try tweaking the parameters and using a different model.
     """)
-    return
 
 
 @app.cell
@@ -166,7 +154,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args5)
-    return
 
 
 @app.cell(hide_code=True)
@@ -174,7 +161,6 @@ def _(mo):
     mo.md(r"""
     This is a larger set (~1500) of images that contain UTM and TRS notations.
     """)
-    return
 
 
 @app.cell
@@ -187,7 +173,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args6)
-    return
 
 
 @app.cell(hide_code=True)
@@ -196,7 +181,6 @@ def _(mo):
     _Mea culpa_. I forgot to prevent my computer from sleeping,
     so the job died part of the way thru. Restarting.
     """)
-    return
 
 
 @app.cell
@@ -210,7 +194,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args7)
-    return
 
 
 @app.cell(hide_code=True)
@@ -218,7 +201,6 @@ def _(mo):
     mo.md(r"""
     Process the errors for the TRS & UTM dataset.
     """)
-    return
 
 
 @app.cell
@@ -233,7 +215,6 @@ def _(doc_tsv, get_text, to_args):
         )
     )
     # get_text.ocr_images(args8)
-    return
 
 
 @app.cell(hide_code=True)
@@ -241,7 +222,6 @@ def _(mo):
     mo.md(r"""
     Did I OCR all of the images?
     """)
-    return
 
 
 @app.cell
@@ -256,7 +236,6 @@ def _(Path, doc_tsv, get_text):
     print(f"{len(expected)=}")
 
     len(actual) == len(expected)
-    return
 
 
 @app.cell
