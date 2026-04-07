@@ -58,10 +58,12 @@ class Utm(BaseField):
     utmZone: str = field(default="", metadata=BOTH)
 
     @classmethod
-    def setup_field(cls) -> None:
+    def setup_postprocessing(cls) -> None:
         cls.predictor = dspy.Predict(UtmSig)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         # Set up the utm so it is valid input for further processing
         self.utm = fix_values.to_str(self.utm)
         self.clean_subfields()

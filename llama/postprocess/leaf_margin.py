@@ -8,5 +8,7 @@ from llama.postprocess.base_field import BOTH, BaseField
 class LeafMargin(BaseField):
     leafMargin: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.leafMargin = fix_values.to_str(self.leafMargin)

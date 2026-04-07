@@ -207,3 +207,30 @@ class TestFixValues(unittest.TestCase):
 
     def test_clean_str_07(self) -> None:
         self.assertEqual(fix_values.clean_str('test"'), 'test"')
+
+    # ---------------------------------------------------------------------
+    def test_date_to_iso_01(self) -> None:
+        self.assertEqual(fix_values.date_to_iso("01/ix-77"), "1977-09-01")
+
+    def test_date_to_iso_02(self) -> None:
+        self.assertEqual(fix_values.date_to_iso("ix-77"), "1977-09")
+
+    def test_date_to_iso_03(self) -> None:
+        self.assertEqual(fix_values.date_to_iso("09-77"), "")
+
+    def test_date_to_iso_04(self) -> None:
+        self.assertEqual(fix_values.date_to_iso("Jan 30, 1922"), "1922-01-30")
+
+    def test_date_to_iso_05(self) -> None:
+        self.assertEqual(fix_values.date_to_iso("August 1911"), "1911-08")
+
+    # ---------------------------------------------------------------------
+    def test_hallucinated_str_01(self) -> None:
+        self.assertEqual(
+            fix_values.hallucinated_str("TEST", "words test more words"), "TEST"
+        )
+
+    def test_hallucinated_str_02(self) -> None:
+        self.assertEqual(
+            fix_values.hallucinated_str("TEST", "words and more words"), ""
+        )

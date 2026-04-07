@@ -8,5 +8,5 @@ from llama.postprocess.base_field import BOTH, BaseField
 class GeodeticDatum(BaseField):
     geodeticDatum: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
-        self.geodeticDatum = fix_values.to_str(self.geodeticDatum)
+    def __post_init__(self, text: str) -> None:
+        self.geodeticDatum = fix_values.hallucinated_str(self.geodeticDatum, text)

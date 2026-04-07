@@ -10,7 +10,9 @@ from llama.vocab.taxon import GENUS_TO_FAMILY
 class Family(BaseField):
     family: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.family = fix_values.to_str(self.family).title()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

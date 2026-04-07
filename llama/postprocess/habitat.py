@@ -8,7 +8,9 @@ from llama.postprocess.base_field import BOTH, BaseField
 class Habitat(BaseField):
     habitat: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.habitat = fix_values.to_str(self.habitat)
 
         # Remove the habitat label

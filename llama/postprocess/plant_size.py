@@ -8,6 +8,8 @@ from llama.postprocess.base_field import BOTH, BaseField
 class PlantSize(BaseField):
     plantSize: list[str] | str | None = field(default_factory=list, metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.plantSize = fix_values.to_list_of_strs(self.plantSize)
         self.plantSize = fix_values.reduce_list(self.plantSize)

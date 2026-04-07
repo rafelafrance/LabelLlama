@@ -8,6 +8,7 @@ from llama.postprocess.base_field import BOTH, BaseField
 class LeafShape(BaseField):
     leafShape: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
-        self.leafShape = fix_values.to_str(self.leafShape)
+    def __post_init__(self, text: str) -> None:
+        del text
 
+        self.leafShape = fix_values.to_str(self.leafShape)

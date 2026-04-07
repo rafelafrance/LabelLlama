@@ -5,12 +5,20 @@ import json
 import math
 import re
 from calendar import IllegalMonthError
+from datetime import date as dt
 from typing import Any
 
 from dateutil import parser
+from dateutil.relativedelta import relativedelta
 
 INT = re.compile(r"\d+")
 FLOAT = re.compile(r" \d+ (?: \.\d* )? | \.\d+", flags=re.VERBOSE)
+
+# For parsing dates
+SEP = r"[\s(.,/_'-]+"  # Date month, day, year separators
+YEAR = r"([12]\d\d\d|\d\d)"
+YEAR4 = r"([12]\d\d\d)"
+MON_NUM = r"[01]?\d"  # Month as a number
 
 
 def to_str(value: Any) -> str:
@@ -176,8 +184,26 @@ def list_to_item(value: Any) -> Any:
 
 
 def date_to_iso(value: str) -> str:
-    value = value.lower()
-    value = value.replace("april", "iv")  # The only problemactic month
+    value = value.lower().strip()
+
+    short_date = re.match(
+        rf""" ^ (?:
+              [a-z]+    {SEP} {YEAR}
+            | {YEAR}    {SEP} [a-z]+
+            | {MON_NUM} {SEP} {YEAR4}
+            | {YEAR4}   {SEP} {MON_NUM}
+            ) $ """,
+        value,
+        flags=re.IGNORECASE | re.VERBOSE,
+    )
+
+    bad_short_date = re.match(
+        rf""" ^ \d+ {SEP} \d+ $ """, value, flags=re.IGNORECASE | re.VERBOSE
+    )
+    if not short_date and bad_short_date:
+        return ""
+
+    value = value.replace("april", "iv")  # The only month w/ roman numerals in it
 
     value = value.replace("viii", "Aug")
     value = value.replace("iii", "Mar")
@@ -194,7 +220,13 @@ def date_to_iso(value: str) -> str:
 
     try:
         date_ = parser.parse(value).date()
-        value = date_.isoformat()[:10]
+
+        if date_ > dt.today():
+            date_ -= relativedelta(years=100)
+
+        end = 7 if short_date else 10
+        value = date_.isoformat()[:end]
+
     except parser.ParserError, IllegalMonthError:
         value = ""
 
@@ -219,3 +251,8 @@ def reduce_str_list(value: list[str] | str) -> str:
     if len(value) == 1:
         return value[0]
     return str(value)
+
+
+def hallucinated_str(value: str, text: str) -> str:
+    value = value if re.search(value, text, flags=re.IGNORECASE) else ""
+    return to_str(value)

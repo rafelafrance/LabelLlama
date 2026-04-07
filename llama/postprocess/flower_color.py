@@ -8,6 +8,8 @@ from llama.postprocess.base_field import BOTH, BaseField
 class FlowerColor(BaseField):
     flowerColor: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.flowerColor = fix_values.to_str(self.flowerColor)
         self.flowerColor = fix_values.remove_trailing_punct(self.flowerColor)

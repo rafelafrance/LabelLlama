@@ -8,5 +8,7 @@ from llama.postprocess.base_field import BOTH, BaseField
 class IdentifiedBy(BaseField):
     identifiedBy: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.identifiedBy = fix_values.to_str(self.identifiedBy)

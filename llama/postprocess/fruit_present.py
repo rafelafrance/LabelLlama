@@ -9,7 +9,9 @@ from llama.postprocess.base_field import BOTH, BaseField
 class FruitPresent(BaseField):
     fruitPresent: bool | None = field(default=False, metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.fruitPresent = fix_values.to_bool(self.fruitPresent)
 
         # Handle the case where the word "fruits" is being used as true

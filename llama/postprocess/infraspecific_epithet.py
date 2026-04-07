@@ -8,7 +8,9 @@ from llama.postprocess.base_field import BOTH, BaseField
 class InfraspecificEpithet(BaseField):
     infraspecificEpithet: list[str] | str | None = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         values = fix_values.to_list_of_strs(self.infraspecificEpithet)
         values = [v.lower() for v in values]
         self.infraspecificEpithet = fix_values.reduce_list(values)

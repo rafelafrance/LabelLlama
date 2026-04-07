@@ -36,7 +36,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
         for field_name in field_list:
             field_action = ALL_FIELDS[field_name]
-            field_action.setup_field()
+            field_action.setup_postprocessing()
 
             # Record prompts for later use
             if args.log_file and hasattr(field_action, "predictor"):
@@ -52,18 +52,18 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     for field_name in field_list:
         field_action = ALL_FIELDS[field_name]
         in_subfields = field_action.get_input_subfields()
-        out_subfields = field_action.get_output_subfields()
+        visible_subfields = field_action.get_visible_subfields()
 
         for row in tqdm(input_rows, desc=field_name):
             in_data = {k: row.get(k) for k in in_subfields}
 
-            field = field_action(**in_data)
+            field = field_action(row["text"], **in_data)
             if args.run_field_models:
                 field.run_field_model()
 
             field.cross_field_update(row)
 
-            out_data = {k: getattr(field, k) for k in out_subfields}
+            out_data = {k: getattr(field, k) for k in visible_subfields}
 
             # Print debug info
             if args.field or args.limit:

@@ -66,13 +66,15 @@ class Trs(BaseField):
     trsSection: str = field(default="", metadata=BOTH)
     trsQuad: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         # Set up the trs so it is valid input for further processing
         self.trs = fix_values.to_str(self.trs)
         self.clean_subfields()
 
     @classmethod
-    def setup_field(cls) -> None:
+    def setup_postprocessing(cls) -> None:
         cls.predictor = dspy.Predict(TrsSig)
 
     def run_field_model(self) -> None:

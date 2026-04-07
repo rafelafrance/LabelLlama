@@ -8,7 +8,9 @@ from llama.postprocess.base_field import BOTH, BaseField
 class ScientificNameAuthorship(BaseField):
     scientificNameAuthorship: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         values = fix_values.to_list_of_strs(self.scientificNameAuthorship)
         values = [v.title() for v in values]
         self.scientificNameAuthorship = fix_values.reduce_str_list(values)

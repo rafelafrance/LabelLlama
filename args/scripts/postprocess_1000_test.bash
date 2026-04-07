@@ -5,4 +5,4 @@ uv run llama/postprocess_fields.py \
   --log-file data/herbarium/1000_test.log \
   --run-field-models \
   --no-cache \
-  --out-file data/herbarium/1000_2026-04-06a_post.csv
+  --out-file data/herbarium/1000_tes_2026-04-06b_post.csv

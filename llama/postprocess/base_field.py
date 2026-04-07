@@ -1,23 +1,30 @@
-from dataclasses import dataclass, fields
-from enum import Enum
+from dataclasses import InitVar, dataclass, fields
+from enum import Flag, auto
 from typing import Any
 
 
-class InOut(Enum):
-    IN = 1
-    OUT = 2
-    BOTH = 3
+class Flags(Flag):
+    IN = auto()
+    OUT = auto()
+    HIDE = auto()
 
 
-IN = {"in_out": InOut.IN}
-OUT = {"in_out": InOut.OUT}
-BOTH = {"in_out": InOut.BOTH}
+IN = {"in_out": Flags.IN}
+OUT = {"in_out": Flags.OUT}
+BOTH = {"in_out": Flags.IN | Flags.OUT}
+HIDE = {"visible": Flags.HIDE}
 
 
 @dataclass
 class BaseField:
+    text: InitVar[str] = ""
+
     @classmethod
-    def setup_field(cls) -> None:
+    def setup_postprocessing(cls) -> None:
+        pass
+
+    @classmethod
+    def cleanup_postprocessing(cls) -> None:
         pass
 
     def run_field_model(self) -> None:
@@ -28,16 +35,17 @@ class BaseField:
 
     @classmethod
     def get_input_subfields(cls) -> list[str]:
-        return [
-            f.name
-            for f in fields(cls)
-            if f.metadata.get("in_out") in (InOut.IN, InOut.BOTH)
-        ]
+        return [f.name for f in fields(cls) if f.metadata.get("in_out", 0) & Flags.IN]
 
     @classmethod
     def get_output_subfields(cls) -> list[str]:
+        return [f.name for f in fields(cls) if f.metadata.get("in_out", 0) & Flags.OUT]
+
+    @classmethod
+    def get_visible_subfields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)
-            if f.metadata.get("in_out") in (InOut.OUT, InOut.BOTH)
+            if f.metadata.get("in_out", 0) & Flags.OUT
+            and not f.metadata.get("visible", 1) & Flags.HIDE
         ]

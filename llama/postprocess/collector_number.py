@@ -2,15 +2,17 @@ import re
 from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.postprocess.base_field import BOTH, BaseField
+from llama.postprocess.base_field import BOTH, HIDE, BaseField
 
 
 @dataclass
 class CollectorNumber(BaseField):
-    collectorNumber: str = field(default="", metadata=BOTH)
+    collectorNumber: str = field(default="", metadata=BOTH | HIDE)
     recordNumber: str = field(default="", metadata=BOTH)
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.collectorNumber = fix_values.to_str(self.collectorNumber)
         self.collectorNumber = re.sub(r"(#|Nº)", "", self.collectorNumber)
 
