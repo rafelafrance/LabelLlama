@@ -12,7 +12,7 @@ class Flags(Flag):
 IN = {"in_out": Flags.IN}
 OUT = {"in_out": Flags.OUT}
 BOTH = {"in_out": Flags.IN | Flags.OUT}
-HIDE = {"visible": Flags.HIDE}
+HIDE = {"hide": Flags.HIDE}
 
 
 @dataclass
@@ -46,6 +46,6 @@ class BaseField:
         return [
             f.name
             for f in fields(cls)
-            if f.metadata.get("in_out", 0) & Flags.OUT
-            and not f.metadata.get("visible", 1) & Flags.HIDE
+            if (f.metadata.get("in_out", 0) & Flags.OUT)
+            and not (f.metadata.get("hide", 0) & Flags.HIDE)
         ]

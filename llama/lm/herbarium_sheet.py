@@ -229,8 +229,8 @@ class HerbariumSheet(Signature):
             It will look like: "10S", "11", "8N", "Zone 11S;", "NH", "16P", "LJ".
             """),
     )
-    locality: list[str] = OutputField(
-        default=[],
+    locality: str = OutputField(
+        default="",
         desc=compress("""
             Get the locality from input text string.
             There may be multiple phrases that describe the locality.
@@ -303,8 +303,8 @@ class HerbariumSheet(Signature):
             Examples: "entire", "crenate", "dentate", "serrate".
             """),
     )
-    occurrenceRemarks: list[str] = OutputField(
-        default=[],
+    occurrenceRemarks: str = OutputField(
+        default="",
         desc=dedent("""
             This contains all other observations not in the other fields.
             ✅ IncludeOnly include information not in other fields.
