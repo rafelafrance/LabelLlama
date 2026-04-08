@@ -42,16 +42,17 @@ def filter_lines(text: str) -> str:
 
 def join_lines(text: str) -> str:
     """
-    Join lines of text.
+    Join lines of text if there is only one line break (return) between them.
 
-    Labels have limited space, so sentences are split across multiple lines.
-    The models tend to do better if there are no line breaks in a sentence.
+    Labels have limited horizontal space, so sentences are split across multiple lines.
+    However, the models tend to do better if there are no line breaks in a sentence.
     If there are two or more line breaks in a row then the break is likely to have
-    semantic meaning.
+    semantic meaning, but if there is only one break then it probably doesn't.
     """
     text = re.sub(r"\n\s*\n", "<br>", text)
     text = text.replace("\n", " ")
     text = text.replace("<br>", "\n\n")
+    text = text.strip()
     return text
 
 

@@ -12,8 +12,8 @@ import lmstudio as lms
 import pandas as pd
 from tqdm import tqdm
 
-from llama.common import io_util, log, str_util
-from llama.ocr.all_ocr_prompts import ALL_OCR
+from llama.common import io_util, log
+from llama.ocr import all_ocr_parameters
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -21,9 +21,10 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     already_read = get_docs_read(args.doc_csv)
 
-    prompt = ALL_OCR[args.prompt]
+    ocr_params = all_ocr_parameters.get_parameters(args.model_name)
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
+    image_paths = image_paths[: args.limit]
 
     with lms.Client() as client, args.doc_csv.open("a") as tsv:
         writer = csv.writer(tsv)
@@ -47,7 +48,7 @@ def ocr_images(args: argparse.Namespace) -> None:
 
             handle = client.files.prepare_image(image_path)
             chat = lms.Chat()
-            chat.add_user_message(prompt, images=[handle])
+            chat.add_user_message(ocr_params["prompt"], images=[handle])
 
             try:
                 response = model.respond(chat, config=response_config)
@@ -55,7 +56,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 logging.exception("Server error:")
                 continue
 
-            text = str_util.clean_response(str(response))
+            text = ocr_params["cleaner"](str(response))
 
             elapsed = str(datetime.now() - rec_began)
             writer.writerow([str(image_path), elapsed, text])
@@ -92,15 +93,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     arg_parser.add_argument(
         "--model-name",
-        default="prithivMLmods/chandra-ocr-2",
+        default="chandra-ocr-2",
         help="""Use this language model. (default: %(default)s)""",
-    )
-    prompts = list(ALL_OCR.keys())
-    arg_parser.add_argument(
-        "--prompt",
-        choices=prompts,
-        default=prompts[0],
-        help="""What type of data are you extracting?""",
     )
     arg_parser.add_argument(
         "--api-host",

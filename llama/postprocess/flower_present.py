@@ -20,5 +20,3 @@ class FlowersPresent(BaseField):
             self.flowersPresent = bool(
                 re.search(r"(fls|flower|fl)", string, flags=re.IGNORECASE)
             )
-
-        self.flowersPresent = self.flowersPresent or None

@@ -35,17 +35,25 @@ class BaseField:
 
     @classmethod
     def get_input_subfields(cls) -> list[str]:
-        return [f.name for f in fields(cls) if f.metadata.get("in_out", 0) & Flags.IN]
+        return [
+            f.name
+            for f in fields(cls)
+            if f.metadata.get("in_out", ~Flags.IN) & Flags.IN
+        ]
 
     @classmethod
     def get_output_subfields(cls) -> list[str]:
-        return [f.name for f in fields(cls) if f.metadata.get("in_out", 0) & Flags.OUT]
+        return [
+            f.name
+            for f in fields(cls)
+            if f.metadata.get("in_out", ~Flags.OUT) & Flags.OUT
+        ]
 
     @classmethod
     def get_visible_subfields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)
-            if (f.metadata.get("in_out", 0) & Flags.OUT)
-            and not (f.metadata.get("hide", 0) & Flags.HIDE)
+            if (f.metadata.get("in_out", ~Flags.OUT) & Flags.OUT)
+            and not (f.metadata.get("hide", ~Flags.HIDE) & Flags.HIDE)
         ]

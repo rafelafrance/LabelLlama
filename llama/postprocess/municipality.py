@@ -11,4 +11,4 @@ class Municipality(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.municipality = fix_values.to_str(self.municipality)
+        self.municipality = fix_values.to_str(self.municipality).title()

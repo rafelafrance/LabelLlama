@@ -12,4 +12,4 @@ class PlantSize(BaseField):
         del text
 
         self.plantSize = fix_values.to_list_of_strs(self.plantSize)
-        self.plantSize = fix_values.reduce_list(self.plantSize)
+        self.plantSize = fix_values.reduce_str_list(self.plantSize)

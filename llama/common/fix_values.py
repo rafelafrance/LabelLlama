@@ -171,8 +171,8 @@ def clean_str(value: str) -> str:
         return ""
 
     # Remove leading and trailing quotes
-    value = re.sub(r'"(.+)"', r"\1", value)
-    value = re.sub(r"'(.+)'", r"\1", value)
+    value = re.sub(r'^"(.+)"$', r"\1", value)
+    value = re.sub(r"^'(.+)'$", r"\1", value)
 
     return value
 
@@ -192,7 +192,7 @@ def date_to_iso(value: str) -> str:
             | {YEAR}    {SEP} [a-z]+
             | {MON_NUM} {SEP} {YEAR4}
             | {YEAR4}   {SEP} {MON_NUM}
-            ) $ """,
+            ) [.,;:_-]* $ """,
         value,
         flags=re.IGNORECASE | re.VERBOSE,
     )
@@ -254,5 +254,6 @@ def reduce_str_list(value: list[str] | str) -> str:
 
 
 def hallucinated_str(value: str, text: str) -> str:
-    value = value if re.search(value, text, flags=re.IGNORECASE) else ""
+    pattern = re.escape(str(value))
+    value = value if re.search(pattern, text, flags=re.IGNORECASE) else ""
     return to_str(value)

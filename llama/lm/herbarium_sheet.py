@@ -79,11 +79,14 @@ class HerbariumSheet(Signature):
     )
     identifiedBy: str = OutputField(
         default="",
-        desc="""Who identified or verified the species.""",
+        desc=compress("""
+            Who identified or verified or determined the species.
+            The identifier or verifier or determiner of the species.
+            """),
     )
     dateIdentified: str = OutputField(
         default="",
-        desc="""When was the specimen identified or verified?""",
+        desc="""When was the specimen identified or verified or determined?""",
     )
     country: str = OutputField(
         default="",

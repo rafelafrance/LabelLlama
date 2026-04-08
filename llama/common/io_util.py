@@ -22,18 +22,18 @@ def read_to_df(path: Path, *, limit: int | None = None) -> pd.DataFrame:
     df = None
     match path.suffix:
         case ".csv":
-            df = pd.read_csv(path)
+            df = pd.read_csv(path).fillna("")
         case ".tsv":
-            df = pd.read_csv(path, sep="\t")
+            df = pd.read_csv(path, sep="\t").fillna("")
         case ".json":
-            df = pd.read_json(path)
+            df = pd.read_json(path).fillna("")
         case ".jsonl":
-            df = pd.read_json(path, lines=True)
+            df = pd.read_json(path, lines=True).fillna("")
         case ".html":
             dfs = pd.read_html(path)
             if not dfs:
                 raise ValueError(f"Could not find a table in {path}")
-            df = dfs[0]
+            df = dfs[0].fillna("")
         case _:
             raise ValueError(f"Unrecognized file extension: {path.suffix}")
     if limit:

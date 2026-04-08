@@ -20,5 +20,3 @@ class FruitPresent(BaseField):
             self.fruitPresent = bool(
                 re.search(r"(fr|fruit)", string, flags=re.IGNORECASE)
             )
-
-        self.fruitPresent = self.fruitPresent or None

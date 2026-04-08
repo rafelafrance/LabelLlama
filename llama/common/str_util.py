@@ -14,7 +14,7 @@ def dedent(text: str) -> str:
 
 def clean_response(text: str) -> str:
     text = re.sub(
-        r" ^ .* ( </think> | ```json ) ",
+        r" ^ .*? ( </think> | ```json ) ",
         "",
         str(text),
         flags=re.IGNORECASE | re.VERBOSE | re.DOTALL,
@@ -25,9 +25,10 @@ def clean_response(text: str) -> str:
 
 
 def strip_html(text: str) -> str:
+    # TODO: Parse chandra-ocr-2 output
+    text = clean_response(text)
+    # text = re.sub(r"<br\s?/?>", r"\n\n", text)
     # soup = BeautifulSoup(text, "lxml")
-    text = re.sub(r"<br/?>", "\n", text)
-    text = re.sub(r"</p>|</div>", "\n", text)
-    text = re.sub(r"<.+?>", "\n", text)
-    text = text.strip()
+    # text = soup.get_text(" ", strip=False)
+    # text = text.strip()
     return text

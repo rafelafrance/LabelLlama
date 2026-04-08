@@ -16,6 +16,7 @@ class Country(BaseField):
         self.country = fix_values.to_str(self.country)
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
+        """Make a blank country = USA if state or county is known to be in the US."""
         self.country = USA.get(self.country, self.country)
         us_county = fix_values.to_str(record.get("county", ""))
         us_county = us_county.lower() in US_COUNTY

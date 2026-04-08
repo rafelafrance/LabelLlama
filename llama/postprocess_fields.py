@@ -4,6 +4,7 @@ import argparse
 import logging
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import dspy
 from tqdm import tqdm
@@ -67,15 +68,22 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
             # Print debug info
             if args.field or args.limit:
-                for field_name, value in out_data.items():
-                    print(f"{field_name:>28}: {value}")
-                print()
+                print_debug_info(row, out_data)
 
             output_rows[row["source"]] |= out_data
 
     io_util.output_file(args.out_file, list(output_rows.values()))
 
     log.finished()
+
+
+def print_debug_info(row: dict[str, Any], out_data: dict[str, Any]) -> None:
+    print(row["source"])
+    for field_name, value in out_data.items():
+        if field_name in row:
+            print(f"{'before ' + field_name:>40}: {row[field_name]}")
+        print(f"{'after ' + field_name:>40}: {value}")
+    print()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

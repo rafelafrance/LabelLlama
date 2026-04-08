@@ -48,8 +48,8 @@ class Elevation(BaseField):
 
     verbatimElevation: str = field(default="", metadata=BOTH)
     elevationValues: list[float] | None = field(default=None, metadata=IN)
-    elevation: float | None = field(default=None, metadata=BOTH)
-    maxElevation: float | None = field(default=None, metadata=BOTH)
+    elevation: float | str | None = field(default=None, metadata=BOTH)
+    maxElevation: float | str | None = field(default=None, metadata=BOTH)
     elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
     elevationEstimated: bool | None = field(default=None, metadata=BOTH)
 
@@ -111,12 +111,13 @@ class Elevation(BaseField):
 
         # If there are no pairs then something went wrong
         if not pairs:
-            self.elevation = None
-            self.maxElevation = None
-            self.elevationUnits = None
+            self.elevation = ""
+            self.maxElevation = ""
+            self.elevationUnits = ""
+            self.elevationEstimated = False
             return
 
         # Now set the output fields based on the pairs or values and units
         self.elevation = pairs[0][0]
-        self.maxElevation = pairs[1][0] if len(pairs) > 1 else None
+        self.maxElevation = pairs[1][0] if len(pairs) > 1 else ""
         self.elevationUnits = units.elevation(pairs[0][1])
