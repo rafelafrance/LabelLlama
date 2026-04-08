@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from llama.common import io_util, log
-from llama.postprocess.all_fields import ALL_FIELDS
+from llama.fields.all_fields import ALL_FIELDS
 from llama.score.all_scorers import get_scorer
 
 

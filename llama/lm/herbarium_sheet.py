@@ -1,6 +1,47 @@
 from dspy import InputField, OutputField, Signature
 
-from llama.common.str_util import compress, dedent
+from llama.fields import (
+    abundance,
+    associated_taxa,
+    collector,
+    collector_number,
+    country,
+    county,
+    date_identified,
+    elevation,
+    event_date,
+    family,
+    flower_color,
+    flower_present,
+    fruit_color,
+    fruit_present,
+    geodetic_datum,
+    habit,
+    habitat,
+    identified_by,
+    infraspecific_epithet,
+    infraspecific_name_authorship,
+    latitude,
+    leaf_margin,
+    leaf_shape,
+    longitude,
+    municipality,
+    occurrence_remarks,
+    plant_height,
+    plant_size,
+    scientific_name,
+    scientific_name_authorship,
+    state_province,
+)
+from llama.fields import (
+    locality as locality_,
+)
+from llama.fields import (
+    trs as trs_,
+)
+from llama.fields import (
+    utm as utm_,
+)
 
 
 class HerbariumSheet(Signature):
@@ -30,290 +71,178 @@ class HerbariumSheet(Signature):
     text = InputField()
 
     scientificName: str = OutputField(
-        default="",
-        desc=compress("""
-            Scientific name or species given in 'Genus species' format.
-            Do not include subspecies or varieties and do not include author names.
-            """),
+        default=scientific_name.DEFAULTS["scientificName"],
+        desc=scientific_name.SCIENTIFIC_NAME,
     )
     scientificNameAuthorship: str = OutputField(
-        default="",
-        desc=compress("""
-            Scientific name authorship.
-            There is often more than one author per scientific name.
-            Authors may be abbreviated, sometimes as a single letter.
-            """),
+        default=scientific_name.DEFAULTS["scientificNameAuthorship"],
+        desc=scientific_name_authorship.SCIENTIFIC_NAME_AUTHORSHIP,
     )
     infraspecificEpithet: str = OutputField(
-        default="",
-        desc="""Contains the subspecies or variety portion of the scientific name""",
+        default=infraspecific_epithet.DEFAULTS["infraspecificEpithet"],
+        desc=infraspecific_epithet.INFRASPECIFIC_EPITHET,
     )
     infraspecificNameAuthorship: str = OutputField(
-        default="",
-        desc="""The author (authority) who coined the infraspecific name.""",
+        default=infraspecific_name_authorship.DEFAULTS["infraspecificNameAuthorship"],
+        desc=infraspecific_name_authorship.INFRASPECIFIC_NAME_AUTHORSHIP,
     )
     family: str = OutputField(
-        default="",
-        desc="""Taxonomic family is typically near the scientific name.""",
+        default=family.DEFAULTS["family"],
+        desc=family.FAMILY,
     )
     associatedTaxa: str = OutputField(
-        default="",
-        desc="""Was the specimen found near, around, or on another species.""",
+        default=associated_taxa.DEFAULTS["associatedTaxa"],
+        desc=associated_taxa.ASSOCIATED_TAXA,
     )
     verbatimEventDate: str = OutputField(
-        default="",
-        desc="""When was the specimen collected.""",
+        default=event_date.DEFAULTS["verbatimEventDate"],
+        desc=event_date.VERBATIM_EVENT_DATE,
     )
     collector: str = OutputField(
-        default="",
-        desc="""The person or people who collected the specimen.""",
+        default=collector.DEFAULTS["collector"],
+        desc=collector.COLLECTOR,
     )
     collectorNumber: str = OutputField(
-        default="",
-        desc=compress("""
-            The number used to identify the collector or who recorded the specimen.
-            The collector number is almost always found just after or before the
-            collector's name or event date.
-            It is closely associated with the collector's name.
-            """),
+        default=collector_number.DEFAULTS["collectorNumber"],
+        desc=collector_number.COLLECTOR_NUMBER,
     )
     identifiedBy: str = OutputField(
-        default="",
-        desc=compress("""
-            Who identified or verified or determined the species.
-            The identifier or verifier or determiner of the species.
-            """),
+        default=identified_by.DEFAULTS["identifiedBy"],
+        desc=identified_by.IDENTIFIED_BY,
     )
     dateIdentified: str = OutputField(
-        default="",
-        desc="""When was the specimen identified or verified or determined?""",
+        default=date_identified.DEFAULTS["dateIdentified"],
+        desc=date_identified.DATE_IDENTIFIED,
     )
     country: str = OutputField(
-        default="",
-        desc="""The country where the specimen was collected.""",
+        default=country.DEFAULTS["country"],
+        desc=country.COUNTRY,
     )
     stateProvince: str = OutputField(
-        default="",
-        desc="""The state or province where the specimen was collected.""",
+        default=state_province.DEFAULTS["stateProvince"],
+        desc=state_province.STATE_PROVINCE,
     )
     county: str = OutputField(
-        default="",
-        desc="""The county where the specimen was collected.""",
+        default=county.DEFAULTS["county"],
+        desc=county.COUNTY,
     )
     municipality: str = OutputField(
-        default="",
-        desc="""Collected from this municipality. This can be a city, town, etc.""",
+        default=municipality.DEFAULTS["municipality"],
+        desc=municipality.MUNICIPALITY,
     )
     verbatimElevation: str = OutputField(
-        default="",
-        desc="""The specimen was collected at this elevation or altitude""",
+        default=elevation.DEFAULTS["verbatimElevation"],
+        desc=elevation.VERBATIM_ELEVATION,
     )
     elevationValues: list[float] = OutputField(
-        default=[],
-        desc=compress("""
-            The elevation values.
-            More than one value could be an elevation range or it could be the same
-            elevation reported in different units.
-            """),
+        default=elevation.DEFAULTS["elevationValues"],
+        desc=elevation.ELEVATION_VALUES,
     )
     elevationUnits: list[str] = OutputField(
-        default=[],
-        desc=compress("""
-            The elevation units.
-            There may be more than one units reported when the same value is reported
-            in different units.
-            """),
+        default=elevation.DEFAULTS["elevationUnits"],
+        desc=elevation.ELEVATION_UNITS,
     )
     elevationEstimated: bool = OutputField(
-        default=False,
-        desc="""Is this an estimated elevation?""",
+        default=elevation.DEFAULTS["elevationEstimated"],
+        desc=elevation.ELEVATION_ESTIMATED,
     )
     verbatimLatitude: str = OutputField(
-        default="",
-        desc=compress("""
-            The specimen was collected at this latitude.
-            Latitude must fall in the range of -90.0 degrees to 90.0 degrees.
-            """),
+        default=latitude.DEFAULTS["verbatimLatitude"],
+        desc=latitude.VERBATIM_LATITUDE,
     )
     verbatimLongitude: str = OutputField(
-        default="",
-        desc=compress("""
-            The specimen was collected at this longitude.
-            Longitude must fall in the range of -180.0 degrees to 180.0 degrees.
-            """),
+        default=longitude.DEFAULTS["verbatimLongitude"],
+        desc=longitude.VERBATIM_LONGITUDE,
     )
     geodeticDatum: str = OutputField(
-        default="",
-        desc=compress("""
-            What geodetic datum is the latitude, longitude, TRS, or UTM using.
-            Examples "NAD27", "NAD83", "WGS84".
-            """),
+        default=geodetic_datum.DEFAULTS["geodeticDatum"],
+        desc=geodetic_datum.GEODETIC_DATUM,
     )
     trs: str = OutputField(
-        default="",
-        desc=compress("""
-            Township Range Section (TRS).
-            There may be a quad (quadrangle) associated with the TRS.
-            The quad may come before or after the other fields.
-            Examples "Bodie Quadrangle; T4N R25E S36", "T41N R15E NW 1/4 S10",
-            "T7S, R1W SE 1/4 sec. 33", "SW 1/4 sec. 34.",
-            "T23N R14E se1/4 ne1/4 sec 12 Reconnaissance quad",
-            "S27, T 48 N , R 7 W Mt. Diablo Mer.",
-            "T.43.R.11W., south-east corner section 7".
-            """),
+        default=trs_.DEFAULTS["trs"],
+        desc=trs_.TRS,
     )
     trsTownship: str = OutputField(
-        default="",
-        desc=compress("""
-            The township portion of the TRS. It will look like: "T28N", "T 32 N", or
-            "T.43".
-            The letter "T" followed by possible punctuation and then a few digits and
-            then an "N" or "S" compass direction.
-            """),
+        default=trs_.DEFAULTS["trsTownship"],
+        desc=trs_.TRS_TOWNSHIP,
     )
     trsRange: str = OutputField(
-        default="",
-        desc=compress("""
-            The range portion of the TRS. It will look like: "R23E", "R 1 W", "R.11W".
-            The letter "R" followed by possible punctuation then a few digits and
-            then an "E" or "W" compass direction.
-            """),
+        default=trs_.DEFAULTS["trsRange"],
+        desc=trs_.TRS_RANGE,
     )
     trsSection: str = OutputField(
-        default="",
-        desc=compress("""
-            The section portion of the TRS. Examples look like "1/4 S10",
-            '"se1/4 ne1/4  sec 12", "SE ¼ Section 17", "NW¼ of sec. 8", "section 18",
-            "S8 (SE¼)", "south-east corner section 7", "w½ne¼ sec 27", "S 12°".
-            """),
+        default=trs_.DEFAULTS["trsSection"],
+        desc=trs_.TRS_SECTION,
     )
     trsQuad: str = OutputField(
-        default="",
-        desc=compress("""
-            The quad (quadrangle) portion of the TRS. It may be at the beginning or
-            end of the TRS.
-            Examples look like: "USGS Wahtoke 7 1/2 quad", "Yountville Quad",
-            "Chicken Hawk Hill quadrangle", "Mt. Ingalls quad."
-            """),
+        default=trs_.DEFAULTS["trsQuad"],
+        desc=trs_.TRS_QUAD,
     )
     utm: str = OutputField(
-        default="",
-        desc=compress("""
-            Universal Transverse Mercator (UTM).
-            Examples "33T 500000 4649776", "Z12 N7874900 E768500",
-            "11S 316745.14 3542301.90", "10 3756206N, 0769161E",
-            "11S - 0484145E, 3741382N", "10S, 709280 E, 3913480 N",
-            "Zone 11S; 3845372N 0729522E", "4057.5 N, 368.1 E".
-            """),
+        default=utm_.DEFAULTS["utm"],
+        desc=utm_.UTM,
     )
     utmNorthing: str = OutputField(
-        default="",
-        desc=compress("""
-            The northing portion of the UTM.
-            It is a number (possibly negative, or a decimal) followed by an "N".
-            It will look like: "3845372N", "4057.6 N", "3968400 N", "N 4253279", "4N".
-            Northing is never negative so dashes are separators and not minus signs.
-            """),
+        default=utm_.DEFAULTS["utmNorthing"],
+        desc=utm_.UTM_NORTHING,
     )
     utmEasting: str = OutputField(
-        default="",
-        desc=compress("""
-            The easting portion of the UTM.
-            It is a number (possibly negative, or a decimal) followed by an "E".
-            Examples look like "E 642700", "509257E", "0484145E", "546936",
-            "368.2 E", "6E".
-            Easting is never negative so dashes are separators and not minus signs.
-            """),
+        default=utm_.DEFAULTS["utmEasting"],
+        desc=utm_.UTM_EASTING,
     )
     utmZone: str = OutputField(
-        default="",
-        desc=compress("""
-            The zone portion of the UTM.
-            It will look like: "10S", "11", "8N", "Zone 11S;", "NH", "16P", "LJ".
-            """),
+        default=utm_.DEFAULTS["utmZone"],
+        desc=utm_.UTM_ZONE,
     )
     locality: str = OutputField(
-        default="",
-        desc=compress("""
-            Get the locality from input text string.
-            There may be multiple phrases that describe the locality.
-            Exclude the TRS, UTM, elevation, and county.
-            """),
+        default=locality_.DEFAULTS["locality"],
+        desc=locality_.LOCALITY,
     )
     habitat: str = OutputField(
-        default="",
-        desc=dedent("""
-            Collected from this habitat or environment.
-            Describes the physical environment where the specimen grows.
-              ✅ Include: substrate (e.g. 'dry sand', 'loamy soil'),
-                 vegetation type (e.g. 'open grassland'), floodplains, and life zones.
-              ❌ DO NOT include associated taxa.
-              ❌ DO NOT include place names, geographic features, road names, or phrases
-                 like 'near [named place]'. These belong to locality.
-              ❌ DO NOT include details about the plant itself like height, color,
-                 or flowers.
-            """),
+        default=habitat.DEFAULTS["habitat"],
+        desc=habitat.HABITAT,
     )
     flowersPresent: bool = OutputField(
-        default=False,
-        desc="""Are there flowers on the plant?""",
+        default=flower_present.DEFAULTS["flowersPresent"],
+        desc=flower_present.FLOWERS_PRESENT,
     )
     fruitPresent: bool = OutputField(
-        default=False,
-        desc="""Is there fruit on the plant?""",
+        default=fruit_present.DEFAULTS["fruitPresent"],
+        desc=fruit_present.FRUIT_PRESENT,
     )
     flowerColor: str = OutputField(
-        default="",
-        desc="""What are the colors of the flowers?""",
+        default=flower_color.DEFAULTS["flowerColor"],
+        desc=flower_color.FLOWER_COLOR,
     )
     fruitColor: str = OutputField(
-        default="",
-        desc="""What are the colors of the fruits?""",
+        default=fruit_color.DEFAULTS["fruitColor"],
+        desc=fruit_color.FRUIT_COLOR,
     )
     plantHeight: str = OutputField(
-        default="",
-        desc="""How tall is the specimen.""",
+        default=plant_height.DEFAULTS["plantHeight"],
+        desc=plant_height.PLANT_HEIGHT,
     )
     plantSize: list[str] = OutputField(
-        default=[],
-        desc="""Other specimen sizes like plant width, or flower size, etc.""",
+        default=plant_size.DEFAULTS["plantSize"],
+        desc=plant_size.PLANT_SIZE,
     )
     habit: str = OutputField(
-        default="",
-        desc=compress("""
-            What is the specimen habit?
-            Examples: "herbaceous", "woody", "decumbent", "erect".
-            """),
+        default=habit.DEFAULTS["habit"],
+        desc=habit.HABIT,
     )
     abundance: str = OutputField(
-        default="",
-        desc=compress("""
-            How common is the specimen?
-            Examples include "common", "scattered", "rare."
-            """),
+        default=abundance.DEFAULTS["abundance"],
+        desc=abundance.ABUNDANCE,
     )
     leafShape: str = OutputField(
-        default="",
-        desc=compress("""
-            What is the shape of the specimen's leaf?
-            Examples: "acute", "caudate", "elliptic", "lobed".
-            """),
+        default=leaf_shape.DEFAULTS["leafShape"],
+        desc=leaf_shape.LEAF_SHAPE,
     )
     leafMargin: str = OutputField(
-        default="",
-        desc=compress("""
-            Description of the specimen's leaf margins.
-            Examples: "entire", "crenate", "dentate", "serrate".
-            """),
+        default=leaf_margin.DEFAULTS["leafMargin"],
+        desc=leaf_margin.LEAF_MARGIN,
     )
     occurrenceRemarks: str = OutputField(
-        default="",
-        desc=dedent("""
-            This contains all other observations not in the other fields.
-            ✅ IncludeOnly include information not in other fields.
-            ✅ This is strictly for data that is not covered anywhere else.
-            ❌ DO NOT include habitat information.
-            ❌ DO NOT include locality information.
-            ❌ DO NOT include associated taxa information.
-            """),
+        default=occurrence_remarks.DEFAULTS["occurrenceRemarks"],
+        desc=occurrence_remarks.OCCURRENCE_REMARKS,
     )

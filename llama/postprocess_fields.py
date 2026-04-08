@@ -10,7 +10,7 @@ import dspy
 from tqdm import tqdm
 
 from llama.common import io_util, log
-from llama.postprocess.all_fields import ALL_FIELDS
+from llama.fields.all_fields import ALL_FIELDS
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:

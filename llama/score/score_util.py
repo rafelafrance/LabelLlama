@@ -11,4 +11,3 @@ def score_color(score: float) -> str:
     if score >= OK:
         return "yellow"
     return "red"
-
