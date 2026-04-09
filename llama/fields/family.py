@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, fields
 from typing import Any
 
 from llama.common import fix_values
+from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 from llama.vocab.taxon import GENUS_TO_FAMILY
@@ -27,4 +28,4 @@ class Family(BaseField):
             self.family = GENUS_TO_FAMILY.get(genus, "")
 
 
-DEFAULTS = {f.name: f.default for f in fields(Family)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(Family)})

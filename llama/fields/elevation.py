@@ -5,6 +5,7 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
+from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, IN, BaseField
 from llama.vocab import units
@@ -106,7 +107,7 @@ class Elevation(BaseField):
         self.elevationUnits = units.elevation(pairs[0][1])
 
 
-DEFAULTS = {f.name: f.default for f in fields(Elevation)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(Elevation)})
 
 
 class ElevationSig(Signature):

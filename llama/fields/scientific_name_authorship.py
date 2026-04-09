@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, fields
 
 from llama.common import fix_values
+from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -23,4 +24,4 @@ class ScientificNameAuthorship(BaseField):
         self.scientificNameAuthorship = fix_values.reduce_str_list(values)
 
 
-DEFAULTS = {f.name: f.default for f in fields(ScientificNameAuthorship)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(ScientificNameAuthorship)})

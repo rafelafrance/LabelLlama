@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, fields
 
 from llama.common import fix_values
+from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -18,4 +19,4 @@ class FlowerColor(BaseField):
         self.flowerColor = fix_values.remove_trailing_punct(self.flowerColor)
 
 
-DEFAULTS = {f.name: f.default for f in fields(FlowerColor)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(FlowerColor)})

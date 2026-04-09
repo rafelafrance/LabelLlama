@@ -6,6 +6,7 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
+from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -104,7 +105,7 @@ class Trs(BaseField):
         self.trsQuad = " ".join(words)
 
 
-DEFAULTS = {f.name: f.default for f in fields(Trs)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(Trs)})
 
 
 class TrsSig(Signature):

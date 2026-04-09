@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, fields
 
 from llama.common import fix_values
+from llama.common.dot_dict import DotDict
 from llama.common.str_util import dedent
 from llama.fields.base_field import BOTH, BaseField
 
@@ -32,4 +33,4 @@ class Habitat(BaseField):
         self.habitat = " ".join(words)
 
 
-DEFAULTS = {f.name: f.default for f in fields(Habitat)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(Habitat)})

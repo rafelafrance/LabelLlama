@@ -24,4 +24,4 @@ class Collector(BaseField):
         self.recordedBy = self.collector
 
 
-DEFAULTS = {f.name: f.default for f in fields(Collector)}
+DEFAULTS = DotDict({f.name: f.default for f in fields(Collector)})
