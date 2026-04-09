@@ -10,14 +10,14 @@ import dspy
 from tqdm import tqdm
 
 from llama.common import io_util, log
-from llama.fields.all_fields import ALL_FIELDS
+from llama.fields.field_registry import FIELD_REGISTRY
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
     df = io_util.read_to_df(args.in_file, limit=args.limit)
-    field_list = [c for c in ALL_FIELDS if c in df.columns]
+    field_list = [c for c in FIELD_REGISTRY if c in df.columns]
 
     if args.field:
         field_list = args.field
@@ -36,7 +36,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         dspy.configure(lm=lm)
 
         for field_name in field_list:
-            field_action = ALL_FIELDS[field_name]
+            field_action = FIELD_REGISTRY[field_name]
             field_action.setup_postprocessing()
 
             # Record prompts for later use
@@ -51,7 +51,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     }
 
     for field_name in field_list:
-        field_action = ALL_FIELDS[field_name]
+        field_action = FIELD_REGISTRY[field_name]
         in_subfields = field_action.get_input_subfields()
         visible_subfields = field_action.get_visible_subfields()
 

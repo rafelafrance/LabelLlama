@@ -108,7 +108,7 @@ app._unparsable_cell(
     )
     # get_text.ocr_images(args3)
     """,
-    name="_"
+    name="_",
 )
 
 

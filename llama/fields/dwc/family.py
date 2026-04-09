@@ -20,7 +20,7 @@ class Family(BaseField):
         self.family = fix_values.to_str(self.family).title()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
-        """Add a family name using the genus if it is missing."""
+        """Add a family name using the genus if the family is missing."""
         if not self.family:
             sci_name = fix_values.to_str(record.get("scientificName", ""))
             words = sci_name.split()

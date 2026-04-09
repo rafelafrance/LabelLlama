@@ -1,6 +1,6 @@
 from dspy import InputField, OutputField, Signature
 
-from llama.fields import (
+from llama.fields.dwc import (
     abundance,
     associated_taxa,
     collector,
@@ -11,36 +11,32 @@ from llama.fields import (
     elevation,
     event_date,
     family,
-    flower_color,
-    flower_present,
-    fruit_color,
-    fruit_present,
     geodetic_datum,
-    habit,
     habitat,
     identified_by,
     infraspecific_epithet,
     infraspecific_name_authorship,
     latitude,
-    leaf_margin,
-    leaf_shape,
     longitude,
     municipality,
     occurrence_remarks,
-    plant_height,
-    plant_size,
     scientific_name,
     scientific_name_authorship,
     state_province,
 )
-from llama.fields import (
-    locality as locality_,
-)
-from llama.fields import (
-    trs as trs_,
-)
-from llama.fields import (
-    utm as utm_,
+from llama.fields.dwc import locality as locality_
+from llama.fields.dwc import trs as trs_
+from llama.fields.dwc import utm as utm_
+from llama.fields.plants import (
+    flower_color,
+    flower_present,
+    fruit_color,
+    fruit_present,
+    habit,
+    leaf_margin,
+    leaf_shape,
+    plant_height,
+    sizes,
 )
 
 
@@ -223,8 +219,8 @@ class HerbariumSheet(Signature):
         desc=plant_height.PLANT_HEIGHT,
     )
     plantSize: list[str] = OutputField(
-        default=plant_size.DEFAULTS.plantSize,
-        desc=plant_size.PLANT_SIZE,
+        default=sizes.DEFAULTS.sizes,
+        desc=sizes.SIZES,
     )
     habit: str = OutputField(
         default=habit.DEFAULTS.habit,

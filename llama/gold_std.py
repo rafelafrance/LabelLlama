@@ -7,8 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 
 from llama.common import io_util, log
-from llama.fields.all_fields import ALL_FIELDS
-from llama.score.all_scorers import get_scorer
+from llama.fields.field_registry import FIELD_REGISTRY
+from llama.score.scorer_registry import get_scorer
 
 
 def score_extracts(args: argparse.Namespace) -> None:
@@ -27,7 +27,9 @@ def score_extracts(args: argparse.Namespace) -> None:
             compare[key].append(row)
     compare = [p for p in compare.values() if len(p) == 2]
 
-    field_list = [c for c in ALL_FIELDS if c in gold_df.columns and c in lm_df.columns]
+    field_list = [
+        c for c in FIELD_REGISTRY if c in gold_df.columns and c in lm_df.columns
+    ]
 
     rows = []
     df_rows = []
@@ -99,7 +101,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Score a language model job against a gold standard."""
+            """Score a language model job against a gold standard.""",
         ),
     )
     arg_parser.add_argument(

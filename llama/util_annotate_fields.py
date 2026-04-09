@@ -9,7 +9,7 @@ from tkinter import Event, filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
 from typing import Any
 
-from llama.lm.all_signatures import ALL_SIGNATURES
+from llama.lm.signature_registry import SIGNATURE_REGISTRY
 
 FONT = ("liberation sans", 16)
 FONT_I = ("liberation sans", 16, "italic bold")
@@ -52,7 +52,7 @@ class App(tk.Tk):
     def __init__(self, args: argparse.Namespace) -> None:
         super().__init__()
 
-        self.signature = ALL_SIGNATURES[args.signature]
+        self.signature = SIGNATURE_REGISTRY[args.signature]
         sig = self.signature.model_fields
         self.fields: list[str] = [
             k
@@ -360,7 +360,7 @@ def parse_args() -> argparse.Namespace:
         ),
     )
 
-    signatures = list(ALL_SIGNATURES.keys())
+    signatures = list(SIGNATURE_REGISTRY.keys())
     arg_parser.add_argument(
         "--signature",
         choices=signatures,

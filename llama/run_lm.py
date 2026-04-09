@@ -8,9 +8,9 @@ from pathlib import Path
 import dspy
 
 from llama.common import io_util, log
-from llama.lm.all_signatures import ALL_SIGNATURES
 from llama.lm.dwc_module import DwcModule
 from llama.lm.preprocess import clean_text
+from llama.lm.signature_registry import SIGNATURE_REGISTRY
 
 
 def lm_extraction(args: argparse.Namespace) -> None:
@@ -56,7 +56,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             """Use a language model (LM) to extract information from text."""
         ),
     )
-    signatures = list(ALL_SIGNATURES.keys())
+    signatures = list(SIGNATURE_REGISTRY.keys())
     arg_parser.add_argument(
         "--signature",
         choices=signatures,
