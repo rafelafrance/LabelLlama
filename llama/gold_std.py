@@ -7,8 +7,8 @@ from collections import defaultdict
 from pathlib import Path
 
 from llama.common import io_util, log
+from llama.fields.base_field import BaseField
 from llama.fields.field_registry import FIELD_REGISTRY
-from llama.score.scorer_registry import get_scorer
 
 
 def score_extracts(args: argparse.Namespace) -> None:
@@ -66,17 +66,15 @@ def score_extracts(args: argparse.Namespace) -> None:
             expect = gold.get(field_name)
             actual = lm.get(field_name)
 
-            scorer = get_scorer(field_name)
-            scorer.edit_distance(expect, actual)
-            scorer.fuzzy_score(expect, actual)
-            scorer.cross_field_score(expect, actual, lm)
+            field_action = field_registry.get(field_name, BaseField)
+            score = field_action.score(expect, actual, lm)
 
             df_row1[field_name] = ""
             df_row2[field_name] = str(expect)
             df_row3[field_name] = str(actual)
-            df_row4[field_name] = scorer.score
+            df_row4[field_name] = score
 
-            avg[field_name] += scorer.score
+            avg[field_name] += score
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 

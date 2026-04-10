@@ -1,4 +1,7 @@
 from dataclasses import dataclass, field, fields
+from typing import Any
+
+from rapidfuzz import fuzz
 
 from llama.common import fix_values
 from llama.common.dot_dict import DotDict
@@ -20,6 +23,13 @@ class Locality(BaseField):
         del text
 
         self.locality = fix_values.to_str(self.locality)
+
+    @staticmethod
+    def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
+        del record
+
+        expect = str(expect)
+        return fuzz.partial_ratio(expect, actual) / 100.0
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(Locality)})

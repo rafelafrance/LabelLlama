@@ -5,7 +5,6 @@ from llama.common import fix_values
 from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
-from llama.score.base_scorer import BaseScorer
 from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 
 COUNTRY: str = compress("""The country where the specimen was collected.""")
@@ -30,22 +29,17 @@ class Country(BaseField):
         if not self.country and (us_county or us_state):
             self.country = "USA"
 
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(Country)})
-
-
-@dataclass
-class CountryScorer(BaseScorer):
-    def cross_field_score(
-        self, expect: Any, actual: Any, actual_record: dict[str, Any]
-    ) -> float:
+    @staticmethod
+    def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
         actual_usa = actual.lower() in USA
-        us_county = actual_record.get("county", "").lower() in US_COUNTY
-        us_state = actual_record.get("stateProvince", "").lower() in US_STATE
+        us_county = record.get("county", "").lower() in US_COUNTY
+        us_state = record.get("stateProvince", "").lower() in US_STATE
 
         # OK if expect is empty and predicted USA and is a US county or state
         if not expect and actual_usa and (us_county or us_state):
-            self.cross_field = 1.0
-        else:
-            self.cross_field = 0.0
-        return self.cross_field
+            return 1.0
+
+        return BaseField.score(expect, actual, record)  # Default to edit distance
+
+
+DEFAULTS = DotDict({f.name: f.default for f in fields(Country)})

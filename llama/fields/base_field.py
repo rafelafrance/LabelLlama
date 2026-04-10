@@ -2,6 +2,8 @@ from dataclasses import InitVar, dataclass, fields
 from enum import Flag, auto
 from typing import Any
 
+import Levenshtein
+
 
 class Flags(Flag):
     IN = auto()
@@ -57,3 +59,12 @@ class BaseField:
             if (f.metadata.get("in_out", ~Flags.OUT) & Flags.OUT)
             and not (f.metadata.get("hide", ~Flags.HIDE) & Flags.HIDE)
         ]
+
+    @staticmethod
+    def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
+        del record
+
+        actual = str(actual)
+        expect = str(expect)
+
+        return Levenshtein.ratio(expect, actual)

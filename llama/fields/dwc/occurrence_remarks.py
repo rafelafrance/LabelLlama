@@ -2,6 +2,8 @@ import re
 from dataclasses import dataclass, field, fields
 from typing import Any
 
+from rapidfuzz import fuzz
+
 from llama.common import fix_values
 from llama.common.dot_dict import DotDict
 from llama.common.str_util import dedent
@@ -77,6 +79,13 @@ class OccurrenceRemarks(BaseField):
         # If we just have a few small words then kill it
         if len(words) <= MIN_WORDS and all(re.fullmatch(r".{,2}", w) for w in words):
             self.occurrenceRemarks = ""
+
+    @staticmethod
+    def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
+        del record
+
+        expect = str(expect)
+        return fuzz.partial_ratio(expect, actual) / 100.0
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(OccurrenceRemarks)})

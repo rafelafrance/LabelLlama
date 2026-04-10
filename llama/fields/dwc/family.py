@@ -5,7 +5,6 @@ from llama.common import fix_values
 from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
-from llama.score.base_scorer import BaseScorer
 from llama.vocab.taxon import GENUS_TO_FAMILY
 
 FAMILY: str = compress("""Taxonomic family is typically near the scientific name.""")
@@ -28,21 +27,16 @@ class Family(BaseField):
             genus = words[0] if len(words) > 0 else ""
             self.family = GENUS_TO_FAMILY.get(genus, "")
 
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(Family)})
-
-
-@dataclass
-class FamilyScorer(BaseScorer):
-    def cross_field_score(
-        self, expect: Any, actual: Any, actual_record: dict[str, Any]
-    ) -> float:
-        genus = actual_record.get("scientificName", "").split()
+    @staticmethod
+    def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
+        genus = record.get("scientificName", "").split()
         genus = genus[0] if len(genus) > 0 else ""
 
         # OK if expect is empty and the sci name genus is in the family
         if not expect and GENUS_TO_FAMILY.get(genus) == actual:
-            self.cross_field = 1.0
-        else:
-            self.cross_field = 0.0
-        return self.cross_field
+            return 1.0
+
+        return BaseField.score(expect, actual, record)  # Default to edit distance
+
+
+DEFAULTS = DotDict({f.name: f.default for f in fields(Family)})
