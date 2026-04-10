@@ -1,6 +1,6 @@
+from llama.fields.dwc.country import CountryScorer
+from llama.fields.dwc.family import FamilyScorer
 from llama.score.base_scorer import BaseScorer, FuzzyScorer
-from llama.score.country_scorer import CountryScorer
-from llama.score.family_scorer import FamilyScorer
 
 type Scorer = BaseScorer | FuzzyScorer | FamilyScorer | CountryScorer
 

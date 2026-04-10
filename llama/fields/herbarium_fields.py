@@ -40,6 +40,7 @@ from llama.fields.plants.plant_height import PlantHeight
 from llama.fields.plants.reproduction import Reproduction
 from llama.fields.plants.sex import Sex
 from llama.fields.plants.sizes import Sizes
+from llama.fields.plants.woodiness import Woodiness
 
 # This also is the base order of fields in reports
 HERBARIUM_FIELDS: dict[str, Any] = {
@@ -76,6 +77,7 @@ HERBARIUM_FIELDS: dict[str, Any] = {
     "fruitColor": FruitColor,
     "plantHeight": PlantHeight,
     "plantSize": Sizes,
+    "woodiness": Woodiness,
     "habit": Habit,
     "lifeStage": LifeStage,
     "leafShape": LeafShape,

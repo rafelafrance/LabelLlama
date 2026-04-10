@@ -795,7 +795,7 @@ requires-dist = [
     { name = "llama-cpp-python", specifier = ">=0.3.16" },
     { name = "lmstudio", specifier = ">=1.5.0" },
     { name = "lxml", specifier = ">=6.0.2" },
-    { name = "marimo", extras = ["lsp"], specifier = ">=0.18.1" },
+    { name = "marimo", extras = ["lsp"], specifier = ">=0.23.0" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "pillow", specifier = ">=12.0.0" },
     { name = "pip", specifier = ">=26.0.1" },

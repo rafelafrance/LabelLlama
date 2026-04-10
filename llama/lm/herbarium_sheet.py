@@ -24,19 +24,18 @@ from llama.fields.dwc import (
     scientific_name_authorship,
     state_province,
 )
-from llama.fields.dwc import locality as locality_
-from llama.fields.dwc import trs as trs_
-from llama.fields.dwc import utm as utm_
+from llama.fields.dwc import locality as locality_  # Quiet the linter
+from llama.fields.dwc import trs as trs_  # Linter BS
+from llama.fields.dwc import utm as utm_  # Linter BS
 from llama.fields.plants import (
     flower_color,
     flower_present,
     fruit_color,
     fruit_present,
     habit,
-    leaf_margin,
-    leaf_shape,
+    life_stage,
     plant_height,
-    sizes,
+    woodiness,
 )
 
 
@@ -218,10 +217,6 @@ class HerbariumSheet(Signature):
         default=plant_height.DEFAULTS.plantHeight,
         desc=plant_height.PLANT_HEIGHT,
     )
-    plantSize: list[str] = OutputField(
-        default=sizes.DEFAULTS.sizes,
-        desc=sizes.SIZES,
-    )
     habit: str = OutputField(
         default=habit.DEFAULTS.habit,
         desc=habit.HABIT,
@@ -230,15 +225,15 @@ class HerbariumSheet(Signature):
         default=abundance.DEFAULTS.abundance,
         desc=abundance.ABUNDANCE,
     )
-    leafShape: str = OutputField(
-        default=leaf_shape.DEFAULTS.leafShape,
-        desc=leaf_shape.LEAF_SHAPE,
-    )
-    leafMargin: str = OutputField(
-        default=leaf_margin.DEFAULTS.leafMargin,
-        desc=leaf_margin.LEAF_MARGIN,
-    )
     occurrenceRemarks: str = OutputField(
         default=occurrence_remarks.DEFAULTS.occurrenceRemarks,
         desc=occurrence_remarks.OCCURRENCE_REMARKS,
+    )
+    woodiness: str = OutputField(
+        default=woodiness.DEFAULTS.woodiness,
+        desc=woodiness.WOODINESS,
+    )
+    life_stage: str = OutputField(
+        default=life_stage.DEFAULTS.life_stage,
+        desc=life_stage.LIFE_STAGE,
     )
