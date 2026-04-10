@@ -36,7 +36,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             Example: You're given a gold standard list of records from an outside
             source. It would be handy to have a separate file of only the OCRed records
             in the gold standard.
-            """
+            """,
         ),
     )
     arg_parser.add_argument(

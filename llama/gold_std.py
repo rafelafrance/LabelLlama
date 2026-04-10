@@ -10,6 +10,8 @@ from llama.common import io_util, log
 from llama.fields.base_field import BaseField
 from llama.fields.field_registry import FIELD_REGISTRY
 
+PAIR = 2
+
 
 def score_extracts(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
@@ -25,7 +27,7 @@ def score_extracts(args: argparse.Namespace) -> None:
         key = row["source"]
         if key in compare:
             compare[key].append(row)
-    compare = [p for p in compare.values() if len(p) == 2]
+    compare = [p for p in compare.values() if len(p) == PAIR]
 
     field_registry = FIELD_REGISTRY[args.fields_registry]
     field_list = [

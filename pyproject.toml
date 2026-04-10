@@ -82,22 +82,9 @@ ignore = [
   "FIX002",  # Line contains TODO
   "G004",    # Logging statement uses f-string
   "LOG015",  # Use own logger instead
-  "N815",    # Variable in class scope should not be mixedCase
-  "N818",    # Exception name {name} should be named with an Error suffix
-  "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
-  "PLR0915", # Too many statements (x > 50)
-  "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
+  "N815",    # Variable in class scope should not be mixedCase -- I prefer snake case too
   "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
-  "PT009",   # Use a regular assert instead of unittest-style {assertion}
   "RET504",  # Unnecessary assignment to {name} before return statement
-  "RUF001",  # Ambiguous quote character in string
-  "RUF002",  # Docstring contains ambiguous `‘`
-  "S602",    # subprocess` call with `shell=True` identified, security issue
-  "S607",    # Starting a process with a partial executable path
-  "S608",    # Possible SQL injection vector through string-based query construction
-  "SIM114",  # Combine if branches using logical or operator
-  "SIM905",  # Consider using a list literal instead of `str.split`
-  "SLF001",  # Private member accessed: {access}
   "T201",    # print found
   "TD002",   # Missing author in TODO
   "TD003",   # Missing issue link on the line following this TODO
