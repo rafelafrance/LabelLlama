@@ -27,8 +27,9 @@ def score_extracts(args: argparse.Namespace) -> None:
             compare[key].append(row)
     compare = [p for p in compare.values() if len(p) == 2]
 
+    field_registry = FIELD_REGISTRY[args.fields_registry]
     field_list = [
-        c for c in FIELD_REGISTRY if c in gold_df.columns and c in lm_df.columns
+        c for c in field_registry if c in gold_df.columns and c in lm_df.columns
     ]
 
     rows = []
@@ -103,6 +104,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         description=textwrap.dedent(
             """Score a language model job against a gold standard.""",
         ),
+    )
+    field_registry = list(FIELD_REGISTRY.keys())
+    arg_parser.add_argument(
+        "--fields-registry",
+        choices=field_registry,
+        default=field_registry[0],
+        help="""What type of data are you comparing? What is its field list?""",
     )
     arg_parser.add_argument(
         "--gold-in",

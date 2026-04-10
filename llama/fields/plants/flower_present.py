@@ -11,7 +11,7 @@ FLOWERS_PRESENT: str = compress("""Are there flowers on the plant?""")
 
 @dataclass
 class FlowersPresent(BaseField):
-    flowersPresent: bool | None = field(default=False, metadata=BOTH)
+    flowersPresent: bool | str | None = field(default=False, metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -24,6 +24,8 @@ class FlowersPresent(BaseField):
             self.flowersPresent = bool(
                 re.search(r"(fls|flower|fl)", string, flags=re.IGNORECASE)
             )
+
+        self.flowersPresent = self.flowersPresent or ""
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(FlowersPresent)})

@@ -35,7 +35,7 @@ class Elevation(BaseField):
     elevation: float | str | None = field(default=None, metadata=BOTH)
     maxElevation: float | str | None = field(default=None, metadata=BOTH)
     elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
-    elevationEstimated: bool | None = field(default=None, metadata=BOTH)
+    elevationEstimated: bool | str | None = field(default=None, metadata=BOTH)
 
     @classmethod
     def setup_postprocessing(cls) -> None:
@@ -74,7 +74,7 @@ class Elevation(BaseField):
         self.elevationEstimated = fix_values.to_bool(self.elevationEstimated)
 
         # Format boolean as None or True
-        self.elevationEstimated = self.elevationEstimated or False
+        self.elevationEstimated = self.elevationEstimated or ""
 
         # Remove the label from verbatimElevation
         words = self.verbatimElevation.split()
@@ -98,7 +98,7 @@ class Elevation(BaseField):
             self.elevation = ""
             self.maxElevation = ""
             self.elevationUnits = ""
-            self.elevationEstimated = False
+            self.elevationEstimated = ""
             return
 
         # Now set the output fields based on the pairs or values and units

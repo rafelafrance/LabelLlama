@@ -16,8 +16,9 @@ from llama.fields.field_registry import FIELD_REGISTRY
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
+    field_registry = FIELD_REGISTRY[args.fields_registry]
     df = io_util.read_to_df(args.in_file, limit=args.limit)
-    field_list = [c for c in FIELD_REGISTRY if c in df.columns]
+    field_list = [c for c in field_registry if c in df.columns]
 
     if args.field:
         field_list = args.field
@@ -36,7 +37,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         dspy.configure(lm=lm)
 
         for field_name in field_list:
-            field_action = FIELD_REGISTRY[field_name]
+            field_action = field_registry[field_name]
             field_action.setup_postprocessing()
 
             # Record prompts for later use
@@ -51,7 +52,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     }
 
     for field_name in field_list:
-        field_action = FIELD_REGISTRY[field_name]
+        field_action = field_registry[field_name]
         in_subfields = field_action.get_input_subfields()
         visible_subfields = field_action.get_visible_subfields()
 
@@ -92,6 +93,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         description=textwrap.dedent(
             """Format and validate language model extracted text.""",
         ),
+    )
+    field_registry = list(FIELD_REGISTRY.keys())
+    arg_parser.add_argument(
+        "--fields-registry",
+        choices=field_registry,
+        default=field_registry[0],
+        help="""What type of data are you processing? What is its field list?""",
     )
     arg_parser.add_argument(
         "--in-file",

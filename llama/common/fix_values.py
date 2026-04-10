@@ -167,7 +167,7 @@ def stringified_list(value: str) -> list[Any] | str:
 
 def clean_str(value: str) -> str:
     # Notations for an empty field
-    if value in ("[]", '""', "''"):
+    if value in ("[]", '""', "''", '{""}'):
         return ""
 
     # Remove leading and trailing quotes
@@ -191,7 +191,6 @@ def date_to_iso(value: str) -> str:
               [a-z]+    {SEP} {YEAR}
             | {YEAR}    {SEP} [a-z]+
             | {MON_NUM} {SEP} {YEAR4}
-            | {YEAR4}   {SEP} {MON_NUM}
             ) [.,;:_-]* $ """,
         value,
         flags=re.IGNORECASE | re.VERBOSE,
