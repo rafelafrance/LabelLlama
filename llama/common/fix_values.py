@@ -28,7 +28,6 @@ def to_str(value: Any) -> str:
         case str():
             return clean_str(value)
         case float() if math.isnan(value) or math.isinf(value):
-            print("float nan")
             return ""
         case int() | float() | bool():
             return str(value)
