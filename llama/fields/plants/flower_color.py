@@ -13,9 +13,7 @@ class FlowerColor(BaseField):
     flowerColor: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.flowerColor = fix_values.to_str(self.flowerColor)
+        self.flowerColor = fix_values.hallucinated_str(self.flowerColor, text)
         self.flowerColor = fix_values.remove_trailing_punct(self.flowerColor)
 
 

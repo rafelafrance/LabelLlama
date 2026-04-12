@@ -16,9 +16,7 @@ class Woodiness(BaseField):
     woodiness: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.woodiness = fix_values.to_str(self.woodiness)
+        self.woodiness = fix_values.hallucinated_str(self.woodiness, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(Woodiness)})

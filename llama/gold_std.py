@@ -10,7 +10,7 @@ from llama.common import io_util, log
 from llama.fields.base_field import BaseField
 from llama.fields.field_registry import FIELD_REGISTRY
 
-PAIR = 2
+PAIR: int = 2
 
 
 def score_extracts(args: argparse.Namespace) -> None:

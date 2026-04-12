@@ -3,14 +3,14 @@ from typing import Any
 
 import dspy
 
-from llama.lm.all_signatures import ALL_SIGNATURES
 from llama.lm.preprocess import clean_text
+from llama.lm.signature_registry import SIGNATURE_REGISTRY
 
 
 class DwcModule(dspy.Module):
     def __init__(self, signature: str) -> None:
         super().__init__()
-        self.signature = ALL_SIGNATURES[signature]
+        self.signature = SIGNATURE_REGISTRY[signature]
         self.predictor = dspy.Predict(self.signature)
 
     def forward(self, text: str, source: str) -> dict[str, Any]:

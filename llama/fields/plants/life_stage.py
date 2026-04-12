@@ -14,12 +14,10 @@ LIFE_STAGE: str = compress("""
 
 @dataclass
 class LifeStage(BaseField):
-    life_stage: str = field(default="", metadata=BOTH)
+    lifeStage: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.life_stage = fix_values.to_str(self.life_stage)
+        self.lifeStage = fix_values.hallucinated_str(self.lifeStage, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(LifeStage)})

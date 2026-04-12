@@ -20,12 +20,15 @@ YEAR = r"([12]\d\d\d|\d\d)"
 YEAR4 = r"([12]\d\d\d)"
 MON_NUM = r"[01]?\d"  # Month as a number
 
+EMPTY: tuple = ("[]", '""', "''", '{""}', "[", "]", "[empty]", "nan")
+
 
 def to_str(value: Any) -> str:
     match value:
         case str():
             return clean_str(value)
         case float() if math.isnan(value) or math.isinf(value):
+            print("float nan")
             return ""
         case int() | float() | bool():
             return str(value)
@@ -167,7 +170,7 @@ def stringified_list(value: str) -> list[Any] | str:
 
 def clean_str(value: str) -> str:
     # Notations for an empty field
-    if value in ("[]", '""', "''", '{""}'):
+    if value.lower() in EMPTY:
         return ""
 
     # Remove leading and trailing quotes
@@ -253,6 +256,7 @@ def reduce_str_list(value: list[str] | str) -> str:
 
 
 def hallucinated_str(value: str, text: str) -> str:
+    value = to_str(value)
     pattern = re.escape(str(value))
     value = value if re.search(pattern, text, flags=re.IGNORECASE) else ""
-    return to_str(value)
+    return value

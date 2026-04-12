@@ -8,18 +8,16 @@ from llama.fields.base_field import BOTH, BaseField
 DURATION: str = compress("""
     What is the noted plant duration?
     Examples: "annual", "biennial", "fugacious", "marcescent", "monocarp", "monocarpic",
-    "perennial", "persistent", "semelparous", "subpersistent".
+    "perennial", "persistent", "semelparous", "subpersistent", "iteroparity".
     """)
 
 
 @dataclass
-class Duration(BaseField):
-    duration: str = field(default="", metadata=BOTH)
+class LifeCycle(BaseField):
+    lifeCycle: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.duration = fix_values.to_str(self.duration)
+        self.lifeCycle = fix_values.hallucinated_str(self.lifeCycle, text)
 
 
-DEFAULTS = DotDict({f.name: f.default for f in fields(Duration)})
+DEFAULTS = DotDict({f.name: f.default for f in fields(LifeCycle)})

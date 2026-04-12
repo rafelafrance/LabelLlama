@@ -93,7 +93,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     arg_parser.add_argument(
         "--model-name",
-        default="chandra-ocr-2",
+        default="chandra-ocr",
         help="""Use this language model. (default: %(default)s)""",
     )
     arg_parser.add_argument(

@@ -233,7 +233,7 @@ class HerbariumSheet(Signature):
         default=woodiness.DEFAULTS.woodiness,
         desc=woodiness.WOODINESS,
     )
-    life_stage: str = OutputField(
-        default=life_stage.DEFAULTS.life_stage,
+    lifeStage: str = OutputField(
+        default=life_stage.DEFAULTS.lifeStage,
         desc=life_stage.LIFE_STAGE,
     )

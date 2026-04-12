@@ -13,12 +13,13 @@ LEAF_DURATION: str = compress("""
 
 @dataclass
 class LeafDuration(BaseField):
-    leaf_duration: str = field(default="", metadata=BOTH)
+    leafDuration: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
+        self.leafDuration = fix_values.hallucinated_str(self.leafDuration, text)
         del text
 
-        self.leaf_duration = fix_values.to_str(self.leaf_duration)
+        self.leafDuration = fix_values.to_str(self.leafDuration)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(LeafDuration)})

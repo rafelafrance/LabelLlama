@@ -35,6 +35,10 @@ UTM_ZONE: str = compress("""
     """)
 
 
+# Remove these extra values
+EMPTY_NE: tuple = ("0", "0.0")
+
+
 @dataclass
 class Utm(BaseField):
     predictor: ClassVar[Any] = None
@@ -79,6 +83,10 @@ class Utm(BaseField):
         # Remove the E or N for the easting or northing field
         self.utmNorthing = self.utmNorthing.lower().replace("n", "")
         self.utmEasting = self.utmEasting.lower().replace("e", "")
+
+        # Remove these odd values from northing or easting
+        self.utmNorthing = "" if self.utmNorthing in EMPTY_NE else self.utmNorthing
+        self.utmEasting = "" if self.utmEasting in EMPTY_NE else self.utmEasting
 
         # Remove the zone label
         words = self.utmZone.split()

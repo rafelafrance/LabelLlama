@@ -24,6 +24,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         field_list = args.field
 
     input_rows = df.to_dict("records")
+    input_rows = input_rows[: args.limit]
 
     if args.run_field_models:
         lm = dspy.LM(
