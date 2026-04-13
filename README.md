@@ -41,9 +41,12 @@ You will need the python environment package manager called `uv` as well as `git
 ### Step 1: Clone this repository
 
 ```bash
-git clone https://github.com/rafelafrance/LabelLlama.git@v0.1.0
+git clone https://github.com/rafelafrance/LabelLlama.git
 cd LabelLlama
+git checkout v0.1.0
 ```
+
+This project is under **heavy** development, tag `v0.1.0` will pin the code to a known state.
 
 ### Step 2: Set up the environment using `uv`
 
