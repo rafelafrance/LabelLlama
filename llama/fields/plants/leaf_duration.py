@@ -17,9 +17,6 @@ class LeafDuration(BaseField):
 
     def __post_init__(self, text: str) -> None:
         self.leafDuration = fix_values.hallucinated_str(self.leafDuration, text)
-        del text
-
-        self.leafDuration = fix_values.to_str(self.leafDuration)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(LeafDuration)})

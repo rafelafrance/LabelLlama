@@ -61,8 +61,9 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             in_data = {k: row.get(k) for k in in_subfields}
 
             field = field_action(row["text"], **in_data)
+
             if args.run_field_models:
-                field.run_field_model()
+                field.parse_field()
 
             field.cross_field_update(row)
 

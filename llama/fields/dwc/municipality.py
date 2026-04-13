@@ -15,9 +15,7 @@ class Municipality(BaseField):
     municipality: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.municipality = fix_values.to_str(self.municipality).title()
+        self.municipality = fix_values.hallucinated_str(self.municipality, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(Municipality)})

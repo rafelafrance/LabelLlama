@@ -20,9 +20,7 @@ class Reproduction(BaseField):
     reproduction: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.reproduction = fix_values.to_str(self.reproduction)
+        self.reproduction = fix_values.hallucinated_str(self.reproduction, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(Reproduction)})

@@ -17,9 +17,7 @@ class Sex(BaseField):
     sex: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.sex = fix_values.to_str(self.sex)
+        self.sex = fix_values.hallucinated_str(self.sex, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(Sex)})

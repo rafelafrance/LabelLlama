@@ -28,7 +28,7 @@ ELEVATION_ESTIMATED: str = compress("""Is this an estimated elevation?""")
 
 @dataclass
 class Elevation(BaseField):
-    predictor: ClassVar[Any] = None
+    parse_model: ClassVar[Any] = None
 
     verbatimElevation: str = field(default="", metadata=BOTH)
     elevationValues: list[float] | None = field(default=None, metadata=IN)
@@ -39,7 +39,7 @@ class Elevation(BaseField):
 
     @classmethod
     def setup_postprocessing(cls) -> None:
-        cls.predictor = dspy.Predict(ElevationSig)
+        cls.parse_model = dspy.Predict(ElevationSig)
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -48,13 +48,13 @@ class Elevation(BaseField):
         self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
         self.clean_subfields()
 
-    def run_field_model(self) -> None:
+    def parse_field(self) -> None:
         # Only run the model if an input field is empty
         # Input for this class is actually an output from the LM model class
         if not self.verbatimElevation or (self.elevationValues and self.elevationUnits):
             return
 
-        predicted = self.predictor(verbatimElevation=self.verbatimElevation)
+        predicted = self.parse_model(verbatimElevation=self.verbatimElevation)
 
         # Only fill fields without a previous value, i.e. default to previous LLM
         self.elevationValues = self.elevationValues or predicted.get(
@@ -121,22 +121,14 @@ class ElevationSig(Signature):
     verbatimElevation = InputField()
 
     elevationValues: list[float] = OutputField(
-        default=DEFAULTS["elevationValues"],
-        desc=compress("""
-            The elevation values.
-            More than one value could be an elevation range or it could be the same
-            elevation reported in different units.
-            """),
+        default=DEFAULTS.elevationValues,
+        desc=ELEVATION_VALUES,
     )
     elevationUnits: list[str] = OutputField(
-        default=DEFAULTS["elevationUnits"],
-        desc=compress("""
-            The elevation units.
-            There may be more than one units reported when the same value is reported
-            in different units.
-            """),
+        default=DEFAULTS.elevationUnits,
+        desc=ELEVATION_UNITS,
     )
     elevationEstimated: bool = OutputField(
-        default=DEFAULTS["elevationEstimated"],
-        desc="Is this an estimated elevation?",
+        default=DEFAULTS.elevationEstimated,
+        desc=ELEVATION_ESTIMATED,
     )

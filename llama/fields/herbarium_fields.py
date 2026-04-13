@@ -35,6 +35,7 @@ from llama.fields.plants.habit import Habit
 from llama.fields.plants.leaf_duration import LeafDuration
 from llama.fields.plants.leaf_margin import LeafMargin
 from llama.fields.plants.leaf_shape import LeafShape
+from llama.fields.plants.life_form import LifeForm
 from llama.fields.plants.life_stage import LifeStage
 from llama.fields.plants.plant_height import PlantHeight
 from llama.fields.plants.reproduction import Reproduction
@@ -79,6 +80,7 @@ HERBARIUM_FIELDS: dict[str, Any] = {
     "plantSize": Sizes,
     "woodiness": Woodiness,
     "habit": Habit,
+    "lifeForm": LifeForm,
     "lifeStage": LifeStage,
     "leafShape": LeafShape,
     "leafMargin": LeafMargin,

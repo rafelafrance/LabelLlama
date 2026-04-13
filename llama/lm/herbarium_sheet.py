@@ -33,6 +33,7 @@ from llama.fields.plants import (
     fruit_color,
     fruit_present,
     habit,
+    life_form,
     life_stage,
     plant_height,
     woodiness,
@@ -220,6 +221,10 @@ class HerbariumSheet(Signature):
     habit: str = OutputField(
         default=habit.DEFAULTS.habit,
         desc=habit.HABIT,
+    )
+    lifeForm: str = OutputField(
+        default=life_form.DEFAULTS.lifeForm,
+        desc=life_form.LIFE_FORM,
     )
     abundance: str = OutputField(
         default=abundance.DEFAULTS.abundance,

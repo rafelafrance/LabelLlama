@@ -41,7 +41,7 @@ EMPTY_NE: tuple = ("0", "0.0")
 
 @dataclass
 class Utm(BaseField):
-    predictor: ClassVar[Any] = None
+    parse_model: ClassVar[Any] = None
 
     utm: str = field(default="", metadata=BOTH)
     utmNorthing: str = field(default="", metadata=BOTH)
@@ -50,7 +50,7 @@ class Utm(BaseField):
 
     @classmethod
     def setup_postprocessing(cls) -> None:
-        cls.predictor = dspy.Predict(UtmSig)
+        cls.parse_model = dspy.Predict(UtmSig)
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -59,13 +59,13 @@ class Utm(BaseField):
         self.utm = fix_values.to_str(self.utm)
         self.clean_subfields()
 
-    def run_field_model(self) -> None:
+    def parse_field(self) -> None:
         # Only run the model if an input field is empty
         # Input for this class is actually an output from the LM model class
         if not self.utm or (self.utmNorthing and self.utmEasting and self.utmZone):
             return
 
-        predicted = self.predictor(utm=self.utm)
+        predicted = self.parse_model(utm=self.utm)
 
         # Only fill fields without a previous value, i.e. default to previous LLM
         self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
@@ -110,14 +110,14 @@ class UtmSig(Signature):
     utm = InputField()
 
     utmNorthing: str = OutputField(
-        default="",
+        default=DEFAULTS.utmNorthing,
         desc=UTM_NORTHING,
     )
     utmEasting: str = OutputField(
-        default="",
+        default=DEFAULTS.utmEasting,
         desc=UTM_EASTING,
     )
     utmZone: str = OutputField(
-        default="",
+        default=DEFAULTS.utmZone,
         desc=UTM_ZONE,
     )

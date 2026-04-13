@@ -46,7 +46,7 @@ TRS_QUAD: str = compress("""
 
 @dataclass
 class Trs(BaseField):
-    predictor: ClassVar[Any] = None
+    parse_model: ClassVar[Any] = None
 
     trs: str = field(default="", metadata=BOTH)
     trsTownship: str = field(default="", metadata=BOTH)
@@ -63,15 +63,15 @@ class Trs(BaseField):
 
     @classmethod
     def setup_postprocessing(cls) -> None:
-        cls.predictor = dspy.Predict(TrsSig)
+        cls.parse_model = dspy.Predict(TrsSig)
 
-    def run_field_model(self) -> None:
+    def parse_field(self) -> None:
         # Only run the model if an important input field is empty
         # Input for this class is actually an output from the LM moddel class
         if not self.trs or (self.trsTownship and self.trsRange and self.trsSection):
             return
 
-        predicted = self.predictor(trs=self.trs)
+        predicted = self.parse_model(trs=self.trs)
 
         # Only fill fields without a previous value, i.e. default to previous LLM
         self.trsTownship = self.trsTownship or predicted.get("trsTownship", "")
@@ -119,18 +119,18 @@ class TrsSig(Signature):
     trs = InputField()
 
     trsTownship: str = OutputField(
-        default=DEFAULTS["trsTownship"],
+        default=DEFAULTS.trsTownship,
         desc=TRS_TOWNSHIP,
     )
     trsRange: str = OutputField(
-        default=DEFAULTS["trsRange"],
+        default=DEFAULTS.trsRange,
         desc=TRS_RANGE,
     )
     trsSection: str = OutputField(
-        default=DEFAULTS["trsSection"],
+        default=DEFAULTS.trsSection,
         desc=TRS_SECTION,
     )
     trsQuad: str = OutputField(
-        default=DEFAULTS["trsQuad"],
+        default=DEFAULTS.trsQuad,
         desc=TRS_QUAD,
     )

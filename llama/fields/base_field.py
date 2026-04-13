@@ -29,7 +29,7 @@ class BaseField:
     def cleanup_postprocessing(cls) -> None:
         pass
 
-    def run_field_model(self) -> None:
+    def parse_field(self) -> None:
         pass
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

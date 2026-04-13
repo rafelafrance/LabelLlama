@@ -16,9 +16,7 @@ class LeafShape(BaseField):
     leafShape: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.leafShape = fix_values.to_str(self.leafShape)
+        self.leafShape = fix_values.hallucinated_str(self.leafShape, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(LeafShape)})

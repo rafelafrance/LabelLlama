@@ -16,9 +16,7 @@ class LeafMargin(BaseField):
     leafMargin: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.leafMargin = fix_values.to_str(self.leafMargin)
+        self.leafDuration = fix_values.hallucinated_str(self.leafDuration, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(LeafMargin)})

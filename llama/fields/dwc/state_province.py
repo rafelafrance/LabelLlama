@@ -15,9 +15,7 @@ class StateProvince(BaseField):
     stateProvince: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.stateProvince = fix_values.to_str(self.stateProvince).title()
+        self.stateProvince = fix_values.hallucinated_str(self.stateProvince, text)
 
 
 DEFAULTS = DotDict({f.name: f.default for f in fields(StateProvince)})

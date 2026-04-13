@@ -1,8 +1,8 @@
 #!/bin/bash
 
 uv run llama/run_lm.py \
-  --doc-in data/herbarium/1000_test_docs.csv \
-  --out-file data/herbarium/1000_test_2026-04-11.csv \
+  --doc-csv data/herbarium/1000_test_docs.csv \
+  --out-file data/herbarium/1000_test_2026-04-13.csv \
   --model "openai/gpt-5-nano" \
   --api-key "$OPENAI_API_KEY" \
   --threads 20 \
