@@ -1,5 +1,7 @@
 # Label Llama![CI](https://github.com/rafelafrance/LabelLlama/workflows/CI/badge.svg)
 
+**This project is under heavy development.**
+
 - [How to set up LabelLlama](#how-to-set-up-labelllama)
 - [OCR images of museum specimens](#ocr-images-of-museum-specimens)
 - [Extract terms with an LLM](#extract-terms-with-an-llm)
@@ -8,8 +10,6 @@
 ## The view from 30,000 feet
 
 Extract information from labels on images of museum specimens.
-
-**This project is in heavy development.**
 
 ### Given images of museum specimens
 

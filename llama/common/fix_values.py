@@ -88,7 +88,7 @@ def to_list_of_strs(value: Any) -> list[str]:
     match value:
         case str():
             value = clean_str(value)
-            return [value] if value else []
+            return [value] or []
         case float() if math.isnan(value) or math.isinf(value):
             return []
         case int() | float() | bool():
