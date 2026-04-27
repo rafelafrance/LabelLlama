@@ -34,7 +34,6 @@ __marimo__/
 
 # Environment
 .venv/
-.env/
 
 # data
 output/
@@ -55,4 +54,4 @@ external/
 
 # secrets
 *secret*
-time/
+.env

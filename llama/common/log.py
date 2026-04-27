@@ -9,11 +9,12 @@ if TYPE_CHECKING:
 
 def setup_logger(file_name: str | Path | None = None) -> None:
     logging.basicConfig(
-        filename=file_name,
         level=logging.INFO,
         format="%(asctime)s %(levelname)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    if file_name:
+        logging.getLogger().addHandler(logging.FileHandler(file_name))
 
 
 def module_name() -> str:
@@ -39,4 +40,5 @@ def finished() -> None:
 def log_args(args: Namespace) -> None:
     for key, val in sorted(vars(args).items()):
         if key != "api_key":
-            logging.info(f"Argument: {key} = {val}")
+            msg = f"Argument: {key} = {val}"
+            logging.info(msg)

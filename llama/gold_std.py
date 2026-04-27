@@ -6,7 +6,9 @@ import textwrap
 from collections import defaultdict
 from pathlib import Path
 
-from llama.common import io_util, log
+from rich import print as rprint
+
+from llama.common import io_util, log, score_util
 from llama.fields.base_field import BaseField
 from llama.fields.field_registry import FIELD_REGISTRY
 
@@ -30,9 +32,9 @@ def score_extracts(args: argparse.Namespace) -> None:
     compare = [p for p in compare.values() if len(p) == PAIR]
 
     field_registry = FIELD_REGISTRY[args.fields_registry]
-    field_list = [
-        c for c in field_registry if c in gold_df.columns and c in lm_df.columns
-    ]
+
+    field_list = [c for c in gold_df.columns if c in lm_df.columns]
+    field_list = args.column or field_list
 
     rows = []
     df_rows = []
@@ -78,6 +80,10 @@ def score_extracts(args: argparse.Namespace) -> None:
 
             avg[field_name] += score
 
+            # Print debug info
+            if args.column or args.limit:
+                print_debug_info(field_name, str(expect), str(actual), score)
+
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 
     avg_row: dict[str, float | str] = {
@@ -96,6 +102,14 @@ def score_extracts(args: argparse.Namespace) -> None:
     io_util.output_file(args.out_file, df_rows)
 
     log.finished()
+
+
+def print_debug_info(field_name: str, expect: str, actual: str, score: float) -> None:
+    color = score_util.score_color(score)
+    rprint(f"[{color}]{field_name}[/{color}]")
+    rprint(f"[{color}]expect: {expect}[/{color}]")
+    rprint(f"[{color}]actual: {actual}[/{color}]")
+    print()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -135,6 +149,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--column",
+        action="append",
+        help="""Just parse one column. Used for debugging.""",
+    )
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit to this many records. Used for debugging.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

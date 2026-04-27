@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import logging
 import textwrap
 from pathlib import Path
 
@@ -21,21 +20,14 @@ def lm_extraction(args: argparse.Namespace) -> None:
         api_base=args.api_host,
         api_key=args.api_key,
         temperature=args.temperature,
-        max_tokens=args.context_length,
-        cache=not args.no_cache,
     )
     dspy.configure(lm=lm)
 
     predictor = DwcModule(args.signature)
 
-    # Record the prompt for later use
-    if args.log_file:
-        prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
-        logging.info(prompt)
-
     parallel = dspy.Parallel(num_threads=args.threads)
 
-    docs = io_util.read_list_of_dicts(args.doc_csv, fill_na="", limit=args.limit)
+    docs = io_util.read_list_of_dicts(args.doc_tsv, fill_na="")
 
     exec_pairs = [
         (predictor, {"text": clean_text(d["text"]), "source": d["source"]})
@@ -64,7 +56,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""What type of data are you extracting? What is its signature?""",
     )
     arg_parser.add_argument(
-        "--doc-csv",
+        "--doc-tsv",
         type=Path,
         help="""Parse doc text from this file. We need only 'source' and 'text'
             columns for valid input, so any file with those columns are fine.""",
@@ -96,34 +88,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""API key.""",
     )
     arg_parser.add_argument(
-        "--context-length",
-        type=int,
-        help="""Model's context length.""",
-    )
-    arg_parser.add_argument(
-        "--max-tokens",
-        type=int,
-        help="""Model's max tokens for output.""",
-    )
-    arg_parser.add_argument(
         "--temperature",
         type=float,
         help="""Model's temperature.""",
     )
     arg_parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="""Don't use cached records?""",
-    )
-    arg_parser.add_argument(
         "--log-file",
         type=Path,
-        help="""Append logging notices to this file. It also logs the script arguments
-            so you may use this to keep track of what you did.""",
-    )
-    arg_parser.add_argument(
-        "--limit",
-        type=int,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
     )

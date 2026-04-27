@@ -1,9 +1,6 @@
 #!/bin/bash
 
-uv run llama/postprocess_fields.py \
-  --in-file data/herbarium/gold_std_2026-03-30.tsv \
-  --log-file data/herbarium/history.log \
+uv run llama/postprocess.py \
+  --in-file data/herbarium/gold_docs_2026-04-27a.csv \
   --run-field-models \
-  --no-cache \
-  --field occurrenceRemarks \
-  --out-file data/herbarium/gold_std_2026-03-30b_post.csv
+  --out-file data/herbarium/gold_docs_2026-04-27a_post.csv

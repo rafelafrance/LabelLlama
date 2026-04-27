@@ -18,11 +18,9 @@ class TestPreprocess(unittest.TestCase):
             Date
             May 29, 1966.
             """)
-        expect = " ".join(
-            """
-            F. H. SARGENT Paspalum urvillei Steud. Locality Picayune, Miss.
-            Habitat Waste ground. Date May 29, 1966.
-            """.split()
+        expect = (
+            "F. H. SARGENT Paspalum urvillei Steud. Locality Picayune, Miss. "
+            "Habitat Waste ground. Date May 29, 1966."
         )
         actual = preprocess.clean_text(text)
-        self.assertEqual(actual, expect)
+        assert actual == expect

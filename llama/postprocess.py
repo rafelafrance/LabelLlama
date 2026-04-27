@@ -20,8 +20,8 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     df = io_util.read_to_df(args.in_file, limit=args.limit)
     field_list = [c for c in field_registry if c in df.columns]
 
-    if args.field:
-        field_list = args.field
+    if args.column:
+        field_list = args.column
 
     input_rows = df.to_dict("records")
     input_rows = input_rows[: args.limit]
@@ -32,8 +32,6 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             api_base=args.api_host,
             api_key=args.api_key,
             temperature=args.temperature,
-            max_tokens=args.context_length,
-            cache=not args.no_cache,
         )
         dspy.configure(lm=lm)
 
@@ -70,7 +68,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             out_data = {k: getattr(field, k) for k in visible_subfields}
 
             # Print debug info
-            if args.field or args.limit:
+            if args.column or args.limit:
                 print_debug_info(row, out_data)
 
             output_rows[row["source"]] |= out_data
@@ -130,12 +128,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""API key.""",
     )
     arg_parser.add_argument(
-        "--context-length",
-        type=int,
-        default=16384,
-        help="""Model's context length. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
         "--temperature",
         type=float,
         default=0.1,
@@ -148,20 +140,15 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             the primary field.""",
     )
     arg_parser.add_argument(
-        "--no-cache",
-        action="store_true",
-        help="""Don't use cached records?""",
-    )
-    arg_parser.add_argument(
         "--log-file",
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
     )
     arg_parser.add_argument(
-        "--field",
+        "--column",
         action="append",
-        help="""Just parse one field. Used for debugging.""",
+        help="""Just parse one column. Used for debugging.""",
     )
     arg_parser.add_argument(
         "--limit",
