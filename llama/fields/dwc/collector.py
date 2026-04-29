@@ -1,8 +1,7 @@
 import re
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, HIDE, BaseField
 
@@ -23,6 +22,3 @@ class Collector(BaseField):
         self.collector = re.sub(r"^col\w*[.:,;]?\s+", "", self.collector)
 
         self.recordedBy = self.collector
-
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(Collector)})

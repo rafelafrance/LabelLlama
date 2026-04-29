@@ -1,9 +1,9 @@
 #!/bin/bash
 
 uv run ./llama/gold_std.py \
-  --gold-in data/herbarium/gold_std_2026-03-30a_postRPG3_edits.csv \
+  --gold-in data/herbarium/gold_std_2026-03-30a_postRPG3_edited.csv \
   --lm-in data/herbarium/gold_std_2026-03-30a_post.csv \
-  --out-file data/herbarium/score_dwc_2026-04-27a_gold.csv
+  --out-file data/herbarium/score_dwc_2026-04-28a_gold.html
 
 # source
 # text

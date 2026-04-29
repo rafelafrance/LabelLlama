@@ -1,8 +1,7 @@
 import re
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, HIDE, BaseField
 
@@ -32,6 +31,3 @@ class CollectorNumber(BaseField):
         words = [s for s in words if not s.lower().startswith("rec")]
         self.collectorNumber = " ".join(words)
         self.recordNumber = self.collectorNumber
-
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(CollectorNumber)})

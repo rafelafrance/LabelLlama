@@ -1,8 +1,8 @@
 import re
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
+from typing import Any
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -27,5 +27,7 @@ class FruitPresent(BaseField):
 
         self.fruitPresent = self.fruitPresent or ""
 
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(FruitPresent)})
+    def cross_field_update(self, record: dict[str, Any]) -> None:
+        """Set fruitPresent to True if there are fruit colors."""
+        if not self.fruitPresent and record["fruitColor"]:
+            self.fruitPresent = True

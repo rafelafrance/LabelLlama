@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, IN, BaseField
 from llama.vocab import units
@@ -61,9 +60,7 @@ class Elevation(BaseField):
             "elevationValues", ""
         )
         self.elevationUnits = self.elevationUnits or predicted.get("elevationUnits", "")
-        self.elevationEstimated = self.elevationEstimated or predicted.get(
-            "elevationEstimated", ""
-        )
+        self.elevationEstimated = self.elevationEstimated or ""
 
         self.clean_subfields()
 
@@ -107,9 +104,6 @@ class Elevation(BaseField):
         self.elevationUnits = units.elevation(pairs[0][1])
 
 
-DEFAULTS = DotDict({f.name: f.default for f in fields(Elevation)})
-
-
 class ElevationSig(Signature):
     """
     Analyze the text and extract this elevation information.
@@ -121,14 +115,11 @@ class ElevationSig(Signature):
     verbatimElevation = InputField()
 
     elevationValues: list[float] = OutputField(
-        default=DEFAULTS.elevationValues,
         desc=ELEVATION_VALUES,
     )
     elevationUnits: list[str] = OutputField(
-        default=DEFAULTS.elevationUnits,
         desc=ELEVATION_UNITS,
     )
     elevationEstimated: bool = OutputField(
-        default=DEFAULTS.elevationEstimated,
         desc=ELEVATION_ESTIMATED,
     )

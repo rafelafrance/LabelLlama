@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -24,6 +23,3 @@ class Habit(BaseField):
 
     def __post_init__(self, text: str) -> None:
         self.habit = fix_values.hallucinated_str(self.habit, text)
-
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(Habit)})

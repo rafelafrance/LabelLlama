@@ -25,6 +25,9 @@ def lm_extraction(args: argparse.Namespace) -> None:
 
     predictor = DwcModule(args.signature)
 
+    # prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
+    # print(prompt)
+
     parallel = dspy.Parallel(num_threads=args.threads)
 
     docs = io_util.read_list_of_dicts(args.doc_tsv, fill_na="")

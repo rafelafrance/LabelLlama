@@ -33,7 +33,8 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     field_registry = FIELD_REGISTRY[args.fields_registry]
 
-    field_list = [c for c in gold_df.columns if c in lm_df.columns]
+    skips = ["source", "text"]
+    field_list = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
     field_list = args.column or field_list
 
     rows = []
@@ -80,8 +81,7 @@ def score_extracts(args: argparse.Namespace) -> None:
 
             avg[field_name] += score
 
-            # Print debug info
-            if args.column or args.limit:
+            if debugging(args):
                 print_debug_info(field_name, str(expect), str(actual), score)
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
@@ -102,6 +102,10 @@ def score_extracts(args: argparse.Namespace) -> None:
     io_util.output_file(args.out_file, df_rows)
 
     log.finished()
+
+
+def debugging(args: argparse.Namespace) -> bool:
+    return args.column or args.limit
 
 
 def print_debug_info(field_name: str, expect: str, actual: str, score: float) -> None:

@@ -1,8 +1,7 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from typing import Any
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 from llama.vocab.taxon import GENUS_TO_FAMILY
@@ -37,6 +36,3 @@ class Family(BaseField):
             return 1.0
 
         return BaseField.score(expect, actual, record)  # Default to edit distance
-
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(Family)})

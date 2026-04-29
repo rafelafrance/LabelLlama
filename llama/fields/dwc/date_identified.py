@@ -1,12 +1,14 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
 DATE_IDENTIFIED: str = compress(
-    """When was the specimen identified or verified or determined?"""
+    """
+    When was the specimen identified or verified or determined?
+    It is often given as a partial date without the month and/or without the day.
+    """
 )
 
 
@@ -24,7 +26,4 @@ class DateIdentified(BaseField):
         words = [w for w in words if not w.lower().startswith("date")]
         self.dateIdentified = " ".join(words)
 
-        self.dateIdentified = fix_values.date_to_iso(self.dateIdentified)
-
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(DateIdentified)})
+        # self.dateIdentified = fix_values.date_to_iso(self.dateIdentified)

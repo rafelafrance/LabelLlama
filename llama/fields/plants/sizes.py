@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -19,6 +18,3 @@ class Sizes(BaseField):
 
         self.sizes = fix_values.to_list_of_strs(self.sizes)
         self.sizes = fix_values.reduce_str_list(self.sizes)
-
-
-DEFAULTS = DotDict({f.name: f.default for f in fields(Sizes)})

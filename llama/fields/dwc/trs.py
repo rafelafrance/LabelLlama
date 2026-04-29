@@ -1,12 +1,11 @@
 import re
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.common import fix_values
-from llama.common.dot_dict import DotDict
 from llama.common.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
@@ -105,9 +104,6 @@ class Trs(BaseField):
         self.trsQuad = " ".join(words)
 
 
-DEFAULTS = DotDict({f.name: f.default for f in fields(Trs)})
-
-
 class TrsSig(Signature):
     """
     Analyze the text and extract this elevation information.
@@ -119,18 +115,14 @@ class TrsSig(Signature):
     trs = InputField()
 
     trsTownship: str = OutputField(
-        default=DEFAULTS.trsTownship,
         desc=TRS_TOWNSHIP,
     )
     trsRange: str = OutputField(
-        default=DEFAULTS.trsRange,
         desc=TRS_RANGE,
     )
     trsSection: str = OutputField(
-        default=DEFAULTS.trsSection,
         desc=TRS_SECTION,
     )
     trsQuad: str = OutputField(
-        default=DEFAULTS.trsQuad,
         desc=TRS_QUAD,
     )
