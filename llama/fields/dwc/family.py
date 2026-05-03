@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from llama.common import fix_values
-from llama.common.str_util import compress
+from llama.pylib import fix_values
+from llama.pylib.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 from llama.vocab.taxon import GENUS_TO_FAMILY
 

@@ -1,6 +1,6 @@
 import unittest
 
-from llama.common import fix_values
+from llama.pylib import fix_values
 
 
 class TestFixValues(unittest.TestCase):

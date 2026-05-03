@@ -3,8 +3,8 @@ from typing import Any
 
 from rapidfuzz import fuzz
 
-from llama.common import fix_values
-from llama.common.str_util import compress
+from llama.pylib import fix_values
+from llama.pylib.str_util import compress
 from llama.fields.base_field import BOTH, BaseField
 
 LOCALITY: str = compress("""

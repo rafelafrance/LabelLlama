@@ -6,7 +6,7 @@ from pathlib import Path
 
 import dspy
 
-from llama.common import io_util, log
+from llama.pylib import io_util, log
 from llama.lm.dwc_module import DwcModule
 from llama.lm.preprocess import clean_text
 from llama.lm.signature_registry import SIGNATURE_REGISTRY

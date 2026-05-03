@@ -8,7 +8,7 @@ from pathlib import Path
 
 from rich import print as rprint
 
-from llama.common import io_util, log, score_util
+from llama.pylib import io_util, log, score_util
 from llama.fields.base_field import BaseField
 from llama.fields.field_registry import FIELD_REGISTRY
 

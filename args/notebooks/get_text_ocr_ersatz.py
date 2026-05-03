@@ -27,7 +27,7 @@ def _():
     from pathlib import Path
 
     from llama import get_text
-    from llama.common.args_util import to_args
+    from llama.pylib.args_util import to_args
 
     return Path, get_text, to_args
 

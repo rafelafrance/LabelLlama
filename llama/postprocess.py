@@ -9,7 +9,7 @@ from typing import Any
 import dspy
 from tqdm import tqdm
 
-from llama.common import io_util, log
+from llama.pylib import io_util, log
 from llama.fields.field_registry import FIELD_REGISTRY
 
 

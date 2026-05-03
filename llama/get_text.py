@@ -1,44 +1,45 @@
 #!/usr/bin/env python3
 
 import argparse
+import base64
 import contextlib
 import csv
 import logging
+import os
 import textwrap
 from datetime import datetime
 from pathlib import Path
 
-import lmstudio as lms
+import openai
 import pandas as pd
 from tqdm import tqdm
 
-from llama.common import io_util, log
+from llama.pylib import io_util, log
 from llama.ocr import all_ocr_parameters
 
 
 def ocr_images(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
+    job_began = datetime.now()
+
     already_read = get_docs_read(args.doc_csv)
 
-    ocr_params = all_ocr_parameters.get_parameters(args.model_name)
+    ocr_params = all_ocr_parameters.get_parameters(args.model)
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
     image_paths = image_paths[: args.limit]
 
-    with lms.Client() as client, args.doc_csv.open("a") as tsv:
+    client = openai.OpenAI(
+        base_url=args.api_host,
+        api_key=os.environ.get("OPENAI_API_KEY", "lm-studio"),
+    )
+
+    with args.doc_csv.open("a") as tsv:
         writer = csv.writer(tsv)
 
         if not already_read:
             writer.writerow(["source", "elapsed", "text"])
-
-        model_config = lms.LlmLoadModelConfigDict(contextLength=args.context_length)
-        model = client.llm.model(args.model_name, config=model_config)
-
-        response_config = lms.LlmPredictionConfigDict(
-            temperature=args.temperature,
-            maxTokens=args.max_tokens,
-        )
 
         for image_path in tqdm(image_paths):
             if image_path in already_read:
@@ -46,21 +47,47 @@ def ocr_images(args: argparse.Namespace) -> None:
 
             rec_began = datetime.now()
 
-            handle = client.files.prepare_image(image_path)
-            chat = lms.Chat()
-            chat.add_user_message(ocr_params["prompt"], images=[handle])
-
             try:
-                response = model.respond(chat, config=response_config)
-            except lms.LMStudioServerError:
-                logging.exception("Server error:")
-                continue
+                with image_path.open("rb") as f:
+                    image_data = base64.b64encode(f.read()).decode("utf-8")
 
-            text = ocr_params["cleaner"](str(response))
+                response = client.chat.completions.create(
+                    model=args.model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": ocr_params["prompt"],
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": ocr_params["prompt"]},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_data}",
+                                    },
+                                },
+                            ],
+                        }
+                    ],
+                    temperature=args.temperature,
+                    max_tokens=args.max_tokens,
+                )
+
+                text = response.choices[0].message.content
+
+            except openai.APIError:
+                logging.exception("API error:")
+                continue
 
             elapsed = str(datetime.now() - rec_began)
             writer.writerow([str(image_path), elapsed, text])
             tsv.flush()
+
+    job_elapsed = str(datetime.now() - job_began)
+    msg = f"Job elapsed {job_elapsed}"
+    logging.info(msg)
 
     log.finished()
 
@@ -92,7 +119,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Put OCRed text into this CSV file. This appends data to the file.""",
     )
     arg_parser.add_argument(
-        "--model-name",
+        "--model",
         default="chandra-ocr",
         help="""Use this language model. (default: %(default)s)""",
     )
@@ -104,13 +131,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--context-length",
         type=int,
-        help="""Model's context length. Combined input and output.
-            (default: %(default)s)""",
+        help="""Model's context length. Combined input and output.""",
     )
     arg_parser.add_argument(
         "--max-tokens",
         type=int,
-        help="""The responses maximum tokens. (default: %(default)s)""",
+        help="""The responses maximum tokens.""",
     )
     arg_parser.add_argument(
         "--temperature",

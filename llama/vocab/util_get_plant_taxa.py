@@ -12,7 +12,7 @@ import sqlite3
 import textwrap
 from pathlib import Path
 
-from llama.common import log
+from llama.pylib import log
 
 ITIS_SPECIES_ID = 220
 

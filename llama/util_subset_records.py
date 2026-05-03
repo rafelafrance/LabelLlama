@@ -4,7 +4,7 @@ import argparse
 import textwrap
 from pathlib import Path
 
-from llama.common import io_util, log
+from llama.pylib import io_util, log
 
 
 def sample_records(args: argparse.Namespace) -> None:
