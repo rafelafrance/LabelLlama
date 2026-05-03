@@ -5,8 +5,11 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 IDENTIFIED_BY: str = compress("""
-    Who identified or verified or determined the species.
-    The identifier or verifier or determiner of the species.
+    Extract the name of the person who identified, verified, or determined the
+    species of the specimen. This may appear with labels like 'det.', 'det. by',
+    'id.', 'identified by', or 'verified by'.
+    Preserve the name as written — do not expand abbreviations.
+    If no identifier is named, return the default value.
     """)
 
 

@@ -6,23 +6,21 @@ from rapidfuzz import fuzz
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import dedent
+from llama.pylib.str_util import compress
 
 MIN_WORDS = 2
 SKIP_FIELDS = ("occurrenceRemarks", "associatedTaxa")
 
-OCCURRENCE_REMARKS: str = dedent(
-    """
-        This contains all other observations not in the other fields.
-        ✅ Only include information not in other fields.
-        ✅ This is strictly for data that is not covered anywhere else.
-        ❌ DO NOT include habitat information.
-        ❌ DO NOT include locality information.
-        ❌ DO NOT include associated taxa information.
-        ❌ DO NOT include flower color.
-        ❌ DO NOT include the determiner or verifier.
-        """,
-)
+OCCURRENCE_REMARKS: str = compress("""
+    Extract any remaining observations or notes not captured by other fields.
+    This is a catch-all for data that does not fit elsewhere.
+        ✅ Include: field notes, specimen condition, phenology observations,
+            collection circumstances, or any other remarks.
+        ❌ DO NOT include: habitat, locality, associated taxa, flower/fruit
+            color, determiner/verifier, collector, dates, coordinates,
+            elevation, or scientific name — those have their own fields.
+    If no remarks are present, return the default value.
+    """)
 
 
 @dataclass

@@ -6,7 +6,14 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 
-COUNTRY: str = compress("""The country where the specimen was collected.""")
+COUNTRY: str = compress("""
+    Extract the country where the specimen was collected.
+    Return the full country name (e.g., 'United States', 'Canada', 'Mexico'),
+    not an abbreviation or acronym.
+    If the country is not stated but can be inferred from the state,
+    province, or locality, return the inferred country.
+    If no country information is available, return the default value.
+    """)
 
 
 @dataclass

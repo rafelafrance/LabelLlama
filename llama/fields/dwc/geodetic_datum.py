@@ -5,8 +5,10 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 GEODETIC_DATUM: str = compress("""
-    What geodetic datum is the latitude, longitude, TRS, or UTM using.
-    Examples "NAD27", "NAD83", "WGS84".
+    Extract the geodetic datum used for the latitude, longitude, TRS, or UTM
+    coordinates (e.g., 'NAD27', 'NAD83', 'WGS84', 'WGS 84').
+    This datum defines the reference frame for the coordinates.
+    If no datum is stated, return the default value.
     """)
 
 

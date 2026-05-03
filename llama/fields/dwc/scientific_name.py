@@ -6,8 +6,13 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 SCIENTIFIC_NAME: str = compress("""
-    Scientific name or species given in 'Genus species' format.
-    Do not include subspecies or varieties and do not include author names.
+    Extract the scientific (binomial) name of the specimen.
+    Format as 'Genus species' with Genus capitalized and species lowercase.
+    Include the species epithet only — do not include subspecies, varieties,
+    or any authorship citations (e.g., 'L.', 'Smith & Jones').
+    If the specimen is identified only to genus, return the genus name alone.
+    If marked as unidentified (e.g., 'sp.', 'spp.'), include that notation.
+    For hybrids, include the hybrid symbol (×) if present in the source text.
     """)
 
 

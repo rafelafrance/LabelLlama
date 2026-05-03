@@ -5,8 +5,12 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LEAF_SHAPE: str = compress("""
-    What is the shape of the specimen's leaf?
-    Examples: "acute", "caudate", "elliptic", "lobed".
+    Extract the shape of the specimen's leaf.
+    Examples: 'elliptic', 'ovate', 'lanceolate', 'oblong', 'orbicular',
+    'cordate', 'reniform', 'deltoid', 'linear', 'falcate', 'spatulate',
+    'obovate', 'rhombic', 'truncate', 'acute', 'caudate',
+    'lobed', 'pinnate', 'palmate'.
+    If no leaf shape information is stated, return the default value.
     """)
 
 

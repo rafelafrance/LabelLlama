@@ -4,9 +4,14 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-STATE_PROVINCE: str = compress(
-    """The state or province where the specimen was collected."""
-)
+STATE_PROVINCE: str = compress("""
+    Extract the state, province, or equivalent first-level administrative division
+    where the specimen was collected (e.g., 'California', 'Ontario', 'Coahuila').
+    Return the full name, not an abbreviation or acronym.
+    If the state/province is not stated but can be inferred from the locality,
+    return the inferred value.
+    If no state/province information is available, return the default value.
+    """)
 
 
 @dataclass

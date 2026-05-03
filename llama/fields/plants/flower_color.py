@@ -4,7 +4,12 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-FLOWER_COLOR: str = compress("""What are the colors of the flowers?""")
+FLOWER_COLOR: str = compress("""
+    Extract the color(s) of the flowers of the specimen.
+    Examples: 'white', 'pink', 'yellow', 'purple', 'blue', 'red', 'cream',
+    'greenish-yellow', 'mottled purple and white'.
+    If no flower color is stated, return the default value.
+    """)
 
 
 @dataclass

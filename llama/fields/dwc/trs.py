@@ -10,36 +10,40 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 TRS: str = compress("""
-    Township Range Section (TRS).
-    There may be a quad (quadrangle) associated with the TRS.
-    The quad may come before or after the other fields.
-    Examples "Bodie Quadrangle; T4N R25E S36", "T41N R15E NW 1/4 S10",
-    "T7S, R1W SE 1/4 sec. 33", "SW 1/4 sec. 34.",
-    "T23N R14E se1/4 ne1/4 sec 12 Reconnaissance quad",
-    "S27, T 48 N , R 7 W Mt. Diablo Mer.",
-    "T.43.R.11W., south-east corner section 7".
+    Extract the Township Range Section (TRS) coordinates from the label.
+    TRS is a land survey system used primarily in the United States.
+    Preserve the text exactly as written — it may include township, range,
+    section, quadrant subdivisions, and a quadrangle (quad) name.
+    Examples: 'Bodie Quadrangle; T4N R25E S36', 'T41N R15E NW 1/4 S10',
+    'T7S, R1W SE 1/4 sec. 33', 'SW 1/4 sec. 34'.
+    If no TRS information is present, return the default value.
     """)
 TRS_TOWNSHIP: str = compress("""
-    The township portion of the TRS. It will look like: "T28N", "T 32 N", or
-    "T.43".
-    The letter "T" followed by possible punctuation and then a few digits and
-    then an "N" or "S" compass direction.
+    Extract the township portion of the TRS coordinates. It will look like
+    'T28N', 'T 32 N', or 'T.43'. The letter 'T' followed by digits and an
+    'N' or 'S' compass direction. Return only the value without the 'T' prefix.
+    If no township is present, return the default value.
     """)
 TRS_RANGE: str = compress("""
-    The range portion of the TRS. It will look like: "R23E", "R 1 W", "R.11W".
-    The letter "R" followed by possible punctuation then a few digits and
-    then an "E" or "W" compass direction.
+    Extract the range portion of the TRS coordinates. It will look like
+    'R23E', 'R 1 W', 'R.11W'. The letter 'R' followed by digits and an
+    'E' or 'W' compass direction. Return only the value without the 'R' prefix.
+    If no range is present, return the default value.
     """)
 TRS_SECTION: str = compress("""
-    The section portion of the TRS. Examples look like "1/4 S10",
-    '"se1/4 ne1/4  sec 12", "SE ¼ Section 17", "NW¼ of sec. 8", "section 18",
-    "S8 (SE¼)", "south-east corner section 7", "w½ne¼ sec 27", "S 12°".
+    Extract the section portion of the TRS coordinates. This may include
+    quadrant subdivisions (e.g., 'NW 1/4', 'SE ¼') and the section number.
+    Examples: '1/4 S10', 'se1/4 ne1/4 sec 12', 'SE ¼ Section 17',
+    'NW¼ of sec. 8', 'section 18'. Return only the section value,
+    not the 'sec' or 'S' label.
+    If no section is present, return the default value.
     """)
 TRS_QUAD: str = compress("""
-    The quad (quadrangle) portion of the TRS. It may be at the beginning or
-    end of the TRS.
-    Examples look like: "USGS Wahtoke 7 1/2 quad", "Yountville Quad",
-    "Chicken Hawk Hill quadrangle", "Mt. Ingalls quad."
+    Extract the quadrangle (quad) name associated with the TRS coordinates.
+    The quad may appear before or after the other TRS fields. Examples:
+    'USGS Wahtoke 7 1/2 quad', 'Yountville Quad', 'Chicken Hawk Hill quadrangle',
+    'Mt. Ingalls quad.'. Return only the quad name, not the 'quad' label.
+    If no quadrangle is mentioned, return the default value.
     """)
 
 
@@ -106,9 +110,9 @@ class Trs(BaseField):
 
 class TrsSig(Signature):
     """
-    Analyze the text and extract this elevation information.
+    Analyze the text and extract this TRS (Township Range Section) information.
 
-    If the data field is not found in the text return an empty list.
+    If the data field is not found in the text empty fields.
     Do not hallucinate.
     """
 

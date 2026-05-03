@@ -5,7 +5,10 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 MUNICIPALITY: str = compress("""
-    Collected from this municipality. This can be a city, town, etc.
+    Extract the municipality where the specimen was collected. This can be a
+    city, town, village, or other populated place.
+    Do not include the state/province or country — those have their own fields.
+    If no municipality is stated, return the default value.
     """)
 
 

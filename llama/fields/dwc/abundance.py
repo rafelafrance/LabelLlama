@@ -5,8 +5,11 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 ABUNDANCE: str = compress("""
-    How common is the specimen?
-    Examples include "common", "scattered", "rare."
+    Extract the abundance or frequency of the specimen at the collection site.
+    This describes how common or rare the plant was where it was collected.
+    Examples: "common", "abundant", "scattered", "rare", "occasional",
+    "numerous", "uncommon", "few", "sparse", "dominant".
+    If no abundance information is stated, return the default value.
     """)
 
 

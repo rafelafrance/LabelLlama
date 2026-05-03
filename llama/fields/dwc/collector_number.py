@@ -6,10 +6,13 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 COLLECTOR_NUMBER: str = compress("""
-    The number used to identify the collector or who recorded the specimen.
-    The collector number is almost always found just after or before the
-    collector's name or event date.
-    It is closely associated with the collector's name.
+    Extract the collector number (also called access number) assigned to this
+    specimen by the collector. It is a unique identifier for the collection event,
+    not the collector's personal ID.
+    It typically appears near the collector's name or event date and may be
+    preceded by '#' or 'Nº'.
+    Examples: '12345', 'Smith 1234', 'acc. 4567'.
+    If no collector number is present, return the default value.
     """)
 
 

@@ -4,9 +4,12 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-ASSOCIATED_TAXA: str = compress(
-    """Was the specimen found near, around, or on another species."""
-)
+ASSOCIATED_TAXA: str = compress("""
+    Extract the name(s) of other species found with or near the specimen.
+    This may include host plants, epiphyte substrates, co-occurring species,
+    or any other taxa mentioned in relation to the collection.
+    If no associated taxa are mentioned, return the default value.
+    """)
 
 
 @dataclass

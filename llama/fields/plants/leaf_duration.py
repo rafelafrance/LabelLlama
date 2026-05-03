@@ -5,8 +5,10 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LEAF_DURATION: str = compress("""
-    What is the leaf duration?
-    Examples: "deciduous", "evergreen", "semi-deciduous", "semi-evergreen".
+    Extract the leaf duration (how long the plant retains its leaves).
+    Examples: 'deciduous', 'evergreen', 'semi-deciduous', 'semi-evergreen',
+    'marcescent', 'persistent'.
+    If no leaf duration information is stated, return the default value.
     """)
 
 

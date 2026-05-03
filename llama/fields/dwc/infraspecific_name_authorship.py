@@ -4,9 +4,13 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-INFRASPECIFIC_NAME_AUTHORSHIP: str = compress(
-    """The author (authority) who coined the infraspecific name."""
-)
+INFRASPECIFIC_NAME_AUTHORSHIP: str = compress("""
+    Extract the authorship citation for the infraspecific name (subspecies or
+    variety). This is the person(s) who originally described the subspecies or
+    variety, separate from the species-level authorship.
+    Authors may be abbreviated, sometimes to a single letter.
+    If no infraspecific authorship is stated, return the default value.
+    """)
 
 
 @dataclass

@@ -5,15 +5,13 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 HABIT: str = compress("""
-    What is the plant's habit or general shape?
-    Examples: "acaulescent", "actinomorphic", "arborescent", "ascending",
-    "assurgent", "branching", "caespitose", "caulescent", "cespitose",
-    "climbing", "climbing plant", "creeping", "decumbent", "deflexed",
-    "determinate growth", "dimorphic", "ecad" "erect", "free-standing", "frutescent",
-    "fruticose", "humifuse", "indeterminate growth", "lax", "liana",
-    "procumbent", "prostrate", "repent", "semi-erect", "shrubby",
-    "subacaulescent", "subcaulescent", "subshrubby", "suffrutescent", "treelet",
-    "treelets", "upright", "vine", "vines", "virgate", "tree", "bush".
+    Extract the plant's habit or general growth form/shape.
+    Examples: 'erect', 'ascending', 'prostrate', 'creeping', 'climbing', 'vine',
+    'liana', 'shrubby', 'arborescent', 'tree', 'bush', 'caespitose', 'cespitose',
+    'decumbent', 'procumbent', 'repent', 'semi-erect', 'upright', 'branching',
+    'frutescent', 'suffrutescent', 'acaulescent', 'caulescent', 'lax',
+    'actinomorphic', 'fruticose', 'humifuse', 'virgate', 'treelet'.
+    If no habit information is stated, return the default value.
     """)
 
 

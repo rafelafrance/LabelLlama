@@ -6,7 +6,12 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 from llama.vocab.taxon import GENUS_TO_FAMILY
 
-FAMILY: str = compress("""Taxonomic family is typically near the scientific name.""")
+FAMILY: str = compress("""
+    Extract the taxonomic family of the specimen (e.g., 'Rosaceae', 'Asteraceae',
+    'Fabaceae'). The family name is typically near the scientific name on the label.
+    Return the family name only — do not include higher or lower ranks.
+    If no family is stated, return the default value.
+    """)
 
 
 @dataclass

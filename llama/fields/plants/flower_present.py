@@ -6,12 +6,18 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-FLOWERS_PRESENT: str = compress("""Are there flowers on the plant?""")
+FLOWERS_PRESENT: str = compress("""
+    Determine whether the specimen has flowers present.
+    Look for indicators like 'in flower', 'blooming', 'fl.', 'fls',
+    'flowers', 'flowering', or the presence of flower color descriptions.
+    Return True if flowers are present, False otherwise.
+    If no information about flowers is stated, return the default value.
+    """)
 
 
 @dataclass
 class FlowersPresent(BaseField):
-    flowersPresent: bool | str | None = field(default=False, metadata=BOTH)
+    flowersPresent: bool | str | None = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text

@@ -5,11 +5,26 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LIFE_FORM: str = compress("""
-    How does the plant make its living? Is it parasitic or an epiphyte? Does it grow
-    on rocks or other plants? Does it like salty environments?
-    Examples: "ecotone", "ectogenesis", "ectoparasite", "epigeal", "epigean", "epigeic",
-    "epigeous", "epilithic", "epiphloedal", "epiphloedic", "epiphyllous", "epiphyte",
-    "epiphytic", "euryhaline", "eurythermous", "geophytic", "lithophytic", "parasitic",
+    Extract the ecological life form (or niche) of the specimen.
+    This describes how the plant obtains nutrients and where it anchors itself.
+    It is distinct from habit (growth shape), habitat (physical environment),
+    and woodiness (woody vs herbaceous).
+
+    Nutritional strategy: 'parasitic', 'hemiparasitic', 'holoparasitic',
+    'saprophytic', 'saprotrophic', 'mycoheterotrophic', 'heterotrophic',
+    'myco-heterotrophic', 'chlorophyllous', 'achlorophyllous', 'autotrophic'.
+
+    Substrate association: 'epiphyte', 'epiphytic', 'lithophyte', 'lithophytic',
+    'saxicolous', 'saxatile', 'terrestrial', 'geophyte', 'geophytic',
+    'rhizomatous', 'bulbous', 'tuberous'.
+
+    Environmental association: 'aquatic', 'semi-aquatic', 'amphibious',
+    'hydrophytic', 'halophyte', 'halophytic', 'littoral', 'riparian',
+    'xerophytic', 'hygrophytic', 'helophytic'.
+
+    Do not confuse life form with habit (e.g. 'erect', 'climbing', 'prostrate')
+    or habitat (e.g. 'forest', 'meadow', 'desert').
+    If no life form information is stated, return the default value.
     """)
 
 

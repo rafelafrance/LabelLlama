@@ -7,16 +7,19 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import dedent
 
-HABITAT: str = dedent("""
-    Collected from this habitat or environment.
-    Describes the physical environment where the specimen grows.
-        ✅ Include: substrate (e.g. 'dry sand', 'loamy soil'),
-            vegetation type (e.g. 'open grassland'), floodplains, and life zones.
-        ❌ DO NOT include associated taxa.
-        ❌ DO NOT include place names, geographic features, road names, or phrases
-            like 'near [named place]'. These belong to locality.
-        ❌ DO NOT include details about the plant itself like height, color,
-            or flowers.
+HABITAT: str = compress("""
+    Extract the habitat or environment where the specimen grows.
+    Describe the physical conditions and setting, not the location.
+        ✅ Include: substrate ('dry sand', 'loamy soil', 'rocky outcrop'),
+            vegetation type ('open grassland', 'mixed forest', 'shrubland'),
+            hydrology ('wetland', 'stream bank', 'riparian'),
+            disturbance ('roadside', 'old field', 'disturbed ground'),
+            and life zones ('desert', 'prairie', 'alpine meadow').
+        ❌ DO NOT include associated taxa — those belong to associatedTaxa.
+        ❌ DO NOT include place names, geographic features, road names,
+            or 'near [named place]' — those belong to locality.
+        ❌ DO NOT include details about the plant itself (height, color, flowers).
+    If no habitat information is present, return the default value.
     """)
 
 

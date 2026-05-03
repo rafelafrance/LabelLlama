@@ -4,10 +4,11 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-DURATION: str = compress("""
-    What is the noted plant duration?
-    Examples: "annual", "biennial", "fugacious", "marcescent", "monocarp", "monocarpic",
-    "perennial", "persistent", "semelparous", "subpersistent", "iteroparity".
+LIFE_CYCLE: str = compress("""
+    Extract the plant's life cycle or duration (how long the plant lives).
+    Examples: 'annual', 'biennial', 'perennial', 'fugacious', 'marcescent',
+    'monocarpic', 'semelparous', 'iteroparous', 'persistent', 'subpersistent'.
+    If no life cycle information is stated, return the default value.
     """)
 
 

@@ -5,8 +5,12 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 VERBATIM_LONGITUDE: str = compress("""
-    The specimen was collected at this longitude.
-    Longitude must fall in the range of -180.0 degrees to 180.0 degrees.
+    Extract the verbatim longitude at which the specimen was collected.
+    Preserve the value exactly as written — it may be decimal degrees
+    (e.g., '-93.5678'), degrees/minutes/seconds (e.g., '93°34'05"W'),
+    or a coordinate pair. Longitude must fall between -180.0 and 180.0 degrees.
+    Exclude the label itself (e.g., 'long.', 'longitude').
+    If no longitude is present, return the default value.
     """)
 
 

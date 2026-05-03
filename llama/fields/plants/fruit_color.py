@@ -4,7 +4,12 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-FRUIT_COLOR: str = compress("""What are the colors of the fruits?""")
+FRUIT_COLOR: str = compress("""
+    Extract the color(s) of the fruits of the specimen.
+    Examples: 'red', 'black', 'purple', 'green', 'brown', 'orange',
+    'dark blue', 'reddish-brown', 'yellow when ripe'.
+    If no fruit color is stated, return the default value.
+    """)
 
 
 @dataclass

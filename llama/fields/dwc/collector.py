@@ -5,7 +5,14 @@ from llama.fields.base_field import BOTH, HIDE, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-COLLECTOR: str = compress("""The person or people who collected the specimen.""")
+COLLECTOR: str = compress("""
+    Extract the name of the person or people who collected the specimen.
+    The collector name may appear with labels like 'col.', 'coll.', 'coll. by',
+    or 'collected by'. Multiple collectors may be separated by '&', 'and',
+    or commas.
+    Preserve the name as written — do not expand abbreviations.
+    If no collector is named, return the default value.
+    """)
 
 
 @dataclass

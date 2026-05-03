@@ -10,19 +10,26 @@ from llama.pylib.str_util import compress
 from llama.vocab import units
 
 VERBATIM_ELEVATION: str = compress("""
-    The specimen was collected at this elevation or altitude.
+    Extract the verbatim elevation or altitude at which the specimen was collected.
+    This may include the numeric value, units, and any labels (e.g., 'elev.', 'alt.',
+    'altitude'). Preserve the text exactly as written.
+    If no elevation information is present, return the default value.
     """)
 ELEVATION_VALUES: str = compress("""
-    The elevation values.
-    More than one value could be an elevation range or it could be the same
-    elevation reported in different units.
+    Extract the numeric elevation value(s). A single value indicates a point
+    elevation; two values indicate an elevation range (min and max).
+    The same elevation may be reported in different units — include all numeric values.
+    Return only the numbers, not the units.
     """)
 ELEVATION_UNITS: str = compress("""
-    The elevation units.
-    There may be more than one units reported when the same value is reported
-    in different units.
+    Extract the unit(s) for each elevation value (e.g., 'm', 'ft', 'meters', 'feet').
+    If multiple values are given, provide a matching unit for each.
+    Common units are meters ('m') and feet ('ft').
     """)
-ELEVATION_ESTIMATED: str = compress("""Is this an estimated elevation?""")
+ELEVATION_ESTIMATED: str = compress(
+    """Is the elevation an estimate? Look for words like 'approx.', 'est.', 'ca.',
+    'about', 'approximately', '~', or '?' near the elevation value."""
+)
 
 
 @dataclass
