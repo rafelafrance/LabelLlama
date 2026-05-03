@@ -8,9 +8,9 @@ from pathlib import Path
 
 from rich import print as rprint
 
-from llama.pylib import io_util, log, score_util
 from llama.fields.base_field import BaseField
 from llama.fields.field_registry import FIELD_REGISTRY
+from llama.pylib import io_util, log, score_util
 
 PAIR: int = 2
 

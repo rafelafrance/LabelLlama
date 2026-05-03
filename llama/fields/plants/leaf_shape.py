@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 LEAF_SHAPE: str = compress("""
     What is the shape of the specimen's leaf?

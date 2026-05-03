@@ -14,8 +14,8 @@ import openai
 import pandas as pd
 from tqdm import tqdm
 
-from llama.pylib import io_util, log
 from llama.ocr import all_ocr_parameters
+from llama.pylib import io_util, log
 
 
 def ocr_images(args: argparse.Namespace) -> None:

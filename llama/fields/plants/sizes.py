@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 SIZES: str = compress("""
     Other sizes of the plant and plant parts like plant width, or flower size, etc.

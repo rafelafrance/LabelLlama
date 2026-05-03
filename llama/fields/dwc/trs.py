@@ -5,9 +5,9 @@ from typing import Any, ClassVar
 import dspy
 from dspy import InputField, OutputField, Signature
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 TRS: str = compress("""
     Township Range Section (TRS).

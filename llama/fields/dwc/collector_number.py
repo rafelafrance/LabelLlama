@@ -1,9 +1,9 @@
 import re
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, HIDE, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, HIDE, BaseField
 
 COLLECTOR_NUMBER: str = compress("""
     The number used to identify the collector or who recorded the specimen.

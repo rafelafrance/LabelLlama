@@ -1,9 +1,9 @@
 import re
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, HIDE, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, HIDE, BaseField
 
 COLLECTOR: str = compress("""The person or people who collected the specimen.""")
 

@@ -3,9 +3,9 @@ from typing import Any
 
 from rapidfuzz import fuzz
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import dedent
-from llama.fields.base_field import BOTH, BaseField
 
 HABITAT: str = dedent("""
     Collected from this habitat or environment.

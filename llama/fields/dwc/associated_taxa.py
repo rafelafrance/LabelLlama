@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 ASSOCIATED_TAXA: str = compress(
     """Was the specimen found near, around, or on another species."""

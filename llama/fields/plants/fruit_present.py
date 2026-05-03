@@ -2,9 +2,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 FRUIT_PRESENT: str = compress("""Is there fruit on the plant?""")
 

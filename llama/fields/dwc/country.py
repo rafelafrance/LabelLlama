@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 
 COUNTRY: str = compress("""The country where the specimen was collected.""")

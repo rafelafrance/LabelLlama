@@ -9,8 +9,8 @@ from typing import Any
 import dspy
 from tqdm import tqdm
 
-from llama.pylib import io_util, log
 from llama.fields.field_registry import FIELD_REGISTRY
+from llama.pylib import io_util, log
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:

@@ -1,9 +1,9 @@
 import re
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 SCIENTIFIC_NAME: str = compress("""
     Scientific name or species given in 'Genus species' format.

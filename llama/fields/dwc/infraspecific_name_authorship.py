@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 
+from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.base_field import BOTH, BaseField
 
 INFRASPECIFIC_NAME_AUTHORSHIP: str = compress(
     """The author (authority) who coined the infraspecific name."""
