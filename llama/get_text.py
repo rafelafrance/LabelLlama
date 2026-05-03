@@ -14,8 +14,20 @@ import openai
 import pandas as pd
 from tqdm import tqdm
 
-from llama.ocr import all_ocr_parameters
 from llama.pylib import io_util, log
+
+SYSTEM_ROLE = textwrap.dedent("""
+    You are given an image of a museum specimen with labels.
+    I want you to extract all of the text from every label and stamp on the specimen.
+    This includes text from both typewritten and handwritten labels.
+    It also includes text from stamps and smaller labels.
+      ✅ I want ALL of the text.
+      ✅ I only want UTF-8 text without markup.
+      ❌ DO NOT include HTML tags.
+      ❌ DO NOT include markdown tags.
+      ❌ DO NOT get confused by the specimen itself which is in the center of the image.
+      ❌ Do not hallucinate!
+    """)
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -24,8 +36,6 @@ def ocr_images(args: argparse.Namespace) -> None:
     job_began = datetime.now()
 
     already_read = get_docs_read(args.doc_csv)
-
-    ocr_params = all_ocr_parameters.get_parameters(args.model)
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
     image_paths = image_paths[: args.limit]
@@ -56,12 +66,11 @@ def ocr_images(args: argparse.Namespace) -> None:
                     messages=[
                         {
                             "role": "system",
-                            "content": ocr_params["prompt"],
+                            "content": SYSTEM_ROLE,
                         },
                         {
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": ocr_params["prompt"]},
                                 {
                                     "type": "image_url",
                                     "image_url": {
