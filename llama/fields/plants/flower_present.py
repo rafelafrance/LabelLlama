@@ -11,7 +11,7 @@ FLOWERS_PRESENT: str = compress("""
     Look for indicators like 'in flower', 'blooming', 'fl.', 'fls',
     'flowers', 'flowering', or the presence of flower color descriptions.
     Return True if flowers are present, False otherwise.
-    If no information about flowers is stated, return the default value.
+    If no information about flowers is stated, return an empty string.
     """)
 
 

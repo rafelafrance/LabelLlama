@@ -19,7 +19,7 @@ OCCURRENCE_REMARKS: str = compress("""
         ❌ DO NOT include: habitat, locality, associated taxa, flower/fruit
             color, determiner/verifier, collector, dates, coordinates,
             elevation, or scientific name — those have their own fields.
-    If no remarks are present, return the default value.
+    If no remarks are present, return an empty string.
     """)
 
 

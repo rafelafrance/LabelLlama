@@ -9,7 +9,7 @@ INFRASPECIFIC_NAME_AUTHORSHIP: str = compress("""
     variety). This is the person(s) who originally described the subspecies or
     variety, separate from the species-level authorship.
     Authors may be abbreviated, sometimes to a single letter.
-    If no infraspecific authorship is stated, return the default value.
+    If no infraspecific authorship is stated, return an empty string.
     """)
 
 

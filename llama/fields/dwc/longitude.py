@@ -10,7 +10,7 @@ VERBATIM_LONGITUDE: str = compress("""
     (e.g., '-93.5678'), degrees/minutes/seconds (e.g., '93°34'05"W'),
     or a coordinate pair. Longitude must fall between -180.0 and 180.0 degrees.
     Exclude the label itself (e.g., 'long.', 'longitude').
-    If no longitude is present, return the default value.
+    If no longitude is present, return an empty string.
     """)
 
 

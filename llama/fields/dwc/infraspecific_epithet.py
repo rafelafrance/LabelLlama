@@ -10,7 +10,7 @@ INFRASPECIFIC_EPITHET: str = compress("""
     e.g., 'var. latifolia' or 'subsp. montana'.
     Return only the epithet itself — do not include the rank indicator
     ('var.', 'subsp.', 'forma', 'f.').
-    If no infraspecific epithet is present, return the default value.
+    If no infraspecific epithet is present, return an empty string.
     """)
 
 

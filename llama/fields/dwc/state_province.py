@@ -10,7 +10,7 @@ STATE_PROVINCE: str = compress("""
     Return the full name, not an abbreviation or acronym.
     If the state/province is not stated but can be inferred from the locality,
     return the inferred value.
-    If no state/province information is available, return the default value.
+    If no state/province information is available, return an empty string.
     """)
 
 

@@ -10,7 +10,7 @@ LEAF_SHAPE: str = compress("""
     'cordate', 'reniform', 'deltoid', 'linear', 'falcate', 'spatulate',
     'obovate', 'rhombic', 'truncate', 'acute', 'caudate',
     'lobed', 'pinnate', 'palmate'.
-    If no leaf shape information is stated, return the default value.
+    If no leaf shape information is stated, return an empty string.
     """)
 
 

@@ -10,7 +10,7 @@ SCIENTIFIC_NAME_AUTHORSHIP: str = compress("""
     'Smith & Jones', '(Bartlett) Fernald'. There may be multiple authors.
     Authors are often abbreviated, sometimes to a single letter.
     Do not include infraspecific authorship — that has its own field.
-    If no authorship is stated, return the default value.
+    If no authorship is stated, return an empty string.
     """)
 
 

@@ -11,7 +11,7 @@ HABIT: str = compress("""
     'decumbent', 'procumbent', 'repent', 'semi-erect', 'upright', 'branching',
     'frutescent', 'suffrutescent', 'acaulescent', 'caulescent', 'lax',
     'actinomorphic', 'fruticose', 'humifuse', 'virgate', 'treelet'.
-    If no habit information is stated, return the default value.
+    If no habit information is stated, return an empty string.
     """)
 
 

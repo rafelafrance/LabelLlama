@@ -10,7 +10,7 @@ COUNTY: str = compress("""
     where the specimen was collected.
     Return only the county name — do not include trailing labels like 'county'
     or 'co.'.
-    If no county is mentioned, return the default value.
+    If no county is mentioned, return an empty string.
     """)
 
 

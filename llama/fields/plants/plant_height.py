@@ -16,7 +16,7 @@ PLANT_HEIGHT: str = compress("""
     Preserve the text exactly as written, including ranges and units.
     Common forms: '10 cm', '0.5-2 m', '15-30 cm tall', 'up to 3 m', 'ca. 50 cm'.
 
-    If no height information is stated, return the default value.
+    If no height information is stated, return an empty string.
     """)
 
 

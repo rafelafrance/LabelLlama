@@ -9,7 +9,7 @@ ABUNDANCE: str = compress("""
     This describes how common or rare the plant was where it was collected.
     Examples: "common", "abundant", "scattered", "rare", "occasional",
     "numerous", "uncommon", "few", "sparse", "dominant".
-    If no abundance information is stated, return the default value.
+    If no abundance information is stated, return an empty string.
     """)
 
 

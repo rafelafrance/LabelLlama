@@ -13,7 +13,7 @@ VERBATIM_ELEVATION: str = compress("""
     Extract the verbatim elevation or altitude at which the specimen was collected.
     This may include the numeric value, units, and any labels (e.g., 'elev.', 'alt.',
     'altitude'). Preserve the text exactly as written.
-    If no elevation information is present, return the default value.
+    If no elevation information is present, return an empty string.
     """)
 ELEVATION_VALUES: str = compress("""
     Extract the numeric elevation value(s). A single value indicates a point

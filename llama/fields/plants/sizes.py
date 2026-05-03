@@ -20,7 +20,7 @@ SIZES: str = compress("""
     Each size should be a self-contained measurement with units,
     e.g., 'leaves 5-10 cm', 'corolla 1.5 cm wide', 'fruit 3 mm diam'.
     Preserve the text exactly as written, including ranges and units.
-    If no size information is stated, return the default value.
+    If no size information is stated, return an empty list.
     """)
 
 

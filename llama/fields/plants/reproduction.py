@@ -20,7 +20,7 @@ PLANT_REPRODUCTION: str = compress("""
 
     Temporal separation: 'dichogamous', 'protandrous', 'protogynous'.
 
-    If no breeding system information is stated, return the default value.
+    If no breeding system information is stated, return an empty string.
     """)
 
 

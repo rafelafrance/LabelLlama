@@ -12,7 +12,7 @@ COLLECTOR_NUMBER: str = compress("""
     It typically appears near the collector's name or event date and may be
     preceded by '#' or 'Nº'.
     Examples: '12345', 'Smith 1234', 'acc. 4567'.
-    If no collector number is present, return the default value.
+    If no collector number is present, return an empty string.
     """)
 
 

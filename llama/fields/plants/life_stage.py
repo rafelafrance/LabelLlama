@@ -21,7 +21,7 @@ LIFE_STAGE: str = compress("""
     Seasonal/resting state: 'dormant', 'dormancy', 'resting', 'dormant
     with buds', 'dormant with flower buds', 'dormant with fruit'.
 
-    If no life stage information is stated, return the default value.
+    If no life stage information is stated, return an empty string.
     """)
 
 

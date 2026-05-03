@@ -19,7 +19,7 @@ HABITAT: str = compress("""
         ❌ DO NOT include place names, geographic features, road names,
             or 'near [named place]' — those belong to locality.
         ❌ DO NOT include details about the plant itself (height, color, flowers).
-    If no habitat information is present, return the default value.
+    If no habitat information is present, return an empty string.
     """)
 
 

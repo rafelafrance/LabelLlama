@@ -17,7 +17,7 @@ LOCALITY: str = compress("""
             county, state/province, or country — those have their own fields.
         ❌ DO NOT include: habitat descriptions (e.g., 'wetland', 'grassland')
             or associated taxa — those have their own fields.
-    If no locality is present, return the default value.
+    If no locality is present, return an empty string.
     """)
 
 

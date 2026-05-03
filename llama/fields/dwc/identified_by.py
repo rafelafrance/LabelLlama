@@ -9,7 +9,7 @@ IDENTIFIED_BY: str = compress("""
     species of the specimen. This may appear with labels like 'det.', 'det. by',
     'id.', 'identified by', or 'verified by'.
     Preserve the name as written — do not expand abbreviations.
-    If no identifier is named, return the default value.
+    If no identifier is named, return an empty string.
     """)
 
 

@@ -16,7 +16,7 @@ PLANT_SEX: str = compress("""
     'synoecious', 'neuter', 'staminode', 'pistillode', 'androgynous',
     'cleistogamous', 'chasmogamous'.
 
-    If no flower sex information is stated, return the default value.
+    If no flower sex information is stated, return an empty string.
     """)
 
 

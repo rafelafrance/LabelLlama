@@ -19,7 +19,7 @@ WOODINESS: str = compress("""
     Herbaceous: 'herbaceous', 'herb', 'subherbaceous', 'soft-stemmed',
     'succulent', 'fleshy', 'herbaceous perennial', 'herbaceous annual'.
 
-    If no woodiness information is stated, return the default value.
+    If no woodiness information is stated, return an empty string.
     """)
 
 

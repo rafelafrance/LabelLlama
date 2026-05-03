@@ -11,7 +11,7 @@ COLLECTOR: str = compress("""
     or 'collected by'. Multiple collectors may be separated by '&', 'and',
     or commas.
     Preserve the name as written — do not expand abbreviations.
-    If no collector is named, return the default value.
+    If no collector is named, return an empty string.
     """)
 
 

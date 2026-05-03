@@ -10,7 +10,7 @@ VERBATIM_EVENT_DATE: str = compress("""
     date (e.g., 'Spring 1995', 'July 2001', '1998').
     Preserve the date exactly as written — do not reformat it.
     Exclude the date label itself (e.g., words starting with 'date').
-    If no collection date is present, return the default value.
+    If no collection date is present, return an empty string.
     """)
 
 

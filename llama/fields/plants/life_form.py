@@ -24,7 +24,7 @@ LIFE_FORM: str = compress("""
 
     Do not confuse life form with habit (e.g. 'erect', 'climbing', 'prostrate')
     or habitat (e.g. 'forest', 'meadow', 'desert').
-    If no life form information is stated, return the default value.
+    If no life form information is stated, return an empty string.
     """)
 
 

@@ -13,7 +13,7 @@ UTM: str = compress("""
     UTM coordinates consist of a zone, northing, and easting.
     Preserve the text exactly as written. Examples: '33T 500000 4649776',
     'Z12 N7874900 E768500', '11S 316745.14 3542301.90', 'Zone 11S; 3845372N 0729522E'.
-    If no UTM information is present, return the default value.
+    If no UTM information is present, return an empty string.
     """)
 UTM_NORTHING: str = compress("""
     Extract the northing portion of the UTM coordinates. It is a number
@@ -21,7 +21,7 @@ UTM_NORTHING: str = compress("""
     Examples: '3845372N', '4057.6 N', '3968400 N', 'N 4253279'.
     Northing is never negative — dashes are separators, not minus signs.
     Return only the numeric value, not the 'N' label.
-    If no northing is present, return the default value.
+    If no northing is present, return an empty string.
     """)
 UTM_EASTING: str = compress("""
     Extract the easting portion of the UTM coordinates. It is a number
@@ -29,13 +29,13 @@ UTM_EASTING: str = compress("""
     Examples: 'E 642700', '509257E', '0484145E', '368.2 E'.
     Easting is never negative — dashes are separators, not minus signs.
     Return only the numeric value, not the 'E' label.
-    If no easting is present, return the default value.
+    If no easting is present, return an empty string.
     """)
 UTM_ZONE: str = compress("""
     Extract the zone portion of the UTM coordinates. It will look like
     '10S', '11', '8N', 'Zone 11S', 'NH', '16P'. Return only the zone value,
     not the 'Zone' label.
-    If no zone is present, return the default value.
+    If no zone is present, return an empty string.
     """)
 
 
