@@ -19,14 +19,14 @@ SCIENTIFIC_NAME: str = compress("""
 
 @dataclass
 class ScientificName(BaseField):
-    scientificName: list[str] | str | None = field(default_factory=list, metadata=BOTH)
+    scientificName: list[str] | str = field(default_factory=list, metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text
 
         self.scientificName = fix_values.to_list_of_strs(self.scientificName)
         self.scientificName = [c for n in self.scientificName if (c := self.clean(n))]
-        self.scientificName = fix_values.reduce_list(self.scientificName)
+        self.scientificName = fix_values.reduce_str_list(self.scientificName)
 
     @staticmethod
     def clean(value: str) -> str:

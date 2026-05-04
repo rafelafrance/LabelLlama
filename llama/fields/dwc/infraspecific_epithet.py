@@ -17,7 +17,7 @@ INFRASPECIFIC_EPITHET: str = compress("""
 
 @dataclass
 class InfraspecificEpithet(BaseField):
-    infraspecificEpithet: str | None = field(default="", metadata=BOTH)
+    infraspecificEpithet: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text

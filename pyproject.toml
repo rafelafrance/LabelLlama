@@ -88,6 +88,7 @@ ignore = [
   "PLR2004", # Magic value used in comparison
   "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
   "RET504",  # Unnecessary assignment to {name} before return statement
+  "RUF001",  # String contains ambiguous character
   "S101",    # Use of assert detected
   "T201",    # print found
   "TD002",   # Missing author in TODO

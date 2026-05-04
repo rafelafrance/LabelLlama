@@ -13,7 +13,7 @@ from pathlib import Path
 import openai
 import pandas as pd
 from openai.types.chat.chat_completion_system_message_param import (
-    ChatCompletionSystemMessageParam
+    ChatCompletionSystemMessageParam,
 )
 from tqdm import tqdm
 

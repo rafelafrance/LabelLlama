@@ -240,7 +240,7 @@ def remove_trailing_punct(value: str) -> str:
 
 def reduce_list(value: list[Any]) -> Any | None:
     if not value:
-        return None
+        return []
     if len(value) == 1:
         return value[0]
     return value

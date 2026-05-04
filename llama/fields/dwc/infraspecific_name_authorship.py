@@ -16,7 +16,7 @@ INFRASPECIFIC_NAME_AUTHORSHIP: str = compress("""
 
 @dataclass
 class InfraspecificNameAuthorship(BaseField):
-    infraspecificNameAuthorship: str | None = field(default="", metadata=BOTH)
+    infraspecificNameAuthorship: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text

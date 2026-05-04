@@ -45,9 +45,9 @@ class Elevation(BaseField):
     parse_model: ClassVar[Any] = None
 
     verbatimElevation: str = field(default="", metadata=BOTH)
-    elevationValues: list[float] | None = field(default=None, metadata=IN)
-    elevation: float | str | None = field(default=None, metadata=BOTH)
-    maxElevation: float | str | None = field(default=None, metadata=BOTH)
+    elevationValues: list[float] = field(default_factory=list, metadata=IN)
+    elevation: float | None = field(default=None, metadata=BOTH)
+    maxElevation: float | None = field(default=None, metadata=BOTH)
     elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
     elevationEstimated: bool | str | None = field(default="", metadata=BOTH)
 
