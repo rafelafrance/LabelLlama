@@ -69,8 +69,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
             out_data = {k: getattr(field, k) for k in visible_subfields}
 
-            # Print debug info
-            if args.column or args.limit:
+            if is_debugging(args):
                 print_debug_info(row, out_data)
 
             output_rows[row["source"]] |= out_data
@@ -78,6 +77,10 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     io_util.output_file(args.out_file, list(output_rows.values()))
 
     log.finished()
+
+
+def is_debugging(args: argparse.Namespace) -> bool:
+    return args.column or args.limit
 
 
 def print_debug_info(row: dict[str, Any], out_data: dict[str, Any]) -> None:

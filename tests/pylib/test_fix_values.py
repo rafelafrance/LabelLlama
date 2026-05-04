@@ -231,3 +231,9 @@ class TestFixValues(unittest.TestCase):
 
     def test_hallucinated_str_02(self) -> None:
         assert fix_values.hallucinated_str("TEST", "words and more words") == ""
+
+    def test_hallucinated_str_03(self) -> None:
+        assert fix_values.hallucinated_str(
+            "Atongan River",
+            "Katanglad Mts Atongan River October 1991",
+        ) == "Atongan River"
