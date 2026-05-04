@@ -3,7 +3,6 @@ from typing import Any
 from llama.fields.dwc.abundance import Abundance
 from llama.fields.dwc.associated_taxa import AssociatedTaxa
 from llama.fields.dwc.collector import Collector
-from llama.fields.dwc.collector_number import CollectorNumber
 from llama.fields.dwc.country import Country
 from llama.fields.dwc.county import County
 from llama.fields.dwc.date_identified import DateIdentified
@@ -22,6 +21,7 @@ from llama.fields.dwc.locality import Locality
 from llama.fields.dwc.longitude import Longitude
 from llama.fields.dwc.municipality import Municipality
 from llama.fields.dwc.occurrence_remarks import OccurrenceRemarks
+from llama.fields.dwc.record_number import RecordNumber
 from llama.fields.dwc.scientific_name import ScientificName
 from llama.fields.dwc.scientific_name_authorship import ScientificNameAuthorship
 from llama.fields.dwc.state_province import StateProvince
@@ -54,8 +54,7 @@ HERBARIUM_FIELDS: dict[str, Any] = {
     "verbatimEventDate": EventDate,
     "collector": Collector,
     "recordedBy": Collector,
-    "collectorNumber": CollectorNumber,
-    "recordNumber": CollectorNumber,
+    "recordNumber": RecordNumber,
     "identifiedBy": IdentifiedBy,
     "dateIdentified": DateIdentified,
     "habitat": Habitat,

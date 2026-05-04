@@ -1,6 +1,10 @@
 #!/bin/bash
 
 uv run llama/postprocess.py \
-  --in-file data/herbarium/gold_docs_2026-04-27a.csv \
+  --in-file data/diode_geode/label_test_rmnh_nano_2026-05-04a.csv \
   --run-field-models \
-  --out-file data/herbarium/gold_docs_2026-04-27a_post.csv
+  --fields-registry insects \
+  --model lm_studio/qwen/qwen3.6-35b-a3b \
+  --max-tokens 4096 \
+  --context-length 8192 \
+  --out-file data/diode_geode/label_test_rmnh_nano_2026-05-04a_post.csv

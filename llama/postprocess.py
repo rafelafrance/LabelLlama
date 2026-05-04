@@ -28,10 +28,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     if args.run_field_models:
         lm = dspy.LM(
-            args.model_name,
+            args.model,
             api_base=args.api_host,
             api_key=args.api_key,
             temperature=args.temperature,
+            max_tokens=args.max_tokens,
+            context_length=args.context_length,
         )
         dspy.configure(lm=lm)
 
@@ -114,7 +116,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
            Handles (.json, .jsonl, .csv, .tsv, .html)""",
     )
     arg_parser.add_argument(
-        "--model-name",
+        "--model",
         default="lm_studio/google/gemma-4-26b-a4b",
         help="""Use this language model. (default: %(default)s)""",
     )
@@ -126,6 +128,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--api-key",
         help="""API key.""",
+    )
+    arg_parser.add_argument(
+        "--context-length",
+        type=int,
+        help="""Model's context length. Combined input and output.""",
+    )
+    arg_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        help="""The responses maximum tokens.""",
     )
     arg_parser.add_argument(
         "--temperature",
