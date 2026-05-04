@@ -24,14 +24,12 @@ def llm_extraction(args: argparse.Namespace) -> None:
 
     predictor = DwcModule(args.signature)
 
-    prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
-    print(prompt)
-
-    return
+    # prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
+    # print(prompt)
 
     parallel = dspy.Parallel(num_threads=args.threads)
 
-    docs = io_util.read_list_of_dicts(args.doc_tsv, fill_na="")
+    docs = io_util.read_list_of_dicts(args.doc_csv, fill_na="")
 
     exec_pairs = [
         (predictor, {"text": preprocess.clean_text(d["text"]), "source": d["source"]})
@@ -60,7 +58,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""What type of data are you extracting? What is its signature?""",
     )
     arg_parser.add_argument(
-        "--doc-tsv",
+        "--doc-csv",
         type=Path,
         help="""Parse doc text from this file. We need only 'source' and 'text'
             columns for valid input, so any file with those columns are fine.""",

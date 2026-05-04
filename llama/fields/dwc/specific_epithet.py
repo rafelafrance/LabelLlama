@@ -5,7 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 SPECIFIC_EPITHET: str = compress("""
-    `specificEpithet` str:
+    `specificEpithet` (str):
     Extract the taxonomic specific epipthet of the specimen
     (e.g., 'exigua', 'lupis', 'domesticus').
     The specific epipthet is typically the second word of the scientific name.

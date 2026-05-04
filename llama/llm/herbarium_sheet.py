@@ -6,7 +6,6 @@ from llama.fields.dwc import (
     abundance,
     associated_taxa,
     collector,
-    collector_number,
     country,
     county,
     date_identified,
@@ -22,6 +21,7 @@ from llama.fields.dwc import (
     longitude,
     municipality,
     occurrence_remarks,
+    record_number,
     scientific_name,
     scientific_name_authorship,
     state_province,
@@ -100,7 +100,7 @@ class HerbariumSheet(Signature):
     associatedTaxa: str = OutputField(desc=associated_taxa.ASSOCIATED_TAXA)
     verbatimEventDate: str = OutputField(desc=event_date.VERBATIM_EVENT_DATE)
     collector: str = OutputField(desc=collector.COLLECTOR)
-    collectorNumber: str = OutputField(desc=collector_number.COLLECTOR_NUMBER)
+    recordNumber: str = OutputField(desc=record_number.RECORD_NUMBER)
     identifiedBy: str = OutputField(desc=identified_by.IDENTIFIED_BY)
     dateIdentified: str = OutputField(desc=date_identified.DATE_IDENTIFIED)
     country: str = OutputField(desc=country.COUNTRY)
