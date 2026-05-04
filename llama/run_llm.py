@@ -6,13 +6,12 @@ from pathlib import Path
 
 import dspy
 
-from llama.lm.dwc_module import DwcModule
-from llama.lm.preprocess import clean_text
-from llama.lm.signature_registry import SIGNATURE_REGISTRY
-from llama.pylib import io_util, log
+from llama.llm.dwc_module import DwcModule
+from llama.llm.signature_registry import SIGNATURE_REGISTRY
+from llama.pylib import io_util, log, preprocess
 
 
-def lm_extraction(args: argparse.Namespace) -> None:
+def llm_extraction(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
     lm = dspy.LM(
@@ -25,15 +24,17 @@ def lm_extraction(args: argparse.Namespace) -> None:
 
     predictor = DwcModule(args.signature)
 
-    # prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
-    # print(prompt)
+    prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
+    print(prompt)
+
+    return
 
     parallel = dspy.Parallel(num_threads=args.threads)
 
     docs = io_util.read_list_of_dicts(args.doc_tsv, fill_na="")
 
     exec_pairs = [
-        (predictor, {"text": clean_text(d["text"]), "source": d["source"]})
+        (predictor, {"text": preprocess.clean_text(d["text"]), "source": d["source"]})
         for d in docs
     ]
 
@@ -107,4 +108,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    lm_extraction(ARGS)
+    llm_extraction(ARGS)

@@ -1,3 +1,5 @@
+import textwrap
+
 from dspy import InputField, OutputField, Signature
 
 from llama.fields.dwc import (
@@ -39,29 +41,48 @@ from llama.fields.plants import (
     woodiness,
 )
 
+HERBARIUM_SHEET = textwrap.dedent("""
+    Extract structured botanical and collection metadata from herbarium label text.
+
+    This signature processes OCR'd or transcribed herbarium sheet labels and extracts
+    Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
+    morphological data (phenology, habit, life form, etc.).
+
+    Extraction rules:
+
+    - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
+      label. Do not expand abbreviations, correct spelling, normalize punctuation,
+      add/remove whitespace, or rephrase in any way.
+    - **No inference**: Only extract information explicitly present in the source text.
+      Do not infer, summarize, categorize, or add any new information.
+    - **Missing data**: If a field cannot be found in the text, return the default
+      value defined for that field.
+    - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
+      entities, Markdown formatting, MATHML, or any other markup.
+    - **No hallucination**: Never fabricate data not present in the source.
+    """)
+
 
 class HerbariumSheet(Signature):
     """
-    Analyze text from herbarium sheets and extract this information.
+    Extract structured botanical and collection metadata from herbarium label text.
 
-    I need the text exactly as it appears in the text.
-    Leave abbreviations exactly as they are.
-    If the data field is not found in the text return the default value.
+    This signature processes OCR'd or transcribed herbarium sheet labels and extracts
+    Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
+    morphological data (phenology, habit, life form, etc.).
 
-    I want plain text:
-      ✅ Use UTF-8 characters only.
-      ❌ DO NOT change the text in any way.
-      ❌ DO NOT add or delete any punctuation and do not add or delete any spaces.
-      ❌ DO NOT include HTML tags
-      ❌ DO NOT include HTML entities
-      ❌ DO NOT include MATHML tags,
-      ❌ DO NOT include Markdown tags.
-      ❌ DO NOT add or infer any new information.
-      ❌ DO NOT rephrase, summarize, or infer meaning.
-      ❌ DO NOT turn phrases into lists or categories.
-      ✅ Use exact phrases from the label text only.
+    Extraction rules:
 
-    ❌ Do not hallucinate!
+    - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
+      label. Do not expand abbreviations, correct spelling, normalize punctuation,
+      add/remove whitespace, or rephrase in any way.
+    - **No inference**: Only extract information explicitly present in the source text.
+      Do not infer, summarize, categorize, or add any new information.
+    - **Missing data**: If a field cannot be found in the text, return the default
+      value defined for that field.
+    - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
+      entities, Markdown formatting, MATHML, or any other markup.
+    - **No hallucination**: Never fabricate data not present in the source.
     """
 
     text = InputField()

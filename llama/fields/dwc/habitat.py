@@ -5,7 +5,7 @@ from rapidfuzz import fuzz
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import dedent
+from llama.pylib.str_util import compress
 
 HABITAT: str = compress("""
     Extract the habitat or environment where the specimen grows.

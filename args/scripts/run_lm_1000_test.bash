@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run llama/run_lm.py \
+uv run llama/run_llm.py \
   --doc-csv data/herbarium/1000_test_docs.csv \
   --out-file data/herbarium/1000_test_2026-04-13.csv \
   --model "openai/gpt-5-nano" \

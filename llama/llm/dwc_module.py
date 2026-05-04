@@ -3,8 +3,8 @@ from typing import Any
 
 import dspy
 
-from llama.lm.preprocess import clean_text
-from llama.lm.signature_registry import SIGNATURE_REGISTRY
+from llama.pylib.preprocess import clean_text
+from llama.llm.signature_registry import SIGNATURE_REGISTRY
 
 
 class DwcModule(dspy.Module):

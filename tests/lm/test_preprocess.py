@@ -1,7 +1,7 @@
 import unittest
 from textwrap import dedent
 
-from llama.lm import preprocess
+from llama.pylib import preprocess
 
 
 class TestPreprocess(unittest.TestCase):
