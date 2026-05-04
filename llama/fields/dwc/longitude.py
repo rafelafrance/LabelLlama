@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 VERBATIM_LONGITUDE: str = compress("""
+    `verbatimLongitude` (str):
     Extract the verbatim longitude at which the specimen was collected.
     Preserve the value exactly as written — it may be decimal degrees
     (e.g., '-93.5678'), degrees/minutes/seconds (e.g., '93°34'05"W'),

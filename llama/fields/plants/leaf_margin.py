@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LEAF_MARGIN: str = compress("""
+    `leafMargin` (str):
     Extract the description of the specimen's leaf margins (edge shape).
     Examples: 'entire', 'crenate', 'dentate', 'serrate', 'lobed', 'toothed',
     'undulate', 'sinuate', 'ciliate', 'scalloped'.

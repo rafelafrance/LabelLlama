@@ -6,6 +6,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 SCIENTIFIC_NAME: str = compress("""
+    `scientificName` (list[str]):
     Extract the scientific (binomial) name of the specimen.
     Format as 'Genus species' with Genus capitalized and species lowercase.
     Include the species epithet only — do not include subspecies, varieties,

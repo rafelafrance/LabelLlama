@@ -7,6 +7,7 @@ from llama.pylib.str_util import compress
 from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 
 COUNTRY: str = compress("""
+    `country` (str):
     Extract the country where the specimen was collected.
     Return the full country name (e.g., 'United States', 'Canada', 'Mexico'),
     not an abbreviation or acronym.

@@ -10,26 +10,34 @@ from llama.pylib.str_util import compress
 from llama.vocab import units
 
 VERBATIM_ELEVATION: str = compress("""
+    `verbatimElevation` (str):
     Extract the verbatim elevation or altitude at which the specimen was collected.
     This may include the numeric value, units, and any labels (e.g., 'elev.', 'alt.',
     'altitude'). Preserve the text exactly as written.
     If no elevation information is present, return an empty string.
     """)
 ELEVATION_VALUES: str = compress("""
+    `elevationValues` (list[float]):
     Extract the numeric elevation value(s). A single value indicates a point
     elevation; two values indicate an elevation range (min and max).
     The same elevation may be reported in different units — include all numeric values.
     Return only the numbers, not the units.
+    If no elevation values are present, return an empty list.
     """)
 ELEVATION_UNITS: str = compress("""
+    `elevationUnits` (list[str]):
     Extract the unit(s) for each elevation value (e.g., 'm', 'ft', 'meters', 'feet').
     If multiple values are given, provide a matching unit for each.
     Common units are meters ('m') and feet ('ft').
+    If no elevation units are present, return an empty list.
     """)
-ELEVATION_ESTIMATED: str = compress(
-    """Is the elevation an estimate? Look for words like 'approx.', 'est.', 'ca.',
-    'about', 'approximately', '~', or '?' near the elevation value."""
-)
+ELEVATION_ESTIMATED: str = compress("""
+    `elevationEstimated` (bool):
+    Determine whether the elevation an estimate?
+    Look for words like 'approx.', 'est.', 'ca.', 'about', 'approximately', '~', or '?'
+    near the elevation value.
+    If no information about elevation estimation is stated, return an empty string.
+    """)
 
 
 @dataclass
@@ -41,7 +49,7 @@ class Elevation(BaseField):
     elevation: float | str | None = field(default=None, metadata=BOTH)
     maxElevation: float | str | None = field(default=None, metadata=BOTH)
     elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
-    elevationEstimated: bool | str | None = field(default=None, metadata=BOTH)
+    elevationEstimated: bool | str | None = field(default="", metadata=BOTH)
 
     @classmethod
     def setup_postprocessing(cls) -> None:

@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 INFRASPECIFIC_NAME_AUTHORSHIP: str = compress("""
+    `infraspecificNameAuthorship` (str):
     Extract the authorship citation for the infraspecific name (subspecies or
     variety). This is the person(s) who originally described the subspecies or
     variety, separate from the species-level authorship.

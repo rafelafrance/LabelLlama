@@ -7,6 +7,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 FRUIT_PRESENT: str = compress("""
+    `fruitPresent` (bool):
     Determine whether the specimen has fruit present.
     Look for indicators like 'in fruit', 'fr.', 'frs', 'fruits', 'fruiting',
     or the presence of fruit color descriptions.

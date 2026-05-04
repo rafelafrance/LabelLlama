@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 PLANT_REPRODUCTION: str = compress("""
+    `reproduction` (str):
     Extract the plant's breeding system (how sexual organs are distributed
     among flowers and individuals). This describes whether male and female
     reproductive parts occur together or separately at the population level.

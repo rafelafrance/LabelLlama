@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LEAF_SHAPE: str = compress("""
+    `leafShape` (str):
     Extract the shape of the specimen's leaf.
     Examples: 'elliptic', 'ovate', 'lanceolate', 'oblong', 'orbicular',
     'cordate', 'reniform', 'deltoid', 'linear', 'falcate', 'spatulate',

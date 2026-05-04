@@ -6,6 +6,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 COLLECTOR_NUMBER: str = compress("""
+    `collectorNumber` (str):
     Extract the collector number (also called access number) assigned to this
     specimen by the collector. It is a unique identifier for the collection event,
     not the collector's personal ID.

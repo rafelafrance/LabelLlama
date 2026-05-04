@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 INFRASPECIFIC_EPITHET: str = compress("""
+    `infraspecificEpithet` (str):
     Extract the infraspecific epithet (subspecies or variety name) from the
     scientific name. This is the third name after the genus and species,
     e.g., 'var. latifolia' or 'subsp. montana'.

@@ -8,6 +8,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 HABITAT: str = compress("""
+    `habitat` (str):
     Extract the habitat or environment where the specimen grows.
     Describe the physical conditions and setting, not the location.
         ✅ Include: substrate ('dry sand', 'loamy soil', 'rocky outcrop'),

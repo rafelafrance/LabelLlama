@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 STATE_PROVINCE: str = compress("""
+    `stateProvince` (str):
     Extract the state, province, or equivalent first-level administrative division
     where the specimen was collected (e.g., 'California', 'Ontario', 'Coahuila').
     Return the full name, not an abbreviation or acronym.

@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LIFE_CYCLE: str = compress("""
+    `lifeCycle` (str):
     Extract the plant's life cycle or duration (how long the plant lives).
     Examples: 'annual', 'biennial', 'perennial', 'fugacious', 'marcescent',
     'monocarpic', 'semelparous', 'iteroparous', 'persistent', 'subpersistent'.

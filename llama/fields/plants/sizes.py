@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 SIZES: str = compress("""
+    `sizes` (list[str]):
     Extract dimensions of plant parts other than the overall plant height.
     This is a catch-all for measurements of individual organs or structures
     (e.g., leaf size, flower size, fruit size, stem diameter, root length).

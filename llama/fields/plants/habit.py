@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 HABIT: str = compress("""
+    `habit` (str):
     Extract the plant's habit or general growth form/shape.
     Examples: 'erect', 'ascending', 'prostrate', 'creeping', 'climbing', 'vine',
     'liana', 'shrubby', 'arborescent', 'tree', 'bush', 'caespitose', 'cespitose',

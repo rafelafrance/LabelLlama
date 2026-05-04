@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 WOODINESS: str = compress("""
+    `woodiness` (str):
     Extract the degree of woodiness of the plant (whether the stem is woody
     or herbaceous). This describes the nature of the above-ground tissue at
     the end of the growing season. It is distinct from habit (growth shape

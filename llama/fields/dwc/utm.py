@@ -9,6 +9,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 UTM: str = compress("""
+    `utm` (str):
     Extract the Universal Transverse Mercator (UTM) coordinates from the label.
     UTM coordinates consist of a zone, northing, and easting.
     Preserve the text exactly as written. Examples: '33T 500000 4649776',
@@ -16,6 +17,7 @@ UTM: str = compress("""
     If no UTM information is present, return an empty string.
     """)
 UTM_NORTHING: str = compress("""
+    `utmNorthing` (str):
     Extract the northing portion of the UTM coordinates. It is a number
     (possibly decimal) followed by or preceded by an 'N'.
     Examples: '3845372N', '4057.6 N', '3968400 N', 'N 4253279'.
@@ -24,6 +26,7 @@ UTM_NORTHING: str = compress("""
     If no northing is present, return an empty string.
     """)
 UTM_EASTING: str = compress("""
+    `utmEasting` (str):
     Extract the easting portion of the UTM coordinates. It is a number
     (possibly decimal) followed by or preceded by an 'E'.
     Examples: 'E 642700', '509257E', '0484145E', '368.2 E'.
@@ -32,6 +35,7 @@ UTM_EASTING: str = compress("""
     If no easting is present, return an empty string.
     """)
 UTM_ZONE: str = compress("""
+    `utmZone` (str):
     Extract the zone portion of the UTM coordinates. It will look like
     '10S', '11', '8N', 'Zone 11S', 'NH', '16P'. Return only the zone value,
     not the 'Zone' label.

@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 PLANT_SEX: str = compress("""
+    `sex` (str):
     Extract the sex of the individual flower(s) or inflorescence on the specimen.
     This describes whether the flowers contain male parts only, female parts only,
     or both. It is distinct from reproduction (breeding system at the

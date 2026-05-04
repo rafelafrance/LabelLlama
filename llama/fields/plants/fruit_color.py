@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 FRUIT_COLOR: str = compress("""
+    `fruitColor` (str):
     Extract the color(s) of the fruits of the specimen.
     Examples: 'red', 'black', 'purple', 'green', 'brown', 'orange',
     'dark blue', 'reddish-brown', 'yellow when ripe'.

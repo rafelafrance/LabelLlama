@@ -7,6 +7,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 FLOWERS_PRESENT: str = compress("""
+    `flowersPresent` (bool):
     Determine whether the specimen has flowers present.
     Look for indicators like 'in flower', 'blooming', 'fl.', 'fls',
     'flowers', 'flowering', or the presence of flower color descriptions.

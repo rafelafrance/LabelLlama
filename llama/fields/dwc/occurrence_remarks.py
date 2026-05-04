@@ -12,6 +12,7 @@ MIN_WORDS = 2
 SKIP_FIELDS = ("occurrenceRemarks", "associatedTaxa")
 
 OCCURRENCE_REMARKS: str = compress("""
+    `occurrenceRemarks` (str):
     Extract any remaining observations or notes not captured by other fields.
     This is a catch-all for data that does not fit elsewhere.
         ✅ Include: field notes, specimen condition, phenology observations,

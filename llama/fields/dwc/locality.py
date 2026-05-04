@@ -8,6 +8,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LOCALITY: str = compress("""
+    `locality` (str):
     Extract the locality — the specific place or geographic description where
     the specimen was collected. This may include multiple phrases joined by
     commas or conjunctions.

@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 FLOWER_COLOR: str = compress("""
+    `flowerColor` (str):
     Extract the color(s) of the flowers of the specimen.
     Examples: 'white', 'pink', 'yellow', 'purple', 'blue', 'red', 'cream',
     'greenish-yellow', 'mottled purple and white'.

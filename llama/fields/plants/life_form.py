@@ -5,7 +5,8 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LIFE_FORM: str = compress("""
-    Extract the ecological life form (or niche) of the specimen.
+    `lifeForm` (str):
+    Extract the ecological life form (aka niche) of the specimen.
     This describes how the plant obtains nutrients and where it anchors itself.
     It is distinct from habit (growth shape), habitat (physical environment),
     and woodiness (woody vs herbaceous).

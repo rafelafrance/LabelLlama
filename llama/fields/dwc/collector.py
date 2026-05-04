@@ -6,6 +6,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 COLLECTOR: str = compress("""
+    `collector` (str):
     Extract the name of the person or people who collected the specimen.
     The collector name may appear with labels like 'col.', 'coll.', 'coll. by',
     or 'collected by'. Multiple collectors may be separated by '&', 'and',

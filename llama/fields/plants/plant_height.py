@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 PLANT_HEIGHT: str = compress("""
+    `plantHeight` (str):
     Extract the height of the specimen or the plant as a whole.
     This is a dimension describing vertical size, typically given as a number
     with units (e.g., '15 cm', '1.2 m', '3 ft', '2-5 m').

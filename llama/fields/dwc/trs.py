@@ -10,6 +10,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 TRS: str = compress("""
+    `trs` (str):
     Extract the Township Range Section (TRS) coordinates from the label.
     TRS is a land survey system used primarily in the United States.
     Preserve the text exactly as written — it may include township, range,
@@ -19,18 +20,21 @@ TRS: str = compress("""
     If no TRS information is present, return an empty string.
     """)
 TRS_TOWNSHIP: str = compress("""
+    `trsTownship` (str):
     Extract the township portion of the TRS coordinates. It will look like
     'T28N', 'T 32 N', or 'T.43'. The letter 'T' followed by digits and an
     'N' or 'S' compass direction. Return only the value without the 'T' prefix.
     If no township is present, return an empty string.
     """)
 TRS_RANGE: str = compress("""
+    `trsRange` (str):
     Extract the range portion of the TRS coordinates. It will look like
     'R23E', 'R 1 W', 'R.11W'. The letter 'R' followed by digits and an
     'E' or 'W' compass direction. Return only the value without the 'R' prefix.
     If no range is present, return an empty string.
     """)
 TRS_SECTION: str = compress("""
+    `trsSection` (str):
     Extract the section portion of the TRS coordinates. This may include
     quadrant subdivisions (e.g., 'NW 1/4', 'SE ¼') and the section number.
     Examples: '1/4 S10', 'se1/4 ne1/4 sec 12', 'SE ¼ Section 17',
@@ -39,6 +43,7 @@ TRS_SECTION: str = compress("""
     If no section is present, return an empty string.
     """)
 TRS_QUAD: str = compress("""
+    `trsQuad` (str):
     Extract the quadrangle (quad) name associated with the TRS coordinates.
     The quad may appear before or after the other TRS fields. Examples:
     'USGS Wahtoke 7 1/2 quad', 'Yountville Quad', 'Chicken Hawk Hill quadrangle',

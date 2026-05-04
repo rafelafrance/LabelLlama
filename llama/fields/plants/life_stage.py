@@ -5,6 +5,7 @@ from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 LIFE_STAGE: str = compress("""
+    `lifeStage` (str):
     Extract the developmental or phenological stage of the specimen.
     This describes the current growth phase or maturity level of the plant
     at the time of collection. It is distinct from life cycle
