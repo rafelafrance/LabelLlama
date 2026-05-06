@@ -36,3 +36,8 @@ class Sex(BaseField):
 
     def __post_init__(self, text: str) -> None:
         self.sex = fix_values.hallucinated_str(self.sex, text)
+
+        if self.sex.lower().startswith("m") or self.sex == "♂":
+            self.sex = "male"
+        elif self.sex.lower().startswith("f") or self.sex == "♀":
+            self.sex = "female"

@@ -18,7 +18,7 @@ FRUIT_PRESENT: str = compress("""
 
 @dataclass
 class FruitPresent(BaseField):
-    fruitPresent: bool | str | None = field(default="", metadata=BOTH)
+    fruitPresent: bool | str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text

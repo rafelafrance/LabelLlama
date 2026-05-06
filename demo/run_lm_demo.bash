@@ -1,7 +1,7 @@
 #!/bin/bash
 
 uv run llama/run_lm.py \
-  --doc-csv demo/ocr_demo_docs.csv \
+  --docs demo/ocr_demo_docs.csv \
   --out-file demo/lm_extracts.csv \
   --model "openai/gpt-5-nano" \
   --api-key "$OPENAI_API_KEY" \

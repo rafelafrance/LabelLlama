@@ -5,19 +5,18 @@ import base64
 import contextlib
 import csv
 import logging
-import os
 import textwrap
 from datetime import datetime
 from pathlib import Path
 
-import openai
 import pandas as pd
+from openai import APIError, OpenAI
 from openai.types.chat.chat_completion_system_message_param import (
     ChatCompletionSystemMessageParam,
 )
 from tqdm import tqdm
 
-from llama.pylib import io_util, log
+from llama.pylib import io_util, timer
 
 SYSTEM_ROLE = textwrap.dedent("""
     You are given an image of a museum specimen with labels.
@@ -34,22 +33,15 @@ SYSTEM_ROLE = textwrap.dedent("""
 
 
 def ocr_images(args: argparse.Namespace) -> None:
-    log.started(args.log_file, args=args)
+    job_began = timer.job_began(args.log_file, args=args)
 
-    job_began = datetime.now()
-
-    already_read = get_docs_read(args.doc_csv)
+    already_read = get_docs_read(args.docs)
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
     image_paths = image_paths[: args.limit]
 
-    client = openai.OpenAI(
-        base_url=args.api_host,
-        api_key=os.environ.get("OPENAI_API_KEY", "lm-studio"),
-    )
-
-    with args.doc_csv.open("a") as tsv:
-        writer = csv.writer(tsv)
+    with OpenAI(base_url=args.api_host) as client, args.docs.open("a") as docs:
+        writer = csv.writer(docs)
 
         if not already_read:
             writer.writerow(["source", "elapsed", "text"])
@@ -60,7 +52,7 @@ def ocr_images(args: argparse.Namespace) -> None:
             if image_path in already_read:
                 continue
 
-            rec_began = datetime.now()
+            doc_began = datetime.now()
 
             try:
                 with image_path.open("rb") as f:
@@ -88,26 +80,22 @@ def ocr_images(args: argparse.Namespace) -> None:
 
                 text = response.choices[0].message.content
 
-            except openai.APIError:
+            except APIError:
                 logging.exception("API error:")
                 continue
 
-            elapsed = str(datetime.now() - rec_began)
+            elapsed = timer.elapsed(doc_began)
             writer.writerow([str(image_path), elapsed, text])
-            tsv.flush()
+            docs.flush()
 
-    job_elapsed = str(datetime.now() - job_began)
-    msg = f"Job elapsed {job_elapsed}"
-    logging.info(msg)
-
-    log.finished()
+    timer.job_elapsed(job_began)
 
 
-def get_docs_read(doc_csv: Path) -> list[Path]:
+def get_docs_read(docs: Path) -> list[Path]:
     done = []
-    if doc_csv.exists():
+    if docs.exists():
         with contextlib.suppress(pd.errors.EmptyDataError):
-            records = io_util.read_list_of_dicts(doc_csv)
+            records = io_util.read_list_of_dicts(docs)
             done = [Path(r["source"]) for r in records if r.get("source")]
     return done
 
@@ -124,10 +112,10 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Directory containing all of the images to OCR.""",
     )
     arg_parser.add_argument(
-        "--doc-csv",
+        "--docs",
         type=Path,
         required=True,
-        help="""Put OCRed text into this CSV file. This appends data to the file.""",
+        help="""Put OCRed text into this file. This appends data to the file.""",
     )
     arg_parser.add_argument(
         "--model",

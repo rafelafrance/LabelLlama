@@ -8,14 +8,14 @@ import dspy
 
 from llama.llm.dwc_module import DwcModule
 from llama.llm.signature_registry import SIGNATURE_REGISTRY
-from llama.pylib import io_util, log, preprocess
+from llama.pylib import io_util, preprocess, timer
 
 
 def llm_extraction(args: argparse.Namespace) -> None:
-    log.started(args.log_file, args=args)
+    job_began = timer.job_began(args.log_file, args=args)
 
     lm = dspy.LM(
-        args.model_name,
+        args.model,
         api_base=args.api_host,
         api_key=args.api_key,
         temperature=args.temperature,
@@ -29,7 +29,7 @@ def llm_extraction(args: argparse.Namespace) -> None:
 
     parallel = dspy.Parallel(num_threads=args.threads)
 
-    docs = io_util.read_list_of_dicts(args.doc_csv, fill_na="")
+    docs = io_util.read_list_of_dicts(args.docs, fill_na="")
 
     exec_pairs = [
         (predictor, {"text": preprocess.clean_text(d["text"]), "source": d["source"]})
@@ -40,7 +40,7 @@ def llm_extraction(args: argparse.Namespace) -> None:
 
     io_util.output_file(args.out_file, results)
 
-    log.finished()
+    timer.job_elapsed(job_began)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -58,7 +58,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""What type of data are you extracting? What is its signature?""",
     )
     arg_parser.add_argument(
-        "--doc-csv",
+        "--docs",
         type=Path,
         help="""Parse doc text from this file. We need only 'source' and 'text'
             columns for valid input, so any file with those columns are fine.""",
@@ -76,7 +76,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""How many parallel threads to run. (default: %(default)s)""",
     )
     arg_parser.add_argument(
-        "--model-name",
+        "--model",
         default="lm_studio/google/gemma-4-26b-a4b",
         help="""Use this language model. (default: %(default)s)""",
     )
@@ -99,6 +99,15 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--notes",
+        help="""Notes for logging.""",
+    )
+    arg_parser.add_argument(
+        "--limit",
+        type=int,
+        help="""Limit to this many records. Primarily for debugging.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

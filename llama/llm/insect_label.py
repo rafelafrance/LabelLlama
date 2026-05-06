@@ -1,7 +1,6 @@
 from dspy import InputField, OutputField, Signature
 
 from llama.fields.dwc import (
-    collector,
     country,
     county,
     elevation,
@@ -13,18 +12,19 @@ from llama.fields.dwc import (
     identified_by_id,
     island,
     island_group,
-    latitude,
     locality,
-    longitude,
     municipality,
     occurrence_id,
     occurrence_remarks,
     record_number,
+    recorded_by,
     scientific_name,
     scientific_name_authorship,
     specific_epithet,
     state_province,
     subgenus,
+    verbatim_latitude,
+    verbatim_longitude,
     water_body,
 )
 from llama.fields.insects import sex
@@ -70,9 +70,9 @@ class InsectLabel(Signature):
     elevationValues: list[float] = OutputField(desc=elevation.ELEVATION_VALUES)
     elevationUnits: list[str] = OutputField(desc=elevation.ELEVATION_UNITS)
     elevationEstimated: bool = OutputField(desc=elevation.ELEVATION_ESTIMATED)
-    verbatimLatitude: str = OutputField(desc=latitude.VERBATIM_LATITUDE)
-    verbatimLongitude: str = OutputField(desc=longitude.VERBATIM_LONGITUDE)
-    collector: str = OutputField(desc=collector.COLLECTOR)
+    verbatimLatitude: str = OutputField(desc=verbatim_latitude.VERBATIM_LATITUDE)
+    verbatimLongitude: str = OutputField(desc=verbatim_longitude.VERBATIM_LONGITUDE)
+    recorded_by: str = OutputField(desc=recorded_by.RECORDED_BY)
     recordNumber: str = OutputField(desc=record_number.RECORD_NUMBER)
     identifiedBy: str = OutputField(desc=identified_by.IDENTIFIED_BY)
     identifiedByID: str = OutputField(desc=identified_by_id.IDENTIFIED_BY_ID)
