@@ -16,7 +16,7 @@ VERBATIM_LONGITUDE: str = compress("""
 
 
 @dataclass
-class Longitude(BaseField):
+class VerbatimLongitude(BaseField):
     verbatimLongitude: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:

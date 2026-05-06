@@ -29,6 +29,4 @@ class Subgenus(BaseField):
     subgenus: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        del text
-
-        self.subgenus = fix_values.to_str(self.subgenus)
+        self.subgenus = fix_values.hallucinated_str(self.subgenus, text)

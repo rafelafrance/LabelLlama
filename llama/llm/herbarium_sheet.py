@@ -2,8 +2,10 @@ import textwrap
 
 from dspy import InputField, OutputField, Signature
 
+from llama.fields.common import infraspecific_name_authorship
+from llama.fields.common import trs as trs_
+from llama.fields.common import utm as utm_
 from llama.fields.dwc import (
-    abundance,
     associated_taxa,
     collector,
     country,
@@ -16,7 +18,6 @@ from llama.fields.dwc import (
     habitat,
     identified_by,
     infraspecific_epithet,
-    infraspecific_name_authorship,
     latitude,
     longitude,
     municipality,
@@ -27,9 +28,8 @@ from llama.fields.dwc import (
     state_province,
 )
 from llama.fields.dwc import locality as locality_  # Quiet the linter
-from llama.fields.dwc import trs as trs_  # Linter BS
-from llama.fields.dwc import utm as utm_  # Linter BS
 from llama.fields.plants import (
+    abundance,
     flower_color,
     flower_present,
     fruit_color,

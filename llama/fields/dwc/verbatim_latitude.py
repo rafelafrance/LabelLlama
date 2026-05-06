@@ -16,10 +16,9 @@ VERBATIM_LATITUDE: str = compress("""
 
 
 @dataclass
-class Latitude(BaseField):
+class VerbatimLatitude(BaseField):
     verbatimLatitude: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text
-
         self.verbatimLatitude = fix_values.to_str(self.verbatimLatitude)

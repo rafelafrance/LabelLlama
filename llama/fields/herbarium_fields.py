@@ -1,8 +1,11 @@
 from typing import Any
 
-from llama.fields.dwc.abundance import Abundance
+from llama.fields.common.infraspecific_name_authorship import (
+    InfraspecificNameAuthorship,
+)
+from llama.fields.common.trs import Trs
+from llama.fields.common.utm import Utm
 from llama.fields.dwc.associated_taxa import AssociatedTaxa
-from llama.fields.dwc.collector import Collector
 from llama.fields.dwc.country import Country
 from llama.fields.dwc.county import County
 from llama.fields.dwc.date_identified import DateIdentified
@@ -13,20 +16,17 @@ from llama.fields.dwc.geodetic_datum import GeodeticDatum
 from llama.fields.dwc.habitat import Habitat
 from llama.fields.dwc.identified_by import IdentifiedBy
 from llama.fields.dwc.infraspecific_epithet import InfraspecificEpithet
-from llama.fields.dwc.infraspecific_name_authorship import (
-    InfraspecificNameAuthorship,
-)
-from llama.fields.dwc.latitude import Latitude
 from llama.fields.dwc.locality import Locality
-from llama.fields.dwc.longitude import Longitude
 from llama.fields.dwc.municipality import Municipality
 from llama.fields.dwc.occurrence_remarks import OccurrenceRemarks
 from llama.fields.dwc.record_number import RecordNumber
+from llama.fields.dwc.recorded_by import RecordedBy
 from llama.fields.dwc.scientific_name import ScientificName
 from llama.fields.dwc.scientific_name_authorship import ScientificNameAuthorship
 from llama.fields.dwc.state_province import StateProvince
-from llama.fields.dwc.trs import Trs
-from llama.fields.dwc.utm import Utm
+from llama.fields.dwc.verbatim_latitude import VerbatimLatitude
+from llama.fields.dwc.verbatim_longitude import VerbatimLongitude
+from llama.fields.plants.abundance import Abundance
 from llama.fields.plants.flower_color import FlowerColor
 from llama.fields.plants.flower_present import FlowersPresent
 from llama.fields.plants.fruit_color import FruitColor
@@ -52,8 +52,7 @@ HERBARIUM_FIELDS: dict[str, Any] = {
     "family": Family,
     "associatedTaxa": AssociatedTaxa,
     "verbatimEventDate": EventDate,
-    "collector": Collector,
-    "recordedBy": Collector,
+    "recordedBy": RecordedBy,
     "recordNumber": RecordNumber,
     "identifiedBy": IdentifiedBy,
     "dateIdentified": DateIdentified,
@@ -67,8 +66,8 @@ HERBARIUM_FIELDS: dict[str, Any] = {
     "geodeticDatum": GeodeticDatum,
     "trs": Trs,
     "utm": Utm,
-    "verbatimLatitude": Latitude,
-    "verbatimLongitude": Longitude,
+    "verbatimLatitude": VerbatimLatitude,
+    "verbatimLongitude": VerbatimLongitude,
     "verbatimElevation": Elevation,
     "abundance": Abundance,
     "flowersPresent": FlowersPresent,

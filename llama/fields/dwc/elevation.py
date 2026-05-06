@@ -46,10 +46,10 @@ class Elevation(BaseField):
 
     verbatimElevation: str = field(default="", metadata=BOTH)
     elevationValues: list[float] = field(default_factory=list, metadata=IN)
-    elevation: float | str | None = field(default=None, metadata=BOTH)
-    maxElevation: float | str | None = field(default=None, metadata=BOTH)
-    elevationUnits: list[str] | str | None = field(default=None, metadata=BOTH)
-    elevationEstimated: bool | str | None = field(default="", metadata=BOTH)
+    elevation: float | str = field(default="", metadata=BOTH)
+    maxElevation: float | str = field(default="", metadata=BOTH)
+    elevationUnits: list[str] | str = field(default="", metadata=BOTH)
+    elevationEstimated: bool | str = field(default="", metadata=BOTH)
 
     @classmethod
     def setup_postprocessing(cls) -> None:

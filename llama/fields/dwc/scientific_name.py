@@ -37,9 +37,9 @@ class ScientificName(BaseField):
         if len(words) == 0:
             value = ""
         elif len(words) == 1:
-            value = words[0].title()
+            value = words[0].capitalize()
         else:
             genus, species, *_ = words
-            value = f"{genus.title()} {species.lower()}"
+            value = f"{genus.capitalize()} {species.lower()}"
 
         return value
