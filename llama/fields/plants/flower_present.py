@@ -18,7 +18,7 @@ FLOWERS_PRESENT: str = compress("""
 
 @dataclass
 class FlowersPresent(BaseField):
-    flowersPresent: bool | str | None = field(default="", metadata=BOTH)
+    flowersPresent: bool | str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text

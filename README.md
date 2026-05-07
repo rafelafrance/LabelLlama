@@ -81,10 +81,10 @@ The important arguments for running the OCR script `get_text.py`
 are shown in the `demo/get_text_demo.bash` bash script.
 
 - --image-dir: A directory full of museum specimen images that you want to OCR.
-- --doc-csv: Put the OCRed text into this file.
+- --docs: Put the OCRed text into this file.
 - --model: Use this model for the OCR.
 
-Note that the script will append to the --doc-csv file so that you may rerun the
+Note that the script will append to the --docs file so that you may rerun the
 script after an error or combine the output from multiple runs into a single file.
 
 The output CSV has 3 columns.
@@ -101,7 +101,7 @@ all of which I try to fix in the next step.
 
 The important arguments for this process are shown in the `demo/run_lm_demo.bash` script.
 
-- --doc-csv: demo/ocr_demo_docs.csv The output from the OCR script.
+- --docs: demo/ocr_demo_docs.csv The output from the OCR script.
 - --out-file: demo/lm_extracts.csv Where to put the extraction output.
 - --model: "openai/gpt-5-nano" The LLM to use.
 - --api-key: The key required to run the LLM.

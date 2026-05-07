@@ -7,6 +7,7 @@ from dspy import InputField, OutputField, Signature
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
+from llama.fields.common import utm_easting, utm_northing, utm_zone
 
 UTM: str = compress("""
     `utm` (str):
@@ -15,31 +16,6 @@ UTM: str = compress("""
     Preserve the text exactly as written. Examples: '33T 500000 4649776',
     'Z12 N7874900 E768500', '11S 316745.14 3542301.90', 'Zone 11S; 3845372N 0729522E'.
     If no UTM information is present, return an empty string.
-    """)
-UTM_NORTHING: str = compress("""
-    `utmNorthing` (str):
-    Extract the northing portion of the UTM coordinates. It is a number
-    (possibly decimal) followed by or preceded by an 'N'.
-    Examples: '3845372N', '4057.6 N', '3968400 N', 'N 4253279'.
-    Northing is never negative — dashes are separators, not minus signs.
-    Return only the numeric value, not the 'N' label.
-    If no northing is present, return an empty string.
-    """)
-UTM_EASTING: str = compress("""
-    `utmEasting` (str):
-    Extract the easting portion of the UTM coordinates. It is a number
-    (possibly decimal) followed by or preceded by an 'E'.
-    Examples: 'E 642700', '509257E', '0484145E', '368.2 E'.
-    Easting is never negative — dashes are separators, not minus signs.
-    Return only the numeric value, not the 'E' label.
-    If no easting is present, return an empty string.
-    """)
-UTM_ZONE: str = compress("""
-    `utmZone` (str):
-    Extract the zone portion of the UTM coordinates. It will look like
-    '10S', '11', '8N', 'Zone 11S', 'NH', '16P'. Return only the zone value,
-    not the 'Zone' label.
-    If no zone is present, return an empty string.
     """)
 
 
@@ -116,11 +92,11 @@ class UtmSig(Signature):
     utm = InputField()
 
     utmNorthing: str = OutputField(
-        desc=UTM_NORTHING,
+        desc=utm_northing.UTM_NORTHING,
     )
     utmEasting: str = OutputField(
-        desc=UTM_EASTING,
+        desc=utm_easting.UTM_EASTING,
     )
     utmZone: str = OutputField(
-        desc=UTM_ZONE,
+        desc=utm_zone.UTM_ZONE,
     )

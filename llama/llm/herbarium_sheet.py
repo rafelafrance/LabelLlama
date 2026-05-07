@@ -1,13 +1,19 @@
-import textwrap
-
 from dspy import InputField, OutputField, Signature
 
-from llama.fields.common import infraspecific_name_authorship
-from llama.fields.common import trs as trs_
-from llama.fields.common import utm as utm_
+from llama.fields.common import (
+    infraspecific_name_authorship,
+    trs,
+    trs_quad,
+    trs_range,
+    trs_section,
+    trs_township,
+    utm,
+    utm_easting,
+    utm_northing,
+    utm_zone,
+)
 from llama.fields.dwc import (
     associated_taxa,
-    collector,
     country,
     county,
     date_identified,
@@ -18,16 +24,17 @@ from llama.fields.dwc import (
     habitat,
     identified_by,
     infraspecific_epithet,
-    latitude,
-    longitude,
+    locality,
     municipality,
     occurrence_remarks,
     record_number,
+    recorded_by,
     scientific_name,
     scientific_name_authorship,
     state_province,
+    verbatim_latitude,
+    verbatim_longitude,
 )
-from llama.fields.dwc import locality as locality_  # Quiet the linter
 from llama.fields.plants import (
     abundance,
     flower_color,
@@ -42,27 +49,6 @@ from llama.fields.plants import (
     sex,
     woodiness,
 )
-
-HERBARIUM_SHEET = textwrap.dedent("""
-    Extract structured botanical and collection metadata from herbarium label text.
-
-    This signature processes OCR'd or transcribed herbarium sheet labels and extracts
-    Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
-    morphological data (phenology, habit, life form, etc.).
-
-    Extraction rules:
-
-    - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
-      label. Do not expand abbreviations, correct spelling, normalize punctuation,
-      add/remove whitespace, or rephrase in any way.
-    - **No inference**: Only extract information explicitly present in the source text.
-      Do not infer, summarize, categorize, or add any new information.
-    - **Missing data**: If a field cannot be found in the text, return the default
-      value defined for that field.
-    - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
-      entities, Markdown formatting, MATHML, or any other markup.
-    - **No hallucination**: Never fabricate data not present in the source.
-    """)
 
 
 class HerbariumSheet(Signature):
@@ -99,7 +85,7 @@ class HerbariumSheet(Signature):
     family: str = OutputField(desc=family.FAMILY)
     associatedTaxa: str = OutputField(desc=associated_taxa.ASSOCIATED_TAXA)
     verbatimEventDate: str = OutputField(desc=event_date.VERBATIM_EVENT_DATE)
-    collector: str = OutputField(desc=collector.COLLECTOR)
+    recorded_by: str = OutputField(desc=recorded_by.RECORDED_BY)
     recordNumber: str = OutputField(desc=record_number.RECORD_NUMBER)
     identifiedBy: str = OutputField(desc=identified_by.IDENTIFIED_BY)
     dateIdentified: str = OutputField(desc=date_identified.DATE_IDENTIFIED)
@@ -111,19 +97,19 @@ class HerbariumSheet(Signature):
     elevationValues: list[float] = OutputField(desc=elevation.ELEVATION_VALUES)
     elevationUnits: list[str] = OutputField(desc=elevation.ELEVATION_UNITS)
     elevationEstimated: bool = OutputField(desc=elevation.ELEVATION_ESTIMATED)
-    verbatimLatitude: str = OutputField(desc=latitude.VERBATIM_LATITUDE)
-    verbatimLongitude: str = OutputField(desc=longitude.VERBATIM_LONGITUDE)
+    verbatimLatitude: str = OutputField(desc=verbatim_latitude.VERBATIM_LATITUDE)
+    verbatimLongitude: str = OutputField(desc=verbatim_longitude.VERBATIM_LONGITUDE)
     geodeticDatum: str = OutputField(desc=geodetic_datum.GEODETIC_DATUM)
-    trs: str = OutputField(desc=trs_.TRS)
-    trsTownship: str = OutputField(desc=trs_.TRS_TOWNSHIP)
-    trsRange: str = OutputField(desc=trs_.TRS_RANGE)
-    trsSection: str = OutputField(desc=trs_.TRS_SECTION)
-    trsQuad: str = OutputField(desc=trs_.TRS_QUAD)
-    utm: str = OutputField(desc=utm_.UTM)
-    utmNorthing: str = OutputField(desc=utm_.UTM_NORTHING)
-    utmEasting: str = OutputField(desc=utm_.UTM_EASTING)
-    utmZone: str = OutputField(desc=utm_.UTM_ZONE)
-    locality: str = OutputField(desc=locality_.LOCALITY)
+    trs: str = OutputField(desc=trs.TRS)
+    trsTownship: str = OutputField(desc=trs_township.TRS_TOWNSHIP)
+    trsRange: str = OutputField(desc=trs_range.TRS_RANGE)
+    trsSection: str = OutputField(desc=trs_section.TRS_SECTION)
+    trsQuad: str = OutputField(desc=trs_quad.TRS_QUAD)
+    utm: str = OutputField(desc=utm.UTM)
+    utmNorthing: str = OutputField(desc=utm_northing.UTM_NORTHING)
+    utmEasting: str = OutputField(desc=utm_easting.UTM_EASTING)
+    utmZone: str = OutputField(desc=utm_zone.UTM_ZONE)
+    locality: str = OutputField(desc=locality.LOCALITY)
     habitat: str = OutputField(desc=habitat.HABITAT)
     flowersPresent: bool = OutputField(desc=flower_present.FLOWERS_PRESENT)
     fruitPresent: bool = OutputField(desc=fruit_present.FRUIT_PRESENT)

@@ -27,7 +27,7 @@ SIZES: str = compress("""
 
 @dataclass
 class Sizes(BaseField):
-    sizes: list[str] | str | None = field(default_factory=list, metadata=BOTH)
+    sizes: list[str] | str = field(default_factory=list, metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text
