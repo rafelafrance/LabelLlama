@@ -38,8 +38,8 @@ from llama.fields.plants.leaf_shape import LeafShape
 from llama.fields.plants.life_form import LifeForm
 from llama.fields.plants.life_stage import LifeStage
 from llama.fields.plants.plant_height import PlantHeight
+from llama.fields.plants.plant_sex import PlantSex
 from llama.fields.plants.reproduction import Reproduction
-from llama.fields.plants.sex import Sex
 from llama.fields.plants.sizes import Sizes
 from llama.fields.plants.woodiness import Woodiness
 
@@ -84,5 +84,5 @@ HERBARIUM_FIELDS: dict[str, Any] = {
     "leafMargin": LeafMargin,
     "leafDuration": LeafDuration,
     "reproduction": Reproduction,
-    "sex": Sex,
+    "plant_sex": PlantSex,
 }

@@ -22,8 +22,8 @@ PLANT_SEX: str = compress("""
 
 
 @dataclass
-class Sex(BaseField):
-    sex: str = field(default="", metadata=BOTH)
+class PlantSex(BaseField):
+    plantSex: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        self.sex = fix_values.hallucinated_str(self.sex, text)
+        self.plantSex = fix_values.hallucinated_str(self.plantSex, text)

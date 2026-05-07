@@ -17,7 +17,7 @@ from openai.types.chat.chat_completion_system_message_param import (
 )
 from tqdm import tqdm
 
-from llama.pylib import io_util, log
+from llama.pylib import io_util, timer
 
 SYSTEM_ROLE = textwrap.dedent("""
     You are given an image of a museum specimen with labels.
@@ -34,9 +34,7 @@ SYSTEM_ROLE = textwrap.dedent("""
 
 
 def ocr_images(args: argparse.Namespace) -> None:
-    log.started(args.log_file, args=args)
-
-    job_began = datetime.now()
+    job_began = timer.job_began(args.log_file, args=args)
 
     already_read = get_docs_read(args.doc_csv)
 
@@ -48,6 +46,8 @@ def ocr_images(args: argparse.Namespace) -> None:
         api_key=os.environ.get("OPENAI_API_KEY", "lm-studio"),
     )
 
+    success, fail, skip = 0, 0, 0
+
     with args.doc_csv.open("a") as tsv:
         writer = csv.writer(tsv)
 
@@ -58,9 +58,10 @@ def ocr_images(args: argparse.Namespace) -> None:
 
         for image_path in tqdm(image_paths):
             if image_path in already_read:
+                skip += 1
                 continue
 
-            rec_began = datetime.now()
+            doc_began = datetime.now()
 
             try:
                 with image_path.open("rb") as f:
@@ -87,20 +88,19 @@ def ocr_images(args: argparse.Namespace) -> None:
                 )
 
                 text = response.choices[0].message.content
+                success += 1
 
             except openai.APIError:
                 logging.exception("API error:")
+                fail += 1
                 continue
 
-            elapsed = str(datetime.now() - rec_began)
-            writer.writerow([str(image_path), elapsed, text])
+            doc_elapsed = timer.elapsed(doc_began)
+            writer.writerow([str(image_path), doc_elapsed, text])
             tsv.flush()
 
-    job_elapsed = str(datetime.now() - job_began)
-    msg = f"Job elapsed {job_elapsed}"
-    logging.info(msg)
-
-    log.finished()
+    logging.info(f"Success: {success}, failure: {fail}, skips: {skip}")
+    timer.job_elapsed(job_began)
 
 
 def get_docs_read(doc_csv: Path) -> list[Path]:

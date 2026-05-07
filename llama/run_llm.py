@@ -43,6 +43,11 @@ def llm_extraction(args: argparse.Namespace) -> None:
     log.finished()
 
 
+def new_llm_extract(args: argparse.Namespace) -> None:
+    pass
+
+
+
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
