@@ -1,11 +1,11 @@
-import re
-
 import importlib.util as iu
+import re
 from pathlib import Path
 
 from llama.pylib.str_util import snake_to_camel
 
 FIELD_DIR = Path(__file__).parent.parent / "fields"
+print(FIELD_DIR)
 EXCLUDE = ("field_lists", "__pycache__", "system_prompts")
 
 
@@ -56,7 +56,7 @@ def read_prompt(path: Path) -> tuple[str, list[str]]:
     fields: list[str] = []
     with path.open() as f:
         raw = f.read()
-    parts = re.split("^(?<!#)#\s", raw, flags=re.MULTILINE)
+    parts = re.split(r"^(?<!#)#\s", raw, flags=re.MULTILINE)
     for part in parts:
         part = part.strip()
         if part.startswith("Prompt"):
