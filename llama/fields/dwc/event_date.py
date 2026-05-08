@@ -4,7 +4,7 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-VERBATIM_EVENT_DATE: str = compress("""
+EVENT_DATE: str = compress("""
     `verbatimEventDate` (str):
     Extract the verbatim date the specimen was collected.
     This may be a full date (e.g., '1995-03-15', '15 March 1995') or a partial

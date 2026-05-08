@@ -45,32 +45,32 @@ from llama.fields.plants import (
     life_form,
     life_stage,
     plant_height,
+    plant_sex,
     reproduction,
-    sex,
     woodiness,
 )
 
 
 class HerbariumSheet(Signature):
     """
-    Extract structured botanical and collection metadata from herbarium label text.
+        Extract structured botanical and collection metadata from herbarium label text.
 
-    This signature processes OCR'd or transcribed herbarium sheet labels and extracts
-    Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
-    morphological data (phenology, habit, life form, etc.).
+        This signature processes OCR'd or transcribed herbarium sheet labels and extracts
+        Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
+        morphological data (phenology, habit, life form, etc.).
 
-    Extraction rules:
+        Extraction rules:
 
-    - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
-      label. Do not expand abbreviations, correct spelling, normalize punctuation,
-      add/remove whitespace, or rephrase in any way.
-    - **No inference**: Only extract information explicitly present in the source text.
-      Do not infer, summarize, categorize, or add any new information.
-    - **Missing data**: If a field cannot be found in the text, return the default
-      value defined for that field.
-    - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
-      entities, Markdown formatting, MATHML, or any other markup.
-    - **No hallucination**: Never fabricate data not present in the source.
+        - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
+          label. Do not expand abbreviations, correct spelling, normalize punctuation,
+          add/remove whitespace, or rephrase in any way.
+        - **No inference**: Only extract information explicitly present in the source text.
+          Do not infer, summarize, categorize, or add any new information.
+        - **Missing data**: If a field cannot be found in the text, return the default
+          value defined for that field.
+        - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
+          entities, Markdown formatting, MATHML, or any other markup.
+        - **No hallucination**: Never fabricate data not present in the source.
     """
 
     text = InputField()
@@ -84,7 +84,7 @@ class HerbariumSheet(Signature):
         desc=infraspecific_name_authorship.INFRASPECIFIC_NAME_AUTHORSHIP)
     family: str = OutputField(desc=family.FAMILY)
     associatedTaxa: str = OutputField(desc=associated_taxa.ASSOCIATED_TAXA)
-    verbatimEventDate: str = OutputField(desc=event_date.VERBATIM_EVENT_DATE)
+    verbatimEventDate: str = OutputField(desc=event_date.EVENT_DATE)
     recorded_by: str = OutputField(desc=recorded_by.RECORDED_BY)
     recordNumber: str = OutputField(desc=record_number.RECORD_NUMBER)
     identifiedBy: str = OutputField(desc=identified_by.IDENTIFIED_BY)
@@ -121,6 +121,6 @@ class HerbariumSheet(Signature):
     abundance: str = OutputField(desc=abundance.ABUNDANCE)
     woodiness: str = OutputField(desc=woodiness.WOODINESS)
     lifeStage: str = OutputField(desc=life_stage.LIFE_STAGE)
-    sex: str = OutputField(desc=sex.PLANT_SEX)
+    sex: str = OutputField(desc=plant_sex.PLANT_SEX)
     reproduction: str = OutputField(desc=reproduction.PLANT_REPRODUCTION)
     occurrenceRemarks: str = OutputField(desc=occurrence_remarks.OCCURRENCE_REMARKS)

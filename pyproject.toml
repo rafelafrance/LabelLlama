@@ -31,6 +31,7 @@ dependencies = [
   "rapidfuzz>=3.14.3",
   "openai>=2.24.0",
   "tqdm>=4.67.1",
+  "markdown>=3.10.2",
 ]
 
 [dependency-groups]

@@ -1,5 +1,6 @@
 from dspy import InputField, OutputField, Signature
 
+from llama.fields.common import suborder
 from llama.fields.dwc import (
     country,
     county,
@@ -20,6 +21,7 @@ from llama.fields.dwc import (
     recorded_by,
     scientific_name,
     scientific_name_authorship,
+    sex,
     specific_epithet,
     state_province,
     subgenus,
@@ -27,14 +29,13 @@ from llama.fields.dwc import (
     verbatim_longitude,
     water_body,
 )
-from llama.fields.insects import sex
 
 
 class InsectLabel(Signature):
     """
     Extract structured biological and collection metadata from insect label text.
 
-    This signature processes OCR'd or transcribed insect labels and extracts
+    This signature processes OCRed or transcribed insect labels and extracts
     Darwin Core fields (taxonomy, geolocation, collection event) and insect specific
     fields like (sex).
 
@@ -58,11 +59,12 @@ class InsectLabel(Signature):
     scientificNameAuthorship: str = OutputField(
         desc=scientific_name_authorship.SCIENTIFIC_NAME_AUTHORSHIP
     )
+    suborder: str = OutputField(desc=suborder.SUBORDER)
     family: str = OutputField(desc=family.FAMILY)
     genus: str = OutputField(desc=genus.GENUS)
     subgenus: str = OutputField(desc=subgenus.SUBGENUS)
     specificEpithet: str = OutputField(desc=specific_epithet.SPECIFIC_EPITHET)
-    verbatimEventDate: str = OutputField(desc=event_date.VERBATIM_EVENT_DATE)
+    verbatimEventDate: str = OutputField(desc=event_date.EVENT_DATE)
     locality: str = OutputField(desc=locality.LOCALITY)
     habitat: str = OutputField(desc=habitat.HABITAT)
     sex: str = OutputField(desc=sex.SEX)

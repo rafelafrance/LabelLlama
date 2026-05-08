@@ -26,4 +26,4 @@ class DecimalLongitude(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.decimalLongitude = fix_values.to_float(self.decimalLongitude)
+        self.decimalLongitude = fix_values.to_float(self.decimalLongitude) or ""

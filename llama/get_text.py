@@ -11,9 +11,6 @@ from pathlib import Path
 
 import pandas as pd
 from openai import APIError, OpenAI
-from openai.types.chat.chat_completion_system_message_param import (
-    ChatCompletionSystemMessageParam,
-)
 from tqdm import tqdm
 
 from llama.pylib import io_util, timer
@@ -48,8 +45,6 @@ def ocr_images(args: argparse.Namespace) -> None:
         if not already_read:
             writer.writerow(["source", "elapsed", "text"])
 
-        sys_role = ChatCompletionSystemMessageParam(role="system", content=SYSTEM_ROLE)
-
         for image_path in tqdm(image_paths):
             if image_path in already_read:
                 skip += 1
@@ -64,7 +59,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 response = client.chat.completions.create(
                     model=args.model,
                     messages=[
-                        sys_role,
+                        {"role": "system", "content": SYSTEM_ROLE},
                         {
                             "role": "user",
                             "content": [
@@ -94,7 +89,6 @@ def ocr_images(args: argparse.Namespace) -> None:
             docs.flush()
 
     logging.info(f"Success: {success}, failure: {fail}, skips: {skip}")
-
     timer.job_elapsed(job_began)
 
 

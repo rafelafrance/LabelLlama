@@ -8,10 +8,10 @@ import dspy
 
 from llama.llm.dwc_module import DwcModule
 from llama.llm.signature_registry import SIGNATURE_REGISTRY
-from llama.pylib import io_util, preprocess, timer
+from llama.pylib import prompt_util, io_util, preprocess, timer
 
 
-def llm_extraction(args: argparse.Namespace) -> None:
+def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
     lm = dspy.LM(
@@ -43,9 +43,19 @@ def llm_extraction(args: argparse.Namespace) -> None:
     timer.job_elapsed(job_began)
 
 
-def new_llm_extract(args: argparse.Namespace) -> None:
-    pass
+def new_lm_extract(args: argparse.Namespace) -> None:
+    job_began = timer.job_began(args.log_file, args=args)
 
+    sys_prompt, field_list = prompt_util.read_prompt(args.prompt)
+    field_prompts = prompt_util.get_field_prompts(field_list)
+
+    print()
+    print(sys_prompt)
+    print()
+    print(field_prompts)
+    print()
+    print(len(field_prompts) + len(sys_prompt))
+    timer.job_elapsed(job_began)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -61,6 +71,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         choices=signatures,
         default=signatures[0],
         help="""What type of data are you extracting? What is its signature?""",
+    )
+    arg_parser.add_argument(
+        "--prompt",
+        type=Path,
+        required=True,
+        help="""A markdown file with a prompt and list of fields to parse.""",
     )
     arg_parser.add_argument(
         "--docs",
@@ -120,4 +136,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    llm_extraction(ARGS)
+    new_lm_extract(ARGS)

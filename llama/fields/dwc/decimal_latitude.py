@@ -26,4 +26,4 @@ class DecimalLatitude(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.decimalLatitude = fix_values.to_float(self.decimalLatitude)
+        self.decimalLatitude = fix_values.to_float(self.decimalLatitude) or ""

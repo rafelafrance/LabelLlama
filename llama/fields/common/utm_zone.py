@@ -26,8 +26,4 @@ class Utm(BaseField):
         words = self.utmZone.split()
         words = [w for w in words if not w.lower().startswith("zone")]
         words = [w for w in words if w.lower() not in ("z", "z.")]
-<<<<<<< HEAD
         self.utmZone = " ".join(words)
-=======
-        self.utmZone = " ".join(words)
->>>>>>> refs/remotes/origin/main
