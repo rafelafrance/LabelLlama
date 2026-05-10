@@ -6,27 +6,14 @@ import contextlib
 import csv
 import logging
 import textwrap
-from datetime import datetime
+import time
 from pathlib import Path
 
 import pandas as pd
 from openai import APIError, OpenAI
 from tqdm import tqdm
 
-from llama.pylib import io_util, timer
-
-SYSTEM_ROLE = textwrap.dedent("""
-    You are given an image of a museum specimen with labels.
-    I want you to extract all of the text from every label and stamp on the specimen.
-    This includes text from both typewritten and handwritten labels.
-    It also includes text from stamps and smaller labels.
-      ✅ I want ALL of the text.
-      ✅ I only want UTF-8 text without markup.
-      ❌ DO NOT include HTML tags.
-      ❌ DO NOT include markdown tags.
-      ❌ DO NOT get confused by the specimen itself which is in the center of the image.
-      ❌ Do not hallucinate!
-    """)
+from llama.pylib import io_util, prompt_util, timer
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -36,6 +23,8 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     image_paths = sorted(args.image_dir.glob("*.jpg"))
     image_paths = image_paths[: args.limit]
+
+    sys_prompt = prompt_util.read_prompt(args.prompt)
 
     success, fail, skip = 0, 0, 0
 
@@ -50,7 +39,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 skip += 1
                 continue
 
-            doc_began = datetime.now()
+            doc_began = time.perf_counter()
 
             try:
                 with image_path.open("rb") as f:
@@ -59,7 +48,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 response = client.chat.completions.create(
                     model=args.model,
                     messages=[
-                        {"role": "system", "content": SYSTEM_ROLE},
+                        {"role": "system", "content": sys_prompt},
                         {
                             "role": "user",
                             "content": [
@@ -122,6 +111,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--model",
         default="chandra-ocr",
         help="""Use this language model. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
+        "--prompt",
+        type=Path,
+        required=True,
+        help="""A markdown file with a prompt used to OCR images.""",
     )
     arg_parser.add_argument(
         "--api-host",

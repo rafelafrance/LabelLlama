@@ -5,7 +5,7 @@
 - [How to set up LabelLlama](#how-to-set-up-labelllama)
 - [OCR images of museum specimens](#ocr-images-of-museum-specimens)
 - [Extract terms with an LLM](#extract-terms-with-an-llm)
-- [Postprocess LLM output](#postprocess-llm-output)
+- [Clean LLM output](#clean-llm-output)
 
 ## The view from 30,000 feet
 
@@ -46,7 +46,7 @@ cd LabelLlama
 git checkout v0.1.1
 ```
 
-This project is under **heavy** development, tag `v0.1.0` will pin the code to a known state.
+This project is under **heavy** development, tag `v0.1.1` will pin the code to a known state.
 
 ### Step 2: Set up the environment using `uv`
 
@@ -58,9 +58,9 @@ uv sync
 
 `lmstudio` is a wrapper and GUI around the `llamma.cpp` library.
 The GUI is convenient for downloading and running models locally.
-Note may run LM-Studio headless with `lms daemon`.
+Note you may run LM-Studio headless with `lms daemon`.
 Of, course you don't have to run any models locally.
-I use local models to OCR text on images of specimens and postprocessing some fields.
+I use local models to OCR text on images of specimens and cleaning LM output some fields.
 
 You can get the LM-Studio GUI and daemon [here](https://lmstudio.ai/)
 
@@ -121,7 +121,7 @@ in a row then the breaks are likely to have semantic meaning,
 but if there is only one break then it probably doesn't.
 I want to record the exact text given to the LLM.
 
-## Postprocess LLM output
+## Clean LLM output
 
 This is where I clean up the oddities in the output from the LLM and put it into a usable format.
 The important arguments for this script are:

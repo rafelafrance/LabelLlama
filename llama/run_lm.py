@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio
+import json
+import logging
 import textwrap
+import time
 from pathlib import Path
 
 import dspy
+from openai import APIError, AsyncOpenAI
 
 from llama.llm.dwc_module import DwcModule
 from llama.llm.signature_registry import SIGNATURE_REGISTRY
-from llama.pylib import prompt_util, io_util, preprocess, timer
+from llama.pylib import io_util, preprocess, prompt_util, timer
+from llama.pylib.str_util import strip_json_fences
 
+JSON_ERRORS = (json.JSONDecodeError, UnicodeDecodeError)
+
+SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
 
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
@@ -43,19 +52,76 @@ def lm_extract(args: argparse.Namespace) -> None:
     timer.job_elapsed(job_began)
 
 
-def new_lm_extract(args: argparse.Namespace) -> None:
+async def new_lm_extract(args: argparse.Namespace) -> None:
+    global SEMAPHORE
+
     job_began = timer.job_began(args.log_file, args=args)
 
-    sys_prompt, field_list = prompt_util.read_prompt(args.prompt)
+    SEMAPHORE = asyncio.Semaphore(args.threads)
+    sys_prompt, field_list = prompt_util.read_field_list_prompts(args.prompt)
     field_prompts = prompt_util.get_field_prompts(field_list)
+    docs = io_util.read_list_of_dicts(args.docs, fill_na="")
 
-    print()
-    print(sys_prompt)
-    print()
-    print(field_prompts)
-    print()
-    print(len(field_prompts) + len(sys_prompt))
+    async with AsyncOpenAI() as client:
+        tasks = [
+            call_lm(args, doc, client, sys_prompt, field_prompts)
+            for doc in docs
+        ]
+
+    results = await asyncio.gather(*tasks)
+
+    errors = sum(1 for r in results if "ERROR" in r)
+    logging.info(f"Total {len(results)} documents processes with {errors} errors.")
+
+    io_util.output_file(args.out_file, results)
+
     timer.job_elapsed(job_began)
+
+
+async def call_lm(
+    args: argparse.Namespace,
+    doc: dict,
+    client: AsyncOpenAI,
+    sys_prompt: str,
+    field_prompts: str,
+) -> dict:
+    async with SEMAPHORE:
+        began = time.perf_counter()
+
+        text = preprocess.clean_text(doc["text"])
+
+        try:
+            response = await client.chat.completions.create(
+                model=args.model,
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {"role": "user", "content": field_prompts},
+                    {"role": "user", "content": f"`text` (str):\n{text}"},
+                ],
+                temperature=args.temperature,
+                max_tokens=args.max_tokens,
+            )
+
+            content = response.choices[0].message.content or ""
+            content = strip_json_fences(content)
+
+        except APIError as err:
+            logging.exception("API error")
+            content = json.dumps({"ERROR": str(err)})
+
+        if not content:
+            content = json.dumps({"ERROR": "Nothing returned by LM." })
+
+        try:
+            result = json.loads(content)
+        except JSON_ERRORS:
+            result = {"ERROR": "Invalid JSON returned by LM." }
+
+        elapsed = timer.elapsed(began)
+
+        result = {"source": doc["source"], "text": text, "elapsed": elapsed} | result
+
+        return result
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -136,4 +202,5 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    new_lm_extract(ARGS)
+    # lm_extract(ARGS)
+    asyncio.run(new_lm_extract(ARGS))

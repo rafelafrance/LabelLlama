@@ -1,8 +1,9 @@
 from typing import Any
 
+from llama.fields.common.suborder import Suborder
 from llama.fields.dwc.country import Country
 from llama.fields.dwc.county import County
-from llama.fields.dwc.decimal_latitde import DecimalLatitude
+from llama.fields.dwc.decimal_latitude import DecimalLatitude
 from llama.fields.dwc.decimal_longitude import DecimalLongitude
 from llama.fields.dwc.elevation import Elevation
 from llama.fields.dwc.event_date import EventDate
@@ -20,6 +21,7 @@ from llama.fields.dwc.record_number import RecordNumber
 from llama.fields.dwc.recorded_by import RecordedBy
 from llama.fields.dwc.scientific_name import ScientificName
 from llama.fields.dwc.scientific_name_authorship import ScientificNameAuthorship
+from llama.fields.dwc.sex import Sex
 from llama.fields.dwc.specific_epithet import SpecificEpithet
 from llama.fields.dwc.state_province import StateProvince
 from llama.fields.dwc.subgenus import Subgenus
@@ -27,8 +29,6 @@ from llama.fields.dwc.verbatim_latitude import VerbatimLatitude
 from llama.fields.dwc.verbatim_longitude import VerbatimLongitude
 from llama.fields.dwc.vernacular_name import VernacularName
 from llama.fields.dwc.water_body import WaterBody
-from llama.fields.insects.sex import Sex
-from llama.fields.insects.suborder import Suborder
 
 # This also is the base order of fields in reports
 INSECT_FIELDS: dict[str, Any] = {
