@@ -53,24 +53,24 @@ from llama.fields.plants import (
 
 class HerbariumSheet(Signature):
     """
-        Extract structured botanical and collection metadata from herbarium label text.
+    Extract structured botanical and collection metadata from herbarium label text.
 
-        This signature processes OCR'd or transcribed herbarium sheet labels and extracts
-        Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
-        morphological data (phenology, habit, life form, etc.).
+    This signature processes OCR'd or transcribed herbarium sheet labels and extracts
+    Darwin Core fields (taxonomy, geolocation, collection event) plus plant-specific
+    morphological data (phenology, habit, life form, etc.).
 
-        Extraction rules:
+    Extraction rules:
 
-        - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
-          label. Do not expand abbreviations, correct spelling, normalize punctuation,
-          add/remove whitespace, or rephrase in any way.
-        - **No inference**: Only extract information explicitly present in the source text.
-          Do not infer, summarize, categorize, or add any new information.
-        - **Missing data**: If a field cannot be found in the text, return the default
-          value defined for that field.
-        - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
-          entities, Markdown formatting, MATHML, or any other markup.
-        - **No hallucination**: Never fabricate data not present in the source.
+    - **Verbatim fidelity**: Preserve the original text exactly as it appears on the
+      label. Do not expand abbreviations, correct spelling, normalize punctuation,
+      add/remove whitespace, or rephrase in any way.
+    - **No inference**: Only extract information explicitly present in the source text.
+      Do not infer, summarize, categorize, or add any new information.
+    - **Missing data**: If a field cannot be found in the text, return the default
+      value defined for that field.
+    - **Plain text output**: Return raw UTF-8 text only. Do not include HTML tags or
+      entities, Markdown formatting, MATHML, or any other markup.
+    - **No hallucination**: Never fabricate data not present in the source.
     """
 
     text = InputField()

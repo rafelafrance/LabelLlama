@@ -36,6 +36,9 @@ Extract the following fields from the given text.
 - habitat
 - sex
 - verbatimElevation
+- elevationValues
+- elevationUnits
+- elevationEstimated
 - verbatimLatitude
 - verbatimLongitude
 - decimalLatitude

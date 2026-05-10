@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import asyncio
 import base64
 import contextlib
 import csv
@@ -10,10 +11,12 @@ import time
 from pathlib import Path
 
 import pandas as pd
-from openai import APIError, OpenAI
+from openai import APIError, AsyncOpenAI, OpenAI
 from tqdm import tqdm
 
 from llama.pylib import io_util, prompt_util, timer
+
+SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -69,7 +72,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 success += 1
 
             except APIError:
-                logging.exception("API error:")
+                logging.exception("API error")
                 fail += 1
                 continue
 
@@ -79,6 +82,86 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     logging.info(f"Success: {success}, failure: {fail}, skips: {skip}")
     timer.job_elapsed(job_began)
+
+
+async def async_ocr_images(args: argparse.Namespace) -> None:
+    global SEMAPHORE
+
+    job_began = timer.job_began(args.log_file, args=args)
+
+    already_read = get_docs_read(args.docs)
+
+    image_paths = sorted(args.image_dir.glob("*.jpg"))
+    image_paths = image_paths[: args.limit]
+
+    sys_prompt = prompt_util.read_prompt(args.prompt)
+
+    SEMAPHORE = asyncio.Semaphore(args.threads)
+
+    async with AsyncOpenAI(base_url=args.api_host) as client:
+        tasks = [
+            call_ocr(args, image_path, client, sys_prompt)
+            for image_path in image_paths
+            if image_path not in already_read
+        ]
+
+    results = await asyncio.gather(*tasks)
+
+    errors = sum(1 for r in results if "ERROR" in r)
+    logging.info(
+        f"Total {len(results)} documents processed with {errors} errors "
+        f"and {len(already_read)} documents were skipped."
+    )
+
+    io_util.output_file(args.docs, results)
+
+    timer.job_elapsed(job_began)
+
+
+async def call_ocr(
+    args: argparse.Namespace,
+    image_path: Path,
+    client: AsyncOpenAI,
+    sys_prompt: str,
+) -> dict:
+    async with SEMAPHORE:
+        began = time.perf_counter()
+
+        try:
+            with image_path.open("rb") as f:
+                image_data = base64.b64encode(f.read()).decode("utf-8")
+
+            response = await client.chat.completions.create(
+                model=args.model,
+                messages=[
+                    {"role": "system", "content": sys_prompt},
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_data}",
+                                },
+                            },
+                        ],
+                    }
+                ],
+                temperature=args.temperature,
+                max_tokens=args.max_tokens,
+            )
+
+            text = response.choices[0].message.content or ""
+            result = {"source": str(image_path), "text": text}
+
+        except APIError as err:
+            logging.exception("API error")
+            result = {"ERROR": str(err)}
+
+        elapsed = timer.elapsed(began)
+        result["elapsed"] = elapsed
+
+        return result
 
 
 def get_docs_read(docs: Path) -> list[Path]:
@@ -150,6 +233,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Notes for logging.""",
     )
     arg_parser.add_argument(
+        "--threads",
+        type=int,
+        default=4,
+        help="""How many parallel threads to run. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
         "--limit",
         type=int,
         help="""Only read this many records.""",
@@ -160,4 +249,5 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    ocr_images(ARGS)
+    # ocr_images(ARGS)
+    asyncio.run(async_ocr_images(ARGS))

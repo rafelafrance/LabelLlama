@@ -5,9 +5,9 @@ import dspy
 from dspy import InputField, OutputField, Signature
 
 from llama.fields.base_field import BOTH, BaseField
+from llama.fields.common import utm_easting, utm_northing, utm_zone
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
-from llama.fields.common import utm_easting, utm_northing, utm_zone
 
 UTM: str = compress("""
     `utm` (str):
