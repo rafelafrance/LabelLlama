@@ -1,3 +1,12 @@
+"""
+Time how long processes take.
+
+This is not a high-performace timer, it is used to get a general idea of how long
+certain processes take. I want the times in a format that I can easily report to
+non-technical people. The times will live in CSV/TSV/whatever files and will get
+looked at by others.
+"""
+
 import logging
 from datetime import datetime
 from typing import TYPE_CHECKING

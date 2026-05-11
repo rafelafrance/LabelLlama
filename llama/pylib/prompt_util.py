@@ -45,6 +45,7 @@ def prompt_file_ok(path: Path) -> bool:
 
     return ok
 
+
 def field_list_ok(path: Path) -> bool:
     _, field_list = read_field_list_prompts(path)
     names = {snake_to_camel(f.stem): f for f in get_all_field_files()}
@@ -56,6 +57,14 @@ def field_list_ok(path: Path) -> bool:
     return ok
 
 
+def get_field_template(fields: list[str]) -> str:
+    """Workaround GPT's really bad JSON formatting."""
+    template = ["Structured all output with the following template."]
+    template += [f"<< ## {f} ## >>\n{{{f}}}" for f in fields]
+    template.append("<< ## completed ## >>")
+    return "\n\n".join(template)
+
+
 def get_field_prompts(fields: list[str]) -> str:
     """
     Get prompts of all fields given in the field list.
@@ -65,7 +74,7 @@ def get_field_prompts(fields: list[str]) -> str:
     """
     names = {snake_to_camel(f.stem): f for f in get_all_field_files()}
     prompts = []
-    for field in fields:
+    for i, field in enumerate(fields, 1):
         path = names[field]
         spec = iu.spec_from_file_location(path.stem, path)
         if spec is None:
@@ -74,7 +83,8 @@ def get_field_prompts(fields: list[str]) -> str:
         if module is None or spec.loader is None:
             raise ValueError
         spec.loader.exec_module(module)
-        prompts.append(getattr(module, module.__name__.upper()))
+        prompt = getattr(module, module.__name__.upper())
+        prompts.append(f"{i}. {prompt}")
     return "\n\n".join(prompts)
 
 

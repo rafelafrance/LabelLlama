@@ -2,55 +2,17 @@
 
 import argparse
 import asyncio
-import json
 import logging
 import textwrap
 from datetime import datetime
 from pathlib import Path
 
-import dspy
 from openai import APIError, AsyncOpenAI
+from tqdm.asyncio import tqdm_asyncio
 
-from llama.llm.dwc_module import DwcModule
-from llama.llm.signature_registry import SIGNATURE_REGISTRY
-from llama.pylib import io_util, preprocess, prompt_util, timer
-from llama.pylib.str_util import strip_json_fences
-
-JSON_ERRORS = (json.JSONDecodeError, UnicodeDecodeError)
+from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 
 SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
-
-
-def lm_extract(args: argparse.Namespace) -> None:
-    job_began = timer.job_began(args.log_file, args=args)
-
-    lm = dspy.LM(
-        args.model,
-        api_base=args.api_host,
-        api_key=args.api_key,
-        temperature=args.temperature,
-    )
-    dspy.configure(lm=lm)
-
-    predictor = DwcModule(args.signature)
-
-    # prompt = dspy.ChatAdapter().format_system_message(predictor.signature)
-    # print(prompt)
-
-    parallel = dspy.Parallel(num_threads=args.threads)
-
-    docs = io_util.read_list_of_dicts(args.docs, fill_na="")
-
-    exec_pairs = [
-        (predictor, {"text": preprocess.clean_text(d["text"]), "source": d["source"]})
-        for d in docs
-    ]
-
-    results = parallel(exec_pairs)
-
-    io_util.output_file(args.out_file, results)
-
-    timer.job_elapsed(job_began)
 
 
 async def new_lm_extract(args: argparse.Namespace) -> None:
@@ -61,12 +23,17 @@ async def new_lm_extract(args: argparse.Namespace) -> None:
     SEMAPHORE = asyncio.Semaphore(args.threads)
     sys_prompt, field_list = prompt_util.read_field_list_prompts(args.prompt)
     field_prompts = prompt_util.get_field_prompts(field_list)
-    docs = io_util.read_list_of_dicts(args.docs, fill_na="")
+    field_template = prompt_util.get_field_template(field_list)
+    docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
 
     async with AsyncOpenAI() as client:
-        tasks = [call_lm(args, doc, client, sys_prompt, field_prompts) for doc in docs]
-
-    results = await asyncio.gather(*tasks)
+        tasks = [
+            call_lm(
+                args, doc, client, sys_prompt, field_prompts, field_template, field_list
+            )
+            for doc in docs
+        ]
+        results = await tqdm_asyncio.gather(*tasks)
 
     errors = sum(1 for r in results if "ERROR" in r)
     logging.info(f"Total {len(results)} documents processes with {errors} errors.")
@@ -82,6 +49,8 @@ async def call_lm(
     client: AsyncOpenAI,
     sys_prompt: str,
     field_prompts: str,
+    field_template: str,
+    field_list: list[str],
 ) -> dict:
     async with SEMAPHORE:
         began = datetime.now()
@@ -92,32 +61,25 @@ async def call_lm(
             response = await client.chat.completions.create(
                 model=args.model,
                 messages=[
+                    # {"role": "system", "content": str(datetime.now())}, # Defeat cache
                     {"role": "system", "content": sys_prompt},
                     {"role": "user", "content": field_prompts},
-                    {"role": "user", "content": f"`text` (str):\n{text}"},
+                    {"role": "user", "content": field_template},
+                    {"role": "user", "content": prompt_util.get_text_prompt(text)},
                 ],
                 temperature=args.temperature,
-                max_tokens=args.max_tokens,
             )
 
             content = response.choices[0].message.content or ""
-            content = strip_json_fences(content)
+            results = str_util.llm_reply_to_dict(content, field_list)
 
         except APIError as err:
             logging.exception("API error")
-            content = json.dumps({"ERROR": str(err)})
-
-        if not content:
-            content = json.dumps({"ERROR": "Nothing returned by LM."})
-
-        try:
-            result = json.loads(content)
-        except JSON_ERRORS:
-            result = {"ERROR": "Invalid JSON returned by LM."}
+            results = {"ERROR": str(err)}
 
         elapsed = timer.elapsed(began)
 
-        result = {"source": doc["source"], "text": text, "elapsed": elapsed} | result
+        result = {"source": doc["source"], "text": text, "elapsed": elapsed} | results
 
         return result
 
@@ -128,13 +90,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         description=textwrap.dedent(
             """Use a language model (LM) to extract information from text."""
         ),
-    )
-    signatures = list(SIGNATURE_REGISTRY.keys())
-    arg_parser.add_argument(
-        "--signature",
-        choices=signatures,
-        default=signatures[0],
-        help="""What type of data are you extracting? What is its signature?""",
     )
     arg_parser.add_argument(
         "--prompt",
@@ -170,10 +125,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         # default="http://localhost:1234/v1",
         help="""URL for the LM model.""",
     )
-    arg_parser.add_argument(
-        "--api-key",
-        help="""API key.""",
-    )
+    # arg_parser.add_argument(
+    #     "--max-tokens",
+    #     type=int,
+    #     help="""The LM response's maximum tokens.""",
+    # )
     arg_parser.add_argument(
         "--temperature",
         type=float,
