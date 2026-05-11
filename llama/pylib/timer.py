@@ -1,5 +1,5 @@
 import logging
-import time
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from llama.pylib import log
@@ -11,21 +11,21 @@ if TYPE_CHECKING:
 
 def job_began(
     file_name: str | Path | None = None, *, args: Namespace | None
-) -> float:
+) -> datetime:
     log.started(file_name, args=args)
-    return time.perf_counter()
+    return datetime.now()
 
 
-def job_elapsed(job_began: float) -> None:
-    job_elapsed = time.perf_counter() - job_began
-    msg = f"Job elapsed {job_elapsed:0.4f}"
+def job_elapsed(job_began: datetime) -> None:
+    job_elapsed = datetime.now() - job_began
+    msg = f"Job elapsed {job_elapsed}"
     logging.info(msg)
     log.finished()
 
 
-def elapsed(started: float, name: str = "") -> str:
-    elapsed_ = str(time.perf_counter() - started)
+def elapsed(started: datetime, name: str = "") -> str:
+    elapsed_ = str(datetime.now() - started)
     if name:
-        msg = f"{name} elapsed {elapsed_:0.4f}"
+        msg = f"{name} elapsed {elapsed_}"
         logging.info(msg)
     return elapsed_

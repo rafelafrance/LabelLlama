@@ -1,10 +1,13 @@
 import textwrap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import pandas as pd
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+MODE = Literal["a", "w"]
 
 
 def read_list_of_dicts(
@@ -41,19 +44,19 @@ def read_to_df(path: Path, *, limit: int | None = None) -> pd.DataFrame:
     return df
 
 
-def output_file(path: Path, data: list[dict[str, Any]]) -> None:
+def output_file(path: Path, data: list[dict[str, Any]], mode: MODE = "w") -> None:
     df = pd.DataFrame(data).fillna("")
 
     match path.suffix:
         case ".csv" | ".tsv":
             sep = "\t" if path.suffix == ".tsv" else ","
-            df.to_csv(path, sep=sep, index=False)
+            df.to_csv(path, sep=sep, index=False, mode=mode)
         case ".json" | ".jsonl":
             indent, lines = (4, False) if path.suffix == ".json" else (None, True)
-            df.to_json(path, indent=indent, lines=lines, index=False)
+            df.to_json(path, indent=indent, lines=lines, index=False, mode=mode)
         case ".html":
             html = html_template(df)
-            with path.open("w") as out:
+            with path.open(mode) as out:
                 out.write(html)
         case _:
             raise ValueError(f"Unrecognized file extension: {path.suffix}")

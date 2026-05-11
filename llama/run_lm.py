@@ -5,7 +5,7 @@ import asyncio
 import json
 import logging
 import textwrap
-import time
+from datetime import datetime
 from pathlib import Path
 
 import dspy
@@ -19,6 +19,7 @@ from llama.pylib.str_util import strip_json_fences
 JSON_ERRORS = (json.JSONDecodeError, UnicodeDecodeError)
 
 SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
+
 
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
@@ -63,10 +64,7 @@ async def new_lm_extract(args: argparse.Namespace) -> None:
     docs = io_util.read_list_of_dicts(args.docs, fill_na="")
 
     async with AsyncOpenAI() as client:
-        tasks = [
-            call_lm(args, doc, client, sys_prompt, field_prompts)
-            for doc in docs
-        ]
+        tasks = [call_lm(args, doc, client, sys_prompt, field_prompts) for doc in docs]
 
     results = await asyncio.gather(*tasks)
 
@@ -86,7 +84,7 @@ async def call_lm(
     field_prompts: str,
 ) -> dict:
     async with SEMAPHORE:
-        began = time.perf_counter()
+        began = datetime.now()
 
         text = preprocess.clean_text(doc["text"])
 
@@ -110,12 +108,12 @@ async def call_lm(
             content = json.dumps({"ERROR": str(err)})
 
         if not content:
-            content = json.dumps({"ERROR": "Nothing returned by LM." })
+            content = json.dumps({"ERROR": "Nothing returned by LM."})
 
         try:
             result = json.loads(content)
         except JSON_ERRORS:
-            result = {"ERROR": "Invalid JSON returned by LM." }
+            result = {"ERROR": "Invalid JSON returned by LM."}
 
         elapsed = timer.elapsed(began)
 

@@ -10,6 +10,13 @@ def clean_response(text: str) -> str:
     return text
 
 
+def clean_ocr(text: str) -> str:
+    """Fix markup nonsense from the OCR engines."""
+    text = re.sub(r"<br/?>", "\n", text)
+    text = text.strip()
+    return text
+
+
 def snake_to_camel(text: str) -> str:
     words = text.split("_")
     words = [words[0]] + [w.capitalize() for w in words[1:]]
@@ -44,7 +51,7 @@ def to_positive_float(value: str | float) -> float | None:
         value = re.sub(r"[^\d./]", "", value) or ""
     try:
         return float(value)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
 
 
@@ -55,5 +62,5 @@ def to_positive_int(value: str | float) -> int | None:
         value = re.sub(r"\.$", "", value)
     try:
         return int(value)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         return None
