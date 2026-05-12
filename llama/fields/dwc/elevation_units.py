@@ -14,7 +14,7 @@ ELEVATION_UNITS: str = compress("""
 
 
 @dataclass
-class Elevation(BaseField):
+class ElevationUnits(BaseField):
     elevationUnits: list[str] | str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:

@@ -49,6 +49,9 @@ scratch/
 old/
 experiments/
 
+# AI agent
+.pi/
+
 # External
 external/
 

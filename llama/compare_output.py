@@ -8,8 +8,6 @@ from pathlib import Path
 
 from rich import print as rprint
 
-from llama.fields.base_field import BaseField
-from llama.fields.field_registry import FIELD_REGISTRY
 from llama.pylib import io_util, log, score_util
 
 PAIR: int = 2
@@ -31,7 +29,7 @@ def score_extracts(args: argparse.Namespace) -> None:
             compare[key].append(row)
     compare = [p for p in compare.values() if len(p) == PAIR]
 
-    field_registry = FIELD_REGISTRY[args.fields_registry]
+    # field_registry = FIELD_REGISTRY[args.fields_registry]
 
     skips = ["source", "text"]
     field_list = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
@@ -67,22 +65,22 @@ def score_extracts(args: argparse.Namespace) -> None:
             "row": "score",
         }
 
-        for field_name in field_list:
-            expect = gold.get(field_name)
-            actual = lm.get(field_name)
-
-            field_action = field_registry.get(field_name, BaseField)
-            score = field_action.score(expect, actual, lm)
-
-            df_row1[field_name] = ""
-            df_row2[field_name] = str(expect)
-            df_row3[field_name] = str(actual)
-            df_row4[field_name] = score
-
-            avg[field_name] += score
-
-            if debugging(args):
-                print_debug_info(field_name, str(expect), str(actual), score)
+        # for field_name in field_list:
+        #     expect = gold.get(field_name)
+        #     actual = lm.get(field_name)
+        #
+        #     field_action = field_registry.get(field_name, BaseField)
+        #     score = field_action.score(expect, actual, lm)
+        #
+        #     df_row1[field_name] = ""
+        #     df_row2[field_name] = str(expect)
+        #     df_row3[field_name] = str(actual)
+        #     df_row4[field_name] = score
+        #
+        #     avg[field_name] += score
+        #
+        #     if debugging(args):
+        #         print_debug_info(field_name, str(expect), str(actual), score)
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 
@@ -122,13 +120,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         description=textwrap.dedent(
             """Score a language model job against a gold standard.""",
         ),
-    )
-    field_registry = list(FIELD_REGISTRY.keys())
-    arg_parser.add_argument(
-        "--fields-registry",
-        choices=field_registry,
-        default=field_registry[0],
-        help="""What type of data are you comparing? What is its field list?""",
     )
     arg_parser.add_argument(
         "--gold-in",

@@ -1,7 +1,9 @@
+import importlib
 import importlib.util as iu
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
 from llama.pylib.str_util import snake_to_camel
 
@@ -28,6 +30,24 @@ def get_all_field_files() -> list[Path]:
     return files
 
 
+def get_field_classes(field_list: list[str]) -> dict[str, Any]:
+    names = get_field_files_by_name()
+    classes = {}
+    for field in field_list:
+        if field in names:
+            cls_name = field[0].upper() + field[1:]
+            mod_name = re.sub(r".*?LabelLlama/", "", str(names[field]))
+            mod_name = mod_name.removesuffix(".py")
+            mod_name = mod_name.replace("/", ".")
+            module = importlib.import_module(mod_name)
+            classes[field] = getattr(module, cls_name)
+    return classes
+
+
+def get_field_files_by_name() -> dict[str, Path]:
+    return {snake_to_camel(f.stem): f for f in get_all_field_files()}
+
+
 def prompt_file_ok(path: Path) -> bool:
     ok = True
     prompt, field_list = read_field_list_prompts(path)
@@ -48,7 +68,7 @@ def prompt_file_ok(path: Path) -> bool:
 
 def field_list_ok(path: Path) -> bool:
     _, field_list = read_field_list_prompts(path)
-    names = {snake_to_camel(f.stem): f for f in get_all_field_files()}
+    names = get_field_files_by_name()
     ok = True
     for field in field_list:
         if field not in names:
@@ -58,7 +78,7 @@ def field_list_ok(path: Path) -> bool:
 
 
 def get_field_template(fields: list[str]) -> str:
-    """Workaround GPT's really bad JSON formatting."""
+    """Workaround GPT's terrible JSON formatting."""
     template = ["Structured all output with the following template."]
     template += [f"<< ## {f} ## >>\n{{{f}}}" for f in fields]
     template.append("<< ## completed ## >>")
@@ -72,7 +92,7 @@ def get_field_prompts(fields: list[str]) -> str:
     Dynamically load the appropriate modules that contain the prompts.
     The module names are in snake case and the target fields are in camel case.
     """
-    names = {snake_to_camel(f.stem): f for f in get_all_field_files()}
+    names = get_field_files_by_name()
     prompts = []
     for i, field in enumerate(fields, 1):
         path = names[field]

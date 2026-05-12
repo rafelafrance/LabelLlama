@@ -21,22 +21,11 @@ HIDE = {"hide": Flags.HIDE}
 class BaseField:
     text: InitVar[str] = ""
 
-    @classmethod
-    def setup_postprocessing(cls) -> None:
-        pass
-
-    @classmethod
-    def cleanup_postprocessing(cls) -> None:
-        pass
-
-    def parse_field(self) -> None:
-        pass
-
     def cross_field_update(self, record: dict[str, Any]) -> None:
         del record
 
     @classmethod
-    def get_input_subfields(cls) -> list[str]:
+    def get_input_fields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)
@@ -44,7 +33,7 @@ class BaseField:
         ]
 
     @classmethod
-    def get_output_subfields(cls) -> list[str]:
+    def get_output_fields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)
@@ -52,7 +41,7 @@ class BaseField:
         ]
 
     @classmethod
-    def get_visible_subfields(cls) -> list[str]:
+    def get_visible_fields(cls) -> list[str]:
         return [
             f.name
             for f in fields(cls)

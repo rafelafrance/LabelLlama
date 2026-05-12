@@ -2,11 +2,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-import dspy
-from dspy import InputField, OutputField, Signature
-
 from llama.fields.base_field import BOTH, BaseField
-from llama.fields.common import trs_quad, trs_range, trs_section, trs_township
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
@@ -39,26 +35,6 @@ class Trs(BaseField):
         self.trs = fix_values.to_str(self.trs)
         self.clean_subfields()
 
-    @classmethod
-    def setup_postprocessing(cls) -> None:
-        cls.parse_model = dspy.Predict(TrsSig)
-
-    def parse_field(self) -> None:
-        # Only run the model if an important input field is empty
-        # Input for this class is actually an output from the LM moddel class
-        if not self.trs or (self.trsTownship and self.trsRange and self.trsSection):
-            return
-
-        predicted = self.parse_model(trs=self.trs)
-
-        # Only fill fields without a previous value, i.e. default to previous LLM
-        self.trsTownship = self.trsTownship or predicted.get("trsTownship", "")
-        self.trsRange = self.trsRange or predicted.get("trsRange", "")
-        self.trsSection = self.trsSection or predicted.get("trsSection", "")
-        self.trsQuad = self.trsQuad or predicted.get("trsQuad", "")
-
-        self.clean_subfields()
-
     def clean_subfields(self) -> None:
         # Make sure a language model didn't do something silly
         self.trsTownship = fix_values.to_str(self.trsTownship)
@@ -81,27 +57,3 @@ class Trs(BaseField):
         words = [w for w in words if not w.lower().startswith("quad")]
         words = [w for w in words if w.lower() not in ("q", "q.")]
         self.trsQuad = " ".join(words)
-
-
-class TrsSig(Signature):
-    """
-    Analyze the text and extract this TRS (Township Range Section) information.
-
-    If the data field is not found in the text empty fields.
-    Do not hallucinate.
-    """
-
-    trs = InputField()
-
-    trsTownship: str = OutputField(
-        desc=trs_township.TRS_TOWNSHIP,
-    )
-    trsRange: str = OutputField(
-        desc=trs_range.TRS_RANGE,
-    )
-    trsSection: str = OutputField(
-        desc=trs_section.TRS_SECTION,
-    )
-    trsQuad: str = OutputField(
-        desc=trs_quad.TRS_QUAD,
-    )

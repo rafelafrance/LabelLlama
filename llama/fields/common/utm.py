@@ -1,11 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
-import dspy
-from dspy import InputField, OutputField, Signature
-
 from llama.fields.base_field import BOTH, BaseField
-from llama.fields.common import utm_easting, utm_northing, utm_zone
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
@@ -32,9 +28,9 @@ class Utm(BaseField):
     utmEasting: str = field(default="", metadata=BOTH)
     utmZone: str = field(default="", metadata=BOTH)
 
-    @classmethod
-    def setup_postprocessing(cls) -> None:
-        cls.parse_model = dspy.Predict(UtmSig)
+    # @classmethod
+    # def setup_postprocessing(cls) -> None:
+    #     cls.parse_model = dspy.Predict(UtmSig)
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -43,20 +39,20 @@ class Utm(BaseField):
         self.utm = fix_values.to_str(self.utm)
         self.clean_subfields()
 
-    def parse_field(self) -> None:
-        # Only run the model if an input field is empty
-        # Input for this class is actually an output from the LM model class
-        if not self.utm or (self.utmNorthing and self.utmEasting and self.utmZone):
-            return
-
-        predicted = self.parse_model(utm=self.utm)
-
-        # Only fill fields without a previous value, i.e. default to previous LLM
-        self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
-        self.utmEasting = self.utmEasting or predicted.get("utmEasting", "")
-        self.utmZone = self.utmZone or predicted.get("utmZone", "")
-
-        self.clean_subfields()
+    # def parse_field(self) -> None:
+    #     # Only run the model if an input field is empty
+    #     # Input for this class is actually an output from the LM model class
+    #     if not self.utm or (self.utmNorthing and self.utmEasting and self.utmZone):
+    #         return
+    #
+    #     predicted = self.parse_model(utm=self.utm)
+    #
+    #     # Only fill fields without a previous value, i.e. default to previous LLM
+    #     self.utmNorthing = self.utmNorthing or predicted.get("utmNorthing", "")
+    #     self.utmEasting = self.utmEasting or predicted.get("utmEasting", "")
+    #     self.utmZone = self.utmZone or predicted.get("utmZone", "")
+    #
+    #     self.clean_subfields()
 
     def clean_subfields(self) -> None:
         # Make sure a language model didn't do something silly
@@ -77,26 +73,3 @@ class Utm(BaseField):
         words = [w for w in words if not w.lower().startswith("zone")]
         words = [w for w in words if w.lower() not in ("z", "z.")]
         self.utmZone = " ".join(words)
-
-
-@dataclass
-class UtmSig(Signature):
-    """
-    Analyze the text and extract this UTM (Universal Transverse Mercator)
-    coordinate information.
-
-    If the data field is not found in the text return an empty list.
-    Do not hallucinate.
-    """
-
-    utm = InputField()
-
-    utmNorthing: str = OutputField(
-        desc=utm_northing.UTM_NORTHING,
-    )
-    utmEasting: str = OutputField(
-        desc=utm_easting.UTM_EASTING,
-    )
-    utmZone: str = OutputField(
-        desc=utm_zone.UTM_ZONE,
-    )

@@ -125,11 +125,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         # default="http://localhost:1234/v1",
         help="""URL for the LM model.""",
     )
-    # arg_parser.add_argument(
-    #     "--max-tokens",
-    #     type=int,
-    #     help="""The LM response's maximum tokens.""",
-    # )
     arg_parser.add_argument(
         "--temperature",
         type=float,

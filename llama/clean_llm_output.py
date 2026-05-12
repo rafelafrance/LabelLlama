@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
-import logging
 import textwrap
 from pathlib import Path
 from typing import Any
 
-import dspy
 from tqdm import tqdm
 
-from llama.fields.field_registry import FIELD_REGISTRY
-from llama.pylib import io_util, log
+from llama.pylib import io_util, log, prompt_util
+
+DEBUG_SKIP = ("source", "text")
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    field_registry = FIELD_REGISTRY[args.fields_registry]
+    field_files_by_name = prompt_util.get_field_files_by_name()
     df = io_util.read_to_df(args.in_file, limit=args.limit)
-    field_list = [c for c in field_registry if c in df.columns]
+    field_list = [c for c in df.columns if c in field_files_by_name]
+    field_classes = prompt_util.get_field_classes(field_list)
 
     if args.column:
         field_list = args.column
@@ -26,55 +26,26 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     input_rows = df.to_dict("records")
     input_rows = input_rows[: args.limit]
 
-    if args.run_field_models:
-        lm = dspy.LM(
-            args.model,
-            api_base=args.api_host,
-            api_key=args.api_key,
-            temperature=args.temperature,
-            max_tokens=args.max_tokens,
-            context_length=args.context_length,
-        )
-        dspy.configure(lm=lm)
+    output_rows = []
+
+    for in_row in tqdm(input_rows):
+        out_row = {"source": in_row["source"], "text": in_row["text"]}
 
         for field_name in field_list:
-            field_action = field_registry[field_name]
-            field_action.setup_postprocessing()
+            field_action = field_classes[field_name]
+            out_field = field_action(in_row[field_name], in_row["text"])
 
-            # Record prompts for later use
-            if args.log_file and hasattr(field_action, "predictor"):
-                prompt = dspy.ChatAdapter().format_system_message(
-                    field_action.predictor.signature
-                )
-                logging.info(prompt)
-
-    output_rows = {
-        r["source"]: {"source": r["source"], "text": r["text"]} for r in input_rows
-    }
-
-    for field_name in field_list:
-        field_action = field_registry[field_name]
-        in_subfields = field_action.get_input_subfields()
-        visible_subfields = field_action.get_visible_subfields()
-
-        for row in tqdm(input_rows, desc=field_name):
-            in_data = {k: row.get(k) for k in in_subfields}
-
-            field = field_action(row["text"], **in_data)
-
-            if args.run_field_models:
-                field.parse_field()
-
-            field.cross_field_update(row)
-
-            out_data = {k: getattr(field, k) for k in visible_subfields}
+            out_data = {
+                k: getattr(out_field, k) for k in out_field.get_visible_fields()
+            }
+            out_row |= out_data
 
             if is_debugging(args):
-                print_debug_info(row, out_data)
+                print_debug_info(in_row, out_data)
 
-            output_rows[row["source"]] |= out_data
+        output_rows.append(out_row)
 
-    io_util.output_file(args.out_file, list(output_rows.values()))
+    io_util.output_file(args.out_file, output_rows)
 
     log.finished()
 
@@ -83,11 +54,11 @@ def is_debugging(args: argparse.Namespace) -> bool:
     return args.column or args.limit
 
 
-def print_debug_info(row: dict[str, Any], out_data: dict[str, Any]) -> None:
-    print(row["source"])
-    for field_name, value in out_data.items():
-        if field_name in row:
-            print(f"{'before ' + field_name:>40}: {row[field_name]}")
+def print_debug_info(in_row: dict[str, Any], out_row: dict[str, Any]) -> None:
+    print(in_row["source"])
+    trimmed = {k: v for k, v in out_row.items() if k not in DEBUG_SKIP}
+    for field_name, value in trimmed.items():
+        print(f"{'before ' + field_name:>40}: {in_row[field_name]}")
         print(f"{'after ' + field_name:>40}: {value}")
     print()
 
@@ -96,21 +67,14 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Format and validate language model extracted text.""",
+            """Format and validate language model (LM) extracted text.""",
         ),
-    )
-    field_registry = list(FIELD_REGISTRY.keys())
-    arg_parser.add_argument(
-        "--fields-registry",
-        choices=field_registry,
-        default=field_registry[0],
-        help="""What type of data are you processing? What is its field list?""",
     )
     arg_parser.add_argument(
         "--in-file",
         type=Path,
         metavar="PATH",
-        help="""Get the language model results to postprocess from this file.""",
+        help="""Clean the LM this results in this file.""",
     )
     arg_parser.add_argument(
         "--out-file",
@@ -119,46 +83,14 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
            Handles (.json, .jsonl, .csv, .tsv, .html)""",
     )
     arg_parser.add_argument(
-        "--model",
-        default="lm_studio/google/gemma-4-26b-a4b",
-        help="""Use this language model. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
-        "--api-host",
-        default="http://localhost:1234/v1",
-        help="""URL for the language model. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
-        "--api-key",
-        help="""API key.""",
-    )
-    arg_parser.add_argument(
-        "--context-length",
-        type=int,
-        help="""Model's context length. Combined input and output.""",
-    )
-    arg_parser.add_argument(
-        "--max-tokens",
-        type=int,
-        help="""The responses maximum tokens.""",
-    )
-    arg_parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.1,
-        help="""Model's temperature. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
-        "--run-field-models",
-        action="store_true",
-        help="""Run field specific models to see if you can get more data from
-            the primary field.""",
-    )
-    arg_parser.add_argument(
         "--log-file",
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--notes",
+        help="""Notes for logging.""",
     )
     arg_parser.add_argument(
         "--column",

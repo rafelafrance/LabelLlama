@@ -14,7 +14,7 @@ IDENTIFIED_BY_ID: str = compress("""
 
 
 @dataclass
-class IdenitfiedByID(BaseField):
+class IdentifiedByID(BaseField):
     identifiedByID: str = field(default="", metadata=BOTH | HIDE)
 
     def __post_init__(self, text: str) -> None:

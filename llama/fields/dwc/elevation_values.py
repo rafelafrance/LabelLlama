@@ -15,7 +15,7 @@ ELEVATION_VALUES: str = compress("""
 
 
 @dataclass
-class Elevation(BaseField):
+class ElevationValues(BaseField):
     elevationValues: list[float] = field(default_factory=list, metadata=IN)
     elevation: float | str = field(default="", metadata=BOTH)
     maxElevation: float | str = field(default="", metadata=BOTH)
