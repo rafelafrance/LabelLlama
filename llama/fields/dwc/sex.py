@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from llama.fields.base_field import BOTH, BaseField
@@ -37,7 +38,15 @@ class Sex(BaseField):
     def __post_init__(self, text: str) -> None:
         self.sex = fix_values.hallucinated_str(self.sex, text)
 
-        if self.sex.lower().startswith("m") or self.sex == "♂":
-            self.sex = "male"
-        elif self.sex.lower().startswith("f") or self.sex == "♀":
-            self.sex = "female"
+        sex = []
+
+        if re.search(r"♂♀|♀♂|pair|fm|mf", self.sex, flags=re.IGNORECASE):
+            sex += ["male", "female"]
+
+        if re.search(r"\b[f]|♀", self.sex, flags=re.IGNORECASE) and "female" not in sex:
+            sex.append("female")
+
+        if re.search(r"\b[m]|♂", self.sex, flags=re.IGNORECASE) and "male" not in sex:
+            sex.append("male")
+
+        self.sex = " & ".join(sex) if sex else self.sex

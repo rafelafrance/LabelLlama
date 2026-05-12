@@ -237,3 +237,18 @@ class TestFixValues(unittest.TestCase):
             "Atongan River",
             "Katanglad Mts Atongan River October 1991",
         ) == "Atongan River"
+
+    # ---------------------------------------------------------------------
+    def test_remove_leading_punct_01(self) -> None:
+        assert fix_values.remove_leading_punct("[word]") == "word]"
+
+    def test_remove_leading_punct_02(self) -> None:
+        assert fix_values.remove_leading_punct("['word']") == "word']"
+
+    # ---------------------------------------------------------------------
+    def test_remove_trailing_punct_01(self) -> None:
+        assert fix_values.remove_trailing_punct("['word']") == "['word"
+
+    # ---------------------------------------------------------------------
+    def test_clean_str_ends_01(self) -> None:
+        assert fix_values.clean_str_ends("['word']") == "word"

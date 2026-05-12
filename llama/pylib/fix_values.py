@@ -21,6 +21,8 @@ YEAR4 = r"([12]\d\d\d)"
 MON_NUM = r"[01]?\d"  # Month as a number
 
 EMPTY: tuple = ("[]", '""', "''", '{""}', "[", "]", "[empty]", "nan")
+OPEN: tuple = ("(", "[", "{")
+CLOSE: tuple = ("", "", "")
 
 
 def to_str(value: Any) -> str:
@@ -80,6 +82,10 @@ def to_bool(value: Any) -> bool:
             return False
         case _:
             return bool(value)
+
+
+def to_truthy(value: Any) -> bool | str:
+    return to_bool(value) or ""
 
 
 def to_list_of_strs(value: Any) -> list[str]:
@@ -168,9 +174,15 @@ def stringified_list(value: str) -> list[Any] | str:
 
 
 def clean_str(value: str) -> str:
+    value = value.strip()
+
     # Notations for an empty field
     if value.lower() in EMPTY:
         return ""
+
+    # Remove surrounding brackets
+    if len(value) > 0 and value[0] in OPEN and value[-1] in CLOSE:
+        value = value[1:-1]
 
     # Remove leading and trailing quotes
     value = re.sub(r'^"(.+)"$', r"\1", value)
@@ -234,8 +246,18 @@ def date_to_iso(value: str) -> str:
     return value
 
 
+def remove_leading_punct(value: str) -> str:
+    return re.sub(r"^[\s\"'.,;:(){}\[\]\-]+", "", value)
+
+
 def remove_trailing_punct(value: str) -> str:
-    return re.sub(r"[.,;:]$", "", value)
+    return re.sub(r"[\s\"'.,;:(){}\[\]\-]+$", "", value)
+
+
+def clean_str_ends(value: str) -> str:
+    value = remove_leading_punct(value)
+    value = remove_trailing_punct(value)
+    return value
 
 
 def reduce_list(value: list[Any]) -> Any | None:

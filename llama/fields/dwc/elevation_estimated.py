@@ -19,4 +19,4 @@ class ElevationEstimated(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.elevationEstimated = fix_values.to_bool(self.elevationEstimated)
+        self.elevationEstimated = fix_values.to_truthy(self.elevationEstimated)

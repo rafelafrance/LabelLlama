@@ -1,9 +1,13 @@
-def elevation(units: str) -> str:
+import csv
+from pathlib import Path
+
+UNITS_CSV: Path = Path(__file__).parent / "terms" / "unit_terms.csv"
+METERS = "m"
+
+with UNITS_CSV.open() as f:
+    reader = csv.DictReader(f)
+    UNITS = {r["pattern"]: r["replace"] for r in reader}
+
+def normalize(units: str) -> str:
     lc = units.lower()
-    match lc:
-        case lc if lc.startswith("f"):
-            return "ft"
-        case lc if lc.startswith("m"):
-            return "m"
-        case _:
-            return units
+    return UNITS.get(lc, lc)

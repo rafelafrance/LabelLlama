@@ -21,7 +21,7 @@ class ScientificNameAuthorship(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-
-        values = fix_values.to_list_of_strs(self.scientificNameAuthorship)
-        values = [v.title() for v in values]
-        self.scientificNameAuthorship = fix_values.reduce_str_list(values)
+        self.scientificNameAuthorship = fix_values.to_str(self.scientificNameAuthorship)
+        self.scientificNameAuthorship = fix_values.clean_str_ends(
+            self.scientificNameAuthorship
+        )
