@@ -1,4 +1,4 @@
-# Prompt
+# System Prompt
 
 A previous extraction of the UTM subfields did not pick up all expected subfield.
 Analyze the UTM text to get subfields the other model may have missed, if any.
@@ -18,7 +18,7 @@ Extraction rules:
 
 Extract the following fields from the given text.
 
-# Fields
+# Output Fields
 
 - utmNorthing
 - utmEasting

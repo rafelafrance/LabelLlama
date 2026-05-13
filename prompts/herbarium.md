@@ -1,4 +1,4 @@
-# Prompt
+# System Prompt
 
 You are an expert in botany.
 You are given text from all labels for the specimen, and you will need to extract
@@ -23,7 +23,7 @@ Extraction rules:
 
 Extract the following fields from the given text.
 
-# Fields
+# Output Fields
 
 - scientificName
 - scientificNameAuthorship
@@ -65,13 +65,13 @@ Extract the following fields from the given text.
 - fruitPresent
 - fruitColor
 - plantHeight
-- plantSize
+- plantSizes
 - woodiness
 - habit
-- lifeForm
-- lifeStage
+- plantLifeForm
+- plantLifeStage
 - leafShape
 - leafMargin
 - leafDuration
-- reproduction
+- plantReproduction
 - plantSex

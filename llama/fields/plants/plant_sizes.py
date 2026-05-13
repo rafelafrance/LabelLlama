@@ -4,8 +4,8 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-SIZES: str = compress("""
-    `sizes` (list[str]):
+PLANT_SIZES: str = compress("""
+    `plantSizes` (list[str]):
     Extract dimensions of plant parts other than the overall plant height.
     This is a catch-all for measurements of individual organs or structures
     (e.g., leaf size, flower size, fruit size, stem diameter, root length).
@@ -26,11 +26,11 @@ SIZES: str = compress("""
 
 
 @dataclass
-class Sizes(BaseField):
-    sizes: list[str] | str = field(default_factory=list, metadata=BOTH)
+class PlantSizes(BaseField):
+    plantSizes: list[str] | str = field(default_factory=list, metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.sizes = fix_values.to_list_of_strs(self.sizes)
-        self.sizes = fix_values.reduce_str_list(self.sizes)
+        self.plantSizes = fix_values.to_list_of_strs(self.plantSizes)
+        self.plantSizes = fix_values.reduce_str_list(self.plantSizes)

@@ -4,8 +4,8 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-LIFE_CYCLE: str = compress("""
-    `lifeCycle` (str):
+PLANT_LIFE_CYCLE: str = compress("""
+    `plantLifeCycle` (str):
     Extract the plant's life cycle or duration (how long the plant lives).
     Examples: 'annual', 'biennial', 'perennial', 'fugacious', 'marcescent',
     'monocarpic', 'semelparous', 'iteroparous', 'persistent', 'subpersistent'.
@@ -14,8 +14,8 @@ LIFE_CYCLE: str = compress("""
 
 
 @dataclass
-class LifeCycle(BaseField):
-    lifeCycle: str = field(default="", metadata=BOTH)
+class PlantLifeCycle(BaseField):
+    plantLifeCycle: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        self.lifeCycle = fix_values.hallucinated_str(self.lifeCycle, text)
+        self.plantLifeCycle = fix_values.hallucinated_str(self.plantLifeCycle, text)

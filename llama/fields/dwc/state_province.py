@@ -21,3 +21,4 @@ class StateProvince(BaseField):
 
     def __post_init__(self, text: str) -> None:
         self.stateProvince = fix_values.hallucinated_str(self.stateProvince, text)
+        self.stateProvince = self.stateProvince.title()

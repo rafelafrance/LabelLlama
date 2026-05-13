@@ -1,31 +1,34 @@
 #!/bin/bash
 
-uv run llama/clean_llm_output.py \
-  --in-file data/diode_geode/rob_gpt_nano_2026-05-11a.csv \
-  --out-file data/diode_geode/rob_gpt_nano_2026-05-11a_cleaned.csv
-
+uv run ./llama/compare_output.py \
+  --gold data/diode_geode/Abbott_and_Ware_gold.csv \
+  --lm data/herbarium/rob_gpt_nano_2026-05-12a_cleaned.csv \
+  --out-file data/herbarium/score_dwc_2026-04-28a_gold.html
 
 # scientificName
 # scientificNameAuthorship
+# suborder
 # family
 # genus
 # subgenus
 # specificEpithet
+# vernacularName
 # verbatimEventDate
-# locality
-# habitat
 # sex
 # verbatimElevation
 # elevationValues
 # elevationUnits
 # elevationEstimated
 # verbatimLatitude
+# decimalLatitude
 # verbatimLongitude
-# collector
+# decimalLongitude
+# recordedBy
 # recordNumber
 # identifiedBy
 # identifiedByID
 # occurrenceID
+# locality
 # country
 # stateProvince
 # county
@@ -34,3 +37,4 @@ uv run llama/clean_llm_output.py \
 # island
 # islandGroup
 # occurrenceRemarks
+# habitat

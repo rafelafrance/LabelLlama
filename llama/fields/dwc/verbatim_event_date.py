@@ -9,7 +9,7 @@ VERBATIM_EVENT_DATE: str = compress("""
     Extract the verbatim date the specimen was collected.
     This may be a full date (e.g., '1995-03-15', '15 March 1995') or a partial
     date (e.g., 'Spring 1995', 'July 2001', '1998').
-    If the date is a range, separate the starting and ending dates with bar "|".
+    If the date is a range, separate the starting and ending dates with a bar "|".
     Exclude the date label itself (e.g., words starting with 'date').
     If no collection date is present, return an empty string.
     """)
@@ -30,6 +30,8 @@ class VerbatimEventDate(BaseField):
         words = [w for w in words if not w.lower().startswith("date")]
         self.verbatimEventDate = " ".join(words)
 
-        self.eventDate = self.eventDate or fix_values.date_to_iso(
-            self.verbatimEventDate
-        )
+        dates = self.verbatimEventDate.split("|")
+        dates = [fix_values.date_to_iso(d) for d in dates]
+
+        self.verbatimEventDate = self.verbatimEventDate.replace("|", " ")
+        self.eventDate = self.eventDate or " to ".join(dates)

@@ -1,4 +1,4 @@
-# Prompt
+# System Prompt
 
 You are given an image of a museum specimen with labels.
 I want you to extract all of the text from every label and stamp on the specimen.

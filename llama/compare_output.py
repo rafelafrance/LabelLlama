@@ -8,7 +8,8 @@ from pathlib import Path
 
 from rich import print as rprint
 
-from llama.pylib import io_util, log, score_util
+from llama.fields.base_field import BaseField
+from llama.pylib import io_util, log, prompt_util, score_util
 
 PAIR: int = 2
 
@@ -16,8 +17,8 @@ PAIR: int = 2
 def score_extracts(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    gold_df = io_util.read_to_df(args.gold_in)
-    lm_df = io_util.read_to_df(args.lm_in)
+    gold_df = io_util.read_to_df(args.gold)
+    lm_df = io_util.read_to_df(args.lm)
 
     gold_data = gold_df.fillna("").to_dict("records")
     lm_data = lm_df.fillna("").to_dict("records")
@@ -34,6 +35,7 @@ def score_extracts(args: argparse.Namespace) -> None:
     skips = ["source", "text"]
     field_list = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
     field_list = args.column or field_list
+    field_classes = prompt_util.get_field_classes(field_list)
 
     rows = []
     df_rows = []
@@ -46,7 +48,7 @@ def score_extracts(args: argparse.Namespace) -> None:
 
         df_row1: dict[str, str] = {
             "source": gold["source"],
-            "text": gold["text"],
+            "text": gold.get("text", lm["text"]),
             "row": "doc",
         }
         df_row2: dict[str, str] = {
@@ -65,22 +67,22 @@ def score_extracts(args: argparse.Namespace) -> None:
             "row": "score",
         }
 
-        # for field_name in field_list:
-        #     expect = gold.get(field_name)
-        #     actual = lm.get(field_name)
-        #
-        #     field_action = field_registry.get(field_name, BaseField)
-        #     score = field_action.score(expect, actual, lm)
-        #
-        #     df_row1[field_name] = ""
-        #     df_row2[field_name] = str(expect)
-        #     df_row3[field_name] = str(actual)
-        #     df_row4[field_name] = score
-        #
-        #     avg[field_name] += score
-        #
-        #     if debugging(args):
-        #         print_debug_info(field_name, str(expect), str(actual), score)
+        for field_name in field_list:
+            expect = gold.get(field_name)
+            actual = lm.get(field_name)
+
+            field_action = field_classes.get(field_name, BaseField)
+            score = field_action.score(expect, actual, lm)
+
+            df_row1[field_name] = ""
+            df_row2[field_name] = str(expect)
+            df_row3[field_name] = str(actual)
+            df_row4[field_name] = score
+
+            avg[field_name] += score
+
+            if debugging(args):
+                print_debug_info(field_name, str(expect), str(actual), score)
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 
@@ -118,17 +120,19 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Score a language model job against a gold standard.""",
+            """Compare the outputs of two language model (LM) runs. One run is typically
+            a gold standard, but this is not a requirement, and you may want to compare
+            LM outputs for various reasons.""",
         ),
     )
     arg_parser.add_argument(
-        "--gold-in",
+        "--gold",
         type=Path,
         required=True,
         help="""The gold standard to score against.""",
     )
     arg_parser.add_argument(
-        "--lm-in",
+        "--lm",
         type=Path,
         required=True,
         help="""The LM data to score.""",
@@ -144,6 +148,10 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--notes",
+        help="""Notes for logging.""",
     )
     arg_parser.add_argument(
         "--column",

@@ -1,4 +1,4 @@
-# Prompt
+# System Prompt
 
 You are an expert in the study of dragonflies and damselflies.
 You will be given OCRed or transcribed label text, and you need to extract
@@ -22,7 +22,7 @@ Extraction rules:
 
 Extract the following fields from the given text.
 
-# Fields
+# Output Fields
 
 - scientificName
 - scientificNameAuthorship
@@ -34,6 +34,7 @@ Extract the following fields from the given text.
 - vernacularName
 - verbatimEventDate
 - sex
+- insectLifeStage
 - verbatimElevation
 - elevationValues
 - elevationUnits
@@ -55,5 +56,5 @@ Extract the following fields from the given text.
 - waterBody
 - island
 - islandGroup
-- occurrenceRemarks
 - habitat
+- occurrenceRemarks

@@ -1,4 +1,4 @@
-# Prompt
+# System Prompt
 
 A previous extraction of the elevation subfields did not pick up all expected subfields.
 Analyze the verbatimElevation text to get subfields the other model may have missed, if any.
@@ -18,9 +18,8 @@ Extraction rules:
 
 Extract the following fields from the given text.
 
-# Fields
+# Output Fields
 
 - elevationValues
 - elevationUnits
 - elevationEstimated
-

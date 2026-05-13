@@ -24,7 +24,7 @@ class Country(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.country = fix_values.to_str(self.country)
+        self.country = fix_values.to_str(self.country).title()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         """Make a blank country = USA if state or county is known to be in the US."""
@@ -34,16 +34,5 @@ class Country(BaseField):
         us_state = fix_values.to_str(record.get("stateProvince", ""))
         us_state = us_state.lower() in US_STATE
         if not self.country and (us_county or us_state):
-            self.country = "USA"
-
-    @staticmethod
-    def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
-        actual_usa = actual.lower() in USA
-        us_county = record.get("county", "").lower() in US_COUNTY
-        us_state = record.get("stateProvince", "").lower() in US_STATE
-
-        # OK if expect is empty and predicted USA and is a US county or state
-        if not expect and actual_usa and (us_county or us_state):
-            return 1.0
-
-        return BaseField.score(expect, actual, record)  # Default to edit distance
+            self.country = "United States"
+        self.country = self.country.title()

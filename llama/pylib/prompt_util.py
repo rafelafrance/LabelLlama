@@ -15,14 +15,17 @@ MIN_PROMPT_LEN = 40
 
 
 def get_field_dirs() -> list[Path]:
+    """Get all the directories with field parsing scripts in them."""
     return [d for d in FIELD_DIR.iterdir() if d.is_dir() and d.stem not in EXCLUDE]
 
 
 def get_field_files(dir_: Path) -> list[Path]:
+    """Get all the field parsing file names in a directory."""
     return [f for f in sorted(dir_.glob("*.py")) if f.is_file() and f.stem[0] != "_"]
 
 
 def get_all_field_files() -> list[Path]:
+    """Get all the fields parsing file paths."""
     dirs = get_field_dirs()
     files = []
     for d in dirs:
@@ -31,6 +34,7 @@ def get_all_field_files() -> list[Path]:
 
 
 def get_field_classes(field_list: list[str]) -> dict[str, Any]:
+    """Get all the field classes in the fields files."""
     names = get_field_files_by_name()
     classes = {}
     for field in field_list:
@@ -49,6 +53,7 @@ def get_field_files_by_name() -> dict[str, Path]:
 
 
 def prompt_file_ok(path: Path) -> bool:
+    """Check if the Markdown prompt file parses OK."""
     ok = True
     prompt, field_list = read_field_list_prompts(path)
     if not prompt:
@@ -67,6 +72,7 @@ def prompt_file_ok(path: Path) -> bool:
 
 
 def field_list_ok(path: Path) -> bool:
+    """Look for invalid field characters in the field list."""
     _, field_list = read_field_list_prompts(path)
     names = get_field_files_by_name()
     ok = True
@@ -112,23 +118,43 @@ def get_text_prompt(text: str) -> str:
     return "Extract data from this `text` (str):\n" + text
 
 
-def read_field_list_prompts(path: Path) -> tuple[str, list[str]]:
-    prompt: str = ""
-    fields: list[str] = []
-    with path.open() as f:
-        raw = f.read()
-    parts = re.split(r"^(?<!#)#\s", raw, flags=re.MULTILINE)
-    for part in parts:
-        part = part.strip()
-        if part.startswith("Prompt"):
-            prompt = part.replace("Prompt", "").strip()
-        elif part.startswith("Fields"):
-            part = part.replace("Fields", "").strip()
-            part = part.replace("-", "")
-            fields = part.split()
-    return prompt, fields
-
-
 def read_prompt(path: Path) -> str:
     prompt, _ = read_field_list_prompts(path)
     return prompt
+
+# ---------------------------------------------------------------------
+# Split Markdown file into sections using headers
+SECTIONS = re.compile(r"^(?<!#)#\s", flags=re.MULTILINE)
+
+# The system prompt section
+SYS_PROMPT = re.compile(r"^System\s+Prompt", flags=re.IGNORECASE)
+
+# The output fields section
+OUT_FIELDS = re.compile(r"^Output\s+Fields", flags=re.IGNORECASE)
+
+
+def read_field_list_prompts(path: Path) -> tuple[str, list[str]]:
+    """Read a Markdown prompt file & return the system prompt and output fields list."""
+    prompt: str = ""
+    fields: list[str] = []
+
+    with path.open() as f:
+        raw = f.read()
+
+    # Split Markdown file into sections using headers
+    sections = SECTIONS.split(raw)
+
+    for section in sections:
+        section = section.strip()
+
+        # Get system prompt section
+        if SYS_PROMPT.search(section):
+            prompt = SYS_PROMPT.sub("", prompt).strip()
+
+        # Get output fields list section
+        elif OUT_FIELDS.search(section):
+            section = OUT_FIELDS.sub("", section).strip()
+            section = section.replace("-", "")  # Remove Markdown list characters
+            fields = section.split()
+
+    return prompt, fields

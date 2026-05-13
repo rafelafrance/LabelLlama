@@ -1,4 +1,4 @@
-# Prompt
+# System Prompt
 
 A previous extraction of the TRS subfields did not pick up all expected subfield.
 Analyze the TRS text to get subfields the other model may have missed, if any.
@@ -18,10 +18,9 @@ Extraction rules:
 
 Extract the following fields from the given text.
 
-# Fields
+# Output Fields
 
 - trsTownship
 - trsRange
 - trsSection
 - trsQuad
-
