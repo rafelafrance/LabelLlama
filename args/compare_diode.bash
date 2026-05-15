@@ -3,8 +3,8 @@
 uv run ./llama/compare_output.py \
   --imperfect \
   --gold data/diode_geode/Abbott_and_Ware_gold.csv \
-  --lm data/diode_geode/rob_gpt_nano_2026-05-14d_cleaned.csv \
-  --out-file data/diode_geode/rob_gpt_nano_2026-05-14d.html
+  --lm data/diode_geode/rob_gpt_nano_2026-05-14e_cleaned.csv \
+  --out-file data/diode_geode/rob_gpt_nano_2026-05-14e.html
 
 # scientificName
 # scientificNameAuthorship

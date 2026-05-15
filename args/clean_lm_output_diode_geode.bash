@@ -1,8 +1,8 @@
 #!/bin/bash
 
 uv run llama/clean_llm_output.py \
-  --in-file data/diode_geode/rob_gpt_nano_2026-05-14d.csv \
-  --out-file data/diode_geode/rob_gpt_nano_2026-05-14d_cleaned.csv
+  --in-file data/diode_geode/rob_gpt_nano_2026-05-14e.csv \
+  --out-file data/diode_geode/rob_gpt_nano_2026-05-14e_cleaned.csv
 
 
 # scientificName

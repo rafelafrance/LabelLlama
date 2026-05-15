@@ -31,7 +31,7 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     for key, cmp in compare.items():
         if len(cmp) != PAIR:
-            logging.warning(f"{key} did not have a pair of rows to compare")
+            logging.warning(f"'{key}' did not have a pair of rows to compare")
 
     compare = [p for p in compare.values() if len(p) == PAIR]
 

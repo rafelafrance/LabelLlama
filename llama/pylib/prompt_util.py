@@ -8,7 +8,6 @@ from typing import Any
 from llama.pylib.str_util import snake_to_camel
 
 FIELD_DIR = Path(__file__).parent.parent / "fields"
-print(FIELD_DIR)
 EXCLUDE = ("__pycache__",)
 
 MIN_PROMPT_LEN = 40
@@ -121,6 +120,7 @@ def get_text_prompt(text: str) -> str:
 def read_prompt(path: Path) -> str:
     prompt, _ = read_field_list_prompts(path)
     return prompt
+
 
 # ---------------------------------------------------------------------
 # Split Markdown file into sections using headers
