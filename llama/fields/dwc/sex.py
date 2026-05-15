@@ -15,7 +15,7 @@ SEX: str = compress("""
 
     Full terms: 'male', 'female'.
 
-    Abbreviations: 'm', 'M', 'f', 'F', 'mal', 'fem', '♂', '♀', 'm.', 'f.'.
+    Abbreviations: '♂', '♀', 'm', 'M', 'f', 'F', 'mal', 'fem', 'm.', 'f.'.
 
     Combined or paired specimens: '♂♀', '♀♂', 'pair', '2m', '2f', 'mf',
     'fm', 'male & female', 'male and female'.

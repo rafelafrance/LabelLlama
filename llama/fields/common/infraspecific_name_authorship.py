@@ -10,6 +10,7 @@ INFRASPECIFIC_NAME_AUTHORSHIP: str = compress("""
     variety). This is the person(s) who originally described the subspecies or
     variety, separate from the species-level authorship.
     Authors may be abbreviated, sometimes to a single letter.
+    This author may include a publication year, include that.
     If no infraspecific authorship is stated, return an empty string.
     """)
 
@@ -20,7 +21,9 @@ class InfraspecificNameAuthorship(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-
         self.infraspecificNameAuthorship = fix_values.to_str(
+            self.infraspecificNameAuthorship
+        )
+        self.infraspecificNameAuthorship = fix_values.clean_str_ends(
             self.infraspecificNameAuthorship
         )

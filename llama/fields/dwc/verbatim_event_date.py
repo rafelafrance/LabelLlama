@@ -33,5 +33,5 @@ class VerbatimEventDate(BaseField):
         dates = self.verbatimEventDate.split("|")
         dates = [fix_values.date_to_iso(d) for d in dates]
 
-        self.verbatimEventDate = self.verbatimEventDate.replace("|", " ")
+        self.verbatimEventDate = self.verbatimEventDate.replace("|", " to ")
         self.eventDate = self.eventDate or " to ".join(dates)

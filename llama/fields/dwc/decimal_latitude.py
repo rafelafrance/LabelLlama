@@ -11,6 +11,7 @@ DECIMAL_LATITUDE: str = compress("""
     Latitude must fall between -90.0 and 90.0 degrees.
         ✅ Include: negative values for Southern Hemisphere (e.g., -33.8688),
             positive values for Northern Hemisphere (e.g., 45.1234, 45.123456).
+        ✅ Include: the negative sign (-) for Southern Hemisphere latitudes is imporant.
         ❌ DO NOT include: the label itself (e.g., 'lat.', 'latitude', 'Lat:'),
             compass direction letters (e.g., 'N', 'S'), or the paired longitude value.
         ❌ DO NOT include: degrees/minutes/seconds format (e.g., '45°12'34"') —

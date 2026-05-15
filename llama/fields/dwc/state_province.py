@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from llama.fields.base_field import BOTH, BaseField
@@ -14,6 +15,8 @@ STATE_PROVINCE: str = compress("""
     If no state/province information is available, return an empty string.
     """)
 
+LABELS = re.compile(r"\s*(Departamento de|District|Provincia de)\s*", re.IGNORECASE)
+
 
 @dataclass
 class StateProvince(BaseField):
@@ -21,4 +24,5 @@ class StateProvince(BaseField):
 
     def __post_init__(self, text: str) -> None:
         self.stateProvince = fix_values.hallucinated_str(self.stateProvince, text)
-        self.stateProvince = self.stateProvince.title()
+        self.stateProvince = fix_values.title_with_exceptions(self.stateProvince)
+        self.stateProvince = LABELS.sub("", self.stateProvince)

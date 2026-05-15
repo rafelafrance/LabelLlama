@@ -53,7 +53,7 @@ class BaseField:
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
         del record
 
-        actual = str(actual)
-        expect = str(expect)
+        actual = str(actual).strip()
+        expect = str(expect).strip()
 
         return Levenshtein.ratio(expect, actual)

@@ -11,6 +11,7 @@ DECIMAL_LONGITUDE: str = compress("""
     Longitude must fall between -180.0 and 180.0 degrees.
         ✅ Include: negative values for Western Hemisphere (e.g., -118.2437),
             positive values for Eastern Hemisphere (e.g., 121.4737, 121.473789).
+        ✅ Include: the negative sign (-) for Western Hemisphere longitudes is imporant.
         ❌ DO NOT include: the label itself (e.g., 'long.', 'longitude', 'Lon:'),
             compass direction letters (e.g., 'E', 'W'), or the paired latitude value.
         ❌ DO NOT include: degrees/minutes/seconds format (e.g., '121°28'25"') —

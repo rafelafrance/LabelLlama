@@ -24,7 +24,7 @@ class Country(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.country = fix_values.to_str(self.country).title()
+        self.country = fix_values.title_with_exceptions(self.country)
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         """Make a blank country = USA if state or county is known to be in the US."""
@@ -35,4 +35,4 @@ class Country(BaseField):
         us_state = us_state.lower() in US_STATE
         if not self.country and (us_county or us_state):
             self.country = "United States"
-        self.country = self.country.title()
+        self.country = fix_values.title_with_exceptions(self.country)

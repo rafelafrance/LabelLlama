@@ -281,3 +281,12 @@ def hallucinated_str(value: str, text: str) -> str:
     pattern = re.escape(str(value))
     value = value if re.search(pattern, text, flags=re.IGNORECASE) else ""
     return value
+
+
+LOWER = {"A", "An", "Of", "The", "De", "And"}
+
+
+def title_with_exceptions(value: str) -> str:
+    words = value.title().split()
+    words = [w.lower() if (i and w in LOWER) else w for i, w in enumerate(words)]
+    return " ".join(words)

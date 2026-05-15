@@ -27,4 +27,4 @@ class County(BaseField):
         # Remove the county label
         self.county = re.sub(r"\s(co\.?|county)$", "", self.county, flags=re.IGNORECASE)
 
-        self.county = self.county.title()
+        self.county = fix_values.to_str(self.county)

@@ -28,9 +28,12 @@ def score_extracts(args: argparse.Namespace) -> None:
         key = row["source"]
         if key in compare:
             compare[key].append(row)
-    compare = [p for p in compare.values() if len(p) == PAIR]
 
-    # field_registry = FIELD_REGISTRY[args.fields_registry]
+    for key, cmp in compare.items():
+        if len(cmp) != PAIR:
+            logging.warning(f"{key} did not have a pair of rows to compare")
+
+    compare = [p for p in compare.values() if len(p) == PAIR]
 
     skips = ["source", "text"]
     field_list = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
@@ -42,29 +45,34 @@ def score_extracts(args: argparse.Namespace) -> None:
     avg = defaultdict(float)
 
     # Build field data and get edit distance scores
-    for gold, lm in compare:
-        row = {"source": gold["source"], "text": gold["text"]}
+    for i, (gold, lm) in enumerate(compare, 1):
+        source = gold["source"]
+        row = {"row": i, "source": source, "text": gold.get("text", lm["text"])}
         rows.append(row)
 
         df_row1: dict[str, str] = {
             "source": gold["source"],
             "text": gold.get("text", lm["text"]),
-            "row": "doc",
+            "row": str(i),
+            "type": "doc",
         }
         df_row2: dict[str, str] = {
             "source": "",
             "text": "",
-            "row": "gold",
+            "row": "",
+            "type": "gold",
         }
         df_row3: dict[str, str] = {
             "source": "",
             "text": "",
-            "row": "lm",
+            "row": "",
+            "type": "lm",
         }
         df_row4: dict[str, float | str] = {
             "source": "",
             "text": "",
-            "row": "score",
+            "row": "",
+            "type": "score",
         }
 
         for field_name in field_list:
@@ -81,12 +89,13 @@ def score_extracts(args: argparse.Namespace) -> None:
 
             avg[field_name] += score
 
-            if debugging(args):
-                print_debug_info(field_name, str(expect), str(actual), score)
+            if debugging(args) and (args.imperfect and score != 1.0):
+                print_debug_info(i, source, field_name, str(expect), str(actual), score)
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 
     avg_row: dict[str, float | str] = {
+        "index": "",
         "source": "",
         "text": "",
         "row": "average",
@@ -108,8 +117,11 @@ def debugging(args: argparse.Namespace) -> bool:
     return args.column or args.limit
 
 
-def print_debug_info(field_name: str, expect: str, actual: str, score: float) -> None:
+def print_debug_info(
+    i: int, source: str, field_name: str, expect: str, actual: str, score: float
+) -> None:
     color = score_util.score_color(score)
+    rprint(f"{i} {source}")
     rprint(f"[{color}]{field_name}[/{color}]")
     rprint(f"[{color}]expect: {expect}[/{color}]")
     rprint(f"[{color}]actual: {actual}[/{color}]")
@@ -162,6 +174,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--limit",
         type=int,
         help="""Limit to this many records. Used for debugging.""",
+    )
+    arg_parser.add_argument(
+        "--imperfect",
+        action="store_true",
+        help="""Only show imperfect records. Used for debugging.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

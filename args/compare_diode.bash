@@ -1,18 +1,13 @@
 #!/bin/bash
 
 uv run ./llama/compare_output.py \
+  --imperfect \
   --gold data/diode_geode/Abbott_and_Ware_gold.csv \
-  --lm data/herbarium/rob_gpt_nano_2026-05-12a_cleaned.csv \
-  --out-file data/herbarium/score_dwc_2026-04-28a_gold.html
+  --lm data/diode_geode/rob_gpt_nano_2026-05-14d_cleaned.csv \
+  --out-file data/diode_geode/rob_gpt_nano_2026-05-14d.html
 
 # scientificName
 # scientificNameAuthorship
-# suborder
-# family
-# genus
-# subgenus
-# specificEpithet
-# vernacularName
 # verbatimEventDate
 # sex
 # verbatimElevation
