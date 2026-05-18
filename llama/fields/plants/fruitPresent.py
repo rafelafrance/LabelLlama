@@ -4,16 +4,6 @@ from typing import Any
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-FRUIT_PRESENT: str = compress("""
-    `fruitPresent` (bool):
-    Determine whether the specimen has fruit present.
-    Look for indicators like 'in fruit', 'fr.', 'frs', 'fruits', 'fruiting',
-    or the presence of fruit color descriptions.
-    Return True if fruit is present, False otherwise.
-    If no information about fruit is stated, return an empty string.
-    """)
 
 
 @dataclass

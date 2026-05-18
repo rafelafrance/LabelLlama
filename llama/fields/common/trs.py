@@ -4,18 +4,6 @@ from typing import Any, ClassVar
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-TRS: str = compress("""
-    `trs` (str):
-    Extract the Township Range Section (TRS) coordinates from the label.
-    TRS is a land survey system used primarily in the United States.
-    Preserve the text exactly as written — it may include township, range,
-    section, quadrant subdivisions, and a quadrangle (quad) name.
-    Examples: 'Bodie Quadrangle; T4N R25E S36', 'T41N R15E NW 1/4 S10',
-    'T7S, R1W SE 1/4 sec. 33', 'SW 1/4 sec. 34'.
-    If no TRS information is present, return an empty string.
-    """)
 
 
 @dataclass

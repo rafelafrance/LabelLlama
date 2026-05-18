@@ -3,16 +3,6 @@ from dataclasses import dataclass, field
 
 from llama.fields.base_field import BOTH, HIDE, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-OCCURRENCE_ID: str = compress("""
-    `occurrenceID` (str):
-    Extract the occurrence ID.
-	An identifier for the occurrence (as opposed to a particular digital record of the
-    occurrence).
-    preceded by '#' or 'Nº'.
-    If no occurrence ID is present, return an empty string.
-    """)
 
 
 @dataclass

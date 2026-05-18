@@ -3,16 +3,6 @@ from typing import Any
 
 from llama.fields.base_field import BOTH, HIDE, IN, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-ELEVATION_VALUES: str = compress("""
-    `elevationValues` (list[float]):
-    Extract the numeric elevation value(s). A single value indicates a point
-    elevation; two values indicate an elevation range (min and max).
-    The same elevation may be reported in different units — include all numeric values.
-    Return only the numbers, not the units.
-    If no elevation values are present, return an empty list.
-    """)
 
 
 @dataclass

@@ -3,17 +3,6 @@ from typing import Any, ClassVar
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-UTM: str = compress("""
-    `utm` (str):
-    Extract the Universal Transverse Mercator (UTM) coordinates from the label.
-    UTM coordinates consist of a zone, northing, and easting.
-    Preserve the text exactly as written. Examples: '33T 500000 4649776',
-    'Z12 N7874900 E768500', '11S 316745.14 3542301.90', 'Zone 11S; 3845372N 0729522E'.
-    If no UTM information is present, return an empty string.
-    """)
-
 
 # Remove these extra values
 EMPTY_NE: tuple = ("0", "0.0")

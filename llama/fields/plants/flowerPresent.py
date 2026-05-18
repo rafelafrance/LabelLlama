@@ -4,16 +4,6 @@ from typing import Any
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-FLOWERS_PRESENT: str = compress("""
-    `flowersPresent` (bool):
-    Determine whether the specimen has flowers present.
-    Look for indicators like 'in flower', 'blooming', 'fl.', 'fls',
-    'flowers', 'flowering', or the presence of flower color descriptions.
-    Return True if flowers are present, False otherwise.
-    If no information about flowers is stated, return an empty string.
-    """)
 
 
 @dataclass

@@ -3,16 +3,6 @@ from dataclasses import dataclass, field
 
 from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
-from llama.pylib.str_util import compress
-
-COUNTY: str = compress("""
-    `county` (str):
-    Extract the county (or equivalent county-level administrative division)
-    where the specimen was collected.
-    Return only the county name — do not include trailing labels like 'county'
-    or 'co.'.
-    If no county is mentioned, return an empty string.
-    """)
 
 
 @dataclass
