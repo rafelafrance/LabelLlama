@@ -1,3 +1,8 @@
+---
+name: Elevation
+description: Extract information from raw elevation text.
+---
+
 # System Prompt
 
 A previous extraction of the elevation subfields did not pick up all expected subfields.
@@ -20,6 +25,6 @@ Extract the following fields from the given text.
 
 # Output Fields
 
-- elevationValues
-- elevationUnits
-- elevationEstimated
+- [elevationValues](../dwc/elevationValues.md)
+- [elevationUnits](../dwc/elevationUnits.md)
+- [elevationEstimated](../dwc/elevationEstimated.md)

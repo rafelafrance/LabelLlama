@@ -1,0 +1,7 @@
+`stateProvince` (str):
+Extract the state, province, or equivalent first-level administrative division
+where the specimen was collected (e.g., 'California', 'Ontario', 'Coahuila').
+Return the full name, not an abbreviation or acronym.
+If the state/province is not stated but can be inferred from the locality,
+return the inferred value.
+If no state/province information is available, return an empty string.

@@ -4,7 +4,7 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-PLANT_SEX: str = compress("""
+SEX: str = compress("""
     `sex` (str):
     Extract the sex of the individual flower(s) or inflorescence on the specimen.
     This describes whether the flowers contain male parts only, female parts only,
@@ -22,8 +22,8 @@ PLANT_SEX: str = compress("""
 
 
 @dataclass
-class PlantSex(BaseField):
-    plantSex: str = field(default="", metadata=BOTH)
+class Sex(BaseField):
+    sex: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        self.plantSex = fix_values.hallucinated_str(self.plantSex, text)
+        self.sex = fix_values.hallucinated_str(self.sex, text)

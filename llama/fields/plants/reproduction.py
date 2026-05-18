@@ -4,8 +4,8 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-PLANT_REPRODUCTION: str = compress("""
-    `plantReproduction` (str):
+REPRODUCTION: str = compress("""
+    `reproduction` (str):
     Extract the plant's breeding system (how sexual organs are distributed
     among flowers and individuals). This describes whether male and female
     reproductive parts occur together or separately at the population level.
@@ -26,10 +26,10 @@ PLANT_REPRODUCTION: str = compress("""
 
 
 @dataclass
-class PlantReproduction(BaseField):
-    plantReproduction: str = field(default="", metadata=BOTH)
+class Reproduction(BaseField):
+    reproduction: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        self.plantReproduction = fix_values.hallucinated_str(
-             self.plantReproduction, text
+        self.reproduction = fix_values.hallucinated_str(
+             self.reproduction, text
         )

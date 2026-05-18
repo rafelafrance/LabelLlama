@@ -4,8 +4,8 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-PLANT_LIFE_FORM: str = compress("""
-    `plantLifeForm` (str):
+LIFE_FORM: str = compress("""
+    `lifeForm` (str):
     Extract the ecological life form (aka niche) of the specimen.
     This describes how the plant obtains nutrients and where it anchors itself.
     It is distinct from habit (growth shape), habitat (physical environment),
@@ -30,8 +30,8 @@ PLANT_LIFE_FORM: str = compress("""
 
 
 @dataclass
-class PlantLifeForm(BaseField):
-    plantLifeForm: str = field(default="", metadata=BOTH)
+class LifeForm(BaseField):
+    lifeForm: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        self.plantLifeForm = fix_values.hallucinated_str(self.plantLifeForm, text)
+        self.lifeForm = fix_values.hallucinated_str(self.lifeForm, text)

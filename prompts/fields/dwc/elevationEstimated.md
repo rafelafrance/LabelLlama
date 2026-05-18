@@ -1,0 +1,5 @@
+`elevationEstimated` (bool):
+Determine whether the elevation an estimate?
+Look for words like 'approx.', 'est.', 'ca.', 'about', 'approximately', '~', or '?'
+near the elevation value.
+If no information about elevation estimation is stated, return an empty string.

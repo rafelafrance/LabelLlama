@@ -1,0 +1,11 @@
+`recordNumber` (str):
+Extract the record number, an identifier given to the occurrence at the time it was
+recorded. It often serves as a link between field notes and a occurrence record,
+such as a specimen's collector number.
+Do not confuse this with a catalog number.
+It is a unique identifier for the collection event, not the collector's personal ID.
+It typically appears near the collector's name or event date and may be
+preceded by '#' or 'Nº'.
+Examples: '12345', 'Smith 1234', 'acc. 4567'.
+If no record number is present, return an empty string.
+

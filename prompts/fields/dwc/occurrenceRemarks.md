@@ -1,0 +1,10 @@
+`occurrenceRemarks` (str):
+Extract any remaining observations or notes not captured by other fields.
+This is a catch-all for data that does not fit elsewhere.
+    ✅ Include: field notes, specimen condition, phenology observations,
+        collection circumstances, or any other remarks.
+    ❌ DO NOT include: habitat, locality, associated taxa, flower/fruit
+        color, determiner/verifier, collector, dates, coordinates,
+        elevation, or scientific name — those have their own fields.
+If no remarks are present, return an empty string.
+

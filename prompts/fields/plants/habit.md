@@ -1,0 +1,9 @@
+`habit` (str):
+Extract the plant's habit or general growth form/shape.
+Examples: 'erect', 'ascending', 'prostrate', 'creeping', 'climbing', 'vine',
+'liana', 'shrubby', 'arborescent', 'tree', 'bush', 'caespitose', 'cespitose',
+'decumbent', 'procumbent', 'repent', 'semi-erect', 'upright', 'branching',
+'frutescent', 'suffrutescent', 'acaulescent', 'caulescent', 'lax',
+'actinomorphic', 'fruticose', 'humifuse', 'virgate', 'treelet'.
+If no habit information is stated, return an empty string.
+

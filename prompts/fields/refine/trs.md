@@ -1,3 +1,8 @@
+---
+name: TRS
+description: Extract information from raw TRS text.
+---
+
 # System Prompt
 
 A previous extraction of the TRS subfields did not pick up all expected subfield.
@@ -20,7 +25,7 @@ Extract the following fields from the given text.
 
 # Output Fields
 
-- trsTownship
-- trsRange
-- trsSection
-- trsQuad
+- [trsTownship](../common/trsTownship.md)
+- [trsRange](../common/trsRange.md)
+- [trsSection](../common/trsSection.md)
+- [trsQuad](../common/trsQuad.md)

@@ -1,3 +1,8 @@
+---
+name: UTM
+description: Extract information from raw UTM text.
+---
+
 # System Prompt
 
 A previous extraction of the UTM subfields did not pick up all expected subfield.
@@ -20,6 +25,6 @@ Extract the following fields from the given text.
 
 # Output Fields
 
-- utmNorthing
-- utmEasting
-- utmZone
+- [utmNorthing](../common/utmNorthing.md)
+- [utmEasting](../common/utmEasting.md)
+- [utmZone](../common/utmZone.md)

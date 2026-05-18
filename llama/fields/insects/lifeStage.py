@@ -4,8 +4,8 @@ from llama.fields.base_field import BOTH, BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
-INSECT_LIFE_STAGE: str = compress("""
-    `insectLifeStage` (str):
+LIFE_STAGE: str = compress("""
+    `lifeStage` (str):
     Extract the developmental or phenological stage of the specimen.
     This describes the current developmental phase or maturity level of the insect
     at the time of collection.
@@ -17,8 +17,8 @@ INSECT_LIFE_STAGE: str = compress("""
 
 
 @dataclass
-class InsectLifeStage(BaseField):
-    insectLifeStage: str = field(default="", metadata=BOTH)
+class LifeStage(BaseField):
+    lifeStage: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
-        self.insectLifeStage = fix_values.hallucinated_str(self.insectLifeStage, text)
+        self.lifeStage = fix_values.hallucinated_str(self.lifeStage, text)
