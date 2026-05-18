@@ -38,7 +38,7 @@ def score_extracts(args: argparse.Namespace) -> None:
     skips = ["source", "text"]
     field_list = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
     field_list = args.column or field_list
-    field_classes = prompt_util.get_field_classes(field_list)
+    field_classes = prompt_util.field_classes_by_name()
 
     rows = []
     df_rows = []

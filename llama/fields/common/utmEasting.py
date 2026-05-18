@@ -8,7 +8,7 @@ EMPTY_NE: tuple = ("0", "0.0")
 
 
 @dataclass
-class Utm(BaseField):
+class UtmEasting(BaseField):
     utmEasting: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:

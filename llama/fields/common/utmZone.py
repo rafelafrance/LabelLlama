@@ -5,7 +5,7 @@ from llama.pylib import fix_values
 
 
 @dataclass
-class Utm(BaseField):
+class UtmZone(BaseField):
     utmZone: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:

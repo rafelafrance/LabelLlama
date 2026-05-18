@@ -5,7 +5,7 @@ from llama.pylib import fix_values
 
 
 @dataclass
-class Trs(BaseField):
+class TrsQuad(BaseField):
     trsQuad: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:

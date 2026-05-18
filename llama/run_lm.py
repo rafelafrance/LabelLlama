@@ -21,9 +21,9 @@ async def new_lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
     SEMAPHORE = asyncio.Semaphore(args.threads)
-    sys_prompt, field_list = prompt_util.read_field_list_prompts(args.prompt)
-    field_prompts = prompt_util.get_field_prompts(field_list)
-    field_template = prompt_util.get_field_template(field_list)
+    sys_prompt, field_list = prompt_util.read_lm_prompt(args.prompt)
+    field_prompts = prompt_util.build_field_prompts(field_list)
+    field_template = prompt_util.build_field_template(field_list)
     docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
 
     async with AsyncOpenAI() as client:
@@ -65,7 +65,7 @@ async def call_lm(
                     {"role": "system", "content": sys_prompt},
                     {"role": "user", "content": field_prompts},
                     {"role": "user", "content": field_template},
-                    {"role": "user", "content": prompt_util.get_text_prompt(text)},
+                    {"role": "user", "content": prompt_util.build_text_prompt(text)},
                 ],
                 temperature=args.temperature,
             )

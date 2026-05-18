@@ -15,12 +15,12 @@ DEBUG_SKIP = ("source", "text")
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    field_files_by_name = prompt_util.get_field_files_by_name()
+    field_files_by_name = prompt_util.field_modules_by_name()
 
     df = io_util.read_to_df(args.in_file, limit=args.limit)
     field_list = [c for c in df.columns if c in field_files_by_name]
 
-    field_classes = prompt_util.get_field_classes(field_list)
+    field_classes = prompt_util.field_classes_by_name()
 
     if args.column:
         field_list = args.column

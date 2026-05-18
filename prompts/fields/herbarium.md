@@ -65,7 +65,7 @@ Extract the following fields from the given text.
 - [elevationUnits](dwc/elevationUnits.md)
 - [elevationEstimated](dwc/elevationEstimated.md)
 - [abundance](plants/abundance.md)
-- [flowersPresent](plants/flowerPresent.md)
+- [flowersPresent](plants/flowersPresent.md)
 - [flowerColor](plants/flowerColor.md)
 - [fruitPresent](plants/fruitPresent.md)
 - [fruitColor](plants/fruitColor.md)

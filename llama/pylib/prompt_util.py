@@ -1,131 +1,123 @@
 import importlib
-import importlib.util as iu
-import logging
 import re
 from pathlib import Path
 from typing import Any
 
-from llama.pylib.str_util import snake_to_camel
+FIELD_MODULE_DIR = Path(__file__).parent.parent / "fields"
+FIEL_MODULE_EXCLUDE = ("__pycache__",)
 
-FIELD_DIR = Path(__file__).parent.parent / "fields"
-EXCLUDE = ("__pycache__",)
+FIELD_PROMPT_DIR = Path("prompts") / "fields"
+FIELD_PROMPT_EXCLUDE = ("refine",)
+
+LM_PROMPT_DIRS = [Path("prompts") / "fields", Path("prompts") / "fields" / "refine"]
 
 MIN_PROMPT_LEN = 40
 
 
-def get_field_dirs() -> list[Path]:
-    """Get all the directories with field parsing scripts in them."""
-    return [d for d in FIELD_DIR.iterdir() if d.is_dir() and d.stem not in EXCLUDE]
+# ---------------------------------------------------------------------
+def normalize(path: Path) -> str:
+    norm = re.sub(r"^.*?fields/", "", str(path))
+    norm = re.sub(r"\.py|\.md", "", norm)
+    return norm
 
 
-def get_field_files(dir_: Path) -> list[Path]:
-    """Get all the field parsing file names in a directory."""
-    return [f for f in sorted(dir_.glob("*.py")) if f.is_file() and f.stem[0] != "_"]
+def to_class_name(path: Path) -> str:
+    """Convert a field name into its class name."""
+    name = path.stem
+    cls_name = name[0].upper() + name[1:]
+    return cls_name
 
 
-def get_all_field_files() -> list[Path]:
-    """Get all the fields parsing file paths."""
-    dirs = get_field_dirs()
+def to_prompt_path(field_name: str) -> Path:
+    prompt_path = f"{FIELD_PROMPT_DIR}/{field_name}.md"
+    return Path(prompt_path)
+
+
+# ---------------------------------------------------------------------
+def get_field_modules() -> list[Path]:
+    """Get all the field modules paths."""
+    dirs = [
+        d for d in FIELD_MODULE_DIR.iterdir()
+        if d.is_dir() and d.stem not in FIEL_MODULE_EXCLUDE
+    ]
     files = []
     for d in dirs:
-        files += get_field_files(d)
+        files += [f for f in sorted(d.glob("*.py")) if f.is_file() and f.stem[0] != "_"]
     return files
 
 
-def get_field_classes(field_list: list[str]) -> dict[str, Any]:
+def get_field_prompts() ->list[Path]:
+    """Get all the fields parsing file paths."""
+    dirs = [
+        d for d in FIELD_PROMPT_DIR.iterdir()
+        if d.is_dir() and d.stem not in FIELD_PROMPT_EXCLUDE
+    ]
+    files = []
+    for d in dirs:
+        files += [f for f in sorted(d.glob("*.md")) if f.is_file()]
+    return files
+
+
+def get_lm_prompts() -> list[Path]:
+    """Get LM information extraction prompt file paths."""
+    files = []
+    for d in LM_PROMPT_DIRS:
+        files += [f for f in sorted(d.glob("*.md")) if f.is_file()]
+    return files
+
+
+def get_field_classes() -> list:
     """Get all the field classes in the fields files."""
-    names = get_field_files_by_name()
-    classes = {}
-    for field in field_list:
-        if field in names:
-            cls_name = field[0].upper() + field[1:]
-            mod_name = re.sub(r".*?LabelLlama/", "", str(names[field]))
-            mod_name = mod_name.removesuffix(".py")
-            mod_name = mod_name.replace("/", ".")
-            module = importlib.import_module(mod_name)
-            classes[field] = getattr(module, cls_name)
+    field_modules = get_field_modules()
+    classes = []
+    for path in field_modules:
+        cls_name = to_class_name(path)
+        mod_name = re.sub(r"^.*?LabelLlama/", "", str(path))
+        mod_name = mod_name.removesuffix(".py")
+        mod_name = mod_name.replace("/", ".")
+        module = importlib.import_module(mod_name)
+        classes.append(getattr(module, cls_name))
     return classes
 
 
-def get_field_files_by_name() -> dict[str, Path]:
-    return {snake_to_camel(f.stem): f for f in get_all_field_files()}
+# ---------------------------------------------------------------------
+def field_modules_by_name() -> dict[str, Path]:
+    return {normalize(m): m for m in get_field_modules()}
 
 
-def prompt_file_ok(path: Path) -> bool:
-    """Check if the Markdown prompt file parses OK."""
-    ok = True
-    prompt, field_list = read_field_list_prompts(path)
-    if not prompt:
-        logging.error(f"{path.name} is missing a prompt section.")
-        ok = False
-    elif len(prompt) < MIN_PROMPT_LEN:
-        logging.warning("The prompt seems awfully short.")
-        ok = False
-
-    if field_list:
-        ok &= field_list_ok(path)
-    else:
-        logging.info("There are no fields in this prompt file.")
-
-    return ok
+def field_prompts_by_name() -> dict[str, Path]:
+    return {normalize(m): m for m in get_field_prompts()}
 
 
-def field_list_ok(path: Path) -> bool:
-    """Look for invalid field characters in the field list."""
-    _, field_list = read_field_list_prompts(path)
-    names = get_field_files_by_name()
-    ok = True
-    for field in field_list:
-        if field not in names:
-            ok = False
-            logging.error(f"{field} is not available as field to extract.")
-    return ok
+def field_classes_by_name() -> dict[str, Any]:
+    return {cls.__name__: cls for cls in get_field_classes()}
+
+# ---------------------------------------------------------------------
+def build_text_prompt(text: str) -> str:
+    return "Extract data from this `text` (str):\n" + text
 
 
-def get_field_template(fields: list[str]) -> str:
-    """Workaround GPT's terrible JSON formatting."""
-    template = ["Structured all output with the following template."]
+def build_field_prompts(field_names: list[str]) -> str:
+    """Get prompts of all fields given in the field list."""
+    prompts = []
+    for i, field_name in enumerate(field_names, 1):
+        prompt_path = to_prompt_path(field_name)
+        with prompt_path.open() as f:
+            prompt = f.read()
+        prompts.append(f"{i}. {prompt}")
+    return "\n\n".join(prompts)
+
+
+def build_field_template(field_names: list[str]) -> str:
+    """Provide a structure for GPT output to workaround GPT's poor JSON formatting."""
+    fields = [f.split("/")[-1] for f in field_names]
+    template = ["Structure all output with the following template."]
     template += [f"<< ## {f} ## >>\n{{{f}}}" for f in fields]
     template.append("<< ## completed ## >>")
     return "\n\n".join(template)
 
 
-def get_field_prompts(fields: list[str]) -> str:
-    """
-    Get prompts of all fields given in the field list.
-
-    Dynamically load the appropriate modules that contain the prompts.
-    The module names are in snake case and the target fields are in camel case.
-    """
-    names = get_field_files_by_name()
-    prompts = []
-    for i, field in enumerate(fields, 1):
-        path = names[field]
-        spec = iu.spec_from_file_location(path.stem, path)
-        if spec is None:
-            raise ValueError
-        module = iu.module_from_spec(spec)
-        if module is None or spec.loader is None:
-            raise ValueError
-        spec.loader.exec_module(module)
-        prompt = getattr(module, module.__name__.upper())
-        prompts.append(f"{i}. {prompt}")
-    return "\n\n".join(prompts)
-
-
-def get_text_prompt(text: str) -> str:
-    return "Extract data from this `text` (str):\n" + text
-
-
-def read_prompt(path: Path) -> str:
-    prompt, _ = read_field_list_prompts(path)
-    return prompt
-
-
 # ---------------------------------------------------------------------
-# Split Markdown file into sections using headers
-SECTIONS = re.compile(r"^(?<!#)#\s", flags=re.MULTILINE)
-
 # The system prompt section
 SYS_PROMPT = re.compile(r"^System\s+Prompt", flags=re.IGNORECASE)
 
@@ -133,28 +125,33 @@ SYS_PROMPT = re.compile(r"^System\s+Prompt", flags=re.IGNORECASE)
 OUT_FIELDS = re.compile(r"^Output\s+Fields", flags=re.IGNORECASE)
 
 
-def read_field_list_prompts(path: Path) -> tuple[str, list[str]]:
-    """Read a Markdown prompt file & return the system prompt and output fields list."""
-    prompt: str = ""
-    fields: list[str] = []
+def read_lm_prompt(path: Path) -> tuple[str, list[str]]:
+    """Read a Markdown prompt file & return the system prompt and field name list."""
+    sys_prompt: str = ""
+    field_names: list[str] = []
 
     with path.open() as f:
         raw = f.read()
 
     # Split Markdown file into sections using headers
-    sections = SECTIONS.split(raw)
+    sections = re.split(r"^(?<!#)#\s", raw, flags=re.MULTILINE)
 
     for section in sections:
         section = section.strip()
 
         # Get system prompt section
-        if SYS_PROMPT.search(section):
-            prompt = SYS_PROMPT.sub("", prompt).strip()
+        if SYS_PROMPT.match(section):
+            sys_prompt = SYS_PROMPT.sub("", section).strip()
 
         # Get output fields list section
-        elif OUT_FIELDS.search(section):
+        elif OUT_FIELDS.match(section):
             section = OUT_FIELDS.sub("", section).strip()
-            section = section.replace("-", "")  # Remove Markdown list characters
-            fields = section.split()
+            links = re.findall(r"\([\w/]+\.md\)", section)
+            field_names = [lk.removeprefix("(").removesuffix(".md)") for lk in links]
 
-    return prompt, fields
+    return sys_prompt, field_names
+
+
+def read_prompt(path: Path) -> str:
+    sys_prompt, _ = read_lm_prompt(path)
+    return sys_prompt
