@@ -137,8 +137,9 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--prompt",
         type=Path,
-        required=True,
-        help="""A markdown file with a prompt used to OCR images.""",
+        default="prompts/ocr.md",
+        help="""A markdown file with a prompt used to OCR images.
+            (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--api-host",
@@ -149,6 +150,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--max-tokens",
         type=int,
         help="""The LM response's maximum tokens.""",
+    )
+    arg_parser.add_argument(
+        "--threads",
+        type=int,
+        default=2,
+        help="""How many parallel threads to run. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--temperature",
@@ -165,12 +172,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--notes",
         help="""Notes for logging.""",
-    )
-    arg_parser.add_argument(
-        "--threads",
-        type=int,
-        default=2,
-        help="""How many parallel threads to run. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--limit",
