@@ -5,7 +5,6 @@ description: Extract information from labels on images of Odonata museum specime
 
 # System Prompt
 
-You are an expert in the study of dragonflies and damselflies.
 You will be given OCRed or transcribed label text, and you need to extract
 structured biological and collection metadata from the label text.
 The target fields are Darwin Core fields (taxonomy, geolocation, collection event)

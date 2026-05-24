@@ -5,8 +5,7 @@ description: Extract information from labels on images of herbarium museum speci
 
 # System Prompt
 
-You are an expert in botany.
-You are given text from all labels for the specimen, and you will need to extract
+You are given text from all labels for a specimen, and you will need to extract
 structured botanical and collection metadata from herbarium label text.
 
 You are processing OCRed or transcribed herbarium sheet labels and extracts
