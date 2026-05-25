@@ -1,0 +1,21 @@
+# Prompts
+
+I use these Markdown files to generate prompts for various tasks. There are three types:
+
+1. Simple `System Prompts` only have a `System Prompt` section. I just pull in the text below the `System Prompt` heading. See [ocr.md](ocr.md) for the only example of this type of prompt.
+
+2. `Output Field` prompts extend `System Prompts`with a list of target fields links to include.  See [herbarium.md](fields/herbarium.md) for an example. The list of field prompts get expanded with contents of the field prompts when generating the full prompt to the LLM. Field lists have many overlapping fields like scientificName that gets reused all over the place.
+
+3. Field prompts hold the indiviual field descriptions used in the prompts.  It contains the data types and instructions to the LLM on how to recognize and process the target data. See [scientificName.md](fields/dwc/scientificName.md) for an example. I haven't found a need to format (with Markdown) the field prompts with anything more than the leading field name and data type.
+
+The `Output Field` prompts are stored in two places. The active field prompts are in the `fields` directory. And the older refinement prompts are archived in the `fields/refine` directory. The refine prompts are no longer used and are from a time when the LLMs didn't parse certain fields well and needed a 2nd round of directed parsing.
+
+The field prompts themselves are stored other subdirectories under the `fields` directory base upon their research domain or term source.
+
+- Darwin Core terms are stored in the `fields/dwc` subdirectory.
+
+- Other terms common to multiple research domains are in the `fields/common` subdirectory.
+
+- Research specific terms are in the other directories like `fields/insects` or `fields/harbarium`.
+
+The expansion of the `Output Field`prompts (without the label text) can be a little over 26K characters which is less than 4K words long.

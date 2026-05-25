@@ -29,8 +29,12 @@ async def async_ocr_images(args: argparse.Namespace) -> None:
     image_paths = image_paths[: args.limit]
 
     sys_prompt = prompt_util.read_prompt(args.prompt)
+    logging.info(
+        f"System prompt length (without image) = {len(sys_prompt)} characters, "
+        f"{len(sys_prompt.split())} words"
+    )
 
-    SEMAPHORE = asyncio.Semaphore(args.threads)
+    SEMAPHORE = asyncio.Semaphore(args.threiads)
 
     async with AsyncOpenAI(base_url=args.api_host) as client:
         tasks = [

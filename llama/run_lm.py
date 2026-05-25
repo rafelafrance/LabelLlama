@@ -15,7 +15,7 @@ from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
 
 
-async def new_lm_extract(args: argparse.Namespace) -> None:
+async def lm_extract(args: argparse.Namespace) -> None:
     global SEMAPHORE
 
     job_began = timer.job_began(args.log_file, args=args)
@@ -25,6 +25,17 @@ async def new_lm_extract(args: argparse.Namespace) -> None:
     field_prompts = prompt_util.build_field_prompts(field_list)
     field_template = prompt_util.build_field_template(field_list)
     docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
+
+    char_len = len(sys_prompt) + len(field_prompts) + len(field_template)
+    word_len = (
+        len(sys_prompt.split())
+        + len(field_prompts.split())
+        + len(field_template.split())
+    )
+    logging.info(
+        f"The prompt length (without label text) is {char_len} characters, "
+        f"{word_len} words"
+    )
 
     async with AsyncOpenAI() as client:
         tasks = [
@@ -151,4 +162,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    asyncio.run(new_lm_extract(ARGS))
+    asyncio.run(lm_extract(ARGS))
