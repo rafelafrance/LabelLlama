@@ -1,5 +1,5 @@
 ---
-name: TRS
+name: trs
 description: Extract information from raw TRS text.
 ---
 

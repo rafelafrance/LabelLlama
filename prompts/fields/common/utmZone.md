@@ -1,5 +1,1 @@
-`utmZone` (str):
-Extract the zone portion of the UTM coordinates. It will look like
-'10S', '11', '8N', 'Zone 11S', 'NH', '16P'. Return only the zone value,
-not the 'Zone' label.
-If no zone is present, return an empty string.
+`utmZone` (str): Extract the zone portion of the UTM coordinates. It will look like '10S', '11', '8N', 'Zone 11S', 'NH', '16P'. Return only the zone value, not the 'Zone' label. If no zone is present, return an empty string.

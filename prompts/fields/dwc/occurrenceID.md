@@ -1,6 +1,1 @@
-`occurrenceID` (str):
-Extract the occurrence ID.
-An identifier for the occurrence (as opposed to a particular digital record of the
-occurrence).
-preceded by '#' or 'Nº'.
-If no occurrence ID is present, return an empty string.
+`occurrenceID` (str): Extract the occurrence ID. An identifier for the occurrence (as opposed to a particular digital record of the occurrence). preceded by '#' or 'Nº'. If no occurrence ID is present, return an empty string.

@@ -1,5 +1,1 @@
-`leafMargin` (str):
-Extract the description of the specimen's leaf margins (edge shape).
-Examples: 'entire', 'crenate', 'dentate', 'serrate', 'lobed', 'toothed',
-'undulate', 'sinuate', 'ciliate', 'scalloped'.
-If no leaf margin information is stated, return an empty string.
+`leafMargin` (str): Extract the description of the specimen's leaf margins (edge shape). Examples: 'entire', 'crenate', 'dentate', 'serrate', 'lobed', 'toothed', 'undulate', 'sinuate', 'ciliate', 'scalloped'. If no leaf margin information is stated, return an empty string.

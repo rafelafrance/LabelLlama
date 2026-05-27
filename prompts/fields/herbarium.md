@@ -1,5 +1,5 @@
 ---
-name: Herbarium
+name: herbarium
 description: Extract information from labels on images of herbarium museum specimens.
 ---
 

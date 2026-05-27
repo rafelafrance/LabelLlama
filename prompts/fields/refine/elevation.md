@@ -1,5 +1,5 @@
 ---
-name: Elevation
+name: elevation
 description: Extract information from raw elevation text.
 ---
 

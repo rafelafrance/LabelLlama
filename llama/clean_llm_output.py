@@ -15,15 +15,14 @@ DEBUG_SKIP = ("source", "text")
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    field_files_by_name = prompt_util.field_modules_by_name()
-
     df = io_util.read_to_df(args.in_file, limit=args.limit)
-    field_list = [c for c in df.columns if c in field_files_by_name]
 
     field_classes = prompt_util.field_classes_by_name()
 
+    headers = df.columns
     if args.column:
-        field_list = args.column
+        headers = args.column
+    headers = [h for h in headers if h not in ("source", "text", "elapsed")]
 
     input_rows = df.to_dict("records")
     input_rows = input_rows[: args.limit]
@@ -33,7 +32,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     for in_row in tqdm(input_rows):
         out_row = {"source": in_row["source"], "text": in_row["text"]}
 
-        for field_name in field_list:
+        for field_name in headers:
             field_action = field_classes[field_name]
 
             in_data = {k: in_row.get(k) for k in field_action.get_input_fields()}

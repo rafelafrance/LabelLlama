@@ -24,6 +24,8 @@ async def lm_extract(args: argparse.Namespace) -> None:
     sys_prompt, field_list = prompt_util.read_lm_prompt(args.prompt)
     field_prompts = prompt_util.build_field_prompts(field_list)
     field_template = prompt_util.build_field_template(field_list)
+    field_keys = prompt_util.get_field_keys(field_list)
+
     docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
 
     char_len = len(sys_prompt) + len(field_prompts) + len(field_template)
@@ -37,10 +39,10 @@ async def lm_extract(args: argparse.Namespace) -> None:
         f"{word_len} words"
     )
 
-    async with AsyncOpenAI() as client:
+    async with AsyncOpenAI(base_url=args.api_host) as client:
         tasks = [
             call_lm(
-                args, doc, client, sys_prompt, field_prompts, field_template, field_list
+                args, doc, client, sys_prompt, field_prompts, field_template, field_keys
             )
             for doc in docs
         ]
@@ -61,7 +63,7 @@ async def call_lm(
     sys_prompt: str,
     field_prompts: str,
     field_template: str,
-    field_list: list[str],
+    field_keys: list[str],
 ) -> dict:
     async with SEMAPHORE:
         began = datetime.now()
@@ -82,7 +84,7 @@ async def call_lm(
             )
 
             content = response.choices[0].message.content or ""
-            results = str_util.llm_reply_to_dict(content, field_list)
+            results = str_util.llm_reply_to_dict(content, field_keys)
 
         except APIError as err:
             logging.exception("API error")
@@ -91,7 +93,6 @@ async def call_lm(
         elapsed = timer.elapsed(began)
 
         result = {"source": doc["source"], "text": text, "elapsed": elapsed} | results
-
         return result
 
 

@@ -1,4 +1,1 @@
-`identifiedByID` (str):
-Extract the globally unique identifier for the person, people, groups,
-or organizations responsible for assigning the taxon to the subject.
-If no identified by ID is present, return an empty string.
+`identifiedByID` (str): Extract the globally unique identifier for the person, people, groups, or organizations responsible for assigning the taxon to the subject. If no identified by ID is present, return an empty string.

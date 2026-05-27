@@ -13,15 +13,15 @@ class Sex(BaseField):
         del text
         self.sex = fix_values.to_str(self.sex)
 
-        sex = []
+        sex = set()
 
         if re.search(r"♂♀|♀♂|pair|fm|mf", self.sex, flags=re.IGNORECASE):
-            sex += ["male", "female"]
+            sex |= {"male", "female"}
 
-        if re.search(r"\b[m]|♂", self.sex, flags=re.IGNORECASE) and "male" not in sex:
-            sex.append("male")
+        if re.search(r"\bm|♂", self.sex, flags=re.IGNORECASE) and "male" not in sex:
+            sex.add("male")
 
-        if re.search(r"\b[f]|♀", self.sex, flags=re.IGNORECASE) and "female" not in sex:
-            sex.append("female")
+        if re.search(r"\bf|♀", self.sex, flags=re.IGNORECASE) and "female" not in sex:
+            sex.add("female")
 
-        self.sex = " & ".join(sex) if sex else self.sex
+        self.sex = " & ".join(sorted(sex, reverse=True)) if sex else self.sex

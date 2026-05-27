@@ -1,5 +1,5 @@
 ---
-name: UTM
+name: utm
 description: Extract information from raw UTM text.
 ---
 

@@ -1,6 +1,1 @@
-`fruitPresent` (bool):
-Determine whether the specimen has fruit present.
-Look for indicators like 'in fruit', 'fr.', 'frs', 'fruits', 'fruiting',
-or the presence of fruit color descriptions.
-Return True if fruit is present, False otherwise.
-If no information about fruit is stated, return an empty string.
+`fruitPresent` (bool): Determine whether the specimen has fruit present. Look for indicators like 'in fruit', 'fr.', 'frs', 'fruits', 'fruiting', or the presence of fruit color descriptions. Return True if fruit is present, False otherwise. If no information about fruit is stated, return an empty string.

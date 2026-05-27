@@ -1,5 +1,1 @@
-`municipality` (str):
-Extract the municipality where the specimen was collected. This can be a
-city, town, village, or other populated place.
-Do not include the state/province or country — those have their own fields.
-If no municipality is stated, return an empty string.
+`municipality` (str): Extract the municipality where the specimen was collected. This can be a city, town, village, or other populated place. Do not include the state/province or country — those have their own fields. If no municipality is stated, return an empty string.

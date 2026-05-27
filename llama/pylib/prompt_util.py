@@ -4,28 +4,27 @@ from pathlib import Path
 from typing import Any
 
 FIELD_MODULE_DIR = Path(__file__).parent.parent / "fields"
-FIEL_MODULE_EXCLUDE = ("__pycache__",)
+FIELD_MODULE_EXCLUDE = ("__pycache__",)
 
 FIELD_PROMPT_DIR = Path("prompts") / "fields"
 FIELD_PROMPT_EXCLUDE = ("refine",)
 
 LM_PROMPT_DIRS = [Path("prompts") / "fields", Path("prompts") / "fields" / "refine"]
 
-MIN_PROMPT_LEN = 40
-
 
 # ---------------------------------------------------------------------
-def normalize(path: Path) -> str:
-    norm = re.sub(r"^.*?fields/", "", str(path))
-    norm = re.sub(r"\.py|\.md", "", norm)
-    return norm
-
-
 def to_class_name(path: Path) -> str:
-    """Convert a field name into its class name."""
+    """Convert a field path into its class name."""
     name = path.stem
     cls_name = name[0].upper() + name[1:]
     return cls_name
+
+
+def to_field_name(cls: Any) -> str:
+    """Convert a class name into its field name."""
+    class_name = cls.__name__
+    field_name = class_name[0].lower() + class_name[1:]
+    return field_name
 
 
 def to_prompt_path(field_name: str) -> Path:
@@ -33,12 +32,20 @@ def to_prompt_path(field_name: str) -> Path:
     return Path(prompt_path)
 
 
+def to_field_key(field_name: str) -> str:
+    return field_name.rsplit("/", maxsplit=1)[-1]
+
+
 # ---------------------------------------------------------------------
+def get_field_keys(field_list: list[str]) -> list[str]:
+    return [to_field_key(f) for f in field_list]
+
+
 def get_field_modules() -> list[Path]:
     """Get all the field modules paths."""
     dirs = [
         d for d in FIELD_MODULE_DIR.iterdir()
-        if d.is_dir() and d.stem not in FIEL_MODULE_EXCLUDE
+        if d.is_dir() and d.stem not in FIELD_MODULE_EXCLUDE
     ]
     files = []
     for d in dirs:
@@ -81,6 +88,12 @@ def get_field_classes() -> list:
 
 
 # ---------------------------------------------------------------------
+def normalize(path: Path) -> str:
+    norm = re.sub(r"^.*?fields/", "", str(path))
+    norm = re.sub(r"\.py|\.md", "", norm)
+    return norm
+
+
 def field_modules_by_name() -> dict[str, Path]:
     return {normalize(m): m for m in get_field_modules()}
 
@@ -90,7 +103,7 @@ def field_prompts_by_name() -> dict[str, Path]:
 
 
 def field_classes_by_name() -> dict[str, Any]:
-    return {cls.__name__: cls for cls in get_field_classes()}
+    return {to_field_name(cls): cls for cls in get_field_classes()}
 
 # ---------------------------------------------------------------------
 def build_text_prompt(text: str) -> str:
@@ -105,7 +118,7 @@ def build_field_prompts(field_names: list[str]) -> str:
         with prompt_path.open() as f:
             prompt = f.read()
         prompts.append(f"{i}. {prompt}")
-    return "\n\n".join(prompts)
+    return "\n".join(prompts)
 
 
 def build_field_template(field_names: list[str]) -> str:

@@ -1,7 +1,1 @@
-`leafShape` (str):
-Extract the shape of the specimen's leaf.
-Examples: 'elliptic', 'ovate', 'lanceolate', 'oblong', 'orbicular',
-'cordate', 'reniform', 'deltoid', 'linear', 'falcate', 'spatulate',
-'obovate', 'rhombic', 'truncate', 'acute', 'caudate',
-'lobed', 'pinnate', 'palmate'.
-If no leaf shape information is stated, return an empty string.
+`leafShape` (str): Extract the shape of the specimen's leaf. Examples: 'elliptic', 'ovate', 'lanceolate', 'oblong', 'orbicular', 'cordate', 'reniform', 'deltoid', 'linear', 'falcate', 'spatulate', 'obovate', 'rhombic', 'truncate', 'acute', 'caudate', 'lobed', 'pinnate', 'palmate'. If no leaf shape information is stated, return an empty string.

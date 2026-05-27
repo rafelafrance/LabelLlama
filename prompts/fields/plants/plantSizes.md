@@ -1,17 +1,1 @@
-`plantSizes` (list[str]):
-Extract dimensions of plant parts other than the overall plant height.
-This is a catch-all for measurements of individual organs or structures
-(e.g., leaf size, flower size, fruit size, stem diameter, root length).
-It is distinct from plantHeight (overall vertical size of the whole plant),
-which belongs in its own field.
-
-Common measurements: leaf length/width, petal size, corolla diameter,
-sepal length, stamen length, style length, ovary size, fruit diameter,
-capsule length, nut size, seed dimensions, stipule size, petiole length,
-internode length, stem diameter, root/rhizome length, bulb size,
-corm diameter, tuber dimensions, branch length, crown width.
-
-Each size should be a self-contained measurement with units,
-e.g., 'leaves 5-10 cm', 'corolla 1.5 cm wide', 'fruit 3 mm diam'.
-Preserve the text exactly as written, including ranges and units.
-If no size information is stated, return an empty list.
+`plantSizes` (list[str]): Extract dimensions of plant parts other than the overall plant height. This is a catch-all for measurements of individual organs or structures (e.g., leaf size, flower size, fruit size, stem diameter, root length). It is distinct from plantHeight (overall vertical size of the whole plant), which belongs in its own field. Common measurements: leaf length/width, petal size, corolla diameter, sepal length, stamen length, style length, ovary size, fruit diameter, capsule length, nut size, seed dimensions, stipule size, petiole length, internode length, stem diameter, root/rhizome length, bulb size, corm diameter, tuber dimensions, branch length, crown width. Each size should be a self-contained measurement with units, e.g., 'leaves 5-10 cm', 'corolla 1.5 cm wide', 'fruit 3 mm diam'. Preserve the text exactly as written, including ranges and units. If no size information is stated, return an empty list.

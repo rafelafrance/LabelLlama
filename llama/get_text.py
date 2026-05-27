@@ -25,8 +25,10 @@ async def async_ocr_images(args: argparse.Namespace) -> None:
 
     already_read = get_docs_already_read(args.docs)
 
-    image_paths = sorted(args.image_dir.glob("*.[Jj][Pp][Gg]"))
+    glob = (args.glob or "*") + ".[Jj][Pp][Gg]"
+    image_paths = sorted(args.image_dir.glob(glob))
     image_paths = image_paths[: args.limit]
+    logging.info(f"There are images {len(image_paths)} to OCR")
 
     sys_prompt = prompt_util.read_prompt(args.prompt)
     logging.info(
@@ -34,7 +36,7 @@ async def async_ocr_images(args: argparse.Namespace) -> None:
         f"{len(sys_prompt.split())} words"
     )
 
-    SEMAPHORE = asyncio.Semaphore(args.threiads)
+    SEMAPHORE = asyncio.Semaphore(args.threads)
 
     async with AsyncOpenAI(base_url=args.api_host) as client:
         tasks = [
@@ -176,6 +178,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--notes",
         help="""Notes for logging.""",
+    )
+    arg_parser.add_argument(
+        "--glob",
+        help="""Only get images matching this glob.
+            For now, I am appending an additional file suffix glob.""",
     )
     arg_parser.add_argument(
         "--limit",

@@ -1,7 +1,1 @@
-`infraspecificNameAuthorship` (str):
-Extract the authorship citation for the infraspecific name (subspecies or variety).
-This is the person(s) who originally described the subspecies or variety, separate
-from the species-level authorship.
-Authors may be abbreviated, sometimes to a single letter.
-This author may include a publication year, include that.
-If no infraspecific authorship is stated, return an empty string.
+`infraspecificNameAuthorship` (str): Extract the authorship citation for the infraspecific name (subspecies or variety). This is the person(s) who originally described the subspecies or variety, separate from the species-level authorship. Authors may be abbreviated, sometimes to a single letter. This author may include a publication year, include that. If no infraspecific authorship is stated, return an empty string.

@@ -1,8 +1,1 @@
-`lifeStage` (str):
-Extract the developmental or phenological stage of the specimen.
-This describes the current developmental phase or maturity level of the insect
-at the time of collection.
-
-Examples of insect life stages: 'egg', 'larva', 'pupa', 'adult', 'imago', 'nymph'.
-
-If no life stage information is stated, return an empty string.
+`lifeStage` (str): Extract the developmental or phenological stage of the specimen. This describes the current developmental phase or maturity level of the insect at the time of collection. Examples of insect life stages: 'egg', 'larva', 'pupa', 'adult', 'imago', 'nymph'. If no life stage information is stated, return an empty string.

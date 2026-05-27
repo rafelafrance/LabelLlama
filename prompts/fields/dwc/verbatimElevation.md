@@ -1,5 +1,1 @@
-`verbatimElevation` (str):
-Extract the verbatim elevation or altitude at which the specimen was collected.
-This may include the numeric value, units, and any labels (e.g., 'elev.', 'alt.',
-'altitude'). Preserve the text exactly as written.
-If no elevation information is present, return an empty string.
+`verbatimElevation` (str): Extract the verbatim elevation or altitude at which the specimen was collected. This may include the numeric value, units, and any labels (e.g., 'elev.', 'alt.', 'altitude'). Preserve the text exactly as written. If no elevation information is present, return an empty string.

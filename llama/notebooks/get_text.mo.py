@@ -18,14 +18,13 @@ def _():
     import requests
     import concurrent.futures as conc
     from datetime import datetime
-    from pathlib import Path
+    from pathlib import Patha
 
     import polars as pl
 
     from llama.pylib import prompt_util, str_util, timer
 
     return (
-        Path,
         base64,
         conc,
         datetime,
