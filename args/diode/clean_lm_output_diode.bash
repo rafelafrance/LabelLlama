@@ -1,11 +1,11 @@
 #!/bin/bash
 
 uv run llama/clean_llm_output.py \
-  --in-file data/diode_geode/ode_imaging_gemma_2026-05-27c.csv \
-  --out-file data/diode_geode/ode_imaging_gemma_2026-05-27c_cleaned.csv \
+  --in-file data/diode_geode/diode_imaging_qwen_2026-05-28a.csv \
+  --out-file data/diode_geode/diode_imaging_qwen_2026-05-28a_clean.csv \
   --prompt prompts/fields/diode.md \
-  --notes "A new batch of diode images to run thru a smaller gemma model" \
-  --log-file data/diode_geode/ode_imaging_gemma_2026-05-27c_cleaned.log
+  --notes "Run a new batch of diode images thru a GPT nano model" \
+  --log-file data/diode_geode/diode_imaging_qwen.log
 
 
 # scientificName

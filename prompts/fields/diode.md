@@ -30,7 +30,7 @@ Extract the following fields from the given text.
 
 - [scientificName](dwc/scientificName.md)
 - [scientificNameAuthorship](dwc/scientificNameAuthorship.md)
-- [verbatimEventDate](dwc/verbatimElevation.md)
+- [verbatimEventDate](dwc/verbatimEventDate.md)
 - [sex](dwc/sex.md)
 - [lifeStage](insects/lifeStage.md)
 - [verbatimLatitude](dwc/verbatimLatitude.md)
