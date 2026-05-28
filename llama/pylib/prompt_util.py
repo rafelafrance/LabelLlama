@@ -11,36 +11,42 @@ FIELD_PROMPT_EXCLUDE = ("refine",)
 
 LM_PROMPT_DIRS = [Path("prompts") / "fields", Path("prompts") / "fields" / "refine"]
 
+MIN_PROMPT_LEN = 40
+
 
 # ---------------------------------------------------------------------
-def to_class_name(path: Path) -> str:
+def field_class_to_column_name(cls: Any) -> str:
+    """Convert a class name into its column name for a CSV file."""
+    class_name = cls.__name__
+    field_name = class_name[0].lower() + class_name[1:]
+    return field_name
+
+
+def field_path_to_field_class_name(path: Path) -> str:
     """Convert a field path into its class name."""
     name = path.stem
     cls_name = name[0].upper() + name[1:]
     return cls_name
 
 
-def to_field_name(cls: Any) -> str:
-    """Convert a class name into its field name."""
-    class_name = cls.__name__
-    field_name = class_name[0].lower() + class_name[1:]
-    return field_name
+def field_class_to_field_name(cls: Any) -> str:
+    """Convert a class name into its field name for a CSV file."""
+    return "/".join(cls.__module__.rsplit(".", maxsplit=2)[-2:])
 
 
-def to_prompt_path(field_name: str) -> Path:
+def field_name_to_prompt_path(field_name: str) -> Path:
+    """Convert a field name into its prompt path."""
     prompt_path = f"{FIELD_PROMPT_DIR}/{field_name}.md"
     return Path(prompt_path)
 
 
-def to_field_key(field_name: str) -> str:
-    return field_name.rsplit("/", maxsplit=1)[-1]
+def field_module_to_field_name(path: Path) -> str:
+    norm = re.sub(r"^.*?fields/", "", str(path))
+    norm = re.sub(r"\.py|\.md", "", norm)
+    return norm
 
 
 # ---------------------------------------------------------------------
-def get_field_keys(field_list: list[str]) -> list[str]:
-    return [to_field_key(f) for f in field_list]
-
-
 def get_field_modules() -> list[Path]:
     """Get all the field modules paths."""
     dirs = [
@@ -78,7 +84,7 @@ def get_field_classes() -> list:
     field_modules = get_field_modules()
     classes = []
     for path in field_modules:
-        cls_name = to_class_name(path)
+        cls_name = field_path_to_field_class_name(path)
         mod_name = re.sub(r"^.*?LabelLlama/", "", str(path))
         mod_name = mod_name.removesuffix(".py")
         mod_name = mod_name.replace("/", ".")
@@ -88,22 +94,22 @@ def get_field_classes() -> list:
 
 
 # ---------------------------------------------------------------------
-def normalize(path: Path) -> str:
-    norm = re.sub(r"^.*?fields/", "", str(path))
-    norm = re.sub(r"\.py|\.md", "", norm)
-    return norm
+def all_field_modules_by_field_name() -> dict[str, Path]:
+    return {field_module_to_field_name(m): m for m in get_field_modules()}
 
 
-def field_modules_by_name() -> dict[str, Path]:
-    return {normalize(m): m for m in get_field_modules()}
+def all_field_prompts_by_field_name() -> dict[str, Path]:
+    return {field_module_to_field_name(m): m for m in get_field_prompts()}
 
 
-def field_prompts_by_name() -> dict[str, Path]:
-    return {normalize(m): m for m in get_field_prompts()}
+def all_field_classes_by_field_name() -> dict[str, Any]:
+    return {field_class_to_field_name(cls): cls for cls in get_field_classes()}
 
 
-def field_classes_by_name() -> dict[str, Any]:
-    return {to_field_name(cls): cls for cls in get_field_classes()}
+def field_classes_by_column_name(field_list: list[str]) -> dict[str, Any]:
+    classes = all_field_classes_by_field_name()
+    return {f.rsplit("/", maxsplit=1)[-1]: classes[f] for f in field_list}
+
 
 # ---------------------------------------------------------------------
 def build_text_prompt(text: str) -> str:
@@ -114,7 +120,7 @@ def build_field_prompts(field_names: list[str]) -> str:
     """Get prompts of all fields given in the field list."""
     prompts = []
     for i, field_name in enumerate(field_names, 1):
-        prompt_path = to_prompt_path(field_name)
+        prompt_path = field_name_to_prompt_path(field_name)
         with prompt_path.open() as f:
             prompt = f.read()
         prompts.append(f"{i}. {prompt}")
@@ -123,7 +129,7 @@ def build_field_prompts(field_names: list[str]) -> str:
 
 def build_field_template(field_names: list[str]) -> str:
     """Provide a structure for GPT output to workaround GPT's poor JSON formatting."""
-    fields = [f.split("/")[-1] for f in field_names]
+    fields = [f.rsplit("/", maxsplit=1)[-1] for f in field_names]
     template = ["Structure all output with the following template."]
     template += [f"<< ## {f} ## >>\n{{{f}}}" for f in fields]
     template.append("<< ## completed ## >>")
@@ -168,3 +174,8 @@ def read_lm_prompt(path: Path) -> tuple[str, list[str]]:
 def read_prompt(path: Path) -> str:
     sys_prompt, _ = read_lm_prompt(path)
     return sys_prompt
+
+
+def read_field_list(path: Path) -> list[str]:
+    _, field_list = read_lm_prompt(path)
+    return field_list

@@ -6,10 +6,8 @@ import textwrap
 from collections import defaultdict
 from pathlib import Path
 
-from rich import print as rprint
-
 from llama.fields.base_field import BaseField
-from llama.pylib import io_util, log, prompt_util, score_util
+from llama.pylib import io_util, log, prompt_util
 
 PAIR: int = 2
 
@@ -17,8 +15,8 @@ PAIR: int = 2
 def score_extracts(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    gold_df = io_util.read_to_df(args.gold)
-    lm_df = io_util.read_to_df(args.lm)
+    gold_df = io_util.read_to_df(args.gold_file)
+    lm_df = io_util.read_to_df(args.lm_file)
 
     gold_data = gold_df.fillna("").to_dict("records")
     lm_data = lm_df.fillna("").to_dict("records")
@@ -36,9 +34,10 @@ def score_extracts(args: argparse.Namespace) -> None:
     compare = [p for p in compare.values() if len(p) == PAIR]
 
     skips = ["source", "text"]
-    field_list = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
-    field_list = args.column or field_list
-    field_classes = prompt_util.field_classes_by_name()
+    columns = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
+
+    field_list = prompt_util.read_field_list(args.prompt)
+    field_classes = prompt_util.field_classes_by_column_name(field_list)
 
     rows = []
     df_rows = []
@@ -60,13 +59,13 @@ def score_extracts(args: argparse.Namespace) -> None:
             "source": "",
             "text": "",
             "row": "",
-            "type": "gold",
+            "type": args.gold_file.stem,
         }
         df_row3: dict[str, str] = {
             "source": "",
             "text": "",
             "row": "",
-            "type": "lm",
+            "type": args.lm_file.stem,
         }
         df_row4: dict[str, float | str] = {
             "source": "",
@@ -75,22 +74,22 @@ def score_extracts(args: argparse.Namespace) -> None:
             "type": "score",
         }
 
-        for field_name in field_list:
-            expect = gold.get(field_name)
-            actual = lm.get(field_name)
+        for column in columns:
+            expect = gold.get(column)
+            actual = lm.get(column)
 
-            field_action = field_classes.get(field_name, BaseField)
+            field_action = field_classes.get(column, BaseField)
             score = field_action.score(expect, actual, lm)
 
-            df_row1[field_name] = ""
-            df_row2[field_name] = str(expect)
-            df_row3[field_name] = str(actual)
-            df_row4[field_name] = score
+            df_row1[column] = ""
+            df_row2[column] = str(expect)
+            df_row3[column] = str(actual)
+            df_row4[column] = score
 
-            avg[field_name] += score
+            avg[column] += score
 
-            if debugging(args) and (args.imperfect and score != 1.0):
-                print_debug_info(i, source, field_name, str(expect), str(actual), score)
+            # if debugging(args) and (args.imperfect and score != 1.0):
+            #   print_debug_info(i, source, field_name, str(expect), str(actual), score)
 
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 
@@ -113,19 +112,19 @@ def score_extracts(args: argparse.Namespace) -> None:
     log.finished()
 
 
-def debugging(args: argparse.Namespace) -> bool:
-    return args.column or args.limit
+# def debugging(args: argparse.Namespace) -> bool:
+#     return args.column or args.limit
 
 
-def print_debug_info(
-    i: int, source: str, field_name: str, expect: str, actual: str, score: float
-) -> None:
-    color = score_util.score_color(score)
-    rprint(f"{i} {source}")
-    rprint(f"[{color}]{field_name}[/{color}]")
-    rprint(f"[{color}]expect: {expect}[/{color}]")
-    rprint(f"[{color}]actual: {actual}[/{color}]")
-    print()
+# def print_debug_info(
+#     i: int, source: str, field_name: str, expect: str, actual: str, score: float
+# ) -> None:
+#     color = score_util.score_color(score)
+#     rprint(f"{i} {source}")
+#     rprint(f"[{color}]{field_name}[/{color}]")
+#     rprint(f"[{color}]expect: {expect}[/{color}]")
+#     rprint(f"[{color}]actual: {actual}[/{color}]")
+#     print()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -138,16 +137,23 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     arg_parser.add_argument(
-        "--gold",
+        "--prompt",
         type=Path,
         required=True,
-        help="""The gold standard to score against.""",
+        help="""A markdown file with a prompt and list of fields to parse.
+            It is used to get the correct version of the scoring modules.""",
     )
     arg_parser.add_argument(
-        "--lm",
+        "--gold-file",
         type=Path,
         required=True,
-        help="""The LM data to score.""",
+        help="""The one of the files to compare.""",
+    )
+    arg_parser.add_argument(
+        "--lm-file",
+        type=Path,
+        required=True,
+        help="""The one of the files to compare.""",
     )
     arg_parser.add_argument(
         "--out-file",
@@ -164,21 +170,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser.add_argument(
         "--notes",
         help="""Notes for logging.""",
-    )
-    arg_parser.add_argument(
-        "--column",
-        action="append",
-        help="""Just parse one column. Used for debugging.""",
-    )
-    arg_parser.add_argument(
-        "--limit",
-        type=int,
-        help="""Limit to this many records. Used for debugging.""",
-    )
-    arg_parser.add_argument(
-        "--imperfect",
-        action="store_true",
-        help="""Only show imperfect records. Used for debugging.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

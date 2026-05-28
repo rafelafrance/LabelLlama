@@ -6,14 +6,23 @@ from llama.pylib import prompt_util
 class TestPrompts(unittest.TestCase):
     def test_field_files_01(self) -> None:
         """All field modules have a corresponding prompt Markdown file."""
-        modules = {prompt_util.normalize(f) for f in prompt_util.get_field_modules()}
-        prompts = {prompt_util.normalize(p) for p in prompt_util.get_field_prompts()}
+        modules = {
+            prompt_util.field_module_to_field_name(f)
+            for f in prompt_util.get_field_modules()
+        }
+        prompts = {
+            prompt_util.field_module_to_field_name(p)
+            for p in prompt_util.get_field_prompts()
+        }
         assert modules == prompts
 
     def test_field_classes_02(self) -> None:
         """All field classes names match their field module name."""
         # Using lists because file stems & class names will repeat
-        expect = [prompt_util.to_class_name(m) for m in prompt_util.get_field_modules()]
+        expect = [
+            prompt_util.field_path_to_field_class_name(m)
+            for m in prompt_util.get_field_modules()
+        ]
         actual = [cls.__name__ for cls in prompt_util.get_field_classes()]
         assert actual == expect
 
@@ -24,7 +33,7 @@ class TestPrompts(unittest.TestCase):
             sys_prompt, fields = prompt_util.read_lm_prompt(lm_prompt)
             assert len(sys_prompt) >= prompt_util.MIN_PROMPT_LEN
             for field in fields:
-                prompt_path = prompt_util.to_prompt_path(field)
+                prompt_path = prompt_util.field_name_to_prompt_path(field)
                 assert prompt_path in prompts
 
     def test_field_prompt_prefix(self) -> None:

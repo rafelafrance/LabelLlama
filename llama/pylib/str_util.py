@@ -20,7 +20,7 @@ def webify(text: str) -> str:
     return text
 
 
-def llm_reply_to_dict(content: str, fields: list[str]) -> dict:
+def llm_reply_to_dict(content: str, columns: list[str]) -> dict:
     """Convert a LM reply in prompt_util.get_field_template format to a dict."""
     # Get field names and the values
     splits = re.split(r"^<< ## (\w+) ## >>$", content, flags=re.MULTILINE)
@@ -33,7 +33,7 @@ def llm_reply_to_dict(content: str, fields: list[str]) -> dict:
     as_dict = {
         k: v.strip()
         for k, v in zip(splits[::2], splits[1::2], strict=False)
-        if k in fields
+        if k in columns
     }
 
     return as_dict

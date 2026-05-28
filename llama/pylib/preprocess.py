@@ -4,8 +4,8 @@ import re
 def setup_filter_pattern() -> re.Pattern:
     """Build a regular expression for deleting lines from OCR text."""
     lines_to_filter: list[str] = [
-        "academy",
         "academ",
+        "academy",
         "botanic garden",
         "botanical",
         "center for",
@@ -15,6 +15,8 @@ def setup_filter_pattern() -> re.Pattern:
         "government",
         "herbaria",
         "herbarium",
+        "museum of",
+        "natural history",
         "plant biology",
         "sciences",
         "university",

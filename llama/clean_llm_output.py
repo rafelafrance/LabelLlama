@@ -17,12 +17,15 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     df = io_util.read_to_df(args.in_file, limit=args.limit)
 
-    field_classes = prompt_util.field_classes_by_name()
+    field_list = prompt_util.read_field_list(args.prompt)
+    field_classes = prompt_util.field_classes_by_column_name(field_list)
+    headers = list(field_classes.keys())
 
-    headers = df.columns
+    columns = df.columns
     if args.column:
-        headers = args.column
-    headers = [h for h in headers if h not in ("source", "text", "elapsed")]
+        columns = args.column
+    columns = [c for c in columns if c not in ("source", "text", "elapsed")]
+    columns = [c for c in columns if c in headers]
 
     input_rows = df.to_dict("records")
     input_rows = input_rows[: args.limit]
@@ -32,13 +35,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     for in_row in tqdm(input_rows):
         out_row = {"source": in_row["source"], "text": in_row["text"]}
 
-        for field_name in headers:
-            field_action = field_classes[field_name]
+        for column in columns:
+            field_action = field_classes[column]
 
             in_data = {k: in_row.get(k) for k in field_action.get_input_fields()}
 
             out_field = field_action(in_row["text"], **in_data)
-
             out_field.cross_field_update(in_row)
 
             out_data = {
@@ -63,10 +65,10 @@ def is_debugging(args: argparse.Namespace) -> bool:
 def print_debug_info(in_row: dict[str, Any], out_row: dict[str, Any]) -> None:
     print(in_row["source"])
     trimmed = {k: v for k, v in out_row.items() if k not in DEBUG_SKIP}
-    for field_name, value in trimmed.items():
-        if field_name in in_row:
-            print(f"{'before ' + field_name:>40}: {in_row[field_name]}")
-        print(f"{'after ' + field_name:>40}: {value}")
+    for column, value in trimmed.items():
+        if column in in_row:
+            print(f"{'before ' + column:>40}: {in_row[column]}")
+        print(f"{'after ' + column:>40}: {value}")
     print()
 
 
@@ -76,6 +78,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         description=textwrap.dedent(
             """Format and validate language model (LM) extracted text.""",
         ),
+    )
+    arg_parser.add_argument(
+        "--prompt",
+        type=Path,
+        required=True,
+        help="""A markdown file with a prompt and list of fields to parse.
+            It is used to get the correct version of the cleaner modules.""",
     )
     arg_parser.add_argument(
         "--in-file",
