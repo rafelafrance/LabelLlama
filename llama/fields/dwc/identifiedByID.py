@@ -15,9 +15,10 @@ class IdentifiedByID(BaseField):
         self.identifiedByID = fix_values.to_str(self.identifiedByID)
         self.identifiedByID = re.sub(r"(#|Nº)", "", self.identifiedByID)
 
-        # Remove the record number label
-        words = self.identifiedByID.split()
-        words = [s for s in words if not s.lower().startswith("no")]
-        words = [s for s in words if not s.lower().startswith("num")]
-        words = [s for s in words if not s.lower().startswith("rec")]
-        self.identifiedByID = " ".join(words)
+        # Remove the label
+        self.identifiedByID = re.sub(
+            r"\b(no|number|num)[:,.;\s]*",
+            "",
+            self.identifiedByID,
+            flags=re.IGNORECASE,
+        )

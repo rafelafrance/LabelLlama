@@ -15,9 +15,7 @@ class OccurrenceID(BaseField):
         self.occurrenceID = fix_values.to_str(self.occurrenceID)
         self.occurrenceID = re.sub(r"(#|Nº)", "", self.occurrenceID)
 
-        # Remove the record number label
-        words = self.occurrenceID.split()
-        words = [s for s in words if not s.lower().startswith("no")]
-        words = [s for s in words if not s.lower().startswith("num")]
-        words = [s for s in words if not s.lower().startswith("rec")]
-        self.occurrenceID = " ".join(words)
+        # Remove the label
+        self.occurrenceID = re.sub(
+            r"\b(no|number|num)[:,.;\s]*", "", self.occurrenceID, flags=re.IGNORECASE
+        )

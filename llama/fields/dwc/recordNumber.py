@@ -21,12 +21,10 @@ class RecordNumber(BaseField):
         self.recordNumber = fix_values.to_str(self.recordNumber)
         self.recordNumber = re.sub(r"(#|Nº)", "", self.recordNumber)
 
-        # Remove the record number label
-        words = self.recordNumber.split()
-        words = [s for s in words if not s.lower().startswith("no")]
-        words = [s for s in words if not s.lower().startswith("num")]
-        words = [s for s in words if not s.lower().startswith("rec")]
-        self.recordNumber = " ".join(words)
+        # Remove the label
+        self.recordNumber = re.sub(
+            r"\b(no|number|num)[:,.;\s]*", "", self.recordNumber, flags=re.IGNORECASE
+        )
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         """Remove the record number if it is obviously another number."""

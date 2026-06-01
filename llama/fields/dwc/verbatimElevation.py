@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from llama.fields.base_field import BOTH, BaseField
@@ -13,7 +14,6 @@ class VerbatimElevation(BaseField):
         self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
 
         # Remove the label
-        words = self.verbatimElevation.split()
-        words = [w for w in words if not w.lower().startswith("el")]
-        words = [w for w in words if not w.lower().startswith("alt")]
-        self.verbatimElevation = " ".join(words)
+        self.verbatimElevation = re.sub(
+            r"(el\w*|alt\w*)[:,.;\s]*", "", self.verbatimElevation, flags=re.IGNORECASE
+        )

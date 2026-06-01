@@ -103,7 +103,7 @@ async def call_ocr(
             logging.exception("API error")
             result = {"ERROR": str(err)}
 
-        elapsed = timer.elapsed(began)
+        elapsed = timer.task_elapsed(began)
         result["elapsed"] = elapsed
 
         return result

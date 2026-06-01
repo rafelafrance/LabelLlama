@@ -7,27 +7,19 @@ from llama.pylib import fix_values
 
 @dataclass
 class ScientificName(BaseField):
-    scientificName: list[str] | str = field(default_factory=list, metadata=BOTH)
+    scientificName: str = field(default="", metadata=BOTH)
 
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.scientificName = fix_values.to_list_of_strs(self.scientificName)
-        self.scientificName = [c for n in self.scientificName if (c := self.clean(n))]
-        self.scientificName = fix_values.reduce_str_list(self.scientificName)
+        self.scientificName = fix_values.to_str(self.scientificName)
+        self.scientificName = re.sub(r"[^\w\s]", "", self.scientificName).strip()
 
-    @staticmethod
-    def clean(value: str) -> str:
-        value = fix_values.to_str(value)
-        value = re.sub(r"[^\w\s]", "", value).strip()
-
-        words = value.split()
+        words = self.scientificName.split()
         if len(words) == 0:
-            value = ""
+            self.scientificName = ""
         elif len(words) == 1:
-            value = words[0].capitalize()
+            self.scientificName = words[0].capitalize()
         else:
             genus, species, *_ = words
-            value = f"{genus.capitalize()} {species.lower()}"
-
-        return value
+            self.scientificName = f"{genus.capitalize()} {species.lower()}"

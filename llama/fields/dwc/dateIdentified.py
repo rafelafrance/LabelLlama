@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 
 from llama.fields.base_field import BOTH, BaseField
@@ -14,8 +15,8 @@ class DateIdentified(BaseField):
         self.dateIdentified = fix_values.to_str(self.dateIdentified)
 
         # Remove the date label
-        words = self.dateIdentified.split()
-        words = [w for w in words if not w.lower().startswith("date")]
-        self.dateIdentified = " ".join(words)
+        self.dateIdentified = re.sub(
+            r"\bdate[:,.;\s]*", "", self.dateIdentified, flags=re.IGNORECASE
+        )
 
         # self.dateIdentified = fix_values.date_to_iso(self.dateIdentified)

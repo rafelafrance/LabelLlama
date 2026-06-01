@@ -18,7 +18,7 @@ def _():
     import requests
     import concurrent.futures as conc
     from datetime import datetime
-    from pathlib import Patha
+    from pathlib import Path
 
     import polars as pl
 

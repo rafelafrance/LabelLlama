@@ -32,7 +32,13 @@ def job_elapsed(job_began: datetime) -> None:
     log.finished()
 
 
-def elapsed(started: datetime, name: str = "") -> str:
+def task_began(name: str = "") -> datetime:
+    if name:
+        logging.info(f"{name} started")
+    return datetime.now()
+
+
+def task_elapsed(started: datetime, name: str = "") -> str:
     elapsed_ = str(datetime.now() - started)
     if name:
         msg = f"{name} elapsed {elapsed_}"

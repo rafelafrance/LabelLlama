@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -17,9 +18,9 @@ class Habitat(BaseField):
         self.habitat = fix_values.to_str(self.habitat)
 
         # Remove the habitat label
-        words = self.habitat.split()
-        words = [s for s in words if not s.lower().startswith("habitat")]
-        self.habitat = " ".join(words)
+        self.habitat = re.sub(
+            r"\bhabitat[:,.;\s]*", "", self.habitat, flags=re.IGNORECASE
+        )
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

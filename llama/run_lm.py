@@ -97,7 +97,7 @@ async def call_lm(
             logging.exception("API error")
             results = {"ERROR": str(err)}
 
-        elapsed = timer.elapsed(began)
+        elapsed = timer.task_elapsed(began)
 
         result = {"source": doc["source"], "text": text, "elapsed": elapsed} | results
         return result
