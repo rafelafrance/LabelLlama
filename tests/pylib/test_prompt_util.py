@@ -13,7 +13,7 @@ class TestPromptUtil(unittest.TestCase):
         Field modules are distinguished by what directory they are in. So,
         plants/sex != dwc/sex.
         """
-        modules = prompt_util.field_modules_by_field_name()
+        modules = prompt_util.all_field_modules_by_field_name()
         for key, module in modules.items():
             assert len(key.split("/")) == 2
             assert str(module).endswith(key + ".py")
@@ -25,7 +25,7 @@ class TestPromptUtil(unittest.TestCase):
         Field prompts are distinguished by what directory they are in. So,
         plants/sex != dwc/sex.
         """
-        prompts = prompt_util.field_prompts_by_field_name()
+        prompts = prompt_util.all_field_prompts_by_field_name()
         for key, prompt in prompts.items():
             assert len(key.split("/")) == 2
             assert str(prompt).endswith(key + ".md")
@@ -37,8 +37,7 @@ class TestPromptUtil(unittest.TestCase):
         Field prompts are distinguished by what directory they are in. So,
         plants/sex != dwc/sex.
         """
-        classes = prompt_util.field_classes_by_field_name()
+        classes = prompt_util.all_field_classes_by_field_name()
         for key, cls in classes.items():
             assert len(key.split("/")) == 2
             assert key.endswith(prompt_util.field_class_to_column_name(cls))
-
