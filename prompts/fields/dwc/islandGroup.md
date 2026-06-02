@@ -1,1 +1,16 @@
-`islandGroup` (str): Extract the name of the island group, archipelago, or atoll group where the specimen was collected. ✅ Include: archipelagos ('Galápagos', 'Aleutian Islands', 'Lesser Antilles', 'Austral Islands'), island groups ('West Indies', 'Mariana Islands', 'Bismarck Archipelago'), atoll groups, and named clusters of islands. ❌ DO NOT include individual island names (e.g., 'Hawaii', 'Vancouver Island', 'Isla de la Juventud') — those belong to island. ❌ DO NOT include country, state/province, or other administrative divisions — those have their own fields. ❌ DO NOT include general locality descriptions — those belong to locality. If no island group is stated, return an empty string.
+`islandGroup` (str): Extract the name of the island group, archipelago, or atoll group where the specimen was collected. Return the full, standard name.
+
+✅ Include:
+- Archipelagos: 'Galápagos', 'Aleutian Islands', 'Lesser Antilles', 'Austral Islands'
+- Named island groups: 'West Indies', 'Mariana Islands', 'Bismarck Archipelago', 'Society Islands'
+- Atoll groups: 'Tuamotu Archipelago', 'Chagos Archipelago'
+- Named clusters or chains of islands: 'Lesser Sunda Islands', 'Banda Islands', 'Windward Islands'
+- Inferred from locality or coordinates: e.g., 'Santa Cruz Island' → 'Galápagos', 'Maui' → 'Hawaiian Islands'
+
+❌ DO NOT include:
+- Individual island names — those belong in `island` (e.g., 'Hawaii', 'Vancouver Island', 'Oahu')
+- Country, state/province, or other administrative divisions — those belong in `country`, `stateProvince`, `county`, `municipality`
+- Specific localities, landmarks, or coordinates — those belong in `locality` or coordinate fields
+- General locality descriptions (e.g., 'Pacific Islands', 'Caribbean region')
+
+Normalization: Return the full standard name. If multiple island groups are listed, include all of them. If the island group is not stated but can be reliably inferred from the locality or coordinates, return the inferred value. If no island group information is available or inference is ambiguous, return an empty string.

@@ -1,1 +1,16 @@
-`sex` (str): Extract the sex of the individual insect specimen. This describes the biological sex of the specimen as recorded on the label. It is distinct from life stage (e.g., 'larva', 'pupa', 'nymph') and from morphological castes (e.g., 'queen', 'worker', 'soldier') in social insects. The symbols '♂' and '♀' are often in the header line of a label or just after the species name. Full terms: 'male', 'female'. Abbreviations: '♂', '♀', 'm', 'M', 'f', 'F', 'mal', 'fem', 'm.', 'f.'. Combined or paired specimens: '♂♀', '♀♂', 'pair', '2m', '2f', 'mf', 'fm', 'male & female', 'male and female'. Uncertain or undetermined: 'unknown', 'unsexed', 'sex unknown', 'unsexed specimen'. Do not confuse sex with developmental stage (e.g., 'larva', 'pupa', 'nymph', 'imago', 'adult') or social-insect caste (e.g., 'queen', 'worker', 'drone'). If no sex information is stated, return an empty string.
+`sex` (str): Extract the biological sex of the specimen as recorded on the label. This describes the sex of the individual organism, distinct from life stage or morphological caste.
+
+✅ Include:
+- Standard terms: 'male', 'female', 'hermaphrodite', 'intersex'
+- Abbreviations and symbols: '♂', '♀', 'm', 'M', 'f', 'F', 'mal', 'fem', 'm.', 'f.'
+- Combined or paired specimens: '♂♀', '♀♂', 'pair', '2m', '2f', 'mf', 'fm', 'male & female', 'male and female'
+- Uncertain or undetermined: 'unknown', 'unsexed', 'sex unknown', 'unsexed specimen', '?♂', '?♀'
+- Sex indicators in any position on the label (e.g., in header lines, after the species name, on collector notes)
+
+❌ DO NOT include:
+- Developmental/life stage: 'larva', 'pupa', 'nymph', 'imago', 'adult', 'juvenile'
+- Social-insect castes: 'queen', 'worker', 'soldier', 'drone', 'dwarf male'
+- Reproductive status: 'pregnant', 'oviparous', 'gravid', 'mated', 'virgin'
+- Sex-linked morphological traits (e.g., 'with antennae', 'with mandibles') — extract only the sex designation
+
+Normalization: Return the value exactly as written on the label — do not expand abbreviations or translate symbols. If no sex information is stated, return an empty string.

@@ -19,7 +19,7 @@ class Habitat(BaseField):
 
         # Remove the habitat label
         self.habitat = re.sub(
-            r"\bhabitat[:,.;\s]*", "", self.habitat, flags=re.IGNORECASE
+            r"^habitat[:,.;\s]*", "", self.habitat, flags=re.IGNORECASE
         )
 
     @staticmethod

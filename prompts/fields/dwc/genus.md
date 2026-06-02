@@ -1,1 +1,29 @@
-`genus` (str): Extract the taxonomic genus of the specimen (e.g., 'Canis', 'Salix', 'Agoseris', 'Drosophila'). The genus is the first component of the scientific name and is typically capitalized. Return the genus name only — do not include the specific epithet (e.g., from 'Canis lupus' extract 'Canis', not 'Canis lupus'), subgenus (e.g., from 'Aedes (Finlaya) aegypti' extract 'Aedes'), authorship citations (e.g., 'L.', 'Smith'), higher ranks (e.g., family names), or any infraspecific epithets. If the genus name is preceded by a hybrid symbol (×), include it (e.g., '×Rhododendron'). If multiple identifications are present, extract the genus from the primary (most specific) identification. If no genus is stated, return an empty string.
+`genus` (str): Extract the taxonomic genus of the specimen (e.g., 'Canis', 'Salix', 'Agoseris', 'Drosophila'). The genus is the first component of the scientific name and is typically capitalized.
+
+✅ Include:
+- The genus name alone (e.g., from 'Canis lupus' extract 'Canis')
+- Hybrid symbol '×' if it precedes the genus (e.g., '×Rhododendron')
+- Genus from the primary (most specific) identification when multiple identifications are present
+
+❌ DO NOT include:
+- Specific epithet — that belongs in `specificEpithet` (e.g., from 'Canis lupus' extract 'Canis', not 'Canis lupus')
+- Infraspecific epithets (subspecies, varieties, forms) — those belong in `infraspecificEpithet`
+- Subgenus names — those belong in `subgenus` (e.g., from 'Aedes (Finlaya) aegypti' extract 'Aedes', not 'Finlaya')
+- Authorship citations (e.g., 'L.', 'Smith & Jones') — those belong in `scientificNameAuthorship`
+- Higher taxonomic ranks (family, order) — those belong in `family` or higher fields
+- Labels or prefixes (e.g., 'gen.', 'Genus:') — extract only the genus name itself
+- Identification qualifiers (e.g., 'det. by', 'id.', 'aff.', 'cf.')
+
+Normalization: Capitalize the first letter of the genus name. Do not alter the spelling. If the genus appears with a label (e.g., 'gen. Quercus'), extract only 'Quercus'.
+
+Examples:
+- 'Canis lupus' → 'Canis'
+- 'Aedes (Finlaya) aegypti' → 'Aedes'
+- '×Rhododendron' → '×Rhododendron'
+- 'Quercus alba L.' → 'Quercus'
+- 'gen. Salix' → 'Salix'
+- 'Salix (Salix) exigua' → 'Salix'
+- 'Drosophila melanogaster subsp. simulans' → 'Drosophila'
+- 'Canis lupus baileyi' → 'Canis'
+
+If no genus is stated, return an empty string.

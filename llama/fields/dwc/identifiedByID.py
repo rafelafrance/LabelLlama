@@ -17,7 +17,7 @@ class IdentifiedByID(BaseField):
 
         # Remove the label
         self.identifiedByID = re.sub(
-            r"\b(no|number|num)[:,.;\s]*",
+            r"\b(no|number|num)\b[:,.;\s]*",
             "",
             self.identifiedByID,
             flags=re.IGNORECASE,

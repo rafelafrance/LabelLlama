@@ -1,1 +1,17 @@
-`catalogNumber` (str): Extract the catalog number. An identifier (preferably unique) for the record within the data set or collection. This is often given within a colon separated triplet with the institution code, collection code, and catalog number like: "ALMNH:Ento:137097" or "ALMNH:Ento:137005"; in these cases the catalog numbers are the third part of the triplet "137097" and "137005". Standalone examples: "145732", "145732a", "2008.1334", "R-4313". If no catalog number is present, return an empty string.
+`catalogNumber` (str): Extract the catalog number — the unique identifier for the specimen or record within its collection or data set.
+
+✅ Include:
+- Numeric identifiers: "137097", "145732", "2008.1334"
+- Alphanumeric identifiers: "145732a", "R-4313", "ENT-001234"
+- The third segment of a colon-separated triplet (e.g., "137097" from "ALMNH:Ento:137097")
+- Identifiers prefixed with collection or institution codes when they form a single compound ID (e.g., "CAS-ENT-12345")
+- Record numbers or accession numbers used as the primary collection identifier
+
+❌ DO NOT include:
+- Institution codes (those belong in `institutionCode`)
+- Collection codes (those belong in `collectionCode`)
+- Field numbers, lot numbers, or collector's own numbering (e.g., "Smith 1234", "Field #567") unless used as the official catalog number
+- Database-generated IDs (e.g., UUIDs, GBIF occurrence keys, iNaturalist observation IDs) unless they serve as the collection's catalog number
+- Multiple catalog numbers — if present, extract only the primary one
+
+If no catalog number is present, return an empty string.

@@ -17,7 +17,7 @@ class VerbatimEventDate(BaseField):
 
         # Remove the date label
         self.verbatimEventDate = re.sub(
-            r"\bdate[:,.;\s]*", "", self.verbatimEventDate, flags=re.IGNORECASE
+            r"\bdate\b[:,.;\s]*", "", self.verbatimEventDate, flags=re.IGNORECASE
         )
 
         # Handle date ranges

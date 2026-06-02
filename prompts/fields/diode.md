@@ -44,6 +44,7 @@ Extract the following fields from the given text.
 - [recordNumber](dwc/recordNumber.md)
 - [identifiedBy](dwc/identifiedBy.md)
 - [identifiedByID](dwc/identifiedByID.md)
+- [dateIdentified](dwc/dateIdentified.md)
 - [locality](dwc/locality.md)
 - [country](dwc/country.md)
 - [stateProvince](dwc/stateProvince.md)

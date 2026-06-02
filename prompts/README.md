@@ -14,7 +14,7 @@ There are three types:
    
    Field lists have many overlapping fields like scientificName that gets reused all over the place. 
    
-   `Output Field` prompts are stored in two places. The active field prompts are in the `fields` directory. And the older refinement prompts are archived in the `fields/refine` directory. The refine prompts are no longer used and are from a time when the LLMs didn't parse certain fields well and needed a 2nd round of directed parsing.
+   `Output Field` prompts are stored in two places. The active field prompts are in the `fields` directory.
    
    The expansion of the `Output Field`prompts (without the label text itself) can be a little over 26K characters which is less than 4K words long.
 

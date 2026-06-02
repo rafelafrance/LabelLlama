@@ -17,5 +17,5 @@ class OccurrenceID(BaseField):
 
         # Remove the label
         self.occurrenceID = re.sub(
-            r"\b(no|number|num)[:,.;\s]*", "", self.occurrenceID, flags=re.IGNORECASE
+            r"\b(no|number|num)\b[:,.;\s]*", "", self.occurrenceID, flags=re.IGNORECASE
         )

@@ -16,7 +16,7 @@ class DateIdentified(BaseField):
 
         # Remove the date label
         self.dateIdentified = re.sub(
-            r"\bdate[:,.;\s]*", "", self.dateIdentified, flags=re.IGNORECASE
+            r"\bdate\b[:,.;\s]*", "", self.dateIdentified, flags=re.IGNORECASE
         )
 
         # self.dateIdentified = fix_values.date_to_iso(self.dateIdentified)

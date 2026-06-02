@@ -23,7 +23,7 @@ class RecordNumber(BaseField):
 
         # Remove the label
         self.recordNumber = re.sub(
-            r"\b(no|number|num)[:,.;\s]*", "", self.recordNumber, flags=re.IGNORECASE
+            r"\b(no|number|num)\b[:,.;\s]*", "", self.recordNumber, flags=re.IGNORECASE
         )
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

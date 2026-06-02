@@ -26,7 +26,7 @@ class Locality(BaseField):
                 self.locality = re.sub(pattern, "", self.locality, flags=re.IGNORECASE)
 
         self.locality = re.sub(
-            r"co\.?|county", "", self.locality, flags=re.IGNORECASE
+            r"\b(co\.?|county)\b", "", self.locality, flags=re.IGNORECASE
         )
 
         self.locality = fix_values.clean_str_ends(self.locality)

@@ -7,9 +7,8 @@ FIELD_MODULE_DIR = Path(__file__).parent.parent / "fields"
 FIELD_MODULE_EXCLUDE = ("__pycache__",)
 
 FIELD_PROMPT_DIR = Path("prompts") / "fields"
-FIELD_PROMPT_EXCLUDE = ("refine",)
 
-LM_PROMPT_DIRS = [Path("prompts") / "fields", Path("prompts") / "fields" / "refine"]
+LM_PROMPT_DIRS = [Path("prompts") / "fields"]
 
 MIN_PROMPT_LEN = 40
 
@@ -50,7 +49,8 @@ def field_module_to_field_name(path: Path) -> str:
 def get_field_modules() -> list[Path]:
     """Get all the field modules paths."""
     dirs = [
-        d for d in FIELD_MODULE_DIR.iterdir()
+        d
+        for d in FIELD_MODULE_DIR.iterdir()
         if d.is_dir() and d.stem not in FIELD_MODULE_EXCLUDE
     ]
     files = []
@@ -59,12 +59,9 @@ def get_field_modules() -> list[Path]:
     return files
 
 
-def get_field_prompts() ->list[Path]:
+def get_field_prompts() -> list[Path]:
     """Get all the fields parsing file paths."""
-    dirs = [
-        d for d in FIELD_PROMPT_DIR.iterdir()
-        if d.is_dir() and d.stem not in FIELD_PROMPT_EXCLUDE
-    ]
+    dirs = [d for d in FIELD_PROMPT_DIR.iterdir() if d.is_dir()]
     files = []
     for d in dirs:
         files += [f for f in sorted(d.glob("*.md")) if f.is_file()]

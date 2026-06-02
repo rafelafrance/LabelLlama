@@ -15,5 +15,8 @@ class VerbatimElevation(BaseField):
 
         # Remove the label
         self.verbatimElevation = re.sub(
-            r"(el\w*|alt\w*)[:,.;\s]*", "", self.verbatimElevation, flags=re.IGNORECASE
+            r"\b(el\w*|alt\w*)\b[:,.;\s]*",
+            "",
+            self.verbatimElevation,
+            flags=re.IGNORECASE,
         )

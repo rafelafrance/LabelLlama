@@ -15,4 +15,4 @@ class RecordedBy(BaseField):
         self.recordedBy = fix_values.to_str(self.recordedBy)
 
         # Remove the collector label
-        self.recordedBy = re.sub(r"^col\w*[.:,;]?\s+", "", self.recordedBy)
+        self.recordedBy = re.sub(r"^(collector|coll?)\b[.:,;]?\s+", "", self.recordedBy)
