@@ -77,8 +77,7 @@ lms server start
 
 ### OCR script arguments
 
-The important arguments for running the OCR script `get_text.py`
-are shown in the `demo/get_text_demo.bash` bash script.
+The important arguments for running the OCR script are shown below.
 
 - --image-dir: A directory full of museum specimen images that you want to OCR.
 - --docs: Put the OCRed text into this file.

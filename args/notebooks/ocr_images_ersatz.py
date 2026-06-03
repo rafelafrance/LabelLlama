@@ -26,10 +26,10 @@ def _():
 def _():
     from pathlib import Path
 
-    from llama import get_text
+    from llama import ocr_images
     from llama.pylib.args_util import to_args
 
-    return Path, get_text, to_args
+    return Path, ocr_images, to_args
 
 
 @app.cell
@@ -53,14 +53,14 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args1 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args1 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/sheets_001",
         )
     )
-    # get_text.ocr_images(args1)
+    # ocr_images.ocr_images(args1)
 
 
 @app.cell(hide_code=True)
@@ -75,8 +75,8 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args2 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args2 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/sheets_001",
@@ -86,7 +86,7 @@ def _(doc_tsv, get_text, to_args):
             ),
         )
     )
-    # get_text.ocr_images(args2)
+    # ocr_images.ocr_images(args2)
 
 
 @app.cell(hide_code=True)
@@ -98,7 +98,7 @@ def _(mo):
 
 app._unparsable_cell(
     r"""
-    args3 = get_text.parse_args(
+    args3 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv",
             image_dir="./data/herbarium/sheets_001",
@@ -106,7 +106,7 @@ app._unparsable_cell(
             notes="Try a difference model on sheets that errored before on jobs 1 & 2.",
         )
     )
-    # get_text.ocr_images(args3)
+    # ocr_images.ocr_images(args3)
     """,
     name="_",
 )
@@ -122,15 +122,15 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args4 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args4 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/sheets_001",
             notes="""A new group of sheet images.""",
         )
     )
-    # get_text.ocr_images(args4)
+    # ocr_images.ocr_images(args4)
 
 
 @app.cell(hide_code=True)
@@ -143,8 +143,8 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args5 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args5 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/CoordinateExamplesNov25",
@@ -153,7 +153,7 @@ def _(doc_tsv, get_text, to_args):
             notes="""Retry errored sheets in job 5 with a new model and params.""",
         )
     )
-    # get_text.ocr_images(args5)
+    # ocr_images.ocr_images(args5)
 
 
 @app.cell(hide_code=True)
@@ -164,15 +164,15 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args6 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args6 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/utm_trs_test",
             notes="""A set of herbarium sheets that contain TRS & UTM notations.""",
         )
     )
-    # get_text.ocr_images(args6)
+    # ocr_images.ocr_images(args6)
 
 
 @app.cell(hide_code=True)
@@ -184,8 +184,8 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args7 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args7 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/utm_trs_test",
@@ -193,7 +193,7 @@ def _(doc_tsv, get_text, to_args):
                 continued""",
         )
     )
-    # get_text.ocr_images(args7)
+    # ocr_images.ocr_images(args7)
 
 
 @app.cell(hide_code=True)
@@ -204,8 +204,8 @@ def _(mo):
 
 
 @app.cell
-def _(doc_tsv, get_text, to_args):
-    args8 = get_text.parse_args(
+def _(doc_tsv, ocr_images, to_args):
+    args8 = ocr_images.parse_args(
         to_args(
             doc_tsv=doc_tsv,
             image_dir="./data/herbarium/utm_trs_test",
@@ -214,7 +214,7 @@ def _(doc_tsv, get_text, to_args):
             notes="Retry errored sheets in ocr_run_id 5 with a new model and params.",
         )
     )
-    # get_text.ocr_images(args8)
+    # ocr_images.ocr_images(args8)
 
 
 @app.cell(hide_code=True)
@@ -225,8 +225,8 @@ def _(mo):
 
 
 @app.cell
-def _(Path, doc_tsv, get_text):
-    actual = set(get_text.get_docs_read(doc_tsv))
+def _(Path, doc_tsv, ocr_images):
+    actual = set(ocr_images.get_docs_read(doc_tsv))
 
     expected = set(Path("./data/herbarium/sheets_001/").glob("*.jpg"))
     expected |= set(Path("./data/herbarium/CoordinateExamplesNov25/").glob("*.jpg"))

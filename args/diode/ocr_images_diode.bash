@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run ./llama/get_text.py \
+uv run ./llama/ocr_images.py \
   --image-dir data/diode_geode/Ode_Imaging \
   --docs data/diode_geode/ode_imaging_2026-05-26.csv \
   --model chandra-ocr \
