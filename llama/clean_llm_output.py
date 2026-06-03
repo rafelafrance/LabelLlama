@@ -48,7 +48,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             }
             out_row |= out_data
 
-            if is_debugging(args):
+            if debugging(args):
                 print_debug_info(in_row, out_data)
 
         output_rows.append(out_row)
@@ -58,7 +58,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     log.finished()
 
 
-def is_debugging(args: argparse.Namespace) -> bool:
+def debugging(args: argparse.Namespace) -> bool:
     return args.column or args.limit
 
 

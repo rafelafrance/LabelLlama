@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run llama/run_lm.py \
+uv run llama/parse_text.py \
   --docs data/herbarium/gold_docs.tsv \
   --out-file data/herbarium/gold_docs_2026-05-25a.csv \
   --prompt prompts/fields/herbarium.md \

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run llama/run_lm.py \
+uv run llama/parse_text.py \
   --docs data/diode_geode/diode_imaging_2026-05-26.csv \
   --out-file data/diode_geode/diode_imaging_gpt_nano_2026-06-02a.csv \
   --prompt prompts/fields/diode.md \

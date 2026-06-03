@@ -17,10 +17,13 @@ from llama.pylib import io_util, prompt_util, str_util, timer
 
 
 def ocr_images(args: argparse.Namespace) -> None:
-
     job_began = timer.job_began(args.log_file, args=args)
 
-    already_read = get_docs_already_read(args.docs)
+    already_read = []
+    if args.docs.exists():
+        with contextlib.suppress(pd.errors.EmptyDataError):
+            records = io_util.read_list_of_dicts(args.docs)
+            already_read = [Path(r["source"]) for r in records if r.get("source")]
 
     glob = (args.glob or "*") + ".[Jj][Pp][Gg]"
     image_paths = sorted(args.image_dir.glob(glob))
@@ -122,15 +125,6 @@ def call_ocr(
     }
 
     return result
-
-
-def get_docs_already_read(docs: Path) -> list[Path]:
-    done = []
-    if docs.exists():
-        with contextlib.suppress(pd.errors.EmptyDataError):
-            records = io_util.read_list_of_dicts(docs)
-            done = [Path(r["source"]) for r in records if r.get("source")]
-    return done
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

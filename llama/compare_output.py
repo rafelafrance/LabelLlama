@@ -43,7 +43,6 @@ def score_extracts(args: argparse.Namespace) -> None:
     df_rows = []
     avg = defaultdict(float)
 
-    # Build field data and get edit distance scores
     for i, (gold, lm) in enumerate(compare, 1):
         source = gold["source"]
         row = {"row": i, "source": source, "text": gold.get("text", lm["text"])}
@@ -88,9 +87,6 @@ def score_extracts(args: argparse.Namespace) -> None:
 
             avg[column] += score
 
-            # if debugging(args) and (args.imperfect and score != 1.0):
-            #   print_debug_info(i, source, field_name, str(expect), str(actual), score)
-
         df_rows += [df_row1, df_row2, df_row3, df_row4]
 
     avg_row: dict[str, float | str] = {
@@ -110,21 +106,6 @@ def score_extracts(args: argparse.Namespace) -> None:
     io_util.output_file(args.out_file, df_rows)
 
     log.finished()
-
-
-# def debugging(args: argparse.Namespace) -> bool:
-#     return args.column or args.limit
-
-
-# def print_debug_info(
-#     i: int, source: str, field_name: str, expect: str, actual: str, score: float
-# ) -> None:
-#     color = score_util.score_color(score)
-#     rprint(f"{i} {source}")
-#     rprint(f"[{color}]{field_name}[/{color}]")
-#     rprint(f"[{color}]expect: {expect}[/{color}]")
-#     rprint(f"[{color}]actual: {actual}[/{color}]")
-#     print()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

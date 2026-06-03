@@ -94,11 +94,11 @@ The output CSV has 3 columns.
 
 ## Extract terms with an LLM
 
-`run_lm.py` gets the raw field extracts from a Large Language Model (LLM).
+`parse_text.py` gets the raw field extracts from a Large Language Model (LLM).
 The fields will contain hallucinations, interpretations, and odd notations,
 all of which I try to fix in the next step.
 
-The important arguments for this process are shown in the `demo/run_lm_demo.bash` script.
+The important arguments for this process are:
 
 - --docs: demo/ocr_demo_docs.csv The output from the OCR script.
 - --out-file: demo/lm_extracts.csv Where to put the extraction output.
@@ -125,14 +125,5 @@ I want to record the exact text given to the LLM.
 This is where I clean up the oddities in the output from the LLM and put it into a usable format.
 The important arguments for this script are:
 
-- --in-file: demo/lm_extracts.csv This is the output from the `run_lm.py` script.
+- --in-file: demo/lm_extracts.csv This is the output from the `parse_text.py` script.
 - --out-file: demo/lm_extracts_post.csv Output the cleaned results to this file.
-- --run-field-models: Explanation below.
-
-The `run-field-models`: Some output fields are fairly complex and need to be broken
-down into subfields. For example a "TRS" field will have the "township", "range",
-"section", and" "quad" subfields. I use a small local model like gemma-4 to find the subfields.
-This option says to run those models on, currently, the "TRS", "UTM", and "Elevation" extracts.
-The field-models are only run if there is missing data from the LLM extract, so if the
-LLM extracted the "northing", "easting", and "zone" from a UTM then the local model is
-skipped for that particular "UTM".
