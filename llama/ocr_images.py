@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 
 import argparse
-import asyncio
 import base64
 import contextlib
 import logging
 import textwrap
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from openai import APIError, AsyncOpenAI
-from tqdm.asyncio import tqdm_asyncio
+import requests
+from tqdm import tqdm
 
 from llama.pylib import io_util, prompt_util, str_util, timer
 
-SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
 
-
-async def async_ocr_images(args: argparse.Namespace) -> None:
-    global SEMAPHORE
+def ocr_images(args: argparse.Namespace) -> None:
 
     job_began = timer.job_began(args.log_file, args=args)
 
@@ -36,22 +33,27 @@ async def async_ocr_images(args: argparse.Namespace) -> None:
         f"{len(sys_prompt.split())} words"
     )
 
-    SEMAPHORE = asyncio.Semaphore(args.threads)
-
-    async with AsyncOpenAI(base_url=args.api_host) as client:
+    with requests.Session() as session:
         tasks = [
-            call_ocr(args, image_path, client, sys_prompt)
-            for image_path in image_paths
-            if image_path not in already_read
+            image_path for image_path in image_paths if image_path not in already_read
         ]
 
-        results = await tqdm_asyncio.gather(*tasks)
+        with tqdm(total=len(image_paths)) as pbar:
+            results = []
 
-    errors = sum(1 for r in results if "ERROR" in r)
+            with ThreadPoolExecutor(max_workers=args.threads) as executor:
+                futures = {
+                    executor.submit(
+                        call_ocr, args, image_path, session, sys_prompt
+                    ): image_path
+                    for image_path in tasks
+                }
+                for future in as_completed(futures):
+                    results.append(future.result())
+                    pbar.update(1)
 
-    good = [r for r in results if "ERROR" not in r]
-    for row in good:
-        row["text"] = str_util.clean_ocr(row["text"])
+    errors = sum(1 for r in results if r["status"] == "ERROR")
+    good = [r for r in results if r["status"] != "ERROR"]
 
     logging.info(
         f"Total {len(results)} documents processed with {errors} errors "
@@ -63,50 +65,63 @@ async def async_ocr_images(args: argparse.Namespace) -> None:
     timer.job_elapsed(job_began)
 
 
-async def call_ocr(
+def call_ocr(
     args: argparse.Namespace,
     image_path: Path,
-    client: AsyncOpenAI,
+    session: requests.Session,
     sys_prompt: str,
 ) -> dict:
-    async with SEMAPHORE:
-        began = datetime.now()
+    began = datetime.now()
 
-        try:
-            with image_path.open("rb") as f:
-                image_data = base64.b64encode(f.read()).decode("utf-8")
+    with image_path.open("rb") as f:
+        base64_image = base64.b64encode(f.read()).decode("utf-8")
 
-            response = await client.chat.completions.create(
-                model=args.model,
-                messages=[
-                    {"role": "system", "content": sys_prompt},
+    url = f"{args.api_host}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "model": args.model,
+        "messages": [
+            {"role": "system", "content": sys_prompt},
+            {
+                "role": "user",
+                "content": [
                     {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_data}",
-                                },
-                            },
-                        ],
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                        },
                     },
                 ],
-                temperature=args.temperature,
-                max_tokens=args.max_tokens,
-            )
+            },
+        ],
+        "temperature": args.temperature,
+    }
 
-            text = response.choices[0].message.content or ""
-            result = {"source": str(image_path), "text": text}
+    try:
+        response = session.post(
+            url, headers=headers, json=payload, timeout=args.timeout
+        )
+        response.raise_for_status()
+        result = response.json()
 
-        except APIError as err:
-            logging.exception("API error")
-            result = {"ERROR": str(err)}
+        content = result["choices"][0]["message"]["content"] or ""
 
-        elapsed = timer.task_elapsed(began)
-        result["elapsed"] = elapsed
+        text = str_util.clean_ocr(content)
+        status = "success"
 
-        return result
+    except requests.exceptions.RequestException as err:
+        logging.exception("API error")
+        text = str(err)
+        status = "ERROR"
+
+    result = {
+        "status": status,
+        "source": str(image_path),
+        "text": text,
+        "elapsed": str(timer.task_elapsed(began)),
+    }
+
+    return result
 
 
 def get_docs_already_read(docs: Path) -> list[Path]:
@@ -136,6 +151,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Put OCRed text into this file. This appends data to the file.""",
     )
     arg_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        help="""How long to wait for the OCR to complete in seconds.
+            (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
         "--model",
         default="chandra-ocr",
         help="""Use this language model. (default: %(default)s)""",
@@ -151,11 +173,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--api-host",
         default="http://localhost:1234/v1",
         help="""URL for the language model. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
-        "--max-tokens",
-        type=int,
-        help="""The LM response's maximum tokens.""",
     )
     arg_parser.add_argument(
         "--threads",
@@ -195,4 +212,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    asyncio.run(async_ocr_images(ARGS))
+    ocr_images(ARGS)
