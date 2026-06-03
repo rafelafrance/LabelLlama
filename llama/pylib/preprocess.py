@@ -19,7 +19,6 @@ def setup_filter_pattern() -> re.Pattern:
         "natural history",
         "plant biology",
         "sciences",
-        "university",
     ]
     filter_pattern = [rf"\b{e}\b" for e in lines_to_filter]
 

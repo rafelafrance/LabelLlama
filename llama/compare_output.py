@@ -33,7 +33,7 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     compare = [p for p in compare.values() if len(p) == PAIR]
 
-    skips = ["source", "text"]
+    skips = ["source", "text", "index"]
     columns = [c for c in gold_df.columns if c in lm_df.columns and c not in skips]
 
     field_list = prompt_util.read_field_list(args.prompt)

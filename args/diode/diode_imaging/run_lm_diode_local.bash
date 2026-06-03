@@ -8,5 +8,4 @@ uv run llama/run_lm.py \
   --api-host "http://localhost:1234/v1" \
   --temperature 0.0 \
   --threads 4 \
-  --notes "Run a new batch of diode images thru a qwen model" \
   --log-file data/diode_geode/diode_imaging_qwen.log

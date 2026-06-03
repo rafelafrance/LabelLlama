@@ -25,9 +25,9 @@ def read_to_df(path: Path, *, limit: int | None = None) -> pd.DataFrame:
     df = None
     match path.suffix:
         case ".csv":
-            df = pd.read_csv(path).fillna("")
+            df = pd.read_csv(path, dtype=str).fillna("")
         case ".tsv":
-            df = pd.read_csv(path, sep="\t").fillna("")
+            df = pd.read_csv(path, sep="\t", dtype=str).fillna("")
         case ".json":
             df = pd.read_json(path).fillna("")
         case ".jsonl":

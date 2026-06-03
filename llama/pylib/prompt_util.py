@@ -8,8 +8,6 @@ FIELD_MODULE_EXCLUDE = ("__pycache__",)
 
 FIELD_PROMPT_DIR = Path("prompts") / "fields"
 
-LM_PROMPT_DIRS = [Path("prompts") / "fields"]
-
 MIN_PROMPT_LEN = 40
 
 
@@ -70,9 +68,7 @@ def get_field_prompts() -> list[Path]:
 
 def get_lm_prompts() -> list[Path]:
     """Get LM information extraction prompt file paths."""
-    files = []
-    for d in LM_PROMPT_DIRS:
-        files += [f for f in sorted(d.glob("*.md")) if f.is_file()]
+    files = [f for f in sorted(FIELD_PROMPT_DIR.glob("*.md")) if f.is_file()]
     return files
 
 
