@@ -1,19 +1,16 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from rapidfuzz import fuzz
 
-from llama.fields.base_field import BOTH, BaseField
-from llama.pylib import fix_values
-
-MIN_WORDS = 2
-SKIP_FIELDS = ("occurrenceRemarks", "associatedTaxa")
+from llama.fields.base_field import BaseField
+from llama.pylib import fix_values, str_util
 
 
 @dataclass
 class OccurrenceRemarks(BaseField):
-    occurrenceRemarks: str = field(default="", metadata=BOTH)
+    occurrenceRemarks: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -30,6 +27,8 @@ class OccurrenceRemarks(BaseField):
             self.occurrenceRemarks = ""
         else:
             self.occurrenceRemarks = " ".join(words)
+
+        self.occurrenceRemarks = str_util.compress(self.occurrenceRemarks)
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

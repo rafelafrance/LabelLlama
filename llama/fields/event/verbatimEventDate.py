@@ -1,14 +1,14 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class VerbatimEventDate(BaseField):
-    verbatimEventDate: str = field(default="", metadata=BOTH)
-    eventDate: str = field(default="", metadata=BOTH)
+    verbatimEventDate: str = ""
+    eventDate: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -18,7 +18,7 @@ class VerbatimEventDate(BaseField):
         # Remove the date label
         self.verbatimEventDate = re.sub(
             r"\bdate\b[:,.;\s]*", "", self.verbatimEventDate, flags=re.IGNORECASE
-        )
+        ).strip()
 
         # Handle date ranges
         dates = self.verbatimEventDate.split("|")

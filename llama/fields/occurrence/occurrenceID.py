@@ -1,13 +1,13 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, HIDE, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class OccurrenceID(BaseField):
-    occurrenceID: str = field(default="", metadata=BOTH | HIDE)
+    occurrenceID: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -18,4 +18,4 @@ class OccurrenceID(BaseField):
         # Remove the label
         self.occurrenceID = re.sub(
             r"\b(no|number|num)\b[:,.;\s]*", "", self.occurrenceID, flags=re.IGNORECASE
-        )
+        ).strip()

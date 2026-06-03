@@ -1,18 +1,17 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 from llama.vocab.taxon import GENUS_TO_FAMILY
 
 
 @dataclass
 class Family(BaseField):
-    family: str = field(default="", metadata=BOTH)
+    family: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
-
         self.family = fix_values.to_str(self.family).title()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

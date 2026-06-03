@@ -1,20 +1,7 @@
 from dataclasses import InitVar, dataclass, fields
-from enum import Flag, auto
 from typing import Any
 
 import Levenshtein
-
-
-class Flags(Flag):
-    IN = auto()
-    OUT = auto()
-    HIDE = auto()
-
-
-IN = {"in_out": Flags.IN}
-OUT = {"in_out": Flags.OUT}
-BOTH = {"in_out": Flags.IN | Flags.OUT}
-HIDE = {"hide": Flags.HIDE}
 
 
 @dataclass
@@ -25,29 +12,9 @@ class BaseField:
         del record
 
     @classmethod
-    def get_input_fields(cls) -> list[str]:
-        return [
-            f.name
-            for f in fields(cls)
-            if f.metadata.get("in_out", ~Flags.IN) & Flags.IN
-        ]
-
-    @classmethod
-    def get_output_fields(cls) -> list[str]:
-        return [
-            f.name
-            for f in fields(cls)
-            if f.metadata.get("in_out", ~Flags.OUT) & Flags.OUT
-        ]
-
-    @classmethod
-    def get_visible_fields(cls) -> list[str]:
-        return [
-            f.name
-            for f in fields(cls)
-            if (f.metadata.get("in_out", ~Flags.OUT) & Flags.OUT)
-            and not (f.metadata.get("hide", ~Flags.HIDE) & Flags.HIDE)
-        ]
+    def get_field_names(cls) -> list[str]:
+        """Get all of the field names within a class."""
+        return [f.name for f in fields(cls)]
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

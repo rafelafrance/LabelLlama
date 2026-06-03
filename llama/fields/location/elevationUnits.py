@@ -1,13 +1,13 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 from llama.vocab import units as dim_units
 
 
 @dataclass
 class ElevationUnits(BaseField):
-    elevationUnits: list[str] | str = field(default="", metadata=BOTH)
+    elevationUnits: list[str] | str = ""
 
     def __post_init__(self, text: str) -> None:
         del text

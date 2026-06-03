@@ -1,11 +1,11 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from rapidfuzz import fuzz
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 SOURCE_THRESHOLD = 75.0
@@ -13,7 +13,7 @@ SOURCE_THRESHOLD = 75.0
 
 @dataclass
 class RecordNumber(BaseField):
-    recordNumber: str = field(default="", metadata=BOTH)
+    recordNumber: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -24,7 +24,7 @@ class RecordNumber(BaseField):
         # Remove the label
         self.recordNumber = re.sub(
             r"\b(no|number|num)\b[:,.;\s]*", "", self.recordNumber, flags=re.IGNORECASE
-        )
+        ).strip()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         """Remove the record number if it is obviously another number."""

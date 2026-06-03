@@ -1,14 +1,14 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class FlowersPresent(BaseField):
-    flowersPresent: bool | str = field(default="", metadata=BOTH)
+    flowersPresent: bool | str = ""
 
     def __post_init__(self, text: str) -> None:
         del text

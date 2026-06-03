@@ -1,7 +1,7 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 LABELS = re.compile(r"\s*(Departamento de|District|Provincia de)\s*", re.IGNORECASE)
@@ -9,7 +9,7 @@ LABELS = re.compile(r"\s*(Departamento de|District|Provincia de)\s*", re.IGNOREC
 
 @dataclass
 class StateProvince(BaseField):
-    stateProvince: str = field(default="", metadata=BOTH)
+    stateProvince: str = ""
 
     def __post_init__(self, text: str) -> None:
         self.stateProvince = fix_values.hallucinated_str(self.stateProvince, text)

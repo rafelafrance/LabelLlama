@@ -1,14 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 
 
 @dataclass
 class Country(BaseField):
-    country: str = field(default="", metadata=BOTH)
+    country: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text

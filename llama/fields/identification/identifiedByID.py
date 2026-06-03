@@ -1,13 +1,13 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, HIDE, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class IdentifiedByID(BaseField):
-    identifiedByID: str = field(default="", metadata=BOTH | HIDE)
+    identifiedByID: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
@@ -21,4 +21,4 @@ class IdentifiedByID(BaseField):
             "",
             self.identifiedByID,
             flags=re.IGNORECASE,
-        )
+        ).strip()

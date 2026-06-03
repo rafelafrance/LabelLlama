@@ -1,13 +1,13 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class TrsRange(BaseField):
-    trsRange: str = field(default="", metadata=BOTH)
+    trsRange: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text

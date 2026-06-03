@@ -1,13 +1,14 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class DecimalLatitude(BaseField):
-    decimalLatitude: float | str = field(default="", metadata=BOTH)
+    decimalLatitude: float | str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.decimalLatitude = fix_values.to_float(self.decimalLatitude) or ""
+        lat = fix_values.to_float(self.decimalLatitude)
+        self.decimalLatitude = lat if lat is not None else ""

@@ -38,14 +38,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         for column in columns:
             field_action = field_classes[column]
 
-            in_data = {k: in_row.get(k) for k in field_action.get_input_fields()}
+            in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
             out_field = field_action(in_row["text"], **in_data)
             out_field.cross_field_update(in_row)
 
-            out_data = {
-                k: getattr(out_field, k) for k in out_field.get_visible_fields()
-            }
+            out_data = {k: getattr(out_field, k) for k in out_field.get_field_names()}
             out_row |= out_data
 
             if debugging(args):

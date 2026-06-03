@@ -1,15 +1,15 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from llama.fields.base_field import BOTH, HIDE, IN, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class ElevationValues(BaseField):
-    elevationValues: list[float] = field(default_factory=list, metadata=IN | HIDE)
-    elevation: float | str = field(default="", metadata=BOTH)
-    maxElevation: float | str = field(default="", metadata=BOTH)
+    elevationValues: list[float] | str = ""
+    elevation: float | str = ""
+    maxElevation: float | str = ""
 
     def __post_init__(self, text: str) -> None:
         del text

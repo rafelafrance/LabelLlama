@@ -1,19 +1,17 @@
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 
 
 @dataclass
 class TrsQuad(BaseField):
-    trsQuad: str = field(default="", metadata=BOTH)
+    trsQuad: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
         self.trsQuad = fix_values.to_str(self.trsQuad)
 
         # Remove quad label
-        words = self.trsQuad.split()
-        words = [w for w in words if not w.lower().startswith("quad")]
-        words = [w for w in words if w.lower() not in ("q", "q.")]
-        self.trsQuad = " ".join(words)
+        self.trsQuad = re.sub(r"\b(quad\w*|q\.?)\b", "", self.trsQuad).strip()

@@ -1,17 +1,17 @@
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from rapidfuzz import fuzz
 
-from llama.fields.base_field import BOTH, BaseField
+from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
 from llama.pylib.str_util import compress
 
 
 @dataclass
 class Locality(BaseField):
-    locality: str = field(default="", metadata=BOTH)
+    locality: str = ""
 
     def __post_init__(self, text: str) -> None:
         del text
