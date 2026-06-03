@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 
 import argparse
-import asyncio
 import logging
 import textwrap
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
-from openai import APIError, AsyncOpenAI
-from tqdm.asyncio import tqdm_asyncio
+import requests
+from tqdm import tqdm
 
 from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 
-SEMAPHORE: asyncio.Semaphore = asyncio.Semaphore(1)
 
-
-async def lm_extract(args: argparse.Namespace) -> None:
-    global SEMAPHORE
+def lm_extract(args: argparse.Namespace) -> None:
 
     job_began = timer.job_began(args.log_file, args=args)
 
-    SEMAPHORE = asyncio.Semaphore(args.threads)
     sys_prompt, field_list = prompt_util.read_lm_prompt(args.prompt)
     field_prompts = prompt_util.build_field_prompts(field_list)
     field_template = prompt_util.build_field_template(field_list)
@@ -40,67 +36,89 @@ async def lm_extract(args: argparse.Namespace) -> None:
         f"{word_len} words"
     )
 
-    async with AsyncOpenAI(base_url=args.api_host) as client:
-        tasks = [
-            call_lm(
-                args,
-                doc,
-                client,
-                sys_prompt,
-                field_prompts,
-                field_template,
-                column_names,
-            )
-            for doc in docs
-        ]
-        results = await tqdm_asyncio.gather(*tasks)
+    with requests.Session() as session, tqdm(total=len(docs)) as pbar:
+        results = []
 
-    errors = sum(1 for r in results if "ERROR" in r)
-    logging.info(f"Total {len(results)} documents processes with {errors} errors.")
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
+            futures = {
+                executor.submit(
+                    call_lm,
+                    args,
+                    doc,
+                    session,
+                    sys_prompt,
+                    field_prompts,
+                    field_template,
+                    column_names,
+                ): doc
+                for doc in docs
+            }
+            for future in as_completed(futures):
+                results.append(future.result())
+                pbar.update(1)
 
-    io_util.output_file(args.out_file, results)
+    errors = sum(1 for r in results if r["status"] == "ERROR")
+    good = [r for r in results if r["status"] != "ERROR"]
+
+    logging.info(f"Total {len(results)} documents processed with {errors} errors.")
+
+    io_util.output_file(args.out_file, good)
 
     timer.job_elapsed(job_began)
 
 
-async def call_lm(
+def call_lm(
     args: argparse.Namespace,
     doc: dict,
-    client: AsyncOpenAI,
+    session: requests.Session,
     sys_prompt: str,
     field_prompts: str,
     field_template: str,
     column_names: list[str],
 ) -> dict:
-    async with SEMAPHORE:
-        began = datetime.now()
+    began = datetime.now()
 
-        text = preprocess.clean_text(doc["text"])
+    text = preprocess.clean_text(doc["text"])
 
-        try:
-            response = await client.chat.completions.create(
-                model=args.model,
-                messages=[
-                    # {"role": "system", "content": str(datetime.now())}, # Defeat cache
-                    {"role": "system", "content": sys_prompt},
-                    {"role": "user", "content": field_prompts},
-                    {"role": "user", "content": field_template},
-                    {"role": "user", "content": prompt_util.build_text_prompt(text)},
-                ],
-                temperature=args.temperature,
-            )
+    url = f"{args.api_host}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "model": args.model,
+        "messages": [
+            {"role": "system", "content": sys_prompt},
+            {"role": "user", "content": field_prompts},
+            {"role": "user", "content": field_template},
+            {"role": "user", "content": prompt_util.build_text_prompt(text)},
+        ],
+    }
+    if args.temperature is not None:
+        payload["temperature"] = args.temperature
 
-            content = response.choices[0].message.content or ""
-            results = str_util.llm_reply_to_dict(content, column_names)
+    try:
+        response = session.post(
+            url, headers=headers, json=payload, timeout=args.timeout
+        )
+        response.raise_for_status()
+        result = response.json()
 
-        except APIError as err:
-            logging.exception("API error")
-            results = {"ERROR": str(err)}
+        content = result["choices"][0]["message"]["content"] or ""
+        extracted = str_util.llm_reply_to_dict(content, column_names)
 
-        elapsed = timer.task_elapsed(began)
+        status = "success"
 
-        result = {"source": doc["source"], "text": text, "elapsed": elapsed} | results
-        return result
+    except requests.exceptions.RequestException as err:
+        logging.exception("API error")
+        extracted = {"ERROR": str(err)}
+        status = "ERROR"
+
+    result = {
+        "status": status,
+        "source": doc["source"],
+        "text": text,
+        "elapsed": str(timer.task_elapsed(began)),
+    } | extracted
+
+    return result
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -127,6 +145,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="""Write the LM results to this file.
            Handles (.json, .jsonl, .csv, .tsv)""",
+    )
+    arg_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        help="""How long to wait for the LM to respond in seconds.
+            (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--threads",
@@ -170,4 +195,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    asyncio.run(lm_extract(ARGS))
+    lm_extract(ARGS)
