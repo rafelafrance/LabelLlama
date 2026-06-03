@@ -1,4 +1,4 @@
-`infraspecificNameAuthorship` (str): Extract the authorship citation for the infraspecific name (subspecies, variety, or form). This is the person(s) who originally described or recombined the infraspecific rank, separate from the species-level authorship.
+`infraspecificEpithetAuthorship` (str): Extract the authorship citation for the infraspecific name (subspecies, variety, or form). This is the person(s) who originally described or recombined the infraspecific rank, separate from the species-level authorship.
 
 ✅ Include:
 - Single author abbreviations (e.g., 'Michx.', 'Torr.', 'Fernald')

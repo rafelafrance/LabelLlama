@@ -32,7 +32,7 @@ Extract the following fields from the given text.
 - [scientificName](taxon/scientificName.md)
 - [scientificNameAuthorship](taxon/scientificNameAuthorship.md)
 - [infraspecificEpithet](taxon/infraspecificEpithet.md)
-- [infraspecificNameAuthorship](taxon/infraspecificNameAuthorship.md)
+- [infraspecificEpithetAuthorship](taxon/infraspecificEpithetAuthorship.md)
 - [family](taxon/family.md)
 - [associatedTaxa](occurrence/associatedTaxa.md)
 - [verbatimEventDate](event/verbatimEventDate.md)
