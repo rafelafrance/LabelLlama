@@ -1,6 +1,7 @@
 ---
 name: trs
 description: Extract the full Township-Range-Section (TRS) coordinate string from the label. TRS is a land survey system used primarily in the United States for describing land parcels
+module: llama/fields/location/trs.py
 ---
 
 # Prompt trs

@@ -30,10 +30,10 @@ def ocr_images(args: argparse.Namespace) -> None:
     image_paths = image_paths[: args.limit]
     logging.info(f"There are images {len(image_paths)} to OCR")
 
-    sys_prompt = prompt_util.read_prompt(args.prompt)
+    prompt = prompt_util.Prompt.load(args.prompt)
     logging.info(
-        f"System prompt length (without image) = {len(sys_prompt)} characters, "
-        f"{len(sys_prompt.split())} words"
+        f"System prompt length (without image) = {len(prompt.system_prompt)} "
+        f"characters, {len(prompt.system_prompt.split())} words"
     )
 
     with requests.Session() as session:
@@ -47,7 +47,7 @@ def ocr_images(args: argparse.Namespace) -> None:
             with ThreadPoolExecutor(max_workers=args.threads) as executor:
                 futures = {
                     executor.submit(
-                        call_ocr, args, image_path, session, sys_prompt
+                        call_ocr, args, image_path, session, prompt.system_prompt
                     ): image_path
                     for image_path in tasks
                 }

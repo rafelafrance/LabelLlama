@@ -1,6 +1,7 @@
 ---
 name: habit
 description: Extract the plant's habit or general growth form/shape. This describes the physical orientation, architecture, or overall shape of the plant's growth
+module: llama/fields/plants/habit.py
 ---
 
 # Prompt habit

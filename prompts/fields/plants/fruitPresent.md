@@ -1,6 +1,7 @@
 ---
 name: fruitPresent
 description: Determine whether the specimen has fruit present at the time of collection. This indicates the reproductive/phenological state of the plant
+module: llama/fields/plants/fruitPresent.py
 ---
 
 # Prompt fruitPresent

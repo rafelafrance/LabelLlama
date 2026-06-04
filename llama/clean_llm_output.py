@@ -17,9 +17,9 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     df = io_util.read_to_df(args.in_file, limit=args.limit)
 
-    field_list = prompt_util.read_field_list(args.prompt)
-    field_classes = prompt_util.field_classes_by_column_name(field_list)
-    headers = list(field_classes.keys())
+    prompt = prompt_util.Prompt.load(args.prompt)
+    field_classes = prompt.field_classes()
+    headers = prompt.column_names()
 
     columns = df.columns
     if args.column:

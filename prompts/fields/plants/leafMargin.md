@@ -1,6 +1,7 @@
 ---
 name: leafMargin
 description: Extract the description of the specimen's leaf margins (edge shape). This describes the physical appearance of the leaf border or edge
+module: llama/fields/plants/leafMargin.py
 ---
 
 # Prompt leafMargin

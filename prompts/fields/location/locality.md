@@ -1,6 +1,7 @@
 ---
 name: locality
 description: Extract the locality — the specific place or geographic description where the specimen was collected. This describes the ground-level location, independent of higher administrative divisions or coordinates
+module: llama/fields/location/locality.py
 ---
 
 # Prompt locality

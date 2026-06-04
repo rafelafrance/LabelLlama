@@ -16,17 +16,16 @@ from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
-    sys_prompt, field_list = prompt_util.read_lm_prompt(args.prompt)
-    field_prompts = prompt_util.build_field_prompts(field_list)
-    field_template = prompt_util.build_field_template(field_list)
-    field_classes = prompt_util.field_classes_by_column_name(field_list)
-    column_names = list(field_classes.keys())
+    prompt = prompt_util.Prompt.load(args.prompt)
+    field_prompts = prompt.build_field_prompts()
+    field_template = prompt.build_field_template()
+    column_names = prompt.column_names()
 
     docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
 
-    char_len = len(sys_prompt) + len(field_prompts) + len(field_template)
+    char_len = len(prompt.system_prompt) + len(field_prompts) + len(field_template)
     word_len = (
-        len(sys_prompt.split())
+        len(prompt.system_prompt.split())
         + len(field_prompts.split())
         + len(field_template.split())
     )
@@ -45,7 +44,7 @@ def lm_extract(args: argparse.Namespace) -> None:
                     args,
                     doc,
                     session,
-                    sys_prompt,
+                    prompt,
                     field_prompts,
                     field_template,
                     column_names,
@@ -70,7 +69,7 @@ def call_lm(
     args: argparse.Namespace,
     doc: dict,
     session: requests.Session,
-    sys_prompt: str,
+    prompt: prompt_util.Prompt,
     field_prompts: str,
     field_template: str,
     column_names: list[str],
@@ -84,10 +83,10 @@ def call_lm(
     payload = {
         "model": args.model,
         "messages": [
-            {"role": "system", "content": sys_prompt},
+            {"role": "system", "content": prompt.system_prompt},
             {"role": "user", "content": field_prompts},
             {"role": "user", "content": field_template},
-            {"role": "user", "content": prompt_util.build_text_prompt(text)},
+            {"role": "user", "content": prompt_util.Prompt.build_text_prompt(text)},
         ],
     }
     if args.temperature is not None:

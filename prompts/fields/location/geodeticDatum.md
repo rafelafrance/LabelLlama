@@ -1,6 +1,7 @@
 ---
 name: geodeticDatum
 description: Extract the geodetic datum used for the latitude, longitude, TRS, or UTM coordinates. The datum defines the reference frame and ellipsoid model for the coordinates
+module: llama/fields/location/geodeticDatum.py
 ---
 
 # Prompt geodeticDatum

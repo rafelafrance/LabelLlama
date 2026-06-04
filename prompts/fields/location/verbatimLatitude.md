@@ -1,6 +1,7 @@
 ---
 name: verbatimLatitude
 description: Extract the verbatim latitude at which the specimen was collected
+module: llama/fields/location/verbatimLatitude.py
 ---
 
 # Prompt verbatimLatitude

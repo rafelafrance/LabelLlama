@@ -1,6 +1,7 @@
 ---
 name: recordNumber
 description: Extract the record number — an identifier assigned to the occurrence at the time it was recorded. This often serves as a link between field notes and the occurrence record, such as a collector's field number or accession number
+module: llama/fields/occurrence/recordNumber.py
 ---
 
 # Prompt recordNumber

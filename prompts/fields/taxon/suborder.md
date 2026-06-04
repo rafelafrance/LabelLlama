@@ -1,6 +1,7 @@
 ---
 name: suborder
 description: Extract the taxonomic suborder of the specimen (e.g., 'Violineae', 'Cucurbitineae', 'Heterodontina'). The suborder ranks between order and family
+module: llama/fields/taxon/suborder.py
 ---
 
 # Prompt suborder

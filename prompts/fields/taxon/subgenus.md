@@ -1,6 +1,7 @@
 ---
 name: subgenus
 description: Extract the taxonomic subgenus of the specimen (e.g., 'Finlaya', 'Leptalegia', 'Caninae'). The subgenus ranks between genus and species
+module: llama/fields/taxon/subgenus.py
 ---
 
 # Prompt subgenus

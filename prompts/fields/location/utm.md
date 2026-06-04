@@ -1,6 +1,7 @@
 ---
 name: utm
 description: Extract the full Universal Transverse Mercator (UTM) coordinate string from the label. UTM coordinates consist of a zone, northing, and easting values used to pinpoint locations on the Earth's surface
+module: llama/fields/location/utm.py
 ---
 
 # Prompt utm

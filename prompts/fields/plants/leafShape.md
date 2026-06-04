@@ -1,6 +1,7 @@
 ---
 name: leafShape
 description: Extract the shape of the specimen's leaf. This describes the overall outline, form, or division pattern of the leaf blade
+module: llama/fields/plants/leafShape.py
 ---
 
 # Prompt leafShape

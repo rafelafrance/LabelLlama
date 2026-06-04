@@ -1,6 +1,7 @@
 ---
 name: verbatimElevation
 description: Extract the verbatim elevation or altitude at which the specimen was collected
+module: llama/fields/location/verbatimElevation.py
 ---
 
 # Prompt verbatimElevation

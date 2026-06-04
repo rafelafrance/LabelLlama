@@ -1,6 +1,7 @@
 ---
 name: specificEpithet
 description: Extract the taxonomic specific epithet of the specimen (e.g., 'exigua', 'lupus', 'domesticus'). The specific epithet is the second component of the binomial scientific name, following the genus
+module: llama/fields/taxon/specificEpithet.py
 ---
 
 # Prompt specificEpithet
