@@ -3,7 +3,7 @@ name: lifeForm
 description: Extract the ecological life form (aka niche) of the specimen
 ---
 
-# Prompt
+# Prompt lifeForm
 
 `lifeForm` (str): Extract the ecological life form (aka niche) of the specimen. This describes how the plant obtains nutrients, how it anchors itself to its substrate, and its physiological adaptation to environmental conditions. It is distinct from habit (growth shape/orientation, e.g., 'erect', 'climbing'), habitat (physical environment/location, e.g., 'forest', 'meadow', 'desert'), woodiness (stem tissue nature, e.g., 'woody', 'herbaceous'), and life cycle (plant lifespan, e.g., 'annual', 'perennial').
 

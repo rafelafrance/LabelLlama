@@ -3,7 +3,7 @@ name: institutionCode
 description: Extract the institution code — the acronym, coden, or short name used by the institution that owns the specimen or data record
 ---
 
-# Prompt
+# Prompt institutionCode
 
 `institutionCode` (str): Extract the institution code — the acronym, coden, or short name used by the institution that owns the specimen or data record. This is typically a short uppercase or mixed-case identifier, not the full institution name.
 

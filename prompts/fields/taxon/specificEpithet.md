@@ -3,7 +3,7 @@ name: specificEpithet
 description: Extract the taxonomic specific epithet of the specimen (e.g., 'exigua', 'lupus', 'domesticus'). The specific epithet is the second component of the binomial scientific name, following the genus
 ---
 
-# Prompt
+# Prompt specificEpithet
 
 `specificEpithet` (str): Extract the taxonomic specific epithet of the specimen (e.g., 'exigua', 'lupus', 'domesticus'). The specific epithet is the second component of the binomial scientific name, following the genus.
 

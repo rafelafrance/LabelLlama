@@ -3,7 +3,7 @@ name: lifeStage
 description: Extract the developmental or phenological stage of the insect specimen at the time of collection. This describes the life cycle phase or maturity level of the organism
 ---
 
-# Prompt
+# Prompt lifeStage
 
 `lifeStage` (str): Extract the developmental or phenological stage of the insect specimen at the time of collection. This describes the life cycle phase or maturity level of the organism.
 

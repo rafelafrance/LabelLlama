@@ -3,7 +3,7 @@ name: trs
 description: Extract the full Township-Range-Section (TRS) coordinate string from the label. TRS is a land survey system used primarily in the United States for describing land parcels
 ---
 
-# Prompt
+# Prompt trs
 
 `trs` (str): Extract the full Township-Range-Section (TRS) coordinate string from the label. TRS is a land survey system used primarily in the United States for describing land parcels.
 
@@ -34,39 +34,39 @@ Examples:
 
 If no TRS information is present, return an empty string.
 
-# Prompt
+# Prompt trsTownship
 
-`trsQuad` (str): Extract the quadrangle (quad) name associated with the TRS coordinates. A quadrangle is the name of a USGS topographic map sheet that covers the collection area. The quad name may appear before or after the township, range, and section values.
+`trsTownship` (str): Extract the township portion of the Township-Range-Section (TRS) coordinates. Township indicates the north-south position within a survey principal meridian.
 
 ✅ Include:
-- Standard quad names (e.g., 'Yountville', 'Bodie', 'Chicken Hawk Hill')
-- Quad names with scale or format indicators (e.g., 'USGS Wahtoke 7.5 min quad', 'Bodie 7 1/2 quadrangle')
-- Quad names with abbreviations (e.g., 'Mt. Ingalls quad.', 'Mt Shasta quadrangle')
-- Quad names preceded or followed by TRS coordinates
+- Standard township formats (e.g., 'T28N', 'T 32 N', 'T.43S')
+- Township with explicit labels (e.g., 'Township 4 North', 'Twp. 7S')
+- Township values appearing in any spacing or punctuation style
 
 ❌ DO NOT include:
-- The township, range, or section values — those belong in `trsTownship`, `trsRange`, `trsSection`
+- The 'T', 'Twp.', 'Township' prefix — extract only the numeric value and compass direction
+- Range values — those belong in `trsRange` (e.g., 'R25E' is range, not township)
+- Section values — those belong in `trsSection`
+- Quadrangle names — those belong in `trsQuad`
 - The full TRS string — that belongs in `trs`
 - Latitude or longitude values — those belong in `decimalLatitude`/`decimalLongitude`
-- General locality or habitat descriptions that are not quad names
-- Labels themselves ('quad', 'quadrangle', 'USGS quad') — extract only the map sheet name
 
-Normalization: Strip the label words 'quad', 'quadrangle', 'quad.', 'map', 'sheet' and any scale indicators (e.g., '7.5 min', '7 1/2'). Preserve the quad name exactly as written, including punctuation like periods in abbreviations (e.g., 'Mt.').
+Normalization: Strip the 'T', 'Twp.', 'Township' prefix and all extra spacing/punctuation. Return only the number followed by the compass direction ('N' or 'S'), with no space between them (e.g., 'T 32 N' → '32N', 'T.43S' → '43S').
 
 Examples:
-- 'USGS Wahtoke 7.5 min quad' → 'Wahtoke'
-- 'Yountville Quad' → 'Yountville'
-- 'Chicken Hawk Hill quadrangle' → 'Chicken Hawk Hill'
-- 'Mt. Ingalls quad.' → 'Mt. Ingalls'
-- 'Bodie Quadrangle; T4N R25E S36' → 'Bodie'
-- 'T4N R25E S36, Bodie quad' → 'Bodie'
-- 'Mt Shasta 7 1/2 quadrangle' → 'Mt Shasta'
-- 'T4N R25E S36' → '' (no quad name present)
-- 'near Bodie, California' → '' (locality description, not a quad reference)
+- 'T28N' → '28N'
+- 'T 32 N' → '32N'
+- 'T.43S' → '43S'
+- 'Township 4 North' → '4N'
+- 'Twp. 7S' → '7S'
+- 'T4N R25E S36' → '4N'
+- 'T7S, R1W SE 1/4 sec. 33' → '7S'
+- 'R25E S36' → '' (no township present)
+- '38.5°N' → '' (this is latitude, not township)
 
-If no quadrangle is mentioned, return an empty string.
+If no township is present, return an empty string.
 
-# Prompt
+# Prompt trsRange
 
 `trsRange` (str): Extract the range portion of the Township-Range-Section (TRS) coordinates. Range indicates the east-west position within a survey principal meridian.
 
@@ -99,7 +99,7 @@ Examples:
 
 If no range is present, return an empty string.
 
-# Prompt
+# Prompt trsSection
 
 `trsSection` (str): Extract the section portion of the Township-Range-Section (TRS) coordinates. Section is a one-square-mile parcel within a township, often further divided into quadrant subdivisions (NE, NW, SE, SW) and fractional parts (1/4, 1/16, etc.).
 
@@ -133,34 +133,34 @@ Examples:
 
 If no section is present, return an empty string.
 
-# Prompt
+# Prompt trsQuad
 
-`trsTownship` (str): Extract the township portion of the Township-Range-Section (TRS) coordinates. Township indicates the north-south position within a survey principal meridian.
+`trsQuad` (str): Extract the quadrangle (quad) name associated with the TRS coordinates. A quadrangle is the name of a USGS topographic map sheet that covers the collection area. The quad name may appear before or after the township, range, and section values.
 
 ✅ Include:
-- Standard township formats (e.g., 'T28N', 'T 32 N', 'T.43S')
-- Township with explicit labels (e.g., 'Township 4 North', 'Twp. 7S')
-- Township values appearing in any spacing or punctuation style
+- Standard quad names (e.g., 'Yountville', 'Bodie', 'Chicken Hawk Hill')
+- Quad names with scale or format indicators (e.g., 'USGS Wahtoke 7.5 min quad', 'Bodie 7 1/2 quadrangle')
+- Quad names with abbreviations (e.g., 'Mt. Ingalls quad.', 'Mt Shasta quadrangle')
+- Quad names preceded or followed by TRS coordinates
 
 ❌ DO NOT include:
-- The 'T', 'Twp.', 'Township' prefix — extract only the numeric value and compass direction
-- Range values — those belong in `trsRange` (e.g., 'R25E' is range, not township)
-- Section values — those belong in `trsSection`
-- Quadrangle names — those belong in `trsQuad`
+- The township, range, or section values — those belong in `trsTownship`, `trsRange`, `trsSection`
 - The full TRS string — that belongs in `trs`
 - Latitude or longitude values — those belong in `decimalLatitude`/`decimalLongitude`
+- General locality or habitat descriptions that are not quad names
+- Labels themselves ('quad', 'quadrangle', 'USGS quad') — extract only the map sheet name
 
-Normalization: Strip the 'T', 'Twp.', 'Township' prefix and all extra spacing/punctuation. Return only the number followed by the compass direction ('N' or 'S'), with no space between them (e.g., 'T 32 N' → '32N', 'T.43S' → '43S').
+Normalization: Strip the label words 'quad', 'quadrangle', 'quad.', 'map', 'sheet' and any scale indicators (e.g., '7.5 min', '7 1/2'). Preserve the quad name exactly as written, including punctuation like periods in abbreviations (e.g., 'Mt.').
 
 Examples:
-- 'T28N' → '28N'
-- 'T 32 N' → '32N'
-- 'T.43S' → '43S'
-- 'Township 4 North' → '4N'
-- 'Twp. 7S' → '7S'
-- 'T4N R25E S36' → '4N'
-- 'T7S, R1W SE 1/4 sec. 33' → '7S'
-- 'R25E S36' → '' (no township present)
-- '38.5°N' → '' (this is latitude, not township)
+- 'USGS Wahtoke 7.5 min quad' → 'Wahtoke'
+- 'Yountville Quad' → 'Yountville'
+- 'Chicken Hawk Hill quadrangle' → 'Chicken Hawk Hill'
+- 'Mt. Ingalls quad.' → 'Mt. Ingalls'
+- 'Bodie Quadrangle; T4N R25E S36' → 'Bodie'
+- 'T4N R25E S36, Bodie quad' → 'Bodie'
+- 'Mt Shasta 7 1/2 quadrangle' → 'Mt Shasta'
+- 'T4N R25E S36' → '' (no quad name present)
+- 'near Bodie, California' → '' (locality description, not a quad reference)
 
-If no township is present, return an empty string.
+If no quadrangle is mentioned, return an empty string.

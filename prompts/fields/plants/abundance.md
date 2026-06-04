@@ -3,7 +3,7 @@ name: abundance
 description: Extract the abundance or frequency of the specimen at the collection site. This describes how common or rare the plant was where it was collected, not its conservation status or global rarity
 ---
 
-# Prompt
+# Prompt abundance
 
 `abundance` (str): Extract the abundance or frequency of the specimen at the collection site. This describes how common or rare the plant was where it was collected, not its conservation status or global rarity.
 

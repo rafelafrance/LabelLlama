@@ -3,7 +3,7 @@ name: country
 description: Extract the country where the specimen was collected. Return the full, standard English country name
 ---
 
-# Prompt
+# Prompt country
 
 `country` (str): Extract the country where the specimen was collected. Return the full, standard English country name.
 

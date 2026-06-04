@@ -3,7 +3,7 @@ name: collectionCode
 description: Extract the collection code — the name, acronym, coden, or initialism identifying the collection or data set from which the record was derived
 ---
 
-# Prompt
+# Prompt collectionCode
 
 `collectionCode` (str): Extract the collection code — the name, acronym, coden, or initialism identifying the collection or data set from which the record was derived.
 

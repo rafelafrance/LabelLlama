@@ -3,7 +3,7 @@ name: occurrenceRemarks
 description: Extract any remaining observations, notes, or comments about the specimen occurrence that are not captured by other dedicated fields. This is a catch-all for data that does not fit elsewhere
 ---
 
-# Prompt
+# Prompt occurrenceRemarks
 
 `occurrenceRemarks` (str): Extract any remaining observations, notes, or comments about the specimen occurrence that are not captured by other dedicated fields. This is a catch-all for data that does not fit elsewhere.
 

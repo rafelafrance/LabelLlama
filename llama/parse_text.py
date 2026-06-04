@@ -14,7 +14,6 @@ from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 
 
 def lm_extract(args: argparse.Namespace) -> None:
-
     job_began = timer.job_began(args.log_file, args=args)
 
     sys_prompt, field_list = prompt_util.read_lm_prompt(args.prompt)

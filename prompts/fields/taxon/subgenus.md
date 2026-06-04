@@ -3,7 +3,7 @@ name: subgenus
 description: Extract the taxonomic subgenus of the specimen (e.g., 'Finlaya', 'Leptalegia', 'Caninae'). The subgenus ranks between genus and species
 ---
 
-# Prompt
+# Prompt subgenus
 
 `subgenus` (str): Extract the taxonomic subgenus of the specimen (e.g., 'Finlaya', 'Leptalegia', 'Caninae'). The subgenus ranks between genus and species. It is commonly written in parentheses between the genus and the specific epithet, or with an explicit label.
 

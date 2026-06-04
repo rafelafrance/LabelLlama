@@ -3,7 +3,7 @@ name: associatedTaxa
 description: Extract the name(s) of other species found with or near the specimen. This field captures taxa associated with the collection but not the primary specimen itself
 ---
 
-# Prompt
+# Prompt associatedTaxa
 
 `associatedTaxa` (str): Extract the name(s) of other species found with or near the specimen. This field captures taxa associated with the collection but not the primary specimen itself.
 

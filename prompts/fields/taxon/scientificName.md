@@ -3,7 +3,7 @@ name: scientificName
 description: Extract the scientific name of the specimen at the species level. This is the primary taxonomic name used to identify the organism
 ---
 
-# Prompt
+# Prompt scientificName
 
 `scientificName` (str): Extract the scientific name of the specimen at the species level. This is the primary taxonomic name used to identify the organism.
 

@@ -3,7 +3,7 @@ name: verbatimEventDate
 description: Extract the verbatim date (or date range) when the specimen was collected or observed
 ---
 
-# Prompt
+# Prompt verbatimEventDate
 
 `verbatimEventDate` (str): Extract the verbatim date (or date range) when the specimen was collected or observed. Preserve the text exactly as written — do not reformat or normalize.
 

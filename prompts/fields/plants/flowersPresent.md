@@ -3,7 +3,7 @@ name: flowersPresent
 description: Determine whether the specimen has flowers present at the time of collection. This indicates the reproductive/phenological state of the plant
 ---
 
-# Prompt
+# Prompt flowersPresent
 
 `flowersPresent` (bool): Determine whether the specimen has flowers present at the time of collection. This indicates the reproductive/phenological state of the plant.
 

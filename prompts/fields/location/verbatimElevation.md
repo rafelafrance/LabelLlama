@@ -3,7 +3,7 @@ name: verbatimElevation
 description: Extract the verbatim elevation or altitude at which the specimen was collected
 ---
 
-# Prompt
+# Prompt verbatimElevation
 
 `verbatimElevation` (str): Extract the verbatim elevation or altitude at which the specimen was collected. Preserve the text exactly as written — do not reformat, convert units, or normalize.
 
@@ -23,58 +23,7 @@ description: Extract the verbatim elevation or altitude at which the specimen wa
 
 Normalization: Return the value exactly as written on the label. Do not convert units (e.g., keep '4921 ft', do not change to '1500 m'). Preserve ranges, labels, and uncertainty markers as they appear. If no elevation information is present, return an empty string.
 
-# Prompt
-
-`elevationEstimated` (bool): Determine whether the elevation value is an estimate rather than a precise measurement. Look for explicit uncertainty markers near the elevation value.
-
-✅ Return `true` if you find:
-- Approximation words: 'approx.', 'approximately', 'est.', 'estimated', 'ca.', 'circa', 'about', 'around'
-- Uncertainty symbols: '~' (tilde), '?' (question mark) adjacent to the elevation
-- Phrases indicating estimation: 'roughly', 'about', 'some', 'near'
-
-❌ Return `false` if:
-- The elevation is stated as a precise value with no uncertainty markers
-- The elevation is a clear numeric value or range without qualifiers
-
-Examples:
-- 'ca. 1500 m' → `true`
-- 'approx. 2000 ft' → `true`
-- 'elev. ~3000 m' → `true`
-- '1500 m?' → `true`
-- '1500 m' → `false`
-- '1000-1500 m' → `false` (a range is not an estimate)
-- 'alt. 2000 ft' → `false`
-
-If no elevation information is present on the label, return an empty string.
-
-# Prompt
-
-`elevationUnits` (list[str]): Extract the unit(s) associated with each elevation value. If multiple elevation values are present (e.g., a range, or the same elevation in different unit systems), provide a matching unit for each value in the same order.
-
-✅ Include:
-- Metric units: 'm', 'meters', 'metres', 'km'
-- Imperial units: 'ft', 'feet', 'f', 'asl', 'asf'
-- Other units: 'masl' (meters above sea level), 'm asl', 'above sea level'
-
-❌ DO NOT include:
-- Labels or prefixes (e.g., 'elev.', 'alt.', 'altitude') — these are not units
-- Numeric values — those belong in `elevationValues`
-- Uncertainty markers (e.g., '~', '?', 'ca.') — those belong in `elevationEstimated`
-
-Normalization: Normalize units to the abbreviation form when possible (e.g., 'meters' → 'm', 'feet' → 'ft'). Preserve the original text if the unit is ambiguous or non-standard.
-
-Examples:
-- '1500 m' → ['m']
-- '4921 ft' → ['ft']
-- '1000-1500 m' → ['m'] (single unit applies to the range)
-- '5000 ft (1524 m)' → ['ft', 'm'] (two values, two units)
-- '3000 meters' → ['m'] (normalized)
-- '2000 f' → ['f'] (preserved as written)
-- '1500 m asl' → ['m'] ('asl' is a qualifier, not a separate unit)
-
-If no elevation units are present, return an empty list.
-
-# Prompt
+# Prompt elevationValues
 
 `elevationValues` (list[float]): Extract the numeric elevation value(s). A single value indicates a point elevation; two values indicate an elevation range (min and max). The same elevation may be reported in different unit systems — include all numeric values in the order they appear.
 
@@ -109,3 +58,54 @@ Examples:
 - '1,500 m' → [1500.0]
 
 If no elevation values are present, return an empty list.
+
+# Prompt elevationUnits
+
+`elevationUnits` (list[str]): Extract the unit(s) associated with each elevation value. If multiple elevation values are present (e.g., a range, or the same elevation in different unit systems), provide a matching unit for each value in the same order.
+
+✅ Include:
+- Metric units: 'm', 'meters', 'metres', 'km'
+- Imperial units: 'ft', 'feet', 'f', 'asl', 'asf'
+- Other units: 'masl' (meters above sea level), 'm asl', 'above sea level'
+
+❌ DO NOT include:
+- Labels or prefixes (e.g., 'elev.', 'alt.', 'altitude') — these are not units
+- Numeric values — those belong in `elevationValues`
+- Uncertainty markers (e.g., '~', '?', 'ca.') — those belong in `elevationEstimated`
+
+Normalization: Normalize units to the abbreviation form when possible (e.g., 'meters' → 'm', 'feet' → 'ft'). Preserve the original text if the unit is ambiguous or non-standard.
+
+Examples:
+- '1500 m' → ['m']
+- '4921 ft' → ['ft']
+- '1000-1500 m' → ['m'] (single unit applies to the range)
+- '5000 ft (1524 m)' → ['ft', 'm'] (two values, two units)
+- '3000 meters' → ['m'] (normalized)
+- '2000 f' → ['f'] (preserved as written)
+- '1500 m asl' → ['m'] ('asl' is a qualifier, not a separate unit)
+
+If no elevation units are present, return an empty list.
+
+# Prompt elevationEstimated
+
+`elevationEstimated` (bool): Determine whether the elevation value is an estimate rather than a precise measurement. Look for explicit uncertainty markers near the elevation value.
+
+✅ Return `true` if you find:
+- Approximation words: 'approx.', 'approximately', 'est.', 'estimated', 'ca.', 'circa', 'about', 'around'
+- Uncertainty symbols: '~' (tilde), '?' (question mark) adjacent to the elevation
+- Phrases indicating estimation: 'roughly', 'about', 'some', 'near'
+
+❌ Return `false` if:
+- The elevation is stated as a precise value with no uncertainty markers
+- The elevation is a clear numeric value or range without qualifiers
+
+Examples:
+- 'ca. 1500 m' → `true`
+- 'approx. 2000 ft' → `true`
+- 'elev. ~3000 m' → `true`
+- '1500 m?' → `true`
+- '1500 m' → `false`
+- '1000-1500 m' → `false` (a range is not an estimate)
+- 'alt. 2000 ft' → `false`
+
+If no elevation information is present on the label, return an empty string.

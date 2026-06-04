@@ -3,7 +3,7 @@ name: occurrenceID
 description: Extract the occurrence ID — a unique identifier for the physical specimen or observation (as opposed to a particular digital record of it)
 ---
 
-# Prompt
+# Prompt occurrenceID
 
 `occurrenceID` (str): Extract the occurrence ID — a unique identifier for the physical specimen or observation (as opposed to a particular digital record of it).
 

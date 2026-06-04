@@ -19,16 +19,15 @@ def field_class_to_column_name(cls: Any) -> str:
     return field_name
 
 
-def field_path_to_field_class_name(path: Path) -> str:
-    """Convert a field path into its class name."""
-    name = path.stem
-    cls_name = name[0].upper() + name[1:]
-    return cls_name
-
-
 def field_class_to_field_name(cls: Any) -> str:
     """Convert a class name into its field name for a CSV file."""
     return "/".join(cls.__module__.rsplit(".", maxsplit=2)[-2:])
+
+
+def field_module_to_field_name(path: Path) -> str:
+    norm = re.sub(r"^.*?fields/", "", str(path))
+    norm = re.sub(r"\.py|\.md", "", norm)
+    return norm
 
 
 def field_name_to_prompt_path(field_name: str) -> Path:
@@ -37,10 +36,11 @@ def field_name_to_prompt_path(field_name: str) -> Path:
     return Path(prompt_path)
 
 
-def field_module_to_field_name(path: Path) -> str:
-    norm = re.sub(r"^.*?fields/", "", str(path))
-    norm = re.sub(r"\.py|\.md", "", norm)
-    return norm
+def field_path_to_field_class_name(path: Path) -> str:
+    """Convert a field path into its class name."""
+    name = path.stem
+    cls_name = name[0].upper() + name[1:]
+    return cls_name
 
 
 # ---------------------------------------------------------------------

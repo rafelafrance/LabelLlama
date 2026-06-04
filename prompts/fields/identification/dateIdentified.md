@@ -3,7 +3,7 @@ name: dateIdentified
 description: Extract the date (or date range) when the specimen was identified, verified, or determined
 ---
 
-# Prompt
+# Prompt dateIdentified
 
 `dateIdentified` (str): Extract the date (or date range) when the specimen was identified, verified, or determined. Preserve the text exactly as written — do not reformat or normalize.
 

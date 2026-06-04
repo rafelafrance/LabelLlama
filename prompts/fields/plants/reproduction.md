@@ -3,7 +3,7 @@ name: reproduction
 description: Extract the plant's breeding system (how sexual organs are distributed among flowers and individuals across the population)
 ---
 
-# Prompt
+# Prompt reproduction
 
 `reproduction` (str): Extract the plant's breeding system (how sexual organs are distributed among flowers and individuals across the population). This describes whether male and female reproductive parts occur together or separately at the species/population level. It is distinct from `sex` (which describes the sex of individual flowers on the specimen, e.g., 'male', 'female', 'bisexual') and from `lifeStage` (which describes the phenological state, e.g., 'flowering', 'fruiting').
 

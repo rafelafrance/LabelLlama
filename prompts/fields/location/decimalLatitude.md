@@ -3,7 +3,7 @@ name: decimalLatitude
 description: Extract the decimal latitude at which the specimen was collected
 ---
 
-# Prompt
+# Prompt decimalLatitude
 
 `decimalLatitude` (float): Extract the decimal latitude at which the specimen was collected. Return only the plain numeric value as a decimal number.
 

@@ -3,7 +3,7 @@ name: sex
 description: Extract the biological sex of the specimen as recorded on the label. This describes the sex of the individual organism, distinct from life stage or morphological caste
 ---
 
-# Prompt
+# Prompt sex
 
 `sex` (str): Extract the biological sex of the specimen as recorded on the label. This describes the sex of the individual organism, distinct from life stage or morphological caste.
 

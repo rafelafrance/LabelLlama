@@ -3,7 +3,7 @@ name: fruitPresent
 description: Determine whether the specimen has fruit present at the time of collection. This indicates the reproductive/phenological state of the plant
 ---
 
-# Prompt
+# Prompt fruitPresent
 
 `fruitPresent` (bool): Determine whether the specimen has fruit present at the time of collection. This indicates the reproductive/phenological state of the plant.
 
