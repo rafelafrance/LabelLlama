@@ -1,9 +1,9 @@
 ---
 name: lifeStage
-description: Extract the developmental or phenological stage of the specimen. This describes the current growth phase, maturity level, or reproductive state of the plant at the time of collection. It is distinct from life cycle (plant lifespan, e.g., 'annual', 'perennial'), flowersPresent/fruitPresent (boolean indicators of reproductive parts), and leaf duration (how long leaves are retained, e.g., 'evergreen', 'deciduous')
+description: Extract the developmental or phenological stage of the specimen
 ---
 
-# lifeStage
+# Prompt
 
 `lifeStage` (str): Extract the developmental or phenological stage of the specimen. This describes the current growth phase, maturity level, or reproductive state of the plant at the time of collection. It is distinct from life cycle (plant lifespan, e.g., 'annual', 'perennial'), flowersPresent/fruitPresent (boolean indicators of reproductive parts), and leaf duration (how long leaves are retained, e.g., 'evergreen', 'deciduous').
 

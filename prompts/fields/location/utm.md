@@ -3,7 +3,7 @@ name: utm
 description: Extract the full Universal Transverse Mercator (UTM) coordinate string from the label. UTM coordinates consist of a zone, northing, and easting values used to pinpoint locations on the Earth's surface
 ---
 
-# utm
+# Prompt
 
 `utm` (str): Extract the full Universal Transverse Mercator (UTM) coordinate string from the label. UTM coordinates consist of a zone, northing, and easting values used to pinpoint locations on the Earth's surface.
 
@@ -34,7 +34,7 @@ Examples:
 
 If no UTM information is present, return an empty string.
 
-# utmEasting
+# Prompt
 
 `utmEasting` (str): Extract the easting portion of the Universal Transverse Mercator (UTM) coordinates. Easting represents the east-west position within a UTM zone and is typically a 6- or 7-digit number.
 
@@ -70,7 +70,7 @@ Examples:
 
 If no easting is present, return an empty string.
 
-# utmNorthing
+# Prompt
 
 `utmNorthing` (str): Extract the northing portion of the Universal Transverse Mercator (UTM) coordinates. Northing represents the north-south position within a UTM zone and is typically a 7-digit number (smaller in the southern hemisphere).
 
@@ -106,7 +106,7 @@ Examples:
 
 If no northing is present, return an empty string.
 
-# utmZone
+# Prompt
 
 `utmZone` (str): Extract the zone portion of the Universal Transverse Mercator (UTM) coordinates. UTM zones are 6° longitudinal bands numbered 1–60 around the globe, often combined with a latitude band letter (C–X, excluding I and O).
 

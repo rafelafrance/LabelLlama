@@ -1,9 +1,9 @@
 ---
 name: county
-description: Extract the county, parish, or equivalent second-level administrative division where the specimen was collected. Return the full, standard name
+description: Extract the county, parish, or equivalent second-level administrative division where the specimen was collected
 ---
 
-# county
+# Prompt
 
 `county` (str): Extract the county, parish, or equivalent second-level administrative division where the specimen was collected. Return the full, standard name.
 

@@ -1,9 +1,9 @@
 ---
 name: lifeCycle
-description: Extract the plant's life cycle or duration (how long the plant lives over the course of its lifetime). This describes the number of growing seasons required to complete the life cycle and the plant's reproductive strategy. It is distinct from leaf duration (how long leaves are retained, e.g., 'evergreen', 'deciduous'), life stage (current developmental phase, e.g., 'seedling', 'flowering'), and woodiness (stem tissue nature, e.g., 'woody', 'herbaceous')
+description: Extract the plant's life cycle or duration (how long the plant lives over the course of its lifetime)
 ---
 
-# lifeCycle
+# Prompt
 
 `lifeCycle` (str): Extract the plant's life cycle or duration (how long the plant lives over the course of its lifetime). This describes the number of growing seasons required to complete the life cycle and the plant's reproductive strategy. It is distinct from leaf duration (how long leaves are retained, e.g., 'evergreen', 'deciduous'), life stage (current developmental phase, e.g., 'seedling', 'flowering'), and woodiness (stem tissue nature, e.g., 'woody', 'herbaceous').
 

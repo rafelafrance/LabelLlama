@@ -3,7 +3,7 @@ name: recordedBy
 description: Extract the name of the person or group who collected or observed the specimen. This is the primary collector, not the person who later identified or cataloged it
 ---
 
-# recordedBy
+# Prompt
 
 `recordedBy` (str): Extract the name of the person or group who collected or observed the specimen. This is the primary collector, not the person who later identified or cataloged it.
 

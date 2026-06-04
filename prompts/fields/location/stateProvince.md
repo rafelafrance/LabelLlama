@@ -1,9 +1,9 @@
 ---
 name: stateProvince
-description: Extract the state, province, or equivalent first-level administrative division where the specimen was collected. Return the full, standard name
+description: Extract the state, province, or equivalent first-level administrative division where the specimen was collected
 ---
 
-# stateProvince
+# Prompt
 
 `stateProvince` (str): Extract the state, province, or equivalent first-level administrative division where the specimen was collected. Return the full, standard name.
 

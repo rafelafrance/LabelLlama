@@ -1,9 +1,9 @@
 ---
 name: vernacularName
-description: Extract the vernacular (common) name of the species collected. Vernacular names are non-scientific names used locally, regionally, or in trade, often in English or other languages
+description: Extract the vernacular (common) name of the species collected
 ---
 
-# vernacularName
+# Prompt
 
 `vernacularName` (str): Extract the vernacular (common) name of the species collected. Vernacular names are non-scientific names used locally, regionally, or in trade, often in English or other languages.
 

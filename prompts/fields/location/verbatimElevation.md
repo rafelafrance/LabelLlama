@@ -1,9 +1,9 @@
 ---
 name: verbatimElevation
-description: Extract the verbatim elevation or altitude at which the specimen was collected. Preserve the text exactly as written — do not reformat, convert units, or normalize
+description: Extract the verbatim elevation or altitude at which the specimen was collected
 ---
 
-# verbatimElevation
+# Prompt
 
 `verbatimElevation` (str): Extract the verbatim elevation or altitude at which the specimen was collected. Preserve the text exactly as written — do not reformat, convert units, or normalize.
 
@@ -23,7 +23,7 @@ description: Extract the verbatim elevation or altitude at which the specimen wa
 
 Normalization: Return the value exactly as written on the label. Do not convert units (e.g., keep '4921 ft', do not change to '1500 m'). Preserve ranges, labels, and uncertainty markers as they appear. If no elevation information is present, return an empty string.
 
-elevationEstimated
+# Prompt
 
 `elevationEstimated` (bool): Determine whether the elevation value is an estimate rather than a precise measurement. Look for explicit uncertainty markers near the elevation value.
 
@@ -47,7 +47,7 @@ Examples:
 
 If no elevation information is present on the label, return an empty string.
 
-# elevationUnits
+# Prompt
 
 `elevationUnits` (list[str]): Extract the unit(s) associated with each elevation value. If multiple elevation values are present (e.g., a range, or the same elevation in different unit systems), provide a matching unit for each value in the same order.
 
@@ -74,7 +74,7 @@ Examples:
 
 If no elevation units are present, return an empty list.
 
-# elevationValues
+# Prompt
 
 `elevationValues` (list[float]): Extract the numeric elevation value(s). A single value indicates a point elevation; two values indicate an elevation range (min and max). The same elevation may be reported in different unit systems — include all numeric values in the order they appear.
 

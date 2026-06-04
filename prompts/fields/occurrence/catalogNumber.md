@@ -3,7 +3,7 @@ name: catalogNumber
 description: Extract the catalog number — the unique identifier for the specimen or record within its collection or data set
 ---
 
-# catalogNumber
+# Prompt
 
 `catalogNumber` (str): Extract the catalog number — the unique identifier for the specimen or record within its collection or data set.
 

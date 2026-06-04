@@ -3,7 +3,7 @@ name: trs
 description: Extract the full Township-Range-Section (TRS) coordinate string from the label. TRS is a land survey system used primarily in the United States for describing land parcels
 ---
 
-# trs
+# Prompt
 
 `trs` (str): Extract the full Township-Range-Section (TRS) coordinate string from the label. TRS is a land survey system used primarily in the United States for describing land parcels.
 
@@ -34,7 +34,7 @@ Examples:
 
 If no TRS information is present, return an empty string.
 
-# trsQuad
+# Prompt
 
 `trsQuad` (str): Extract the quadrangle (quad) name associated with the TRS coordinates. A quadrangle is the name of a USGS topographic map sheet that covers the collection area. The quad name may appear before or after the township, range, and section values.
 
@@ -66,7 +66,7 @@ Examples:
 
 If no quadrangle is mentioned, return an empty string.
 
-# trsRange
+# Prompt
 
 `trsRange` (str): Extract the range portion of the Township-Range-Section (TRS) coordinates. Range indicates the east-west position within a survey principal meridian.
 
@@ -99,7 +99,7 @@ Examples:
 
 If no range is present, return an empty string.
 
-# trsSection
+# Prompt
 
 `trsSection` (str): Extract the section portion of the Township-Range-Section (TRS) coordinates. Section is a one-square-mile parcel within a township, often further divided into quadrant subdivisions (NE, NW, SE, SW) and fractional parts (1/4, 1/16, etc.).
 
@@ -133,7 +133,7 @@ Examples:
 
 If no section is present, return an empty string.
 
-# trsTownship
+# Prompt
 
 `trsTownship` (str): Extract the township portion of the Township-Range-Section (TRS) coordinates. Township indicates the north-south position within a survey principal meridian.
 

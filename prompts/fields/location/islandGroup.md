@@ -1,9 +1,9 @@
 ---
 name: islandGroup
-description: Extract the name of the island group, archipelago, or atoll group where the specimen was collected. Return the full, standard name
+description: Extract the name of the island group, archipelago, or atoll group where the specimen was collected
 ---
 
-# islandGroup
+# Prompt
 
 `islandGroup` (str): Extract the name of the island group, archipelago, or atoll group where the specimen was collected. Return the full, standard name.
 

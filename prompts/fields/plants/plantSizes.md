@@ -1,9 +1,9 @@
 ---
 name: plantSizes
-description: Extract dimensions of individual plant parts and structures, excluding the overall plant height (which belongs in `plantHeight`). This is a catch-all for measurements of specific organs, tissues, or features. Each entry should be a self-contained measurement with units. It is distinct from `plantHeight` (total vertical size of the whole plant), which has its own field
+description: Extract dimensions of individual plant parts and structures, excluding the overall plant height (which belongs in `plantHeight`). This is a catch-all for measurements of specific organs, tissues, or features
 ---
 
-# plantSizes
+# Prompt
 
 `plantSizes` (list[str]): Extract dimensions of individual plant parts and structures, excluding the overall plant height (which belongs in `plantHeight`). This is a catch-all for measurements of specific organs, tissues, or features. Each entry should be a self-contained measurement with units. It is distinct from `plantHeight` (total vertical size of the whole plant), which has its own field.
 

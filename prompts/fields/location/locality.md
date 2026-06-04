@@ -3,7 +3,7 @@ name: locality
 description: Extract the locality — the specific place or geographic description where the specimen was collected. This describes the ground-level location, independent of higher administrative divisions or coordinates
 ---
 
-# locality
+# Prompt
 
 `locality` (str): Extract the locality — the specific place or geographic description where the specimen was collected. This describes the ground-level location, independent of higher administrative divisions or coordinates.
 
