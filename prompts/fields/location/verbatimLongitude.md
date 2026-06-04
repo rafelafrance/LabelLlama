@@ -1,3 +1,10 @@
+---
+name: verbatimLongitude
+description: Extract the verbatim longitude at which the specimen was collected. Preserve the value exactly as written — do not reformat, convert, or normalize
+---
+
+# verbatimLongitude
+
 `verbatimLongitude` (str): Extract the verbatim longitude at which the specimen was collected. Preserve the value exactly as written — do not reformat, convert, or normalize.
 
 ✅ Include:

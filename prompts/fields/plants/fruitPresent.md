@@ -1,3 +1,10 @@
+---
+name: fruitPresent
+description: Determine whether the specimen has fruit present at the time of collection. This indicates the reproductive/phenological state of the plant
+---
+
+# fruitPresent
+
 `fruitPresent` (bool): Determine whether the specimen has fruit present at the time of collection. This indicates the reproductive/phenological state of the plant.
 
 ✅ Return `true` if you find:

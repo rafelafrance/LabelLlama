@@ -1,3 +1,10 @@
+---
+name: habit
+description: Extract the plant's habit or general growth form/shape. This describes the physical orientation, architecture, or overall shape of the plant's growth
+---
+
+# habit
+
 `habit` (str): Extract the plant's habit or general growth form/shape. This describes the physical orientation, architecture, or overall shape of the plant's growth.
 
 ✅ Include:

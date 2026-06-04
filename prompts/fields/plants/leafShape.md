@@ -1,3 +1,10 @@
+---
+name: leafShape
+description: Extract the shape of the specimen's leaf. This describes the overall outline, form, or division pattern of the leaf blade
+---
+
+# leafShape
+
 `leafShape` (str): Extract the shape of the specimen's leaf. This describes the overall outline, form, or division pattern of the leaf blade.
 
 ✅ Include:

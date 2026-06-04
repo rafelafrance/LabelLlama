@@ -1,3 +1,10 @@
+---
+name: plantHeight
+description: Extract the overall height of the specimen or the plant as a whole. This is a dimension describing the total vertical size of the plant, typically given as a number with units (e.g., '15 cm', '1.2 m', '3 ft', '2-5 m'). It is distinct from individual plant part sizes (leaf size, flower size, fruit size, etc.), which belong in `plantSizes`
+---
+
+# plantHeight
+
 `plantHeight` (str): Extract the overall height of the specimen or the plant as a whole. This is a dimension describing the total vertical size of the plant, typically given as a number with units (e.g., '15 cm', '1.2 m', '3 ft', '2-5 m'). It is distinct from individual plant part sizes (leaf size, flower size, fruit size, etc.), which belong in `plantSizes`.
 
 ✅ Include:

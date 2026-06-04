@@ -1,3 +1,10 @@
+---
+name: suborder
+description: Extract the taxonomic suborder of the specimen (e.g., 'Violineae', 'Cucurbitineae', 'Heterodontina'). The suborder ranks between order and family. It is distinct from order (a higher rank) and family (a lower rank)
+---
+
+# suborder
+
 `suborder` (str): Extract the taxonomic suborder of the specimen (e.g., 'Violineae', 'Cucurbitineae', 'Heterodontina'). The suborder ranks between order and family. It is distinct from order (a higher rank) and family (a lower rank).
 
 ✅ Include:

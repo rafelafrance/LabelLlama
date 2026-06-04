@@ -1,3 +1,10 @@
+---
+name: waterBody
+description: Extract the name of the specific body of water where the specimen was collected. This refers to a named water feature, not general habitat or proximity descriptions
+---
+
+# waterBody
+
 `waterBody` (str): Extract the name of the specific body of water where the specimen was collected. This refers to a named water feature, not general habitat or proximity descriptions.
 
 ✅ Include:

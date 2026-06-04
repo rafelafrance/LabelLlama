@@ -1,3 +1,10 @@
+---
+name: habitat
+description: Extract the habitat, environment, or ecological setting where the specimen was collected. This describes the physical conditions and ecological context, not the geographic location
+---
+
+# habitat
+
 `habitat` (str): Extract the habitat, environment, or ecological setting where the specimen was collected. This describes the physical conditions and ecological context, not the geographic location.
 
 ✅ Include:

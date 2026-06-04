@@ -1,3 +1,10 @@
+---
+name: sex
+description: Extract the sex of the individual flower(s) or inflorescence on the specimen. This describes whether the flowers on this particular specimen contain male reproductive parts only, female reproductive parts only, both, or neither. It is distinct from `reproduction` (breeding system at the population/species level, e.g., 'dioecious', 'monoecious') and from `lifeStage` (phenological state, e.g., 'flowering', 'fruiting')
+---
+
+# sex
+
 `sex` (str): Extract the sex of the individual flower(s) or inflorescence on the specimen. This describes whether the flowers on this particular specimen contain male reproductive parts only, female reproductive parts only, both, or neither. It is distinct from `reproduction` (breeding system at the population/species level, e.g., 'dioecious', 'monoecious') and from `lifeStage` (phenological state, e.g., 'flowering', 'fruiting').
 
 ✅ Include:

@@ -1,3 +1,10 @@
+---
+name: identifiedByID
+description: Extract the globally unique identifier for the person, group, or organization responsible for assigning the taxon to the specimen. This is a machine-readable ID, not a human-readable name
+---
+
+# identifiedByID
+
 `identifiedByID` (str): Extract the globally unique identifier for the person, group, or organization responsible for assigning the taxon to the specimen. This is a machine-readable ID, not a human-readable name.
 
 ✅ Include:

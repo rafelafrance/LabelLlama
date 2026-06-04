@@ -1,3 +1,10 @@
+---
+name: municipality
+description: Extract the municipality — the city, town, village, or other populated place where the specimen was collected. Return the full, standard name
+---
+
+# municipality
+
 `municipality` (str): Extract the municipality — the city, town, village, or other populated place where the specimen was collected. Return the full, standard name.
 
 ✅ Include:

@@ -1,3 +1,10 @@
+---
+name: infraspecificEpithet
+description: Extract the infraspecific epithet (subspecies, variety, or form name) from the scientific name. This is the third name after the genus and specific epithet
+---
+
+# infraspecificEpithet
+
 `infraspecificEpithet` (str): Extract the infraspecific epithet (subspecies, variety, or form name) from the scientific name. This is the third name after the genus and specific epithet.
 
 ✅ Include:

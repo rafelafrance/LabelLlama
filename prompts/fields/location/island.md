@@ -1,3 +1,10 @@
+---
+name: island
+description: Extract the name(s) of the island(s) on or near which the specimen was collected. Return the full, standard name
+---
+
+# island
+
 `island` (str): Extract the name(s) of the island(s) on or near which the specimen was collected. Return the full, standard name.
 
 ✅ Include:

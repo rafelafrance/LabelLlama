@@ -1,3 +1,10 @@
+---
+name: leafDuration
+description: Extract the leaf duration (how long the plant retains its leaves through the growing season and/or winter). This describes whether the plant sheds its leaves seasonally or keeps them year-round
+---
+
+# leafDuration
+
 `leafDuration` (str): Extract the leaf duration (how long the plant retains its leaves through the growing season and/or winter). This describes whether the plant sheds its leaves seasonally or keeps them year-round.
 
 ✅ Include:

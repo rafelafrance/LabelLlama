@@ -1,3 +1,10 @@
+---
+name: infraspecificEpithetAuthorship
+description: Extract the authorship citation for the infraspecific name (subspecies, variety, or form). This is the person(s) who originally described or recombined the infraspecific rank, separate from the species-level authorship
+---
+
+# infraspecificEpithetAuthorship
+
 `infraspecificEpithetAuthorship` (str): Extract the authorship citation for the infraspecific name (subspecies, variety, or form). This is the person(s) who originally described or recombined the infraspecific rank, separate from the species-level authorship.
 
 ✅ Include:

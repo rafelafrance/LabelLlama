@@ -1,3 +1,10 @@
+---
+name: woodiness
+description: Extract the degree of woodiness of the plant (whether the stem is woody or herbaceous). This describes the nature of the above-ground tissue at the end of the growing season — specifically, whether the stem persists as hard, lignified tissue or dies back as soft, green tissue. It is distinct from `habit` (growth shape/orientation, e.g., 'erect', 'climbing'), `lifeForm` (nutritional strategy or substrate, e.g., 'epiphytic', 'parasitic'), and `lifeCycle` (plant lifespan, e.g., 'annual', 'perennial')
+---
+
+# woodiness
+
 `woodiness` (str): Extract the degree of woodiness of the plant (whether the stem is woody or herbaceous). This describes the nature of the above-ground tissue at the end of the growing season — specifically, whether the stem persists as hard, lignified tissue or dies back as soft, green tissue. It is distinct from `habit` (growth shape/orientation, e.g., 'erect', 'climbing'), `lifeForm` (nutritional strategy or substrate, e.g., 'epiphytic', 'parasitic'), and `lifeCycle` (plant lifespan, e.g., 'annual', 'perennial').
 
 ✅ Include:

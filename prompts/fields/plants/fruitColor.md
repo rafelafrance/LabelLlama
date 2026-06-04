@@ -1,3 +1,10 @@
+---
+name: fruitColor
+description: Extract the color(s) of the fruits of the specimen. This describes the visual appearance of the fruit (berries, capsules, nuts, drupes, etc.) at the time of collection or at maturity
+---
+
+# fruitColor
+
 `fruitColor` (str): Extract the color(s) of the fruits of the specimen. This describes the visual appearance of the fruit (berries, capsules, nuts, drupes, etc.) at the time of collection or at maturity.
 
 ✅ Include:

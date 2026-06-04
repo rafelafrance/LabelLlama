@@ -1,3 +1,10 @@
+---
+name: country
+description: Extract the country where the specimen was collected. Return the full, standard English country name
+---
+
+# country
+
 `country` (str): Extract the country where the specimen was collected. Return the full, standard English country name.
 
 ✅ Include:

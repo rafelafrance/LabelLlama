@@ -1,3 +1,10 @@
+---
+name: genus
+description: Extract the taxonomic genus of the specimen (e.g., 'Canis', 'Salix', 'Agoseris', 'Drosophila'). The genus is the first component of the scientific name and is typically capitalized
+---
+
+# genus
+
 `genus` (str): Extract the taxonomic genus of the specimen (e.g., 'Canis', 'Salix', 'Agoseris', 'Drosophila'). The genus is the first component of the scientific name and is typically capitalized.
 
 ✅ Include:

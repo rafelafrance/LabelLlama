@@ -1,3 +1,10 @@
+---
+name: scientificNameAuthorship
+description: Extract the authorship citation for the species-level scientific name. This is the person(s) who originally described or recombined the name
+---
+
+# scientificNameAuthorship
+
 `scientificNameAuthorship` (str): Extract the authorship citation for the species-level scientific name. This is the person(s) who originally described or recombined the name.
 
 ✅ Include:

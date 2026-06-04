@@ -1,3 +1,10 @@
+---
+name: flowerColor
+description: Extract the color(s) of the flowers of the specimen. This describes the visual appearance of the petals, sepals, or overall inflorescence at the time of collection
+---
+
+# flowerColor
+
 `flowerColor` (str): Extract the color(s) of the flowers of the specimen. This describes the visual appearance of the petals, sepals, or overall inflorescence at the time of collection.
 
 ✅ Include:

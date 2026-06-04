@@ -1,3 +1,10 @@
+---
+name: decimalLongitude
+description: Extract the decimal longitude at which the specimen was collected. Return only the plain numeric value as a decimal number
+---
+
+# decimalLongitude
+
 `decimalLongitude` (float): Extract the decimal longitude at which the specimen was collected. Return only the plain numeric value as a decimal number.
 
 ✅ Include:

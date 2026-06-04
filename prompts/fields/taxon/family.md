@@ -1,3 +1,10 @@
+---
+name: family
+description: Extract the taxonomic family of the specimen (e.g., 'Rosaceae', 'Asteraceae', 'Fabaceae'). The family name is typically near the scientific name on the label, often preceded by a label like 'fam.' or 'Family:'
+---
+
+# family
+
 `family` (str): Extract the taxonomic family of the specimen (e.g., 'Rosaceae', 'Asteraceae', 'Fabaceae'). The family name is typically near the scientific name on the label, often preceded by a label like 'fam.' or 'Family:'.
 
 ✅ Include:
