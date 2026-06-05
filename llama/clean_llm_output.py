@@ -9,8 +9,6 @@ from tqdm import tqdm
 
 from llama.pylib import io_util, log, prompt_util
 
-DEBUG_SKIP = ("source", "text")
-
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
@@ -43,7 +41,9 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             out_field = field_action(in_row["text"], **in_data)
             out_field.cross_field_update(in_row)
 
-            out_data = {k: getattr(out_field, k) for k in out_field.get_field_names()}
+            out_data = {
+                k: getattr(out_field, k) for k in out_field.get_visible_fields()
+            }
             out_row |= out_data
 
             if debugging(args):
@@ -62,7 +62,7 @@ def debugging(args: argparse.Namespace) -> bool:
 
 def print_debug_info(in_row: dict[str, Any], out_row: dict[str, Any]) -> None:
     print(in_row["source"])
-    trimmed = {k: v for k, v in out_row.items() if k not in DEBUG_SKIP}
+    trimmed = {k: v for k, v in out_row.items() if k not in ("source", "text")}
     for column, value in trimmed.items():
         if column in in_row:
             print(f"{'before ' + column:>40}: {in_row[column]}")

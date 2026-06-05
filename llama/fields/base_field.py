@@ -16,6 +16,11 @@ class BaseField:
         """Get all of the field names within a class."""
         return [f.name for f in fields(cls)]
 
+    @classmethod
+    def get_visible_fields(cls) -> list[str]:
+        """Get all visible field names within a class."""
+        return [f.name for f in fields(cls) if not f.name.startswith("_")]
+
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
         del record

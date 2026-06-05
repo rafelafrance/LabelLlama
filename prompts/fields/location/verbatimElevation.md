@@ -24,9 +24,9 @@ module: llama/fields/location/verbatimElevation.py
 
 Normalization: Return the value exactly as written on the label. Do not convert units (e.g., keep '4921 ft', do not change to '1500 m'). Preserve ranges, labels, and uncertainty markers as they appear. If no elevation information is present, return an empty string.
 
-# Prompt elevationValues
+# Prompt _elevationValues
 
-`elevationValues` (list[float]): Extract the numeric elevation value(s). A single value indicates a point elevation; two values indicate an elevation range (min and max). The same elevation may be reported in different unit systems — include all numeric values in the order they appear.
+`_elevationValues` (list[float]): Extract the numeric elevation value(s). A single value indicates a point elevation; two values indicate an elevation range (min and max). The same elevation may be reported in different unit systems — include all numeric values in the order they appear.
 
 ✅ Include:
 - Single values: '1500 m' → [1500.0]
@@ -71,7 +71,7 @@ If no elevation values are present, return an empty list.
 
 ❌ DO NOT include:
 - Labels or prefixes (e.g., 'elev.', 'alt.', 'altitude') — these are not units
-- Numeric values — those belong in `elevationValues`
+- Numeric values — those belong in `_elevationValues`
 - Uncertainty markers (e.g., '~', '?', 'ca.') — those belong in `elevationEstimated`
 
 Normalization: Normalize units to the abbreviation form when possible (e.g., 'meters' → 'm', 'feet' → 'ft'). Preserve the original text if the unit is ambiguous or non-standard.
