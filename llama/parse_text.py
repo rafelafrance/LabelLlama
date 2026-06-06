@@ -83,6 +83,7 @@ def call_lm(
     payload = {
         "model": args.model,
         "messages": [
+            # {"role": "system", "content": str(began)},  # Defeat cache
             {"role": "system", "content": prompt.system_prompt},
             {"role": "user", "content": field_prompts},
             {"role": "user", "content": field_template},
@@ -130,7 +131,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--prompt",
         type=Path,
         required=True,
-        help="""A markdown file with a prompt and list of fields to parse.""",
+        help="""A markdown file with a prompt and list of fields to parse.
+            For example prompts/fields/herbarium.md.""",
     )
     arg_parser.add_argument(
         "--docs",

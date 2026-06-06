@@ -1,4 +1,4 @@
-# Label Llama![CI](https://github.com/rafelafrance/LabelLlama/workflows/CI/badge.svg)
+# Label Llama
 
 **This project is under heavy development.**
 
