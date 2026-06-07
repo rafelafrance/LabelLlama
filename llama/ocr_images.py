@@ -28,7 +28,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     glob = (args.glob or "*") + ".[Jj][Pp][Gg]"
     image_paths = sorted(args.image_dir.glob(glob))
     image_paths = image_paths[: args.limit]
-    logging.info(f"There are images {len(image_paths)} to OCR")
+    logging.info(f"There are {len(image_paths)} images to OCR")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     logging.info(
@@ -57,6 +57,7 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     errors = sum(1 for r in results if r["status"] == "ERROR")
     good = [r for r in results if r["status"] != "ERROR"]
+    good = sorted(good, key=lambda r: r["source"])
 
     logging.info(
         f"Total {len(results)} documents processed with {errors} errors "
@@ -109,7 +110,10 @@ def call_ocr(
 
         content = result["choices"][0]["message"]["content"] or ""
 
-        text = str_util.clean_ocr(content)
+        if args.convert_html:
+            text = str_util.html_to_text(content)
+        else:
+            text = str_util.clean_ocr(content)
         status = "success"
 
     except requests.exceptions.RequestException as err:
@@ -179,6 +183,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=float,
         default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
+        "--convert-html",
+        action="store_true",
+        help="""If the OCR model insists on producting HTML output, you may want
+            to convert it to text.""",
     )
     arg_parser.add_argument(
         "--log-file",

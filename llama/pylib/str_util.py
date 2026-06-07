@@ -1,8 +1,23 @@
 import re
 
+from markdownify import markdownify as md
+
 
 def compress(text: str) -> str:
     return " ".join(text.split())
+
+
+def html_to_text(text: str) -> str:
+    """Fix markup nonsense from the OCR engines."""
+    text = md(
+        text,
+        strip=["img"],
+        escape_asterisks=False,
+        escape_underscores=False,
+        escape_misc=False,
+    )
+    text = re.sub(r"([*_])([\w\s]*)\1", r"\2", text)
+    return text
 
 
 def clean_ocr(text: str) -> str:
@@ -37,4 +52,3 @@ def llm_reply_to_dict(content: str, columns: list[str]) -> dict:
     }
 
     return as_dict
-

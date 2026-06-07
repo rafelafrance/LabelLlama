@@ -101,7 +101,7 @@ class Prompt:
                     link = link.removeprefix("(").removesuffix(")")
                     fields[link] = FieldPrompt.load(link)
 
-        if not sys_prompt or not fields:
+        if not sys_prompt:
             raise ValueError(f"Improperly formatted prompt file. {path}")
 
         prompt = cls(
