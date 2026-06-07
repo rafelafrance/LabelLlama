@@ -22,7 +22,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     columns = df.columns
     if args.column:
         columns = args.column
-    columns = [c for c in columns if c not in ("source", "text", "elapsed")]
+    columns = [c for c in columns if c not in ("source", "text", "elapsed", "status")]
     columns = [c for c in columns if c in headers]
 
     input_rows = df.to_dict("records")

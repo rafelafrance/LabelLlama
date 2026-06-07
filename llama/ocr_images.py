@@ -23,7 +23,11 @@ def ocr_images(args: argparse.Namespace) -> None:
     if args.docs.exists():
         with contextlib.suppress(pd.errors.EmptyDataError):
             records = io_util.read_list_of_dicts(args.docs)
-            already_read = [Path(r["source"]) for r in records if r.get("source")]
+            already_read = [
+                Path(r["source"])
+                for r in records
+                if r.get("source") and r.get("status") == "success"
+            ]
 
     glob = (args.glob or "*") + ".[Jj][Pp][Gg]"
     image_paths = sorted(args.image_dir.glob(glob))
@@ -56,15 +60,14 @@ def ocr_images(args: argparse.Namespace) -> None:
                     pbar.update(1)
 
     errors = sum(1 for r in results if r["status"] == "ERROR")
-    good = [r for r in results if r["status"] != "ERROR"]
-    good = sorted(good, key=lambda r: r["source"])
+    results = sorted(results, key=lambda r: r["source"])
 
     logging.info(
         f"Total {len(results)} documents processed with {errors} errors "
         f"and {len(already_read)} documents were skipped."
     )
 
-    io_util.output_file(args.docs, good, mode="a")
+    io_util.output_file(args.docs, results, mode="a")
 
     timer.job_elapsed(job_began)
 
@@ -99,6 +102,7 @@ def call_ocr(
             },
         ],
         "temperature": args.temperature,
+        "max_tokens": args.max_tokens,
     }
 
     try:
@@ -183,6 +187,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=float,
         default=0.1,
         help="""Model's temperature. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        help="""The LM response's maximum tokens.""",
     )
     arg_parser.add_argument(
         "--convert-html",

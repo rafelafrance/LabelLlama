@@ -2,9 +2,10 @@
 
 uv run ./llama/ocr_images.py \
   --image-dir data/mix/ocr_test \
-  --docs data/mix/qwen36_docs_1.csv \
-  --model qwen/qwen3.6-35b-a3b \
-  --prompt prompts/ocr.md \
+  --docs data/mix/chandra_docs_2.csv \
+  --model chandra-ocr \
+  --prompt prompts/ocr_v2.md \
   --limit 10 \
   --temperature 0.1 \
-  --log-file data/mix/qwen_ocr.log
+  --max-tokens 2048 \
+  --log-file data/mix/chandra_ocr.log

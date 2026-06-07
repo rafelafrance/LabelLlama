@@ -22,6 +22,7 @@ def lm_extract(args: argparse.Namespace) -> None:
     column_names = prompt.column_names()
 
     docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
+    docs = [d for d in docs if d["status"] == "success"]
 
     char_len = len(prompt.system_prompt) + len(field_prompts) + len(field_template)
     word_len = (
@@ -56,11 +57,11 @@ def lm_extract(args: argparse.Namespace) -> None:
                 pbar.update(1)
 
     errors = sum(1 for r in results if r["status"] == "ERROR")
-    good = [r for r in results if r["status"] != "ERROR"]
+    results = sorted(results, key=lambda r: r["source"])
 
     logging.info(f"Total {len(results)} documents processed with {errors} errors.")
 
-    io_util.output_file(args.out_file, good)
+    io_util.output_file(args.out_file, results)
 
     timer.job_elapsed(job_began)
 
@@ -92,6 +93,8 @@ def call_lm(
     }
     if args.temperature is not None:
         payload["temperature"] = args.temperature
+    if args.max_tokens is not None:
+        payload["max_tokens"] = args.max_tokens
 
     try:
         response = session.post(
@@ -173,6 +176,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--temperature",
         type=float,
         help="""Model's temperature.""",
+    )
+    arg_parser.add_argument(
+        "--max-tokens",
+        type=int,
+        help="""The LM response's maximum tokens.""",
     )
     arg_parser.add_argument(
         "--log-file",
