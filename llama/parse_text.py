@@ -2,12 +2,14 @@
 
 import argparse
 import logging
+import os
 import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
 from tqdm import tqdm
 
 from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
@@ -15,6 +17,8 @@ from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
+
+    load_dotenv()
 
     prompt = prompt_util.Prompt.load(args.prompt)
     field_prompts = prompt.build_field_prompts()
@@ -80,7 +84,10 @@ def call_lm(
     text = preprocess.clean_text(doc["text"])
 
     url = f"{args.api_host}/chat/completions"
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {os.getenv('LLM_API_KEY')}",
+    }
     payload = {
         "model": args.model,
         "messages": [
