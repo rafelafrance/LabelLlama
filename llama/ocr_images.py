@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-from dotenv import load_dotenv
 from tqdm import tqdm
 
 from llama.pylib import io_util, prompt_util, str_util, timer
@@ -19,8 +18,6 @@ from llama.pylib import io_util, prompt_util, str_util, timer
 
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
-
-    load_dotenv()
 
     already_read = []
     if args.docs.exists():
@@ -87,10 +84,7 @@ def call_ocr(
         base64_image = base64.b64encode(f.read()).decode("utf-8")
 
     url = f"{args.api_host}/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        ""
-    }
+    headers = {"Content-Type": "application/json"}
     payload = {
         "model": args.model,
         "messages": [

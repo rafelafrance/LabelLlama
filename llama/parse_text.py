@@ -18,8 +18,6 @@ from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
-    load_dotenv()
-
     prompt = prompt_util.Prompt.load(args.prompt)
     field_prompts = prompt.build_field_prompts()
     field_template = prompt.build_field_template()
@@ -209,5 +207,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     ARGS = parse_args()
     lm_extract(ARGS)
