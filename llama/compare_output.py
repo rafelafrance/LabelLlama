@@ -15,8 +15,8 @@ PAIR: int = 2
 def score_extracts(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    gold_df = io_util.read_to_df(args.gold_file)
-    lm_df = io_util.read_to_df(args.lm_file)
+    gold_df = io_util.read_to_df(args.clean_file1)
+    lm_df = io_util.read_to_df(args.clean_file2)
 
     gold_data = gold_df.fillna("").to_dict("records")
     lm_data = lm_df.fillna("").to_dict("records")
@@ -103,7 +103,7 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     df_rows.append(avg_row)
 
-    io_util.output_file(args.out_file, df_rows)
+    io_util.output_file(args.compare_file, df_rows)
 
     log.finished()
 
@@ -117,40 +117,48 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             LM outputs for various reasons.""",
         ),
     )
-    arg_parser.add_argument(
-        "--prompt",
+    io_group = arg_parser.add_argument_group("I/O options")
+    io_group.add_argument(
+        "--clean-file1",
         type=Path,
         required=True,
-        help="""A markdown file with a prompt and list of fields to parse.
-            It is used to get the correct version of the scoring modules.""",
+        metavar="path",
+        help="""The one of the files to compare. This is often the gold standard.""",
     )
-    arg_parser.add_argument(
-        "--gold-file",
+    io_group.add_argument(
+        "--clean-file2",
         type=Path,
         required=True,
-        help="""The one of the files to compare.""",
+        metavar="path",
+        help="""The one of the files to compare. The is often the LM results file.""",
     )
-    arg_parser.add_argument(
-        "--lm-file",
-        type=Path,
-        required=True,
-        help="""The one of the files to compare.""",
-    )
-    arg_parser.add_argument(
-        "--out-file",
+    io_group.add_argument(
+        "--compare-file",
         type=Path,
         help="""Write the comparison results to this file.
            Handles (.json, .jsonl, .csv, .tsv, .html)""",
     )
-    arg_parser.add_argument(
+    prompt_group = arg_parser.add_argument_group("prompt options")
+    prompt_group.add_argument(
+        "--prompt",
+        type=Path,
+        required=True,
+        metavar="path",
+        help="""A markdown file with a prompt and list of fields to parse.
+            It is used to get the correct version of the scoring modules.""",
+    )
+    logging_group = arg_parser.add_argument_group("logging options")
+    logging_group.add_argument(
         "--log-file",
         type=Path,
+        metavar="path",
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
     )
-    arg_parser.add_argument(
+    logging_group.add_argument(
         "--notes",
-        help="""Notes for logging.""",
+        metavar="string",
+        help="""Notes for logging. They only appear in the log file.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

@@ -77,44 +77,56 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             """Format and validate language model (LM) extracted text.""",
         ),
     )
-    arg_parser.add_argument(
+    io_group = arg_parser.add_argument_group("I/O options")
+    io_group.add_argument(
+        "--parse-file",
+        type=Path,
+        required=True,
+        metavar="path",
+        help="""Clean the LM this results in this file.""",
+    )
+    io_group.add_argument(
+        "--clean-file",
+        type=Path,
+        required=True,
+        metavar="path",
+        help="""Write the cleaned data to this file.
+           Handles (.json, .jsonl, .csv, .tsv, .html)""",
+    )
+    prompt_group = arg_parser.add_argument_group("prompt options")
+    prompt_group.add_argument(
         "--prompt",
         type=Path,
         required=True,
+        metavar="path",
         help="""A markdown file with a prompt and list of fields to parse.
             It is used to get the correct version of the cleaner modules.""",
     )
-    arg_parser.add_argument(
-        "--in-file",
-        type=Path,
-        metavar="PATH",
-        help="""Clean the LM this results in this file.""",
-    )
-    arg_parser.add_argument(
-        "--out-file",
-        type=Path,
-        help="""Write the postprocessing results to this file.
-           Handles (.json, .jsonl, .csv, .tsv, .html)""",
-    )
-    arg_parser.add_argument(
+    logging_group = arg_parser.add_argument_group("logging options")
+    logging_group.add_argument(
         "--log-file",
         type=Path,
+        metavar="path",
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
     )
-    arg_parser.add_argument(
+    logging_group.add_argument(
         "--notes",
-        help="""Notes for logging.""",
+        metavar="string",
+        help="""Notes for logging. They only appear in the log file.""",
     )
-    arg_parser.add_argument(
+    debugging_group = arg_parser.add_argument_group("debugging options")
+    debugging_group.add_argument(
         "--column",
         action="append",
-        help="""Just parse one column. Used for debugging.""",
+        metavar="string",
+        help="""Just parse one column.""",
     )
-    arg_parser.add_argument(
+    debugging_group.add_argument(
         "--limit",
         type=int,
-        help="""Limit to this many records. Used for debugging.""",
+        metavar="int",
+        help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

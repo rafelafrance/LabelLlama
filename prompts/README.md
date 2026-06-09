@@ -18,6 +18,6 @@ There are three types:
 
 3. Field prompts hold the indiviual field descriptions used in the prompts. It contains the data types and instructions to the LLM on how to recognize and process the target data. See [scientificName.md](fields/taxon/scientificName.md) for an example. 
    
-   The field prompts themselves are stored other subdirectories under the `fields` directory base upon their research domain or Darwin Core category.
+   The field prompts themselves are stored other subdirectories under the `fields` directory based upon their research domain or Darwin Core category.
    
    Field prompts are designed to be included in a larger prompt. I will rethink this if the need arises for them to be used individually.

@@ -29,8 +29,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 if r.get("source") and r.get("status") == "success"
             ]
 
-    glob = (args.glob or "*") + ".[Jj][Pp][Gg]"
-    image_paths = sorted(args.image_dir.glob(glob))
+    image_paths = sorted(args.image_dir.glob(args.glob))
     image_paths = image_paths[: args.limit]
     logging.info(f"There are {len(image_paths)} images to OCR")
 
@@ -67,7 +66,7 @@ def ocr_images(args: argparse.Namespace) -> None:
         f"and {len(already_read)} documents were skipped."
     )
 
-    io_util.output_file(args.docs, results, mode="a")
+    io_util.output_file(args.doc_file, results, mode="a")
 
     timer.job_elapsed(job_began)
 
@@ -140,84 +139,104 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         allow_abbrev=True,
         description=textwrap.dedent("""OCR images."""),
     )
-    arg_parser.add_argument(
-        "--image-dir",
+    io_group = arg_parser.add_argument_group("I/O options")
+    io_group.add_argument(
+        "--image-glob",
+        required=True,
+        metavar="glob",
+        help="""Get all images matching this glob/pattern. You may need to quote this
+            argument. An example: 'museum/data/images1/*.jpg'""",
+    )
+    io_group.add_argument(
+        "--doc-file",
         type=Path,
         required=True,
-        help="""Directory containing all of the images to OCR.""",
+        metavar="path",
+        help="""Put OCRed text into this file. This appends data to the file.
+            An example: data/museum/data/images1.csv""",
     )
-    arg_parser.add_argument(
-        "--docs",
-        type=Path,
-        required=True,
-        help="""Put OCRed text into this file. This appends data to the file.""",
-    )
-    arg_parser.add_argument(
-        "--timeout",
-        type=int,
-        default=120,
-        help="""How long to wait for the OCR to complete in seconds.
-            (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
-        "--model",
-        default="chandra-ocr",
-        help="""Use this language model. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
+    prompt_group = arg_parser.add_argument_group("prompt options")
+    prompt_group.add_argument(
         "--prompt",
         type=Path,
-        default="prompts/ocr.md",
+        default="prompts/ocr_v2.md",
+        metavar="path",
         help="""A markdown file with a prompt used to OCR images.
             (default: %(default)s)""",
     )
-    arg_parser.add_argument(
+    model_group = arg_parser.add_argument_group("model options")
+    model_group.add_argument(
+        "--model",
+        default="chandra-ocr",
+        metavar="string",
+        help="""Use this language model. (default: %(default)s)""",
+    )
+    model_group.add_argument(
         "--api-host",
         default="http://localhost:1234/v1",
-        help="""URL for the language model. (default: %(default)s)""",
+        metavar="string",
+        help="""URL for the language model. (default: %(default)s)
+            The default is for LM-Studio, but you could use Ollama's or another
+            URL here.""",
     )
-    arg_parser.add_argument(
+    model_group.add_argument(
         "--threads",
         type=int,
         default=2,
-        help="""How many parallel threads to run. (default: %(default)s)""",
+        metavar="int",
+        help="""How many parallel threads to run. (default: %(default)s)
+            Increase this if the model server is powerful enough.""",
     )
-    arg_parser.add_argument(
+    model_group.add_argument(
         "--temperature",
         type=float,
         default=0.1,
-        help="""Model's temperature. (default: %(default)s)""",
+        metavar="float",
+        help="""Model's temperature. (default: %(default)s)
+            We don't want the model to get creative, so keep this value low.""",
     )
-    arg_parser.add_argument(
+    model_group.add_argument(
         "--max-tokens",
         type=int,
-        help="""The LM response's maximum tokens.""",
+        default=2048,
+        metavar="int",
+        help="""The OCR model's response maximum tokens. (default: %(default)s)
+            2048 tokens is roughly 1.5K words, which is more than enough for most
+            museum specimens. I keep this low to truncate model loops.""",
     )
-    arg_parser.add_argument(
+    model_group.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        metavar="int",
+        help="""How long to wait for the OCR model to complete in seconds.
+            (default: %(default)s) 2 minutes is a life time for OCR.""",
+    )
+    model_group.add_argument(
         "--convert-html",
         action="store_true",
-        help="""If the OCR model insists on producting HTML output, you may want
-            to convert it to text.""",
+        help="""A flag. If the OCR model insists on producting HTML output, you may want
+            to convert it to text. Use this flag to trigger the conversion.""",
     )
-    arg_parser.add_argument(
+    logging_group = arg_parser.add_argument_group("logging options")
+    logging_group.add_argument(
         "--log-file",
         type=Path,
-        help="""Append logging notices to this file. It also logs the script arguments
+        metavar="path",
+        help="""Append logging notices to this file. It also logs the script options
             so you may use this to keep track of what you did.""",
     )
-    arg_parser.add_argument(
+    logging_group.add_argument(
         "--notes",
-        help="""Notes for logging.""",
+        metavar="string",
+        help="""Notes for logging. They only appear in the log file.""",
     )
-    arg_parser.add_argument(
-        "--glob",
-        help="""Only get images matching this glob.
-            For now, I am appending an additional file suffix glob.""",
-    )
-    arg_parser.add_argument(
+    debugging_group = arg_parser.add_argument_group("debugging options")
+    debugging_group.add_argument(
         "--limit",
         type=int,
-        help="""Only read this many records.""",
+        metavar="int",
+        help="""Only OCR this many images.""",
     )
     ns: argparse.Namespace = arg_parser.parse_args(args)
     return ns

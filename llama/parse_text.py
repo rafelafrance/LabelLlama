@@ -23,7 +23,7 @@ def lm_extract(args: argparse.Namespace) -> None:
     field_template = prompt.build_field_template()
     column_names = prompt.column_names()
 
-    docs = io_util.read_list_of_dicts(args.docs, fill_na="", limit=args.limit)
+    docs = io_util.read_list_of_dicts(args.ocr_file, fill_na="", limit=args.limit)
     docs = [d for d in docs if d["status"] == "success"]
 
     char_len = len(prompt.system_prompt) + len(field_prompts) + len(field_template)
@@ -63,7 +63,7 @@ def lm_extract(args: argparse.Namespace) -> None:
 
     logging.info(f"Total {len(results)} documents processed with {errors} errors.")
 
-    io_util.output_file(args.out_file, results)
+    io_util.output_file(args.parse_file, results)
 
     timer.job_elapsed(job_began)
 
@@ -135,72 +135,99 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             """Use a language model (LM) to extract information from text."""
         ),
     )
-    arg_parser.add_argument(
-        "--prompt",
+    io_group = arg_parser.add_argument_group("I/O options")
+    io_group.add_argument(
+        "--ocr-file",
         type=Path,
-        required=True,
-        help="""A markdown file with a prompt and list of fields to parse.
-            For example prompts/fields/herbarium.md.""",
+        metavar="path",
+        help="""Parse label text from this file. We need only 'source' and 'text'
+            columns for valid input, so any CSV/TSV/JSON/JSONL file with those columns
+            is fine.""",
     )
-    arg_parser.add_argument(
-        "--docs",
+    io_group.add_argument(
+        "--parse-file",
         type=Path,
-        help="""Parse doc text from this file. We need only 'source' and 'text'
-            columns for valid input, so any file with those columns are fine.""",
-    )
-    arg_parser.add_argument(
-        "--out-file",
-        type=Path,
+        metavar="path",
         help="""Write the LM results to this file.
            Handles (.json, .jsonl, .csv, .tsv)""",
     )
-    arg_parser.add_argument(
-        "--timeout",
-        type=int,
-        default=120,
-        help="""How long to wait for the LM to respond in seconds.
-            (default: %(default)s)""",
+    prompt_group = arg_parser.add_argument_group("prompt options")
+    prompt_group.add_argument(
+        "--prompt",
+        type=Path,
+        required=True,
+        metavar="path",
+        help="""A markdown file with a prompt and list of fields to parse.
+            For example prompts/fields/herbarium.md.""",
     )
-    arg_parser.add_argument(
+    model_group = arg_parser.add_argument_group("model options")
+    model_group.add_argument(
+        "--model",
+        default="lm_studio/google/gemma-4-26b-a4b",
+        metavar="string",
+        help="""Use this language model. (default: %(default)s) There is a speed vs.
+            cost tradeoff between local and hosted models. Local models are cheaper
+            but hosted models are much faster.""",
+    )
+    model_group.add_argument(
+        "--api-host",
+        default="http://localhost:1234/v1",
+        metavar="string",
+        help="""URL for the LM model. (default %(default)s
+            The default is for LM-Studio, but I also use ChatGPT-nano and other
+            server models.""",
+    )
+    model_group.add_argument(
         "--threads",
         type=int,
         default=10,
-        help="""How many parallel threads to run. (default: %(default)s)""",
+        metavar="int",
+        help="""How many parallel threads to run. (default: %(default)s) For
+            ChatGPT-nano I will increase this to 20 or more, and for a local model
+            I will reduce this to 4.""",
     )
-    arg_parser.add_argument(
-        "--model",
-        default="lm_studio/google/gemma-4-26b-a4b",
-        help="""Use this language model. (default: %(default)s)""",
-    )
-    arg_parser.add_argument(
-        "--api-host",
-        # default="http://localhost:1234/v1",
-        help="""URL for the LM model.""",
-    )
-    arg_parser.add_argument(
+    model_group.add_argument(
         "--temperature",
         type=float,
-        help="""Model's temperature.""",
+        metavar="float",
+        help="""Model's temperature.
+            We don't want the model to get creative, so keep this value low. Some
+            hosted servers don't like this option so there is no default.""",
     )
-    arg_parser.add_argument(
+    model_group.add_argument(
         "--max-tokens",
         type=int,
-        help="""The LM response's maximum tokens.""",
+        metavar="int",
+        help="""The LM response's maximum tokens. Some hosted servers are OK with you
+            not setting this so, I don't have a default.""",
     )
-    arg_parser.add_argument(
+    model_group.add_argument(
+        "--timeout",
+        type=int,
+        default=120,
+        metavar="int",
+        help="""How long to wait for the LM to respond in seconds.
+            (default: %(default)s) 2 minutes is a life time for parsing label text.""",
+    )
+    logging_group = arg_parser.add_argument_group("logging options")
+    logging_group.add_argument(
         "--log-file",
         type=Path,
+        metavar="string",
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
     )
-    arg_parser.add_argument(
+    logging_group.add_argument(
         "--notes",
-        help="""Notes for logging.""",
+        metavar="string",
+        help="""Notes for logging. They only appear in the log file.""",
     )
-    arg_parser.add_argument(
+    debugging_group = arg_parser.add_argument_group("debugging options")
+    debugging_group.add_argument(
         "--limit",
         type=int,
-        help="""Limit to this many records. Primarily for debugging.""",
+        metavar="int",
+        help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
     return ns
