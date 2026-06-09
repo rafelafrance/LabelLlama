@@ -10,9 +10,12 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
 from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
+
+DEFAULT_POOL = 10
 
 
 def lm_extract(args: argparse.Namespace) -> None:
@@ -38,6 +41,13 @@ def lm_extract(args: argparse.Namespace) -> None:
     )
 
     with requests.Session() as session, tqdm(total=len(docs)) as pbar:
+        if args.threads > DEFAULT_POOL:
+            adapter = HTTPAdapter(
+                pool_connections=args.threads, pool_maxsize=args.threads
+            )
+            session.mount("http://", adapter)
+            session.mount("https://", adapter)
+
         results = []
 
         with ThreadPoolExecutor(max_workers=args.threads) as executor:
