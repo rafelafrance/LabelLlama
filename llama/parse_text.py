@@ -10,12 +10,9 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
 from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
-
-DEFAULT_POOL = 10
 
 
 def lm_extract(args: argparse.Namespace) -> None:
@@ -40,14 +37,7 @@ def lm_extract(args: argparse.Namespace) -> None:
         f"{word_len} words"
     )
 
-    with requests.Session() as session, tqdm(total=len(docs)) as pbar:
-        if args.threads > DEFAULT_POOL:
-            adapter = HTTPAdapter(
-                pool_connections=args.threads, pool_maxsize=args.threads
-            )
-            session.mount("http://", adapter)
-            session.mount("https://", adapter)
-
+    with tqdm(total=len(docs)) as pbar:
         results = []
 
         with ThreadPoolExecutor(max_workers=args.threads) as executor:
@@ -56,7 +46,6 @@ def lm_extract(args: argparse.Namespace) -> None:
                     call_lm,
                     args,
                     doc,
-                    session,
                     prompt,
                     field_prompts,
                     field_template,
@@ -81,7 +70,6 @@ def lm_extract(args: argparse.Namespace) -> None:
 def call_lm(
     args: argparse.Namespace,
     doc: dict,
-    session: requests.Session,
     prompt: prompt_util.Prompt,
     field_prompts: str,
     field_template: str,
@@ -110,7 +98,7 @@ def call_lm(
         payload["temperature"] = args.temperature
 
     try:
-        response = session.post(
+        response = requests.post(
             url, headers=headers, json=payload, timeout=args.timeout
         )
         response.raise_for_status()

@@ -39,24 +39,21 @@ def ocr_images(args: argparse.Namespace) -> None:
         f"characters, {len(prompt.system_prompt.split())} words"
     )
 
-    with requests.Session() as session:
-        tasks = [
-            image_path for image_path in image_paths if image_path not in already_read
-        ]
+    tasks = [image_path for image_path in image_paths if image_path not in already_read]
 
-        with tqdm(total=len(image_paths)) as pbar:
-            results = []
+    with tqdm(total=len(image_paths)) as pbar:
+        results = []
 
-            with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                futures = {
-                    executor.submit(
-                        call_ocr, args, image_path, session, prompt.system_prompt
-                    ): image_path
-                    for image_path in tasks
-                }
-                for future in as_completed(futures):
-                    results.append(future.result())
-                    pbar.update(1)
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
+            futures = {
+                executor.submit(
+                    call_ocr, args, image_path, prompt.system_prompt
+                ): image_path
+                for image_path in tasks
+            }
+            for future in as_completed(futures):
+                results.append(future.result())
+                pbar.update(1)
 
     errors = sum(1 for r in results if r["status"] == "ERROR")
     results = sorted(results, key=lambda r: r["source"])
@@ -66,7 +63,7 @@ def ocr_images(args: argparse.Namespace) -> None:
         f"and {len(already_read)} documents were skipped."
     )
 
-    io_util.output_file(args.doc_file, results, mode="a")
+    io_util.output_file(args.ocr_file, results, mode="a")
 
     timer.job_elapsed(job_began)
 
@@ -74,7 +71,6 @@ def ocr_images(args: argparse.Namespace) -> None:
 def call_ocr(
     args: argparse.Namespace,
     image_path: Path,
-    session: requests.Session,
     sys_prompt: str,
 ) -> dict:
     began = datetime.now()
@@ -105,7 +101,7 @@ def call_ocr(
     }
 
     try:
-        response = session.post(
+        response = requests.post(
             url, headers=headers, json=payload, timeout=args.timeout
         )
         response.raise_for_status()
@@ -148,7 +144,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             argument. An example: 'museum/data/images1/*.jpg'""",
     )
     io_group.add_argument(
-        "--doc-file",
+        "--ocr-file",
         type=Path,
         required=True,
         metavar="path",
