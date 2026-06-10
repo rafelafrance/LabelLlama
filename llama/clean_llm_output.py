@@ -13,7 +13,7 @@ from llama.pylib import io_util, log, prompt_util
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    df = io_util.read_to_df(args.in_file, limit=args.limit)
+    df = io_util.read_to_df(args.parse_file, limit=args.limit)
 
     prompt = prompt_util.Prompt.load(args.prompt)
     field_classes = prompt.field_classes()
@@ -23,7 +23,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     if args.column:
         columns = args.column
     columns = [c for c in columns if c not in ("source", "text", "elapsed", "status")]
-    columns = [c for c in columns if c in headers]
+    columns = [c for c in columns if c in headers and c in field_classes]
 
     input_rows = df.to_dict("records")
     input_rows = input_rows[: args.limit]
@@ -51,7 +51,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
         output_rows.append(out_row)
 
-    io_util.output_file(args.out_file, output_rows)
+    io_util.output_file(args.clean_file, output_rows)
 
     log.finished()
 

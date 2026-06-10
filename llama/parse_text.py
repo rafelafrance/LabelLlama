@@ -108,8 +108,6 @@ def call_lm(
     }
     if args.temperature is not None:
         payload["temperature"] = args.temperature
-    if args.max_tokens is not None:
-        payload["max_tokens"] = args.max_tokens
 
     try:
         response = session.post(
@@ -203,13 +201,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Model's temperature.
             We don't want the model to get creative, so keep this value low. Some
             hosted servers don't like this option so there is no default.""",
-    )
-    model_group.add_argument(
-        "--max-tokens",
-        type=int,
-        metavar="int",
-        help="""The LM response's maximum tokens. Some hosted servers are OK with you
-            not setting this so, I don't have a default.""",
     )
     model_group.add_argument(
         "--timeout",

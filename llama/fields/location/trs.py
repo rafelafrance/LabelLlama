@@ -25,7 +25,7 @@ class Trs(BaseField):
         self.trsRange = re.sub(r"^r\s*", "", self.trsRange, flags=re.IGNORECASE)
 
         self.trsSection = fix_values.to_str(self.trsSection)
-        self.trsSection = re.sub(r"\b(sec[\w.])|s\.?)\b", "", self.trsSection).strip()
+        self.trsSection = re.sub(r"\b(sec[\w.]|s\.?)\b", "", self.trsSection).strip()
 
         self.trsQuad = fix_values.to_str(self.trsQuad)
         self.trsQuad = re.sub(r"\b(quad\w*|q\.?)\b", "", self.trsQuad).strip()

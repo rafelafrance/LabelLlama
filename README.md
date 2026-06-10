@@ -116,7 +116,6 @@ all of which I try to fix in the next step.
 |model|--api-host|string|URL for the LM model.|http://localhost:1234/v1|The default is for LM-Studio, but I also use ChatGPT-nano and other server models.|
 |model|--threads|int|How many parallel threads to run.|10|For ChatGPT-nano I will increase this to 20 or more, and for a local model I will reduce this to 4.|
 |model|--temperature|float|Model's temperature.|None|We don't want the model to get creative, so keep this value low. Some hosted servers don't like this option so there is no default.|
-|model|--max-tokens|int|The LM response's maximum tokens.|None|Some hosted servers are OK with you not setting this so, I don't have a default.|
 |model|--timeout|int|How long to wait for the LM to respond in seconds.|120|2 minutes is a life time for parsing label text.|
 |logging|-log-file|string|Append logging notices to this file.|None|It also logs the script arguments so you may use this to keep track of what you did.|
 |logging|--notes|string|Notes for logging.|None|They only appear in the log file.|
