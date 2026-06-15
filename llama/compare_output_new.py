@@ -17,9 +17,30 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     gold_df = io_util.read_to_df(args.clean_file1)
     lm_df = io_util.read_to_df(args.clean_file2)
+    gbif_df = io_util.read_to_df(args.gbif_file)
 
     gold_data = gold_df.fillna("").to_dict("records")
     lm_data = lm_df.fillna("").to_dict("records")
+    gbif_data = gbif_df.fillna("").to_dict("records")
+
+    gbif_html = {}
+    for row in gbif_data:
+        parts = []
+        parts.append("<div class='gbif'>")
+        first = True
+        for key, value in row.items():
+            if not value:
+                continue
+            if first:
+                first = False
+            else:
+                parts.append("<br/>")
+            parts.append(f'<span class="gbif-key">{key}</span>')
+            parts.append(f'<span class="gbif-value">{value}</span>')
+        parts.append("</div>")
+
+        key = row["gbifID"]
+        gbif_html[key] = "".join(parts)
 
     compare = {r["source"]: [r] for r in gold_data}
     for row in lm_data:
@@ -48,27 +69,33 @@ def score_extracts(args: argparse.Namespace) -> None:
         row = {"row": i, "source": source, "text": gold.get("text", lm["text"])}
         rows.append(row)
 
+        gbif_id = Path(source).stem.split("_", maxsplit=1)[0]
+
         df_row1: dict[str, str] = {
             "source": gold["source"],
             "text": gold.get("text", lm["text"]),
+            "gbif": gbif_html[gbif_id],
             "row": str(i),
             "type": "doc",
         }
         df_row2: dict[str, str] = {
             "source": "",
             "text": "",
+            "gbif": "",
             "row": "",
             "type": args.clean_file1.stem,
         }
         df_row3: dict[str, str] = {
             "source": "",
             "text": "",
+            "gbif": "",
             "row": "",
             "type": args.clean_file2.stem,
         }
         df_row4: dict[str, float | str] = {
             "source": "",
             "text": "",
+            "gbif": "",
             "row": "",
             "type": "score",
         }
@@ -137,6 +164,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         help="""Write the comparison results to this file.
            Handles (.json, .jsonl, .csv, .tsv, .html)""",
+    )
+    io_group.add_argument(
+        "--gbif-file",
+        type=Path,
+        metavar="path",
+        help="""The file containing the GBIF metadata.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(

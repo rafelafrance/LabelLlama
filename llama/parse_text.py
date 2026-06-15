@@ -87,7 +87,7 @@ def call_lm(
     payload = {
         "model": args.model,
         "messages": [
-            # {"role": "system", "content": str(began)},  # Defeat cache
+            # {"role": "system", "content": str(began)},  # Defeat GPT web cache
             {"role": "system", "content": prompt.system_prompt},
             {"role": "user", "content": field_prompts},
             {"role": "user", "content": field_template},
@@ -96,6 +96,8 @@ def call_lm(
     }
     if args.temperature is not None:
         payload["temperature"] = args.temperature
+    if args.max_tokens is not None:
+        payload["max_tokens"] = args.max_tokens
 
     try:
         response = requests.post(
@@ -180,7 +182,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         metavar="int",
         help="""How many parallel threads to run. (default: %(default)s) For
             ChatGPT-nano I will increase this to 20 or more, and for a local model
-            I will reduce this to 4.""",
+            I will reduce this to 4 or less.""",
     )
     model_group.add_argument(
         "--temperature",
@@ -189,6 +191,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Model's temperature.
             We don't want the model to get creative, so keep this value low. Some
             hosted servers don't like this option so there is no default.""",
+    )
+    model_group.add_argument(
+        "--max-tokens",
+        type=int,
+        metavar="int",
+        help="""The OCR model's response maximum tokens.
+            I use this to truncate model loops.""",
     )
     model_group.add_argument(
         "--timeout",

@@ -102,6 +102,7 @@ def html_template(df: pd.DataFrame) -> str:
                 background: #ececec;
             }}
             td:has(> span.source) {{
+                overflow-wrap: break-word;
                 max-width: 256px;
             }}
             th:first-child,
@@ -115,6 +116,16 @@ def html_template(df: pd.DataFrame) -> str:
             .text {{
                 white-space: pre-wrap;
                 word-wrap: break-word;
+            }}
+            .gbif {{
+                max-width: 500px;
+                text-align: left;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            }}
+            .gbif-key {{
+                font-weight: bold;
+                margin-right: 1em;
             }}
             </style>
         </head>
