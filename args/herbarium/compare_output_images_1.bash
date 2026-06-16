@@ -1,8 +1,8 @@
 #!/bin/bash
 
-uv run ./llama/compare_output_new.py \
+uv run ./llama/compare_output_gold.py \
   --prompt prompts/fields/herbarium.md \
-  --clean-file1 data/herbarium/ufl_images_1_qwen36_35b_a3b_2026-06-09a_clean.csv \
-  --clean-file2 data/herbarium/ufl_images_1_gpt_nano_2026-06-09a_clean.csv \
-  --compare-file data/herbarium/ufl_images_1_nano_vs_qwen_2026-06-15b.html \
-  --gbif-file data/herbarium/ufl_images_1_gbif.csv
+  --gold-file data/herbarium/ufl_images_1_gbif.csv \
+  --clean-file data/herbarium/qwen36_35b_a3b_06-09a.csv \
+  --clean-file data/herbarium/gpt_nano_06-09a.csv \
+  --html-file data/herbarium/ufl_images_1_compare.html

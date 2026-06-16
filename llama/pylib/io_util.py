@@ -117,16 +117,6 @@ def html_template(df: pd.DataFrame) -> str:
                 white-space: pre-wrap;
                 word-wrap: break-word;
             }}
-            .gbif {{
-                max-width: 500px;
-                text-align: left;
-                white-space: pre-wrap;
-                word-wrap: break-word;
-            }}
-            .gbif-key {{
-                font-weight: bold;
-                margin-right: 1em;
-            }}
             </style>
         </head>
         <body>

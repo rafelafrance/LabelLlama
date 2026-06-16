@@ -15,11 +15,14 @@ def get_gbif(args: argparse.Namespace) -> None:
 
     with args.ocr_file.open() as fin:
         reader = csv.DictReader(fin)
-        targets = {Path(r["source"]).stem.split("_", maxsplit=1)[0] for r in reader}
+        targets = {
+            Path(r["source"]).stem.split("_", maxsplit=1)[0]: r["source"]
+            for r in reader
+        }
 
     with args.occurrence_tsv.open() as fin:
         reader = csv.DictReader(fin, delimiter="\t")
-        gbif = [r for r in reader if r["gbifID"] in targets]
+        gbif = [{"source": t} | r for r in reader if (t := targets.get(r["gbifID"]))]
 
     df = pd.DataFrame(gbif)
     df.to_csv(args.gbif_file, index=False)

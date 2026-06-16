@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>LabelLlama</title>
+        <style>
+            {% include 'compare_output_gold.css' -%}
+        </style>
+    </head>
+    <body>
+        <h1>Compare LLM results against a gold standard: {{ now }}</h1>
+
+        <table>
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in groups %}
+                <tr class="gold">
+                    <td rowspan="{{row_span}}">
+                        <span class="text">{{ group.gold_row.text }}</span>
+                    </td>
+                    <td rowspan="{{row_span}}">
+                        <span>{{ group.source | safe }}</span>
+                    </td>
+                    <td rowspan="{{row_span}}">
+                        <div class="gbif">{{ group.gold_row.gbif | safe }}</div>
+                    </td>
+                    <td rowspan="{{row_span}}">
+                        <span>{{ group.gold_row.row }}</span>
+                    </td>
+                    <td><span class="type">{{ group.gold_row.type }}</span></td>
+                    {% for field in fields %}
+                    <td>{{ group.gold_row[field] | safe }}</td>
+                    {% endfor %}
+                </tr>
+
+                {% for clean_row in group.clean_rows %}
+                <tr class="clean">
+                    <td><span class="type">{{ clean_row.type }}</span></td>
+                    {% for field in fields %}
+                    <td>{{ clean_row[field] | safe }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% for clean_row in group.score_rows %}
+                <tr class="score">
+                    <td><span class="type">{{ clean_row.type }}</span></td>
+                    {% for field in fields %}
+                    <td>{{ clean_row[field] | safe }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>
