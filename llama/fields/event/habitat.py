@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from rapidfuzz import fuzz
 
@@ -10,6 +10,10 @@ from llama.pylib import fix_values
 
 @dataclass
 class Habitat(BaseField):
+    # --------------
+    scoring_method: ClassVar[str] = "FPR"
+    # --------------
+
     habitat: str = ""
 
     def __post_init__(self, text: str) -> None:

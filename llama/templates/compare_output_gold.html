@@ -4,11 +4,14 @@
         <meta charset="utf-8" />
         <title>LabelLlama</title>
         <style>
-            {% include 'compare_output_gold.css' -%}
+            {% include 'compare_output.css' -%}
         </style>
     </head>
     <body>
         <h1>Compare LLM results against a gold standard: {{ now }}</h1>
+        {% if notes %}
+        <h3>{{ notes | safe }}</h3>
+        {% endif %}
 
         <table>
             <thead>
@@ -28,9 +31,6 @@
                         <span>{{ group.source | safe }}</span>
                     </td>
                     <td rowspan="{{row_span}}">
-                        <div class="gbif">{{ group.gold_row.gbif | safe }}</div>
-                    </td>
-                    <td rowspan="{{row_span}}">
                         <span>{{ group.gold_row.row }}</span>
                     </td>
                     <td><span class="type">{{ group.gold_row.type }}</span></td>
@@ -46,16 +46,14 @@
                     <td>{{ clean_row[field] | safe }}</td>
                     {% endfor %}
                 </tr>
-                {% endfor %}
-                {% for clean_row in group.score_rows %}
+                {% endfor %} {% for clean_row in group.score_rows %}
                 <tr class="score">
                     <td><span class="type">{{ clean_row.type }}</span></td>
                     {% for field in fields %}
                     <td>{{ clean_row[field] | safe }}</td>
                     {% endfor %}
                 </tr>
-                {% endfor %}
-                {% endfor %}
+                {% endfor %} {% endfor %}
             </tbody>
         </table>
     </body>

@@ -11,63 +11,8 @@ import jinja2
 from llama.fields.base_field import BaseField
 from llama.pylib import io_util, log, prompt_util
 
-KEEP = [
-    "institutionID",
-    "collectionID",
-    "datasetID",
-    "institutionCode",
-    "collectionCode",
-    "datasetName",
-    "dynamicProperties",
-    "occurrenceID",
-    "catalogNumber",
-    "recordNumber",
-    "recordedBy",
-    "recordedByID",
-    "sex",
-    "lifeStage",
-    "reproductiveCondition",
-    "associatedTaxa",
-    "occurrenceRemarks",
-    "verbatimLabel",
-    "eventType",
-    "fieldNumber",
-    "eventDate",
-    "verbatimEventDate",
-    "habitat",
-    "fieldNotes",
-    "eventRemarks",
-    "waterBody",
-    "islandGroup",
-    "island",
-    "countryCode",
-    "stateProvince",
-    "county",
-    "municipality",
-    "locality",
-    "verbatimLocality",
-    "verbatimElevation",
-    "verticalDatum",
-    "verbatimDepth",
-    "locationRemarks",
-    "decimalLatitude",
-    "decimalLongitude",
-    "coordinateUncertaintyInMeters",
-    "coordinatePrecision",
-    "identifiedBy",
-    "identifiedByID",
-    "dateIdentified",
-    "scientificName",
-    "family",
-    "genus",
-    "subgenus",
-    "specificEpithet",
-    "infraspecificEpithet",
-    "cultivarEpithet",
-    "elevation",
-    "elevationAccuracy",
-    "species",
-]
+SKIP_COLUMNS = ["text", "source", "row", "type"]
+_SKIP_SET = frozenset(SKIP_COLUMNS)
 
 
 @dataclass
@@ -81,98 +26,125 @@ class Group:
 
 
 def score_extracts(args: argparse.Namespace) -> None:
+    """Compare LLM outputs against a gold standard and write an HTML report."""
     log.started(args.log_file, args=args)
 
-    gold_df = io_util.read_to_df(args.gold_file).set_index("source", drop=False)
-    gold_columns = dict.fromkeys(gold_df.columns)
-    groups = {
-        g["source"]: Group(source=g["source"], gold=g)
-        for g in gold_df.fillna("").to_dict("records")
-    }
+    # Load data
+    groups, gold_columns = _load_gold_groups(args.gold_file)
+    column_sets = _load_clean_data(groups, args.clean_file)
+    fields = _common_fields(column_sets, gold_columns)
+    clean_keys = [f.stem for f in args.clean_file]
 
-    clean_dfs = []
-    clean_columns = {}
-    clean_index = set()
-    clean_data = {}
-    for clean_file in args.clean_file:
-        clean_df = io_util.read_to_df(clean_file).set_index("source", drop=False)
-        clean_dfs.append(clean_df)
-        clean_columns |= dict.fromkeys(clean_df)
-        clean_index |= set(clean_df.index)
-        clean_data = clean_df.fillna("").to_dict("records")
+    # Load scoring classes
+    field_classes = prompt_util.Prompt.load(args.prompt).field_classes()
 
-        for clean_row in clean_data:
-            source = groups[clean_row["source"]]
-            source.clean[clean_file.stem] = clean_row
-
-    skips = ["text", "source", "gbif", "row", "type"]
-    fields = [c for c in clean_columns if c in gold_columns and c not in skips]
-    columns = skips + fields
-
-    prompt = prompt_util.Prompt.load(args.prompt)
-    field_classes = prompt.field_classes()
-
-    first = args.clean_file[0].stem
+    # Build comparison rows for each group
     for i, group in enumerate(groups.values(), 1):
-        gold = group.gold
+        group.gold_row = _build_gold_row(
+            group.gold,
+            group.clean[clean_keys[0]]["text"],
+            fields,
+            i,
+        )
+        for key in clean_keys:
+            group.clean_rows.append(_build_clean_row(group.clean[key], key, fields))
+            group.score_rows.append(
+                _build_score_row(
+                    group.gold, group.clean[key], key, fields, field_classes
+                )
+            )
 
-        # Gold row
-        gold_row = {
-            "source": gold["source"],
-            "gbif": get_gbif_html(gold, fields),
-            "text": group.clean[first]["text"],
-            "row": str(i),
-            "type": "gold",
-        }
-        for field_ in fields:
-            gold_row[field_] = gold.get(field_, "")
-        group.gold_row = gold_row
-
-        # LLM rows
-        for clean_file in args.clean_file:
-            key = clean_file.stem
-            clean = group.clean[key]
-            clean_row = {"type": key}
-            for field_ in fields:
-                clean_row[field_] = clean.get(field_, "")
-            group.clean_rows.append(clean_row)
-
-        # Score rows
-        for clean_file in args.clean_file:
-            key = clean_file.stem
-            clean = group.clean[key]
-            score_row = {"type": key}
-            for field_ in fields:
-                expect = str(gold.get(field_, ""))
-                actual = str(clean.get(field_, ""))
-                field_action = field_classes.get(field_, BaseField)
-                score = field_action.score(expect, actual, clean)
-                score_row[field_] = f"{score:0.2f}"
-            group.clean_rows.append(score_row)
-
-    row_span = len(args.clean_file) * 2 + 1
-    write_template(args.html_file, columns, fields, list(groups.values()), row_span)
+    # Write report
+    row_span = len(args.clean_file) * 2 + 1  # gold + clean + score per file
+    write_template(
+        args.html_file,
+        list(SKIP_COLUMNS) + fields,
+        fields,
+        list(groups.values()),
+        row_span,
+    )
 
     log.finished()
 
 
-def get_gbif_html(row: dict, fields: list) -> str:
-    parts = []
-    parts.append("<div class='gbif'>")
-    first = True
-    for key, value in row.items():
-        if key in fields:
-            continue
-        if not value or key not in KEEP:
-            continue
-        if first:
-            first = False
-        else:
-            parts.append("<br/>")
-        parts.append(f'<span class="gbif-key">{key}</span>')
-        parts.append(f'<span class="gbif-value">{value}</span>')
-    parts.append("</div>")
-    return "".join(parts)
+def _load_gold_groups(gold_file: Path) -> tuple[dict[str, Group], set]:
+    """
+    Load gold-standard data into a dict keyed by source.
+
+    Returns (groups, gold_column_set).
+    """
+    gold_df = io_util.read_to_df(gold_file).set_index("source", drop=False)
+    gold_columns = set(gold_df.columns)
+    return {
+        g["source"]: Group(source=g["source"], gold=g)
+        for g in gold_df.fillna("").to_dict("records")
+    }, gold_columns
+
+
+def _load_clean_data(
+    groups: dict[str, Group],
+    clean_files: list[Path],
+) -> dict[str, set]:
+    """Populate each group's clean dict and return per-file column sets."""
+    column_sets: dict[str, set] = {}
+    for clean_file in clean_files:
+        clean_df = io_util.read_to_df(clean_file).set_index("source", drop=False)
+        column_sets[clean_file.stem] = set(clean_df.columns)
+        for clean_row in clean_df.fillna("").to_dict("records"):
+            groups[clean_row["source"]].clean[clean_file.stem] = clean_row
+    return column_sets
+
+
+def _common_fields(
+    column_sets: dict[str, set],
+    gold_columns: set,
+) -> list[str]:
+    """Return columns shared across all clean files and gold, excluding metadata."""
+    shared = column_sets.values().__iter__().__next__()
+    for col_set in column_sets.values():
+        shared &= col_set
+    return sorted(shared & gold_columns - _SKIP_SET)
+
+
+def _build_gold_row(
+    gold: dict,
+    clean_text: str,
+    fields: list[str],
+    row_num: int,
+) -> dict:
+    """Build the gold-standard comparison row."""
+    return {
+        "source": gold["source"],
+        "text": clean_text,
+        "row": str(row_num),
+        "type": "gold",
+        **{f: gold.get(f, "") for f in fields},
+    }
+
+
+def _build_clean_row(clean: dict, clean_key: str, fields: list[str]) -> dict:
+    """Build a single LLM output row."""
+    return {"type": clean_key, **{f: clean.get(f, "") for f in fields}}
+
+
+def _build_score_row(
+    gold: dict,
+    clean: dict,
+    clean_key: str,
+    fields: list[str],
+    field_classes: dict[str, type],
+) -> dict:
+    """Build a single score row comparing gold against one LLM output."""
+    score_row = {"type": clean_key}
+    for f in fields:
+        field_class = field_classes.get(f, BaseField)
+        score = field_class.score(
+            str(gold.get(f, "")),
+            str(clean.get(f, "")),
+            clean,
+        )
+        score_row[f] = f"{score:0.2f}"
+    return score_row
 
 
 def write_template(
@@ -203,9 +175,9 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Compare the outputs of two language model (LM) runs. One run is typically
-            a gold standard, but this is not a requirement, and you may want to compare
-            LM outputs for various reasons.""",
+            """
+            Compare the outputs of language model extracts against a gold standard.
+            """,
         ),
     )
     io_group = arg_parser.add_argument_group("I/O options")
@@ -237,7 +209,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         required=True,
         metavar="path",
         help="""A markdown file with a prompt and list of fields to parse.
-            It is used to get the correct version of the scoring modules.""",
+            It is used to get the scoring functions.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
@@ -250,7 +222,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     logging_group.add_argument(
         "--notes",
         metavar="string",
-        help="""Notes for logging. They only appear in the log file.""",
+        help="""Notes for logging.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

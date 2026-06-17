@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from llama.fields.base_field import BaseField
 from llama.pylib import fix_values
@@ -8,6 +8,10 @@ from llama.vocab.taxon import GENUS_TO_FAMILY
 
 @dataclass
 class Family(BaseField):
+    # --------------
+    scoring_method: ClassVar[str] = "CUST"
+    # --------------
+
     family: str = ""
 
     def __post_init__(self, text: str) -> None:

@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from rapidfuzz import fuzz
 
@@ -11,6 +11,10 @@ from llama.pylib.str_util import compress
 
 @dataclass
 class Locality(BaseField):
+    # --------------
+    scoring_method: ClassVar[str] = "FPR"
+    # --------------
+
     locality: str = ""
 
     def __post_init__(self, text: str) -> None:
