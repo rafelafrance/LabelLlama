@@ -6,7 +6,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from pprint import pp
 
 import jinja2
 from rapidfuzz import fuzz
@@ -16,6 +15,56 @@ from llama.fields.base_field import BaseField
 from llama.pylib import io_util, log, prompt_util
 
 FIRST_COLUMNS = ["text", "source", "row", "type"]
+GBIF_SEARCH_MD = Path() / "llama" / "templates" / "gbif_search.md"
+
+
+@dataclass
+class Accum:
+    field_in_gbif: dict = field(
+        default_factory=lambda: defaultdict(lambda: defaultdict(list))
+    )
+    field_empty: dict = field(
+        default_factory=lambda: defaultdict(lambda: defaultdict(list))
+    )
+    search_fail: dict = field(
+        default_factory=lambda: defaultdict(lambda: defaultdict(list))
+    )
+    search_success: dict = field(
+        default_factory=lambda: defaultdict(lambda: defaultdict(list))
+    )
+
+    def format(self, llm_files: list[Path], columns: list[str]) -> dict:
+        stats = defaultdict(lambda: defaultdict(dict))
+        for llm_file in llm_files:
+            stem = llm_file.stem
+            for col in columns:
+                count, avg = "", ""
+                if self.field_in_gbif.get(stem) and self.field_in_gbif[stem].get(col):
+                    values = self.field_in_gbif[stem][col]
+                    count = str(len(values))
+                    avg = f"{sum(values) / len(values):0.2f}"
+                stats[stem][col]["field_in_gbif_count"] = count
+                stats[stem][col]["field_in_gbif_average"] = avg
+
+                count = ""
+                if self.field_empty.get(stem) and self.field_empty[stem].get(col):
+                    count = str(len(self.field_empty[stem][col]))
+                stats[stem][col]["field_empty_count"] = count
+
+                count = ""
+                if self.search_fail.get(stem) and self.search_fail[stem].get(col):
+                    count = str(len(self.search_fail[stem][col]))
+                stats[stem][col]["search_fail_count"] = count
+
+                count, avg = "", ""
+                if self.search_success.get(stem) and self.search_success[stem].get(col):
+                    values = self.search_success[stem][col]
+                    count = str(len(values))
+                    avg = f"{sum(values) / len(values):0.2f}"
+                stats[stem][col]["search_success_count"] = count
+                stats[stem][col]["search_success_average"] = avg
+
+        return stats
 
 
 @dataclass
@@ -25,9 +74,13 @@ class Group:
     score_rows: list[dict] = field(default_factory=list)
 
 
-def score_extracts(args: argparse.Namespace) -> None:
+def main(args: argparse.Namespace) -> None:
     """Compare LLM outputs against gbif data and write an HTML report."""
     log.started(args.log_file, args=args)
+
+    # ocr data
+    ocr_df = io_util.read_to_df(args.ocr_file)
+    ocr_dict = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Load data
     gbif_df = io_util.read_to_df(args.gbif_file)
@@ -37,13 +90,11 @@ def score_extracts(args: argparse.Namespace) -> None:
     columns = {}
 
     llm_dicts = {}
-    first = None
     for llm_file in args.llm_file:
         llm_df = io_util.read_to_df(llm_file)
         llm_dict = {r["source"]: r for r in llm_df.to_dict("records")}
         key = llm_file.stem
         llm_dicts[key] = llm_dict
-        first = key or first
         sources &= set(llm_dict)
         columns |= dict.fromkeys(llm_df.columns)
 
@@ -52,8 +103,11 @@ def score_extracts(args: argparse.Namespace) -> None:
 
     columns = [k for k in columns if k not in FIRST_COLUMNS]
 
+    aligned = set(gbif_df.columns) & set(columns)
+    gbif_search = get_gbif_search()
+
     classes = prompt_util.Prompt.load(args.prompt).field_classes()
-    accum = defaultdict(float)
+    accum = Accum()
     groups = []
 
     for i, source in tqdm(enumerate(sources, 1), total=len(sources)):
@@ -62,11 +116,16 @@ def score_extracts(args: argparse.Namespace) -> None:
         # Build gbif row
         group = Group(
             gbif_row={
-                "text": llm_dicts[first][source]["text"],
+                "text": ocr_dict[source]["text"],
                 "source": gbif["source"],
                 "row": i,
                 "type": "GBIF",
-                **{c: gbif.get(c, "") for c in columns},
+                **{
+                    c: f"<span class='label'>{c}</span>{gbif[c]}"
+                    if c in aligned
+                    else ""
+                    for c in columns
+                },
             }
         )
 
@@ -84,7 +143,7 @@ def score_extracts(args: argparse.Namespace) -> None:
             row = {"type": f"score: {stem}"}
             for col in columns:
                 score, expect = calc_score(
-                    col, llm_dict[source].get(col, ""), gbif, classes, accum
+                    col, llm_dict[source], gbif, classes, gbif_search, accum, stem
                 )
                 row[col] = score
                 if expect is not None:
@@ -98,43 +157,86 @@ def score_extracts(args: argparse.Namespace) -> None:
 
         groups.append(group)
 
-    write_template(args.html_file, columns, groups, len(llm_dicts) * 2 + 1)
+    write_template(
+        args.html_file,
+        columns,
+        groups,
+        len(llm_dicts) * 2 + 1,
+        gbif_search,
+        accum,
+        args.llm_file,
+    )
 
     log.finished()
 
 
 def calc_score(
-    field: str, actual: str, gbif: dict, field_classes: dict[str, type], accum: dict
+    field: str,
+    llm_dict: dict,
+    gbif: dict,
+    field_classes: dict[str, type],
+    gbif_search: dict,
+    accum: Accum,
+    stem: str,
 ) -> tuple[str, str | None]:
-    if gbif.get(field):
+    actual = llm_dict[field]
+
+    if field in gbif:
         field_class = field_classes.get(field, BaseField)
         score = field_class.score(gbif[field], actual, gbif)
-        accum[field] += score
+        accum.field_in_gbif[stem][field].append(score)
         return f"{field_class.scoring_method}: {score:0.2f}", None
 
-    if not actual and not gbif.get(field):
-        accum[field] += 1.0
-        return "1.0", None
+    if not actual:
+        accum.field_empty[stem][field].append(1)
+        return "NONE: 1.0", None
 
-    max_score = (0.0, 0.0)
+    max_score = (0.0, 0)
     max_field, max_expect = "", ""
-    for column, expect in {k: v for k, v in gbif.items() if v}.items():
-        ratio = fuzz.partial_ratio(expect, actual) / 100
-        score = (ratio, len(actual) / len(expect))
-        if score > max_score:
-            max_field = column
-            max_score = score
+
+    for search_field in gbif_search[field]:
+        expect = gbif.get(search_field, "")
+        if not expect:
+            continue
+        score = fuzz.partial_ratio(expect, actual) / 100.0
+        if (score, -len(expect)) > max_score:
+            max_field = search_field
+            max_score = (score, -len(expect))
             max_expect = expect
 
-    accum[field] += max_score[0]
+    if max_field:
+        accum.search_success[stem][field].append(1)
+    else:
+        accum.search_fail[stem][field].append(max_score[0])
 
     cell = f"<span class='label'>{max_field}</span>{max_expect}" if max_field else None
     return f"<span class='label'>{max_field}</span>FPR: {max_score[0]:0.2f}", cell
 
 
+def get_gbif_search() -> dict[str, list[str]]:
+    with GBIF_SEARCH_MD.open() as inf:
+        lines = [ln for line in inf.readlines() if (ln := line.strip())]
+    key = ""
+    search = defaultdict(list)
+    for ln in lines:
+        if ln.startswith("#####"):
+            key = ln.rsplit(maxsplit=1)[-1]
+        elif ln.startswith("-"):
+            field = ln.rsplit(maxsplit=1)[-1]
+            search[key].append(field)
+    return search
+
+
 def write_template(
-    html_file: Path, columns: list[str], groups: list[dict], row_span: int
+    html_file: Path,
+    columns: list[str],
+    groups: list[dict],
+    row_span: int,
+    gbif_search: dict,
+    accum: Accum,
+    llm_files: list[Path],
 ) -> None:
+
     env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(Path() / "llama" / "templates"),
         autoescape=True,
@@ -146,6 +248,8 @@ def write_template(
         headers=FIRST_COLUMNS + columns,
         groups=groups,
         row_span=row_span,
+        gbif_search=gbif_search,
+        stats=accum.format(llm_files, columns),
     )
 
     with html_file.open("w") as fout:
@@ -177,6 +281,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     io_group = arg_parser.add_argument_group("I/O options")
+    io_group.add_argument(
+        "--ocr-file",
+        type=Path,
+        required=True,
+        metavar="path",
+        help="""This file contains the original OCRed text.""",
+    )
     io_group.add_argument(
         "--gbif-file",
         type=Path,
@@ -233,4 +344,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    score_extracts(ARGS)
+    main(ARGS)

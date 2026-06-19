@@ -18,7 +18,6 @@ th {
     border: 1px solid #c0c0c0;
     padding: 8px;
     text-align: center;
-    position:;
     z-index: 1;
 }
 .text {
@@ -59,4 +58,9 @@ td:has(> span.text) {
 .label {
     font-weight: bold;
     margin-right: 0.5em;
+}
+
+table.search,
+table.stats {
+    margin-bottom: 4rem;
 }
