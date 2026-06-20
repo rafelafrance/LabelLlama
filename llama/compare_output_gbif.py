@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Compare LLM outputs against corresponding GBIF data.
+
+Using a golden dataset would be ideal but sometimes it doesn't exist, so I use GBIF
+data as an ersatz golden dataset. On the plus side, I can reverse the sense of the
+compare and see how well the GBIF actually is.
+"""
 
 import argparse
 import textwrap
@@ -18,8 +25,10 @@ GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md
 
 
 @dataclass
-class Accum:
-    field_in_gbif: dict = field(
+class Accumulator:
+    """Collect various statistics for the report."""
+
+    gbif_has_value: dict = field(
         default_factory=lambda: defaultdict(lambda: defaultdict(list))
     )
     field_empty: dict = field(
@@ -33,17 +42,18 @@ class Accum:
     )
 
     def format(self, llm_files: list[Path], columns: list[str]) -> dict:
+        """Convert the collected data into a usable form for the report."""
         stats = defaultdict(lambda: defaultdict(dict))
         for llm_file in llm_files:
             stem = llm_file.stem
             for col in columns:
                 count, avg = "", ""
-                if self.field_in_gbif.get(stem) and self.field_in_gbif[stem].get(col):
-                    values = self.field_in_gbif[stem][col]
+                if self.gbif_has_value.get(stem) and self.gbif_has_value[stem].get(col):
+                    values = self.gbif_has_value[stem][col]
                     count = str(len(values))
                     avg = f"{sum(values) / len(values):0.2f}"
-                stats[stem][col]["field_in_gbif_count"] = count
-                stats[stem][col]["field_in_gbif_average"] = avg
+                stats[stem][col]["gbif_has_value_count"] = count
+                stats[stem][col]["gbif_has_value_average"] = avg
 
                 count = ""
                 if self.field_empty.get(stem) and self.field_empty[stem].get(col):
@@ -67,55 +77,63 @@ class Accum:
 
 
 @dataclass
-class Group:
+class RowGroup:
+    """A group of rows that get displayed together."""
+
     gbif_row: dict = field(default_factory=dict)
     llm_rows: list[dict] = field(default_factory=list)
     score_rows: list[dict] = field(default_factory=list)
 
 
-def main(args: argparse.Namespace) -> None:
+def score_against_gbif(args: argparse.Namespace) -> None:
     """Compare LLM outputs against gbif data and write an HTML report."""
     log.started(args.log_file, args=args)
 
-    # ocr data
+    # Read OCR data
     ocr_df = io_util.read_to_df(args.ocr_file)
     ocr_dict = {o["source"]: o for o in ocr_df.to_dict("records")}
 
-    # Load data
+    # Read GBIF data
     gbif_df = io_util.read_to_df(args.gbif_file)
     gbif_dict = {g["source"]: g for g in gbif_df.to_dict("records")}
 
-    sources = set(gbif_dict)
+    # Init row and column indexes
+    row_index = set(gbif_dict)
     columns = {}
 
+    # Read LLM data
     llm_dicts = {}
     for llm_file in args.llm_file:
         llm_df = io_util.read_to_df(llm_file)
         llm_dict = {r["source"]: r for r in llm_df.to_dict("records")}
-        key = llm_file.stem
-        llm_dicts[key] = llm_dict
-        sources &= set(llm_dict)
+        llm_dicts[llm_file.stem] = llm_dict
+        row_index &= set(llm_dict)
         columns |= dict.fromkeys(llm_df.columns)
 
-    sources = sorted(sources)
-    sources = sources[: args.limit] if args.limit else sources
+    # Init the row index
+    row_index = sorted(row_index)
+    row_index = row_index[: args.limit] if args.limit else row_index
 
+    # Get common rows in the original order
     columns = [k for k in columns if k not in FIRST_COLUMNS]
 
+    # Setup
     aligned = set(gbif_df.columns) & set(columns)
     gbif_search = get_gbif_search()
 
-    accum = Accum()
-    groups = []
+    accumulator = Accumulator()
 
-    for i, source in tqdm(enumerate(sources, 1), total=len(sources)):
+    # Build output row groups
+    row_groups = []
+    for i, source in tqdm(enumerate(row_index, 1), total=len(row_index)):
         gbif = gbif_dict[source]
 
         # Build gbif row
-        group = Group(
+        group = RowGroup(
             gbif_row={
                 "text": ocr_dict.get(source, {}).get("text", ""),
                 "source": gbif["source"],
+                "href": gbif["identifier"],
                 "row": i,
                 "type": "GBIF",
                 **{
@@ -141,7 +159,12 @@ def main(args: argparse.Namespace) -> None:
             row = {"type": f"score: {stem}"}
             for col in columns:
                 score, expect = calc_score(
-                    col, llm_dict[source], gbif, gbif_search, accum, stem
+                    field=col,
+                    llm_row=llm_dict[source],
+                    gbif_row=gbif,
+                    gbif_search=gbif_search,
+                    accumulator=accumulator,
+                    stem=stem,
                 )
                 row[col] = score
                 if expect is not None:
@@ -153,17 +176,17 @@ def main(args: argparse.Namespace) -> None:
                     group.gbif_row[col] += expect
             group.score_rows.append(row)
 
-        groups.append(group)
+        row_groups.append(group)
 
     write_template(
-        args.html_file,
-        columns,
-        groups,
-        len(llm_dicts) * 2 + 1,
-        gbif_search,
-        accum,
-        args.llm_file,
-        args.notes,
+        html_file=args.html_file,
+        columns=columns,
+        row_groups=row_groups,
+        row_span=len(llm_dicts) * 2 + 1,  # gbif + llm + score per file
+        gbif_search=gbif_search,
+        accumulator=accumulator,
+        llm_files=args.llm_file,
+        notes=args.notes,
     )
 
     log.finished()
@@ -171,28 +194,28 @@ def main(args: argparse.Namespace) -> None:
 
 def calc_score(
     field: str,
-    llm_dict: dict,
-    gbif: dict,
+    llm_row: dict,
+    gbif_row: dict,
     gbif_search: dict,
-    accum: Accum,
+    accumulator: Accumulator,
     stem: str,
 ) -> tuple[str, str | None]:
-    actual = llm_dict[field]
+    actual = llm_row[field]
 
-    if field in gbif:
-        score = fuzz.partial_ratio(gbif[field], actual) / 100.0
-        accum.field_in_gbif[stem][field].append(score)
+    if gbif_row.get(field):
+        score = fuzz.partial_ratio(gbif_row[field], actual) / 100.0
+        accumulator.gbif_has_value[stem][field].append(score)
         return f"FPR: {score:0.2f}", None
 
     if not actual:
-        accum.field_empty[stem][field].append(1)
+        accumulator.field_empty[stem][field].append(1)
         return "NONE: 1.0", None
 
     max_score = (-1.0, 0)
     max_field, max_expect = "", ""
 
     for search_field in gbif_search.get(field, []):
-        expect = gbif.get(search_field, "")
+        expect = gbif_row.get(search_field, "")
         if not expect:
             continue
         score = fuzz.partial_ratio(expect, actual) / 100.0
@@ -202,9 +225,9 @@ def calc_score(
             max_expect = expect
 
     if max_field:
-        accum.search_success[stem][field].append(max_score[0])
+        accumulator.search_success[stem][field].append(max_score[0])
     else:
-        accum.search_fail[stem][field].append(1)
+        accumulator.search_fail[stem][field].append(1)
 
     cell = f"<span class='label'>{max_field}</span>{max_expect}" if max_field else None
     return f"<span class='label'>{max_field}</span>FPR: {max_score[0]:0.2f}", cell
@@ -227,10 +250,10 @@ def get_gbif_search() -> dict[str, list[str]]:
 def write_template(
     html_file: Path,
     columns: list[str],
-    groups: list[Group],
+    row_groups: list[RowGroup],
     row_span: int,
     gbif_search: dict,
-    accum: Accum,
+    accumulator: Accumulator,
     llm_files: list[Path],
     notes: str,
 ) -> None:
@@ -244,10 +267,10 @@ def write_template(
         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
         columns=columns,
         headers=FIRST_COLUMNS + columns,
-        groups=groups,
+        groups=row_groups,
         row_span=row_span,
         gbif_search=gbif_search,
-        stats=accum.format(llm_files, columns),
+        stats=accumulator.format(llm_files, columns),
         notes=notes,
     )
 
@@ -269,7 +292,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
             The problem with using GBIF data is that many columns from GBIF do not
             align with the columns in the LLM output data. For instance a UTM may be
-            burried in the "locality" field in GBIF but it may be broken into
+            buried in the "locality" field in GBIF but it may be broken into
             utm (the verbatim part), utmNorthing, utmEasting, and utmZone in the LLM
             output. To handle this I will scan GBIF data for fields that match the
             little LLM fields and score those. So "UTM 17 495432E, 2926666N" in GBIF's
@@ -343,4 +366,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    main(ARGS)
+    score_against_gbif(ARGS)

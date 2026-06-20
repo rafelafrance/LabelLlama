@@ -45,7 +45,7 @@ td:has(> span.text) {
     background: #ececec;
     opacity: 100%;
 }
-td:has(> span.source) {
+td:has(> a.source) {
     overflow-wrap: break-word;
     max-width: 256px;
 }

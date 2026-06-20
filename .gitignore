@@ -51,6 +51,7 @@ experiments/
 
 # AI agent
 .pi/
+.agents/
 
 # External
 external/
@@ -58,3 +59,6 @@ external/
 # secrets
 *secret*
 .env
+
+# Personal
+.codebook.toml

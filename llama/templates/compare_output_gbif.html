@@ -80,9 +80,9 @@
                 <tr>
                     <th>LLM Extract</th>
                     <th>Field</th>
-                    <th>in both GBIF and LLM count</th>
-                    <th>in both GBIF and LLM average</th>
-                    <th>not in GBIF and LLM empty</th>
+                    <th>GBIF has a value count</th>
+                    <th>GBIF has a value average</th>
+                    <th>LLM is empty</th>
                     <th>not in GBIF and search failed</th>
                     <th>not in GBIF and search worked count</th>
                     <th>not in GBIF and search worked average</th>
@@ -94,8 +94,8 @@
                 <tr>
                     <td>{{ stem | safe }}</td>
                     <td>{{ field | safe }}</td>
-                    <td>{{ stat["field_in_gbif_count"] | safe }}</td>
-                    <td>{{ stat["field_in_gbif_average"] | safe }}</td>
+                    <td>{{ stat["gbif_has_value_count"] | safe }}</td>
+                    <td>{{ stat["gbif_has_value_average"] | safe }}</td>
                     <td>{{ stat["field_empty_count"] | safe }}</td>
                     <td>{{ stat["search_fail_count"] | safe }}</td>
                     <td>{{ stat["search_success_count"] | safe }}</td>
@@ -120,7 +120,9 @@
                         <span class="text">{{ group.gbif_row.text }}</span>
                     </td>
                     <td rowspan="{{row_span}}">
-                        <span>{{ group.gbif_row.source | safe }}</span>
+                        <a class="source" href="{{ group.gbif_row.href | safe }}"
+                            >{{ group.gbif_row.source | safe }}</a
+                        >
                     </td>
                     <td rowspan="{{row_span}}">
                         <span>{{ group.gbif_row.row }}</span>

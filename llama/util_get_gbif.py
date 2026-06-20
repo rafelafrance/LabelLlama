@@ -22,9 +22,20 @@ def get_gbif(args: argparse.Namespace) -> None:
 
     with args.occurrence_tsv.open() as fin:
         reader = csv.DictReader(fin, delimiter="\t")
-        gbif = [{"source": t} | r for r in reader if (t := targets.get(r["gbifID"]))]
+        gbif = {
+            row["gbifID"]: {"source": source} | row
+            for row in reader
+            if (source := targets.get(row["gbifID"]))
+        }
 
-    df = pd.DataFrame(gbif)
+    with args.multimedia_tsv.open() as fin:
+        reader = csv.DictReader(fin, delimiter="\t")
+        for row in reader:
+            if targets.get(row["gbifID"]):
+                gbif_rec = gbif[row["gbifID"]]
+                gbif_rec["identifier"] = row["identifier"]
+
+    df = pd.DataFrame(gbif.values())
     df.to_csv(args.gbif_file, index=False)
 
     log.finished()
@@ -50,6 +61,14 @@ def parse_args() -> argparse.Namespace:
         required=True,
         metavar="PATH",
         help="""This TSV file contains the GBIF data.""",
+    )
+
+    arg_parser.add_argument(
+        "--multimedia-tsv",
+        type=Path,
+        required=True,
+        metavar="PATH",
+        help="""This TSV file contains the image download links.""",
     )
 
     arg_parser.add_argument(
