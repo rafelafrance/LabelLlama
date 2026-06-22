@@ -15,14 +15,7 @@ SKIP_COLUMNS = ["text", "source", "row", "type"]
 _SKIP_SET = frozenset(SKIP_COLUMNS)
 
 
-@dataclass
-class Group:
-    source: str
-    clean: dict[str, dict] = field(default_factory=dict)
-    clean_rows: list[dict] = field(default_factory=list)
-
-
-def score_extracts(args: argparse.Namespace) -> None:
+def compare_model_results(args: argparse.Namespace) -> None:
     """Compare LLM outputs against each other and write an HTML report."""
     log.started(args.log_file, args=args)
 
@@ -216,4 +209,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    score_extracts(ARGS)
+    compare_model_results(ARGS)

@@ -8,6 +8,7 @@ compare and see how well the GBIF actually is.
 """
 
 import argparse
+import re
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -15,12 +16,13 @@ from datetime import datetime
 from pathlib import Path
 
 import jinja2
+import pandas as pd
 from rapidfuzz import fuzz
 from tqdm import tqdm
 
 from llama.pylib import io_util, log
 
-FIRST_COLUMNS = ["text", "source", "row", "type"]
+FIRST_COLUMNS = ["text", "source", "row_group", "type"]
 GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
 
 
@@ -41,7 +43,7 @@ class Accumulator:
         default_factory=lambda: defaultdict(lambda: defaultdict(list))
     )
 
-    def format(self, llm_files: list[Path], columns: list[str]) -> dict:
+    def to_dict(self, llm_files: list[Path], columns: list[str]) -> dict:
         """Convert the collected data into a usable form for the report."""
         stats = defaultdict(lambda: defaultdict(dict))
         for llm_file in llm_files:
@@ -89,6 +91,8 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     """Compare LLM outputs against gbif data and write an HTML report."""
     log.started(args.log_file, args=args)
 
+    suffix = args.output_file.suffix.lower()
+
     # Read OCR data
     ocr_df = io_util.read_to_df(args.ocr_file)
     ocr_dict = {o["source"]: o for o in ocr_df.to_dict("records")}
@@ -128,16 +132,23 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     for i, source in tqdm(enumerate(row_index, 1), total=len(row_index)):
         gbif = gbif_dict[source]
 
+        # These are only displayed once with rowspan for .html, but duplicated for .ods
+        first_cols = {
+            "text": ocr_dict.get(source, {}).get("text", ""),
+            "source": gbif["source"],
+            "href": gbif["identifier"],
+            "row_group": i,
+        }
+
         # Build gbif row
         group = RowGroup(
             gbif_row={
-                "text": ocr_dict.get(source, {}).get("text", ""),
-                "source": gbif["source"],
-                "href": gbif["identifier"],
-                "row": i,
+                **first_cols,
                 "type": "GBIF",
                 **{
-                    c: f"<span class='label'>{c}</span>{gbif[c]}"
+                    c: format_output(
+                        suffix, f"<span class='label'>{c}</span> {gbif[c]}"
+                    )
                     if c in aligned
                     else ""
                     for c in columns
@@ -149,6 +160,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         for stem, llm_dict in llm_dicts.items():
             group.llm_rows.append(
                 {
+                    **first_cols,
                     "type": stem,
                     **{c: llm_dict[source].get(c, "") for c in columns},
                 }
@@ -156,7 +168,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
 
         # Build score rows
         for stem, llm_dict in llm_dicts.items():
-            row = {"type": f"score: {stem}"}
+            row = {**first_cols, "type": f"score: {stem}"}
             for col in columns:
                 score, expect = calc_score(
                     field=col,
@@ -165,6 +177,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
                     gbif_search=gbif_search,
                     accumulator=accumulator,
                     stem=stem,
+                    suffix=suffix,
                 )
                 row[col] = score
                 if expect is not None:
@@ -172,24 +185,106 @@ def score_against_gbif(args: argparse.Namespace) -> None:
                     if prev.find(expect) > -1:
                         continue
                     if prev:
-                        group.gbif_row[col] += "<br/>"
+                        group.gbif_row[col] += format_output(suffix, "<br/>")
                     group.gbif_row[col] += expect
             group.score_rows.append(row)
 
         row_groups.append(group)
 
-    write_template(
-        html_file=args.html_file,
-        columns=columns,
-        row_groups=row_groups,
-        row_span=len(llm_dicts) * 2 + 1,  # gbif + llm + score per file
-        gbif_search=gbif_search,
-        accumulator=accumulator,
-        llm_files=args.llm_file,
-        notes=args.notes,
-    )
+    stats = accumulator.to_dict(args.llm_file, columns)
+
+    match suffix:
+        case ".html":
+            write_html(
+                html_file=args.output_file,
+                columns=columns,
+                row_groups=row_groups,
+                row_span=len(llm_dicts) * 2 + 1,  # gbif + llm + score per file
+                gbif_search=gbif_search,
+                stats=stats,
+                notes=args.notes,
+            )
+        case ".ods":
+            write_ods(
+                output_file=args.output_file,
+                row_groups=row_groups,
+                gbif_search=gbif_search,
+                stats=stats,
+                engine="odf",
+            )
 
     log.finished()
+
+
+def format_output(suffix: str, text: str) -> str:
+    """Convert HTML to plain old text depending on the output file's suffix."""
+    if suffix == ".html":
+        return text
+    text = text.replace("<br/>", "\n")
+    text = re.sub(r"<span[^>]*>", "", text)
+    text = text.replace("</span>", ":")
+    return text
+
+
+def write_ods(
+    output_file: Path,
+    row_groups: list[RowGroup],
+    gbif_search: dict,
+    stats: dict,
+    engine: str,
+) -> None:
+    stats_rows = []
+    for stem, fields in stats.items():
+        for col, data in fields.items():
+            stats_rows.append({"file": stem, "column": col, **data})
+    stats_df = pd.DataFrame(stats_rows)
+
+    group_rows = []
+    for group in row_groups:
+        group_rows.append(group.gbif_row)
+        group_rows += group.llm_rows
+        group_rows += group.score_rows
+    group_df = pd.DataFrame(group_rows)
+
+    gbif_rows = [
+        {"field": k, "search fields": ", ".join(v)} for k, v in gbif_search.items()
+    ]
+    gbif_df = pd.DataFrame(gbif_rows)
+
+    with pd.ExcelWriter(output_file, engine=engine) as writer:
+        stats_df.to_excel(writer, sheet_name="statistics", index=False)
+        group_df.to_excel(writer, sheet_name="detail", index=False)
+        gbif_df.to_excel(writer, sheet_name="gbif_search_fields", index=False)
+
+
+def write_html(
+    html_file: Path | str,
+    columns: list[str],
+    row_groups: list[RowGroup],
+    row_span: int,
+    gbif_search: dict,
+    stats: dict,
+    notes: str,
+) -> None:
+
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(Path(__file__).resolve().parent / "templates"),
+        autoescape=True,
+    )
+
+    template = env.get_template("compare_output_gbif.html").render(
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        columns=columns,
+        headers=FIRST_COLUMNS + columns,
+        groups=row_groups,
+        row_span=row_span,
+        gbif_search=gbif_search,
+        stats=stats,
+        notes=notes,
+    )
+
+    with Path(html_file).open("w") as fout:
+        fout.write(template)
 
 
 def calc_score(
@@ -199,6 +294,7 @@ def calc_score(
     gbif_search: dict,
     accumulator: Accumulator,
     stem: str,
+    suffix: str,
 ) -> tuple[str, str | None]:
     actual = llm_row[field]
 
@@ -229,8 +325,15 @@ def calc_score(
     else:
         accumulator.search_fail[stem][field].append(1)
 
-    cell = f"<span class='label'>{max_field}</span>{max_expect}" if max_field else None
-    return f"<span class='label'>{max_field}</span>FPR: {max_score[0]:0.2f}", cell
+    gbif_cell = (
+        format_output(suffix, f"<span class='label'>{max_field}</span> {max_expect}")
+        if max_field
+        else None
+    )
+    score_cell = format_output(
+        suffix, f"<span class='label'>{max_field}</span> FPR: {max_score[0]:0.2f}"
+    )
+    return score_cell, gbif_cell
 
 
 def get_gbif_search() -> dict[str, list[str]]:
@@ -245,37 +348,6 @@ def get_gbif_search() -> dict[str, list[str]]:
             field = ln.rsplit(maxsplit=1)[-1]
             search[key].append(field)
     return search
-
-
-def write_template(
-    html_file: Path,
-    columns: list[str],
-    row_groups: list[RowGroup],
-    row_span: int,
-    gbif_search: dict,
-    accumulator: Accumulator,
-    llm_files: list[Path],
-    notes: str,
-) -> None:
-
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(Path(__file__).resolve().parent / "templates"),
-        autoescape=True,
-    )
-
-    template = env.get_template("compare_output_gbif.html").render(
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-        columns=columns,
-        headers=FIRST_COLUMNS + columns,
-        groups=row_groups,
-        row_span=row_span,
-        gbif_search=gbif_search,
-        stats=accumulator.format(llm_files, columns),
-        notes=notes,
-    )
-
-    with html_file.open("w") as fout:
-        fout.write(template)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -326,10 +398,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The cleaned LLM results file. You may compare several files at once.""",
     )
     io_group.add_argument(
-        "--html-file",
+        "--output-file",
         type=Path,
         required=True,
-        help="""Write the comparison results to this HTML file.""",
+        help="""Write the comparison results to this file. The file suffix
+            (.html or .ods) determines the file type.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(
