@@ -87,7 +87,6 @@ def call_lm(
     payload = {
         "model": args.model,
         "messages": [
-            # {"role": "system", "content": str(began)},  # Defeat GPT web cache
             {"role": "system", "content": prompt.system_prompt},
             {"role": "user", "content": field_prompts},
             {"role": "user", "content": field_template},
@@ -164,7 +163,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default="lm_studio/google/gemma-4-26b-a4b",
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.
-            cost tradeoff between local and hosted models. Local models are cheaper
+            cost trade off between local and hosted models. Local models are cheaper
             but hosted models are much faster.""",
     )
     model_group.add_argument(
