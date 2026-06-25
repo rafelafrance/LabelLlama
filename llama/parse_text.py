@@ -22,20 +22,10 @@ def lm_extract(args: argparse.Namespace) -> None:
     field_prompts = prompt.build_field_prompts()
     field_template = prompt.build_field_template()
     column_names = prompt.column_names()
+    prompt.log_size()
 
     docs = io_util.read_list_of_dicts(args.ocr_file, fill_na="", limit=args.limit)
     docs = [d for d in docs if d["status"] == "success"]
-
-    char_len = len(prompt.system_prompt) + len(field_prompts) + len(field_template)
-    word_len = (
-        len(prompt.system_prompt.split())
-        + len(field_prompts.split())
-        + len(field_template.split())
-    )
-    logging.info(
-        f"The prompt length (without label text) is {char_len} characters, "
-        f"{word_len} words"
-    )
 
     with tqdm(total=len(docs)) as pbar:
         results = []

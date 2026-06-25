@@ -1,4 +1,5 @@
 import importlib
+import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -73,6 +74,8 @@ class Prompt:
     description: str
     system_prompt: str = ""
     field_prompts: dict[str, FieldPrompt] = field(default_factory=dict)
+    field_prompt_len: int = 0
+    template_len: int = 0
 
     @classmethod
     def load(cls, path: Path) -> Prompt:
@@ -126,7 +129,9 @@ class Prompt:
             for f in self.field_prompts.values()
             for i, p in enumerate(f.prompts, 1)
         ]
-        return "\n".join(formatted)
+        field_prompts = "\n".join(formatted)
+        self.field_prompt_len = len(field_prompts)
+        return field_prompts
 
     def build_field_template(self) -> str:
         template = ["Structure all output with the following template."]
@@ -136,7 +141,16 @@ class Prompt:
             for c in f.columns
         ]
         template.append("<< ## completed ## >>")
-        return "\n\n".join(template)
+        field_template = "\n\n".join(template)
+        self.template_len = len(field_template)
+        return field_template
+
+    def log_size(self) -> None:
+        length = len(self.system_prompt) + self.field_prompt_len + self.template_len
+        logging.info(
+            f"Prompt lengths (without payload) = {length} "
+            f"characters, {len(self.system_prompt.split())} words"
+        )
 
     @staticmethod
     def build_text_prompt(text: str) -> str:

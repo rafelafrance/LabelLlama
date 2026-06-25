@@ -3,8 +3,10 @@
 import argparse
 import base64
 import contextlib
+import csv
 import logging
 import textwrap
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -19,51 +21,55 @@ from llama.pylib import io_util, prompt_util, str_util, timer
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
-    already_read = []
+    mode = "w"  # Used as a flag for writing the header elsewise "a" would work
+    already_read = set()
     if args.ocr_file.exists():
+        mode = "a"
         with contextlib.suppress(pd.errors.EmptyDataError):
             records = io_util.read_list_of_dicts(args.ocr_file)
-            already_read = [
+            already_read = {
                 Path(r["source"])
                 for r in records
                 if r.get("source") and r.get("status") == "success"
-            ]
+            }
 
     image_paths = sorted(Path().glob(args.image_glob))
     image_paths = image_paths[: args.limit]
     logging.info(f"There are {len(image_paths)} images to OCR")
 
     prompt = prompt_util.Prompt.load(args.prompt)
+    prompt.log_size()
+
+    tasks = [path for path in image_paths if path not in already_read]
+
+    statuses = defaultdict(int)
+
+    with args.ocr_file.open(mode) as ocr_file:
+        writer = csv.DictWriter(ocr_file, ["status", "source", "text", "elapsed"])
+        if mode == "w":
+            writer.writeheader()
+
+        with tqdm(total=len(image_paths)) as pbar:
+            results = []
+
+            with ThreadPoolExecutor(max_workers=args.threads) as executor:
+                futures = {
+                    executor.submit(
+                        call_ocr, args, image_path, prompt.system_prompt
+                    ): image_path
+                    for image_path in tasks
+                }
+
+                for future in as_completed(futures):
+                    result = future.result()
+                    statuses[result["status"]] += 1
+                    writer.writerow(result)
+                    pbar.update(1)
+
     logging.info(
-        f"System prompt length (without image) = {len(prompt.system_prompt)} "
-        f"characters, {len(prompt.system_prompt.split())} words"
-    )
-
-    tasks = [image_path for image_path in image_paths if image_path not in already_read]
-
-    with tqdm(total=len(image_paths)) as pbar:
-        results = []
-
-        with ThreadPoolExecutor(max_workers=args.threads) as executor:
-            futures = {
-                executor.submit(
-                    call_ocr, args, image_path, prompt.system_prompt
-                ): image_path
-                for image_path in tasks
-            }
-            for future in as_completed(futures):
-                results.append(future.result())
-                pbar.update(1)
-
-    errors = sum(1 for r in results if r["status"] == "ERROR")
-    results = sorted(results, key=lambda r: r["source"])
-
-    logging.info(
-        f"Total {len(results)} documents processed with {errors} errors "
+        f"Total {len(results)} documents processed with {statuses['ERROR']} errors "
         f"and {len(already_read)} documents were skipped."
     )
-
-    io_util.output_file(args.ocr_file, results, mode="a")
 
     timer.job_elapsed(job_began)
 
