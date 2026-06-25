@@ -12,7 +12,7 @@ MODE = Literal["a", "w"]
 
 def read_list_of_dicts(
     path: Path, *, fill_na: Any = None, limit: int | None = None
-) -> list[dict[str, Any]]:
+) -> list[dict[str, str]]:
     df = read_to_df(path)
     if fill_na is not None:
         df = df.fillna(fill_na)

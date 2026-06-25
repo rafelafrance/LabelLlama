@@ -11,6 +11,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.14"
 dependencies = [
+  "avif[pillow]>=2026.4.7",
   "jinja2>=3.1.6",
   "levenshtein>=0.27.3",
   "lxml>=6.1.1",

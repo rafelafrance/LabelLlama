@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 import logging
 import socket
 import textwrap
@@ -11,8 +12,9 @@ from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
+import PIL
 import requests
-from PIL import Image
+from PIL import Image, ImageFile
 from tqdm import tqdm
 
 from llama.pylib import log
@@ -24,6 +26,7 @@ Image.MAX_IMAGE_PIXELS = 300_000_000
 
 TOO_DAMN_SMALL = 10_000
 TOO_BIG = 32_000_000
+
 
 IMAGE_ERRORS = (
     AttributeError,
@@ -42,9 +45,12 @@ IMAGE_ERRORS = (
     TypeError,
     ValueError,
     requests.exceptions.ReadTimeout,
+    PIL.UnidentifiedImageError,
 )
 # Set a timeout for requests
 socket.setdefaulttimeout(TIMEOUT)
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def main(args: argparse.Namespace) -> None:
@@ -52,19 +58,52 @@ def main(args: argparse.Namespace) -> None:
 
     args.image_dir.mkdir(parents=True, exist_ok=True)
 
-    df = pd.read_csv(
-        args.multimedia_tsv,
-        sep="\t",
-        nrows=args.limit,
-        usecols=["gbifID", "format", "identifier", "title"],
-    )
-    rows = df.to_dict("records")
+    if args.multimedia_tsv:
+        df = pd.read_csv(
+            args.multimedia_tsv,
+            sep="\t",
+            nrows=args.limit,
+            usecols=["gbifID", "format", "identifier", "title"],
+        )
+        rows = df.to_dict("records")
+    elif args.api_download_json:
+        rows = []
+        with args.api_download_json.open() as fh:
+            for row in json.load(fh):
+                if row.get("taxonRank") not in ("SPECIES", "SUBSPECIES", "VARIETY"):
+                    continue
+                title = " ".join(
+                    [
+                        n
+                        for t in ["genus", "specificEpithet", "infraspecificEpithet"]
+                        if (n := row.get(t))
+                    ]
+                )
+                media_recs = [
+                    {
+                        "gbifID": row["gbifID"],
+                        "format": r["format"],
+                        "identifier": r["identifier"],
+                        "title": f"{title}_{i}",
+                    }
+                    for i, r in enumerate(row["media"], 1)
+                    if (
+                        r.get("format")
+                        and r.get("identifier")
+                        and r["format"].endswith("jpeg")
+                    )
+                ]
+                rows += media_recs
+        rows = rows[: args.limit]
+    else:
+        error = "You must choose either --multimedia-tsv or --api-download-json"
+        raise ValueError(error)
 
     with tqdm(total=len(rows)) as pbar:
         results = []
         counts = defaultdict(int)
 
-        with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+        with ThreadPoolExecutor(max_workers=args.threads) as executor:
             futures = [executor.submit(download, row, args.image_dir) for row in rows]
             for future in as_completed(futures):
                 results.append(future.result())
@@ -90,7 +129,7 @@ def download(row: dict, image_dir: Path) -> str:
         return "exists"
 
     try:
-        req = requests.get(row["identifier"], timeout=TIMEOUT)
+        data = requests.get(row["identifier"], timeout=TIMEOUT).content
 
     except requests.exceptions.RequestException:
         logging.exception("Download error")
@@ -100,8 +139,10 @@ def download(row: dict, image_dir: Path) -> str:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)  # No EXIF warnings
 
-            with Image.open(BytesIO(req.content)) as image:
+            with Image.open(BytesIO(data)) as image:
                 image.save(path)
+            # with path.open("wb") as f:
+            #     f.write(data)
 
     except IMAGE_ERRORS:
         logging.exception("Download error")
@@ -121,15 +162,18 @@ def parse_args() -> argparse.Namespace:
         allow_abbrev=True,
         description=textwrap.dedent("""Download images."""),
     )
-
+    arg_parser.add_argument(
+        "--api-download-json",
+        type=Path,
+        metavar="PATH",
+        help="""This JSON file is one option for getting image download links.""",
+    )
     arg_parser.add_argument(
         "--multimedia-tsv",
         type=Path,
-        required=True,
         metavar="PATH",
-        help="""This TSV file contains the image download links.""",
+        help="""This TSV file is another option for getting image download links.""",
     )
-
     arg_parser.add_argument(
         "--image-dir",
         type=Path,
@@ -137,23 +181,19 @@ def parse_args() -> argparse.Namespace:
         metavar="PATH",
         help="""Place downloaded images into subdirectories of this directory.""",
     )
-
     arg_parser.add_argument(
         "--limit",
         type=int,
-        default=1_000,
         metavar="INT",
         help="""Limit to this many completed downloads. (default: %(default)s)""",
     )
-
     arg_parser.add_argument(
-        "--max-workers",
+        "--threads",
         metavar="INT",
         type=int,
         default=1,
-        help="""How many workers to spawn. (default: %(default)s)""",
+        help="""How many worker threads to spawn. (default: %(default)s)""",
     )
-
     args = arg_parser.parse_args()
     return args
 

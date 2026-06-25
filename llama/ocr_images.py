@@ -20,16 +20,16 @@ def ocr_images(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
     already_read = []
-    if args.docs.exists():
+    if args.ocr_file.exists():
         with contextlib.suppress(pd.errors.EmptyDataError):
-            records = io_util.read_list_of_dicts(args.docs)
+            records = io_util.read_list_of_dicts(args.ocr_file)
             already_read = [
                 Path(r["source"])
                 for r in records
                 if r.get("source") and r.get("status") == "success"
             ]
 
-    image_paths = sorted(args.image_dir.glob(args.glob))
+    image_paths = sorted(Path().glob(args.image_glob))
     image_paths = image_paths[: args.limit]
     logging.info(f"There are {len(image_paths)} images to OCR")
 

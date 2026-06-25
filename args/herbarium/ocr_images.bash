@@ -1,10 +1,12 @@
 #!/bin/bash
 
-uv run ./llama/ocr_images.py \
-  --image-glob 'data/herbarium/ufl_images/*.jpeg' \
-  --ocr-file data/herbarium/ufl_images_1.csv \
-  --model chandra-ocr \
-  --prompt prompts/ocr_v2.md \
-  --temperature 0.1 \
-  --max-tokens 2048 \
-  --log-file data/herbarium/ufl_images.log
+for org in "cornell" "harvard" "jepson" "mich" "missouri" "ncu" "wash" "wisc" "wtu"; do
+    uv run ./llama/ocr_images.py \
+        --image-glob "data/herbarium/images/${org}_images/*.jpeg" \
+        --ocr-file "data/herbarium/ocr_${org}_images.csv" \
+        --model chandra-ocr \
+        --prompt prompts/ocr_v2.md \
+        --temperature 0.1 \
+        --max-tokens 2048 \
+        --log-file data/herbarium/ocr_images.log
+done

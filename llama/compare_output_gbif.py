@@ -17,6 +17,7 @@ from pathlib import Path
 
 import jinja2
 import pandas as pd
+from pandas.core.window.ewm import dtype_to_unit
 from rapidfuzz import fuzz
 from tqdm import tqdm
 
@@ -85,6 +86,92 @@ class RowGroup:
     gbif_row: dict = field(default_factory=dict)
     llm_rows: list[dict] = field(default_factory=list)
     score_rows: list[dict] = field(default_factory=list)
+
+
+@dataclass
+class LlmCell:
+    text: str = ""  # The cell's text
+    score: float = 0.0  # The score the cell got
+    score_method: str = ""  # How the cell was scored
+    gbif_cell: str = ""  # What cell provided the best match
+
+
+@dataclass
+class GbifCell:
+    original: str = ""
+    # What cells matched llm cells best. We search for best matches in the GBIF row
+    matches: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class CellGroup:
+    header: str = ""  # Column header for the cell group
+    gbif_cells: list[GbifCell] = field(default_factory=list)
+    llm_cells: list[LlmCell] = field(default_factory=list)
+
+
+@dataclass
+class RowGroup2:
+    row_num: int = 0  # Index for the group. A simple enumerate starting at 1
+    text: str = ""  # What is the OCRed text
+    source: str = ""  # The name of the image file or source CSV file
+    href: str = ""  # A link back to the original gbif record
+    cells: list[CellGroup] = field(default_factory=list)  # Column -> CellGroup
+
+
+def score_against_gbif_new(args: argparse.Namespace) -> None:
+    """Compare LLM outputs against gbif data and write an HTML report."""
+    log.started(args.log_file, args=args)
+
+    suffix = args.output_file.suffix.lower()
+
+    # Read OCR data
+    ocr_list = io_util.read_list_of_dicts(args.ocr_file)
+    ocr_dict = {o["source"]: o for o in ocr_list}
+
+    # Read GBIF data
+    gbif_list = io_util.read_list_of_dicts(args.gbif_file)
+    gbif_dict = {g["source"]: g for g in gbif_list}
+
+    # Init row and column indexes
+    row_index = set(gbif_dict)
+    columns = {}
+
+    # Read LLM data
+    llm_dicts = {}
+    for llm_file in args.llm_file:
+        llm_df = io_util.read_to_df(llm_file)
+        llm_dict = {r["source"]: r for r in llm_df.to_dict("records")}
+        llm_dicts[llm_file.stem] = llm_dict
+        row_index &= set(llm_dict)
+        columns |= dict.fromkeys(llm_df.columns)
+
+    # Init the row index
+    row_index = sorted(row_index)
+    row_index = row_index[: args.limit] if args.limit else row_index
+
+    # Get common columns in the original order
+    columns = [k for k in columns if k not in FIRST_COLUMNS]
+
+    # Build RowGroups
+    row_groups = []
+    for i, source in tqdm(enumerate(row_index, 1), total=len(row_index)):
+        gbif = gbif_dict[source]
+
+        row_group = RowGroup2(
+            row_num=i,
+            text=ocr_dict.get(source, {}).get("text", ""),
+            source=gbif["source"],
+            href=gbif["identifier"],
+        )
+
+        for col in columns:
+            cell_group = CellGroup(
+                header=col,
+                gbif_cells=[GbifCell(original=gbif_dict[source][c]) for c in columns],
+            )
+            for llm_dict in llm_dicts.values():
+                cell_group.llm_cells += [llm_dict[c] for c in columns]
 
 
 def score_against_gbif(args: argparse.Namespace) -> None:

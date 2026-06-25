@@ -15,6 +15,27 @@ SKIP_COLUMNS = ["text", "source", "row", "type"]
 _SKIP_SET = frozenset(SKIP_COLUMNS)
 
 
+@dataclass
+class Cell:
+    text: str = ""  # The cell's text
+    in_majority: bool = False  # Is the cell in the majority?
+
+
+@dataclass
+class CellGroup:
+    header: str = ""  # Column header for the cell group
+    cells: dict[str, Cell] = field(default_factory=dict)  # dict[Column] -> cell
+
+
+@dataclass
+class RowGroup:
+    row_num: int = 0  # Index for the group. A simple enumerate starting at 1
+    text: str = ""  # What is the OCRed text
+    source: str = ""  # The name of the image file or source CSV file
+    href: str = ""  # A link back to the original gbif record
+    cells: dict[str, CellGroup] = field(default_factory=dict)  # Column -> CellGroup
+
+
 def compare_model_results(args: argparse.Namespace) -> None:
     """Compare LLM outputs against each other and write an HTML report."""
     log.started(args.log_file, args=args)
