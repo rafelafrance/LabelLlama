@@ -3,7 +3,7 @@ name: ocr_v2
 description: OCR labels on images of museum specimens. Optimized for Qwen models.
 ---
 
-# System Prompt
+# Base Prompt
 
 You are an OCR assistant specialized in extracting text from museum specimen labels.
 

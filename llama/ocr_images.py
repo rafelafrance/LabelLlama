@@ -2,7 +2,6 @@
 
 import argparse
 import base64
-import contextlib
 import csv
 import logging
 import textwrap
@@ -11,11 +10,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import requests
 from tqdm import tqdm
 
 from llama.pylib import io_util, prompt_util, str_util, timer
+
+MIN_SIZE = 1024
+
+COLUMN_NAMES = ["status", "source", "text", "elapsed"]
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -23,51 +25,51 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     mode = "w"  # Used as a flag for writing the header elsewise "a" would work
     already_read = set()
-    if args.ocr_file.exists():
+    if args.ocr_file.exists() and args.ocr_file.stat().st_size >= MIN_SIZE:
         mode = "a"
-        with contextlib.suppress(pd.errors.EmptyDataError):
-            records = io_util.read_list_of_dicts(args.ocr_file)
-            already_read = {
-                Path(r["source"])
-                for r in records
-                if r.get("source") and r.get("status") == "success"
-            }
+        records = io_util.read_list_of_dicts(args.ocr_file)
+        already_read = {
+            r["source"]
+            for r in records
+            if r.get("source") and r.get("status") == "success"
+        }
 
     image_paths = sorted(Path().glob(args.image_glob))
     image_paths = image_paths[: args.limit]
     logging.info(f"There are {len(image_paths)} images to OCR")
+    logging.info(f"{len(already_read)} images were already read.")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     prompt.log_size()
 
-    tasks = [path for path in image_paths if path not in already_read]
+    tasks = [path for path in image_paths if str(path) not in already_read]
 
     statuses = defaultdict(int)
 
     with args.ocr_file.open(mode) as ocr_file:
-        writer = csv.DictWriter(ocr_file, ["status", "source", "text", "elapsed"])
+        writer = csv.DictWriter(ocr_file, COLUMN_NAMES)
         if mode == "w":
             writer.writeheader()
 
-        with tqdm(total=len(image_paths)) as pbar:
-            results = []
+        with (
+            tqdm(total=len(tasks)) as pbar,
+            ThreadPoolExecutor(max_workers=args.threads) as executor,
+        ):
+            futures = {
+                executor.submit(
+                    call_ocr, args, image_path, prompt.system_prompt
+                ): image_path
+                for image_path in tasks
+            }
 
-            with ThreadPoolExecutor(max_workers=args.threads) as executor:
-                futures = {
-                    executor.submit(
-                        call_ocr, args, image_path, prompt.system_prompt
-                    ): image_path
-                    for image_path in tasks
-                }
-
-                for future in as_completed(futures):
-                    result = future.result()
-                    statuses[result["status"]] += 1
-                    writer.writerow(result)
-                    pbar.update(1)
+            for future in as_completed(futures):
+                result = future.result()
+                statuses[result["status"]] += 1
+                writer.writerow(result)
+                pbar.update(1)
 
     logging.info(
-        f"Total {len(results)} documents processed with {statuses['ERROR']} errors "
+        f"Total {len(image_paths)} documents processed with {statuses['ERROR']} errors "
         f"and {len(already_read)} documents were skipped."
     )
 
@@ -122,7 +124,7 @@ def call_ocr(
         status = "success"
 
     except requests.exceptions.RequestException as err:
-        logging.exception("API error")
+        logging.exception(f"API error for: {image_path.name}")
         text = str(err)
         status = "ERROR"
 

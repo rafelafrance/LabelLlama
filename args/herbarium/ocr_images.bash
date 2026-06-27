@@ -10,5 +10,6 @@ for org in "cas"; do
         --temperature 0.1 \
         --max-tokens 2048 \
         --threads 4 \
+        --timeout 120 \
         --log-file data/herbarium/ocr_images.log
 done

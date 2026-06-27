@@ -3,7 +3,7 @@ name: ocr
 description: OCR labels on images of museum specimens.
 ---
 
-# System Prompt
+# Base Prompt
 
 You are given an image of a museum specimen with labels.
 I want you to extract all the text from every label and stamp on the specimen.

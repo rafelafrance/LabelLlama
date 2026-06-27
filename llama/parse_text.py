@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import logging
 import os
 import textwrap
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -14,57 +16,65 @@ from tqdm import tqdm
 
 from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 
+MIN_SIZE = 1024
+
+FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
+
 
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
-    prompt = prompt_util.Prompt.load(args.prompt)
-    field_prompts = prompt.build_field_prompts()
-    field_template = prompt.build_field_template()
-    column_names = prompt.column_names()
-    prompt.log_size()
+    mode = "w"
+    already_parsed = set()
+    if args.parse_file.exists() and args.parse_file.stat().st_size >= MIN_SIZE:
+        mode = "a"
+        records = io_util.read_list_of_dicts(args.parse_file)
+        already_parsed = {
+            r["source"]
+            for r in records
+            if r.get("source") and r.get("status") == "success"
+        }
 
     docs = io_util.read_list_of_dicts(args.ocr_file, fill_na="", limit=args.limit)
-    docs = [d for d in docs if d["status"] == "success"]
+    doc_count = len(docs)
+    docs = [
+        d
+        for d in docs
+        if d["status"] == "success" and d["source"] not in already_parsed
+    ]
+    logging.info(f"There are {doc_count} texts to parse.")
+    logging.info(f"{len(already_parsed)} texts were already parsed.")
 
-    with tqdm(total=len(docs)) as pbar:
-        results = []
+    prompt = prompt_util.Prompt.load(args.prompt)
+    prompt.log_size()
 
-        with ThreadPoolExecutor(max_workers=args.threads) as executor:
-            futures = {
-                executor.submit(
-                    call_lm,
-                    args,
-                    doc,
-                    prompt,
-                    field_prompts,
-                    field_template,
-                    column_names,
-                ): doc
-                for doc in docs
-            }
+    statuses = defaultdict(int)
+
+    with args.parse_file.open(mode) as parse_file:
+        writer = csv.DictWriter(parse_file, FIRST_COLUMNS + prompt.column_names)
+        if mode == "w":
+            writer.writeheader()
+
+        with (
+            tqdm(total=len(docs)) as pbar,
+            ThreadPoolExecutor(max_workers=args.threads) as executor,
+        ):
+            futures = {executor.submit(parser, args, doc, prompt): doc for doc in docs}
             for future in as_completed(futures):
-                results.append(future.result())
+                result = future.result()
+                statuses[result["status"]] += 1
+                writer.writerow(result)
                 pbar.update(1)
 
-    errors = sum(1 for r in results if r["status"] == "ERROR")
-    results = sorted(results, key=lambda r: r["source"])
-
-    logging.info(f"Total {len(results)} documents processed with {errors} errors.")
-
-    io_util.output_file(args.parse_file, results)
+    logging.info(
+        f"Total {len(docs)} documents processed with {statuses['ERROR']} errors "
+        f"and {len(already_parsed)} documents were skipped."
+    )
 
     timer.job_elapsed(job_began)
 
 
-def call_lm(
-    args: argparse.Namespace,
-    doc: dict,
-    prompt: prompt_util.Prompt,
-    field_prompts: str,
-    field_template: str,
-    column_names: list[str],
-) -> dict:
+def parser(args: argparse.Namespace, doc: dict, prompt: prompt_util.Prompt) -> dict:
     began = datetime.now()
 
     text = preprocess.clean_text(doc["text"])
@@ -78,9 +88,7 @@ def call_lm(
         "model": args.model,
         "messages": [
             {"role": "system", "content": prompt.system_prompt},
-            {"role": "user", "content": field_prompts},
-            {"role": "user", "content": field_template},
-            {"role": "user", "content": prompt_util.Prompt.build_text_prompt(text)},
+            {"role": "user", "content": prompt.build_text_prompt(text)},
         ],
     }
     if args.temperature is not None:
@@ -88,6 +96,7 @@ def call_lm(
     if args.max_tokens is not None:
         payload["max_tokens"] = args.max_tokens
 
+    extracted = {}
     try:
         response = requests.post(
             url, headers=headers, json=payload, timeout=args.timeout
@@ -96,13 +105,13 @@ def call_lm(
         result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
-        extracted = str_util.llm_reply_to_dict(content, column_names)
+        extracted = str_util.llm_reply_to_dict(content, prompt.column_names)
 
         status = "success"
 
     except requests.exceptions.RequestException as err:
         logging.exception("API error")
-        extracted = {"ERROR": str(err)}
+        text = str(err)
         status = "ERROR"
 
     result = {

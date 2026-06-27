@@ -3,7 +3,7 @@ name: herbarium
 description: Extract information from labels on images of herbarium museum specimens.
 ---
 
-# System Prompt
+# Base Prompt
 
 You are given text from all labels for a specimen, and you will need to extract
 structured botanical and collection metadata from herbarium label text.

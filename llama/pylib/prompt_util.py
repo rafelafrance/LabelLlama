@@ -3,7 +3,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import yaml
 
@@ -12,7 +12,7 @@ FIELD_PROMPT_DIR = Path("prompts") / "fields"
 MIN_PROMPT_LEN = 40
 
 # The system prompt section of the prompt
-SYS_PROMPT = re.compile(r"^System\s+Prompt", flags=re.IGNORECASE)
+SYS_PROMPT = re.compile(r"^Base\s+Prompt", flags=re.IGNORECASE)
 
 # The output fields section of the prompt
 OUT_FIELDS = re.compile(r"^Output\s+Fields", flags=re.IGNORECASE)
@@ -70,12 +70,17 @@ class FieldPrompt:
 
 @dataclass
 class Prompt:
+    # -------------- ClassVars ---------------
+    text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
+    # ----------------------------------------
+
     name: str
     description: str
-    system_prompt: str = ""
-    field_prompts: dict[str, FieldPrompt] = field(default_factory=dict)
-    field_prompt_len: int = 0
-    template_len: int = 0
+    base_prompt: str = ""
+    fields: dict[str, FieldPrompt] = field(default_factory=dict)
+    field_prompts: str = ""
+    field_template: str = ""
+    _system_prompt: str = ""
 
     @classmethod
     def load(cls, path: Path) -> Prompt:
@@ -110,48 +115,65 @@ class Prompt:
         prompt = cls(
             name=front["name"],
             description=front["description"],
-            system_prompt=sys_prompt,
-            field_prompts=fields,
+            base_prompt=sys_prompt,
+            fields=fields,
         )
+        if prompt.fields:
+            prompt.field_prompts = prompt.build_field_prompts()
+            prompt.field_template = prompt.build_field_template()
+
         return prompt
+
+    @property
+    def system_prompt(self) -> str:
+        if self._system_prompt:
+            return self._system_prompt
+        self._system_prompt = "\n\n".join(
+            [
+                p
+                for p in (self.base_prompt, self.field_prompts, self.field_template)
+                if p
+            ]
+        )
+        return self._system_prompt
 
     def field_classes(self) -> dict[str, Any]:
         """Return field classes indexed by column/header name."""
-        return {f.name: f.field_class() for f in self.field_prompts.values()}
+        return {f.name: f.field_class() for f in self.fields.values()}
 
+    @property
     def column_names(self) -> list[str]:
         """Get all column names."""
-        return [c for f in self.field_prompts.values() for c in f.columns]
+        columns = []
+        for field_ in self.fields.values():
+            columns += field_.columns
+        return columns
 
     def build_field_prompts(self) -> str:
         formatted = [
             f"{i}. {p}"
-            for f in self.field_prompts.values()
+            for f in self.fields.values()
             for i, p in enumerate(f.prompts, 1)
         ]
-        field_prompts = "\n".join(formatted)
-        self.field_prompt_len = len(field_prompts)
-        return field_prompts
+        self.field_prompts = "\n".join(formatted)
+        return self.field_prompts
 
     def build_field_template(self) -> str:
         template = ["Structure all output with the following template."]
         template += [
-            f"<< ## {c} ## >>\n{{{c}}}"
-            for f in self.field_prompts.values()
-            for c in f.columns
+            f"<< ## {c} ## >>\n{{{c}}}" for f in self.fields.values() for c in f.columns
         ]
         template.append("<< ## completed ## >>")
-        field_template = "\n\n".join(template)
-        self.template_len = len(field_template)
-        return field_template
+        self.field_template = "\n\n".join(template)
+        return self.field_template
 
     def log_size(self) -> None:
-        length = len(self.system_prompt) + self.field_prompt_len + self.template_len
+        sys_prompt = self.system_prompt
+        length = len(sys_prompt)
+        words = len(sys_prompt.split())
         logging.info(
-            f"Prompt lengths (without payload) = {length} "
-            f"characters, {len(self.system_prompt.split())} words"
+            f"Prompt lengths (without payload) = {length} characters, {words} words"
         )
 
-    @staticmethod
-    def build_text_prompt(text: str) -> str:
-        return "Extract data from this `text` (str):\n" + text
+    def build_text_prompt(self, text: str) -> str:
+        return self.text_prompt + text
