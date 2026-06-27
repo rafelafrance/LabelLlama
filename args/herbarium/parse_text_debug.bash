@@ -9,5 +9,5 @@ uv run llama/parse_text.py \
   --temperature 0.1 \
   --timeout 120 \
   --threads 4 \
-  --limit 2 \
+  --limit 4 \
   --log-file data/herbarium/debug.log

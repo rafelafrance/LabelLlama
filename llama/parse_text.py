@@ -12,6 +12,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
 from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
@@ -19,6 +20,8 @@ from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
 MIN_SIZE = 1024
 
 FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
+
+DEFAULT_POOL = 10
 
 
 def lm_extract(args: argparse.Namespace) -> None:
@@ -58,8 +61,18 @@ def lm_extract(args: argparse.Namespace) -> None:
         with (
             tqdm(total=len(docs)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
+            requests.Session() as session,
         ):
-            futures = {executor.submit(parser, args, doc, prompt): doc for doc in docs}
+            if args.threads > DEFAULT_POOL:
+                adapter = HTTPAdapter(
+                    pool_connections=args.threads, pool_maxsize=args.threads
+                )
+                session.mount("http://", adapter)
+                session.mount("https://", adapter)
+
+            futures = {
+                executor.submit(parser, args, doc, prompt, session): doc for doc in docs
+            }
             for future in as_completed(futures):
                 result = future.result()
                 statuses[result["status"]] += 1
@@ -74,7 +87,12 @@ def lm_extract(args: argparse.Namespace) -> None:
     timer.job_elapsed(job_began)
 
 
-def parser(args: argparse.Namespace, doc: dict, prompt: prompt_util.Prompt) -> dict:
+def parser(
+    args: argparse.Namespace,
+    doc: dict,
+    prompt: prompt_util.Prompt,
+    session: requests.Session,
+) -> dict:
     began = datetime.now()
 
     text = preprocess.clean_text(doc["text"])
@@ -98,7 +116,7 @@ def parser(args: argparse.Namespace, doc: dict, prompt: prompt_util.Prompt) -> d
 
     extracted = {}
     try:
-        response = requests.post(
+        response = session.post(
             url, headers=headers, json=payload, timeout=args.timeout
         )
         response.raise_for_status()

@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
 from llama.pylib import io_util, prompt_util, str_util, timer
@@ -18,6 +19,8 @@ from llama.pylib import io_util, prompt_util, str_util, timer
 MIN_SIZE = 1024
 
 COLUMN_NAMES = ["status", "source", "text", "elapsed"]
+
+DEFAULT_POOL = 10
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -54,10 +57,18 @@ def ocr_images(args: argparse.Namespace) -> None:
         with (
             tqdm(total=len(tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
+            requests.Session() as session,
         ):
+            if args.threads > DEFAULT_POOL:
+                adapter = HTTPAdapter(
+                    pool_connections=args.threads, pool_maxsize=args.threads
+                )
+                session.mount("http://", adapter)
+                session.mount("https://", adapter)
+
             futures = {
                 executor.submit(
-                    call_ocr, args, image_path, prompt.system_prompt
+                    call_ocr, args, image_path, prompt.system_prompt, session
                 ): image_path
                 for image_path in tasks
             }
@@ -80,6 +91,7 @@ def call_ocr(
     args: argparse.Namespace,
     image_path: Path,
     sys_prompt: str,
+    session: requests.Session,
 ) -> dict:
     began = datetime.now()
 
@@ -109,7 +121,7 @@ def call_ocr(
     }
 
     try:
-        response = requests.post(
+        response = session.post(
             url, headers=headers, json=payload, timeout=args.timeout
         )
         response.raise_for_status()
