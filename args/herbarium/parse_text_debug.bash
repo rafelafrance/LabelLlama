@@ -1,7 +1,7 @@
 #!/bin/bash
 
 uv run llama/parse_text.py \
-  --ocr-file data/herbarium/ocr/ocr_ariz_images.csv \
+  --ocr-file data/herbarium/ocr_chandra/ocr_ariz_images.csv \
   --parse-file data/herbarium/debug_raw_ariz.csv \
   --prompt prompts/fields/herbarium.md \
   --model "qwen/qwen3.6-35b-a3b" \

@@ -128,7 +128,7 @@ def parser(
         status = "success"
 
     except requests.exceptions.RequestException as err:
-        logging.exception("API error")
+        logging.exception(f"API error for: {Path(doc['source']).name}")
         text = str(err)
         status = "ERROR"
 

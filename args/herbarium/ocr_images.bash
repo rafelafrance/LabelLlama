@@ -4,7 +4,7 @@
 for org in "cas"; do
     uv run ./llama/ocr_images.py \
         --image-glob "data/herbarium/images/${org}_images/*.jpg" \
-        --ocr-file "data/herbarium/ocr_${org}_images.csv" \
+        --ocr-file "data/herbarium/ocr_chandra/ocr_${org}_images.csv" \
         --model chandra-ocr \
         --prompt prompts/ocr_v2.md \
         --temperature 0.1 \

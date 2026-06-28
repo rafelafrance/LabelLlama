@@ -41,6 +41,22 @@ def filter_lines(text: str) -> str:
     return text
 
 
+def remove_identical_lines(text: str) -> str:
+    """
+    Remove identical lines.
+
+    Sometimes the OCR model will get stuck in a loop and repeat the same line over and
+    over again. Even with a max output tokens setting this can get fairly long. This
+    removes duplicate lines.
+    """
+    lines = {}  # Dicts preserve order, sets do not
+    for ln in text.splitlines():
+        if ln not in lines:
+            lines[ln] = 1
+    text = "\n".join(lines)
+    return text
+
+
 def join_lines(text: str) -> str:
     """
     Join lines of text if there is only one line break (return) between them.
@@ -59,5 +75,6 @@ def join_lines(text: str) -> str:
 
 def clean_text(text: str) -> str:
     text = filter_lines(text)
+    text = remove_identical_lines(text)
     text = join_lines(text)
     return text
