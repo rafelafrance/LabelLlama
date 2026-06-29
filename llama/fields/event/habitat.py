@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from rapidfuzz import fuzz
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -19,7 +19,7 @@ class Habitat(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.habitat = fix_values.to_str(self.habitat)
+        self.habitat = fix_parses.to_str(self.habitat)
 
         # Remove the habitat label
         self.habitat = re.sub(

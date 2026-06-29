@@ -1,10 +1,10 @@
 import unittest
 from textwrap import dedent
 
-from llama.pylib import preprocess
+from llama.pylib import fix_ocr
 
 
-class TestPreprocess(unittest.TestCase):
+class TestFixOcr(unittest.TestCase):
     # ---------------------------------------------------------------------
     def test_clean_text_01(self) -> None:
         text = dedent("""
@@ -22,24 +22,24 @@ class TestPreprocess(unittest.TestCase):
             "F. H. SARGENT Paspalum urvillei Steud. Locality Picayune, Miss. "
             "Habitat Waste ground. Date May 29, 1966."
         )
-        actual = preprocess.clean_text(text)
+        actual = fix_ocr.clean_text(text)
         assert actual == expect
 
     # ---------------------------------------------------------------------
     def test_remove_identical_lines_01(self) -> None:
         text = "line 1\nline 2\nline 2\nline 3\n"
         expect = "line 1\nline 2\nline 3"
-        actual = preprocess.remove_identical_lines(text)
+        actual = fix_ocr.remove_identical_lines(text)
         assert actual == expect
 
     def test_remove_identical_lines_02(self) -> None:
         text = "line 1\nline 2\nline 1\nline 3\n"
         expect = "line 1\nline 2\nline 3"
-        actual = preprocess.remove_identical_lines(text)
+        actual = fix_ocr.remove_identical_lines(text)
         assert actual == expect
 
     def test_remove_identical_lines_03(self) -> None:
         text = "line 1\n \nline 2\n\nline 1\n\nline 3\n"
         expect = "line 1\n\nline 2\n\n\nline 3"
-        actual = preprocess.remove_identical_lines(text)
+        actual = fix_ocr.remove_identical_lines(text)
         assert actual == expect

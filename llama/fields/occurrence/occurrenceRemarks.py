@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from rapidfuzz import fuzz
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values, str_util
+from llama.pylib import fix_parses, str_util
 
 
 @dataclass
@@ -19,7 +19,7 @@ class OccurrenceRemarks(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.occurrenceRemarks = fix_values.to_str(self.occurrenceRemarks)
+        self.occurrenceRemarks = fix_parses.to_str(self.occurrenceRemarks)
 
         # Remove easy to get ID number labels
         self.occurrenceRemarks = re.sub(r"(#|Nº)", "", self.occurrenceRemarks)

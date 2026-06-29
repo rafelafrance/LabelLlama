@@ -6,7 +6,7 @@ from typing import Any
 from rapidfuzz import fuzz
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 SOURCE_THRESHOLD = 75.0
 
@@ -18,7 +18,7 @@ class RecordNumber(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.recordNumber = fix_values.to_str(self.recordNumber)
+        self.recordNumber = fix_parses.to_str(self.recordNumber)
         self.recordNumber = re.sub(r"(#|Nº)", "", self.recordNumber)
 
         # Remove the label

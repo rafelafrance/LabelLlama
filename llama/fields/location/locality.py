@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from rapidfuzz import fuzz
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 from llama.pylib.str_util import compress
 
 
@@ -19,7 +19,7 @@ class Locality(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.locality = fix_values.to_str(self.locality)
+        self.locality = fix_parses.to_str(self.locality)
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         """Remove country, state/province, and county."""
@@ -33,7 +33,7 @@ class Locality(BaseField):
             r"\b(co\.?|county)\b", "", self.locality, flags=re.IGNORECASE
         )
 
-        self.locality = fix_values.clean_str_ends(self.locality)
+        self.locality = fix_parses.clean_str_ends(self.locality)
         self.locality = compress(self.locality)
 
     @staticmethod

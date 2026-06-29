@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 from llama.vocab import units as dim_units
 
 
@@ -17,10 +17,10 @@ class VerbatimElevation(BaseField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.verbatimElevation = fix_values.to_str(self.verbatimElevation)
-        self._elevationValues = fix_values.to_list_of_floats(self._elevationValues)
-        self.elevationUnits = fix_values.to_list_of_strs(self.elevationUnits)
-        self.elevationEstimated = fix_values.to_truthy(self.elevationEstimated)
+        self.verbatimElevation = fix_parses.to_str(self.verbatimElevation)
+        self._elevationValues = fix_parses.to_list_of_floats(self._elevationValues)
+        self.elevationUnits = fix_parses.to_list_of_strs(self.elevationUnits)
+        self.elevationEstimated = fix_parses.to_truthy(self.elevationEstimated)
 
         self.clean_verbatim_elevation()
         self.clean_elevation()

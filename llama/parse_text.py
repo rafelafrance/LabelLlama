@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import io_util, preprocess, prompt_util, str_util, timer
+from llama.pylib import fix_ocr, io_util, prompt_util, str_util, timer
 
 MIN_SIZE = 1024
 
@@ -99,7 +99,7 @@ def parser(
 ) -> dict:
     began = datetime.now()
 
-    text = preprocess.clean_text(doc["text"])
+    text = fix_ocr.clean_text(doc["text"])
 
     url = f"{args.api_host}/chat/completions"
     headers = {

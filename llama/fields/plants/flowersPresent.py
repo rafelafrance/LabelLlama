@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -13,11 +13,11 @@ class FlowersPresent(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.flowersPresent = fix_values.to_bool(self.flowersPresent)
+        self.flowersPresent = fix_parses.to_bool(self.flowersPresent)
 
         # Handle the case where the word "flowers" is being used as true
         if not self.flowersPresent:
-            string = fix_values.to_str(self.flowersPresent)
+            string = fix_parses.to_str(self.flowersPresent)
             self.flowersPresent = bool(
                 re.search(r"(fls|flower|fl)", string, flags=re.IGNORECASE)
             )

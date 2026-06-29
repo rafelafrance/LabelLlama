@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -9,4 +9,4 @@ class Habit(BaseField):
     habit: str = ""
 
     def __post_init__(self, text: str) -> None:
-        self.habit = fix_values.hallucinated_str(self.habit, text)
+        self.habit = fix_parses.hallucinated_str(self.habit, text)

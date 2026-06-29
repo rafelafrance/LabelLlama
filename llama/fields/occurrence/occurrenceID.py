@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -12,7 +12,7 @@ class OccurrenceID(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.occurrenceID = fix_values.to_str(self.occurrenceID)
+        self.occurrenceID = fix_parses.to_str(self.occurrenceID)
         self.occurrenceID = re.sub(r"(#|Nº)", "", self.occurrenceID)
 
         # Remove the label

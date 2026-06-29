@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -13,7 +13,7 @@ class VerbatimEventDate(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.verbatimEventDate = fix_values.to_str(self.verbatimEventDate)
+        self.verbatimEventDate = fix_parses.to_str(self.verbatimEventDate)
 
         # Remove the date label
         self.verbatimEventDate = re.sub(
@@ -22,7 +22,7 @@ class VerbatimEventDate(BaseField):
 
         # Handle date ranges
         dates = self.verbatimEventDate.split("|")
-        dates = [fix_values.date_to_iso(d) for d in dates]
+        dates = [fix_parses.date_to_iso(d) for d in dates]
 
         self.verbatimEventDate = self.verbatimEventDate.replace("|", " to ")
         self.eventDate = self.eventDate or " to ".join(dates)

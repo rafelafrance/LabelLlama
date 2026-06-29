@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_values
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -12,7 +12,7 @@ class County(BaseField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.county = fix_values.to_str(self.county)
+        self.county = fix_parses.to_str(self.county)
 
         # Remove the county label
         self.county = re.sub(r"\b(co\.?|county)$", "", self.county, flags=re.IGNORECASE)
