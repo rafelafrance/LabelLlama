@@ -31,7 +31,7 @@ This includes:
 - Return the text **EXACTLY** as written, preserving original capitalization, punctuation, and line breaks.
 - When there is **significant vertical white space** between two sections of text in the image (e.g., between separate labels or stamps), reflect that spacing in your output by adding an extra blank line (`\n\n`). You do not need a precise vertical representation — just use the extra newline to signal distinct, separated blocks of text.
 - Output **only** the raw text — no descriptions, no commentary, no analysis.
-- Output **only** plain UTF-8 text — no HTML tags, no Markdown, no formatting of any kind.
+- Output **only** plain UTF-8 text.
 - **Do not** describe what you see in the image.
 - **Do not** add any introductory or concluding remarks.
 - **Do not** hallucinate text that is not present in the image.
