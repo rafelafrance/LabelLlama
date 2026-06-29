@@ -22,6 +22,8 @@ COLUMN_NAMES = ["status", "source", "text", "elapsed"]
 
 DEFAULT_POOL = 10
 
+FLUSH = 10
+
 
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
@@ -73,11 +75,13 @@ def ocr_images(args: argparse.Namespace) -> None:
                 for image_path in tasks
             }
 
-            for future in as_completed(futures):
+            for i, future in enumerate(as_completed(futures), 1):
                 result = future.result()
                 statuses[result["status"]] += 1
                 writer.writerow(result)
                 pbar.update(1)
+                if i % FLUSH == 0:
+                    ocr_file.flush()
 
     logging.info(
         f"Total {len(image_paths)} documents processed with {statuses['ERROR']} errors "

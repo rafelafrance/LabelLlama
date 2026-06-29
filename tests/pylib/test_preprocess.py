@@ -37,3 +37,9 @@ class TestPreprocess(unittest.TestCase):
         expect = "line 1\nline 2\nline 3"
         actual = preprocess.remove_identical_lines(text)
         assert actual == expect
+
+    def test_remove_identical_lines_03(self) -> None:
+        text = "line 1\n \nline 2\n\nline 1\n\nline 3\n"
+        expect = "line 1\n\nline 2\n\n\nline 3"
+        actual = preprocess.remove_identical_lines(text)
+        assert actual == expect

@@ -23,6 +23,8 @@ FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
 
 DEFAULT_POOL = 10
 
+FLUSH = 10
+
 
 def lm_extract(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
@@ -73,11 +75,13 @@ def lm_extract(args: argparse.Namespace) -> None:
             futures = {
                 executor.submit(parser, args, doc, prompt, session): doc for doc in docs
             }
-            for future in as_completed(futures):
+            for i, future in enumerate(as_completed(futures), 1):
                 result = future.result()
                 statuses[result["status"]] += 1
                 writer.writerow(result)
                 pbar.update(1)
+                if i % FLUSH == 0:
+                    parse_file.flush()
 
     logging.info(
         f"Total {len(docs)} documents processed with {statuses['ERROR']} errors "
