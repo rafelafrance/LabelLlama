@@ -22,7 +22,7 @@ class TestFixOcr(unittest.TestCase):
             "F. H. SARGENT Paspalum urvillei Steud. Locality Picayune, Miss. "
             "Habitat Waste ground. Date May 29, 1966."
         )
-        actual = fix_ocr.clean_text(text)
+        actual = fix_ocr.prepare_for_llm(text)
         assert actual == expect
 
     # ---------------------------------------------------------------------

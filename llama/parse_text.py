@@ -100,7 +100,7 @@ def parser(
 ) -> dict:
     began = datetime.now()
 
-    text = fix_ocr.clean_text(doc["text"])
+    text = fix_ocr.prepare_for_llm(doc["text"])
 
     url = f"{args.api_host}/chat/completions"
     headers = {

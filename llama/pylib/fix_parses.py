@@ -188,6 +188,9 @@ def clean_str(value: str) -> str:
     value = re.sub(r'^"(.+)"$', r"\1", value)
     value = re.sub(r"^'(.+)'$", r"\1", value)
 
+    # Remove bold and italic ( "**text**" and "_text_") markdown notations
+    value = re.sub(r"([*_]+)([\w\s]*)\1", r"\2", value)
+
     return value
 
 

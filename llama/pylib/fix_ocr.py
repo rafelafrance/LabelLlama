@@ -90,7 +90,8 @@ def fix_entities(text: str) -> str:
     return text
 
 
-def clean_text(text: str) -> str:
+def prepare_for_llm(text: str) -> str:
+    """Prepare OCR results for running them thru an LLM."""
     text = fix_entities(text)
     text = remove_identical_lines(text)
     text = filter_lines(text)
@@ -98,8 +99,15 @@ def clean_text(text: str) -> str:
     return text
 
 
-def html_to_text(text: str) -> str:
-    """Fix markup nonsense from the OCR engines."""
+def clean_ocr(text: str) -> str:
+    """Clean OCR results."""
+    text = fix_entities(text)
+    text = remove_identical_lines(text)
+    return text
+
+
+def html_to_md(text: str) -> str:
+    """Convert HTML to markdown."""
     text = md(
         text,
         strip=["img"],
@@ -107,5 +115,4 @@ def html_to_text(text: str) -> str:
         escape_underscores=False,
         escape_misc=False,
     )
-    text = re.sub(r"([*_])([\w\s]*)\1", r"\2", text)
     return text

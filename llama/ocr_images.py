@@ -134,9 +134,9 @@ def call_ocr(
         content = result["choices"][0]["message"]["content"] or ""
 
         if args.convert_html:
-            text = fix_ocr.html_to_text(content)
+            text = fix_ocr.html_to_md(content)
 
-        text = fix_ocr.clean_text(content)
+        text = fix_ocr.clean_ocr(content)
         status = "success"
 
     except requests.exceptions.RequestException as err:
@@ -236,7 +236,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--convert-html",
         action="store_true",
         help="""A flag. If the OCR model insists on producing HTML output, you may want
-            to convert it to text. Use this flag to trigger the conversion.""",
+            to convert it to markdown. Use this flag to trigger the conversion.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
