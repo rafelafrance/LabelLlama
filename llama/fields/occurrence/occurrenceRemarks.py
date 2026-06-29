@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from rapidfuzz import fuzz
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_parses, str_util
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -32,7 +32,7 @@ class OccurrenceRemarks(BaseField):
         else:
             self.occurrenceRemarks = " ".join(words)
 
-        self.occurrenceRemarks = str_util.compress(self.occurrenceRemarks)
+        self.occurrenceRemarks = " ".join(self.occurrenceRemarks.split())
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

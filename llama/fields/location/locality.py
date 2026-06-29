@@ -6,7 +6,6 @@ from rapidfuzz import fuzz
 
 from llama.fields.base_field import BaseField
 from llama.pylib import fix_parses
-from llama.pylib.str_util import compress
 
 
 @dataclass
@@ -34,7 +33,7 @@ class Locality(BaseField):
         )
 
         self.locality = fix_parses.clean_str_ends(self.locality)
-        self.locality = compress(self.locality)
+        self.locality = " ".join(self.locality.split())
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from llama.fields.base_field import BaseField
-from llama.pylib import fix_parses, str_util
+from llama.pylib import fix_parses
 
 
 @dataclass
@@ -14,4 +14,4 @@ class AssociatedTaxa(BaseField):
         self.associatedTaxa = fix_parses.to_str(self.associatedTaxa)
         self.associatedTaxa = self.associatedTaxa.replace("*", "")
         self.associatedTaxa = fix_parses.remove_trailing_punct(self.associatedTaxa)
-        self.associatedTaxa = str_util.compress(self.associatedTaxa)
+        self.associatedTaxa = " ".join(self.associatedTaxa.split())

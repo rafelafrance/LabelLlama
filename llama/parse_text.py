@@ -4,6 +4,7 @@ import argparse
 import csv
 import logging
 import os
+import re
 import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -15,7 +16,7 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, io_util, prompt_util, str_util, timer
+from llama.pylib import fix_ocr, io_util, prompt_util, timer
 
 MIN_SIZE = 1024
 
@@ -127,7 +128,7 @@ def parser(
         result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
-        extracted = str_util.llm_reply_to_dict(content, prompt.column_names)
+        extracted = llm_reply_to_dict(content, prompt.column_names)
 
         status = "success"
 
@@ -144,6 +145,25 @@ def parser(
     } | extracted
 
     return result
+
+
+def llm_reply_to_dict(content: str, columns: list[str]) -> dict:
+    """Convert an LM reply in prompt_util.get_field_template format to a dict."""
+    # Get field names and the values
+    splits = re.split(r"^<< ## (\w+) ## >>$", content, flags=re.MULTILINE)
+
+    # Remove first blank split
+    if splits[0].strip() == "":
+        splits = splits[1:]
+
+    # Try to match field names with values
+    as_dict = {
+        k: v.strip()
+        for k, v in zip(splits[::2], splits[1::2], strict=False)
+        if k in columns
+    }
+
+    return as_dict
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

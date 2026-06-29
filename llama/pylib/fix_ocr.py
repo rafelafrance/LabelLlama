@@ -1,5 +1,7 @@
 import re
 
+from markdownify import markdownify as md
+
 
 def setup_filter_pattern() -> re.Pattern:
     """Build a regular expression for deleting lines from OCR text."""
@@ -80,8 +82,30 @@ def join_lines(text: str) -> str:
     return text
 
 
+def fix_entities(text: str) -> str:
+    """Change entities and some HTML to characters."""
+    text = re.sub(r"<br/?>", "\n", text)
+    text = text.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    text = text.strip()
+    return text
+
+
 def clean_text(text: str) -> str:
+    text = fix_entities(text)
     text = remove_identical_lines(text)
     text = filter_lines(text)
     text = join_lines(text)
+    return text
+
+
+def html_to_text(text: str) -> str:
+    """Fix markup nonsense from the OCR engines."""
+    text = md(
+        text,
+        strip=["img"],
+        escape_asterisks=False,
+        escape_underscores=False,
+        escape_misc=False,
+    )
+    text = re.sub(r"([*_])([\w\s]*)\1", r"\2", text)
     return text

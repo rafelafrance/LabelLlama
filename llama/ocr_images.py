@@ -14,7 +14,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import io_util, prompt_util, str_util, timer
+from llama.pylib import fix_ocr, io_util, prompt_util, timer
 
 MIN_SIZE = 1024
 
@@ -134,9 +134,9 @@ def call_ocr(
         content = result["choices"][0]["message"]["content"] or ""
 
         if args.convert_html:
-            text = str_util.html_to_text(content)
-        else:
-            text = str_util.clean_ocr(content)
+            text = fix_ocr.html_to_text(content)
+
+        text = fix_ocr.clean_text(content)
         status = "success"
 
     except requests.exceptions.RequestException as err:
@@ -235,7 +235,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--convert-html",
         action="store_true",
-        help="""A flag. If the OCR model insists on producting HTML output, you may want
+        help="""A flag. If the OCR model insists on producing HTML output, you may want
             to convert it to text. Use this flag to trigger the conversion.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
