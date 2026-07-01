@@ -140,7 +140,7 @@ def call_ocr(
         status = "success"
 
     except requests.exceptions.RequestException as err:
-        logging.exception(f"API error for: {image_path.name}")
+        logging.exception(f"OCR error for: {image_path.name}")
         text = str(err)
         status = "ERROR"
 

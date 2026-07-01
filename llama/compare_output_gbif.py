@@ -30,6 +30,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from rapidfuzz import fuzz
@@ -56,12 +57,55 @@ class Score:
     gbif_data: str | None = None
 
     @staticmethod
-    def is_score(row: dict) -> bool:
-        return row["row_type"].endswith("score")
+    def is_score(row: dict) -> str:
+        return row["row_type"] if row["row_type"].endswith("score") else ""
 
     @staticmethod
-    def tally(rows: list[dict]) -> dict:
-        return {}
+    def tally(row_groups: dict[str, list[dict]]) -> dict:
+        # The tally is a 3-level dict
+        stats = defaultdict(
+            lambda: defaultdict(
+                lambda: {
+                    "gbif_has_value_count": 0,
+                    "gbif_has_value_average": 0.0,
+                    "field_empty_count": 0,
+                    "search_fail_count": 0,
+                    "search_success_count": 0,
+                    "search_success_average": 0.0,
+                }
+            )
+        )
+        # Accumulate the scores
+        for group in row_groups.values():
+            for row in group:
+                if row_type := Score.is_score(row):
+                    for col, score in row.items():
+                        if col == "row_type":
+                            continue
+                        match score.cat:
+                            case ScoreCat.gbif_has_value:
+                                stats[row_type][col]["gbif_has_value_count"] += 1
+                                stats[row_type][col]["gbif_has_value_score"] += (
+                                    score.score
+                                )
+                            case ScoreCat.both_empty:
+                                stats[row_type][col]["field_empty_count"] += 1
+                            case ScoreCat.search_fail:
+                                stats[row_type][col]["search_fail_count"] += 1
+                            case ScoreCat.search_success:
+                                stats[row_type][col]["search_success_count"] += 1
+                                stats[row_type][col]["search_success_average"] += (
+                                    score.score
+                                )
+        # Make score sums an average
+        for row_type in stats.values():
+            for col in row_type:
+                if col["gbif_has_value_count"] != 0:
+                    col["gbif_has_value_score"] /= col["gbif_has_value_count"]
+                if col["search_success_count"] != 0:
+                    col["search_success_average"] /= col["search_success_count"]
+
+        return stats
 
 
 def score_against_gbif(args: argparse.Namespace) -> None:
@@ -112,17 +156,24 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     }
 
     # Build report cells
-    rows = []
+    row_groups: dict[str, list[dict]] = {}
     for image_path in image_paths:
+        # Build skeleton of the GBIF row. It gets filled in during scoring.
+        # It will ultimately contain a list of score results.
         gbif_input = gbif_by_image[image_path]
-        gbif_row = {"row_type": "GBIF"} | {c: [] for c in columns}
+        gbif_row: dict[str, Any] = {"row_type": "GBIF"} | {c: [] for c in columns}
+
+        # Build the LLM and score rows
         llm_rows, score_rows = [], []
         for llm_file in args.llm_file:
-            llm_row = {"row_type": llm_file.stem} | {
+            # Build LLM row. It just holds the LLM results as is
+            llm_row: dict[str, str] = {"row_type": llm_file.stem} | {
                 c: llm_data[llm_file.stem][c] for c in column_keys
             }
             llm_rows.append(llm_row)
-            score_row = {"row_type": f"{llm_file.stem} score"}
+
+            # Build score row by scoring each column. This also fills in the GBIF cell
+            score_row: dict[str, str | Score] = {"row_type": f"{llm_file.stem} score"}
             for col in columns:
                 actual = llm_row[col]
                 score = calc_score(col, actual, gbif_input, gbif_search)
@@ -130,7 +181,10 @@ def score_against_gbif(args: argparse.Namespace) -> None:
                 if score.gbif_field:
                     gbif_row[col].append(score)
             score_rows.append(score_row)
-        rows += [gbif_row, *llm_rows, *score_rows]
+
+        row_groups[image_path] = [gbif_row, *llm_rows, *score_rows]
+
+    stats = Score.tally(row_groups)
 
     match args.output_file.suffix.lower():
         case ".html":
@@ -147,10 +201,8 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         case ".ods":
             write_ods(
                 ods_file=args.output_file,
-                image_paths=image_paths,
-                columns=columns,
                 first_columns=first_columns,
-                rows=rows,
+                row_groups=row_groups,
                 gbif_search=gbif_search,
                 stats=stats,
             )
@@ -201,29 +253,39 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
 
 def write_ods(
     ods_file: Path,
-    image_paths: list[str],
-    columns: list[str],
     first_columns: dict,
-    rows: list[dict],
+    row_groups: dict[str, list[dict]],
     gbif_search: dict,
     stats: dict,
 ) -> None:
+    # Build the stats tab
     stats_rows = []
     for stem, fields in stats.items():
         for col, data in fields.items():
             stats_rows.append({"file": stem, "column": col, **data})
     stats_df = pd.DataFrame(stats_rows)
 
-    rows = []
-    for image in image_paths:
-        first = first_columns[image]
-        gbif_row = first
-        for col in columns:
-            gbif_row[col]
-        # gbif_row = {c: cell_groups[image][c].gbif_cell for c in columns}
-        rows.append(first | gbif_row)
-        for col in columns:
-            row_group.append({col})
+    # Build the detail tab
+    # rows = []
+    # for image_path, row_group in row_groups.items():
+    #     first = first_columns[image_path]
+    #     row = first
+    #     for row in row_group:
+    #         row_type = row["row_type"]
+    #         formatted = {"row_type": row["row_type"]}
+    #         for col, val in {col: val for col, val in row.items() if col != "row_type"}:
+    #             if row_type == "GBIF":
+    #                 formatted[col] = ",\n".join(
+    #                     [f"{s.gbif_field}: {s.gbif_data}" for s in val]
+    #                 )
+    #             if row_type.endswith("score"):
+    #                 formatted[col] =
+    #         rows.append(formatted)
+
+    #     # gbif_row = {c: cell_groups[image][c].gbif_cell for c in columns}
+    #     rows.append(first | gbif_row)
+    #     for col in columns:
+    #         row_group.append({col})
 
     # for group in row_groups:
     #     group_rows.append(group.gbif_row)
@@ -236,10 +298,10 @@ def write_ods(
     # ]
     # gbif_df = pd.DataFrame(gbif_rows)
 
-    # with pd.ExcelWriter(ods_file, engine="odf") as writer:
-    #     stats_df.to_excel(writer, sheet_name="statistics", index=False)
-    #     group_df.to_excel(writer, sheet_name="detail", index=False)
-    #     gbif_df.to_excel(writer, sheet_name="gbif_search_fields", index=False)
+    with pd.ExcelWriter(ods_file, engine="odf") as writer:
+        stats_df.to_excel(writer, sheet_name="statistics", index=False)
+        # group_df.to_excel(writer, sheet_name="detail", index=False)
+        # gbif_df.to_excel(writer, sheet_name="gbif_search_fields", index=False)
 
 
 # def write_html(

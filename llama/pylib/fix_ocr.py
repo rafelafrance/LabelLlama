@@ -90,7 +90,7 @@ def fix_entities(text: str) -> str:
     return text
 
 
-def prepare_for_llm(text: str) -> str:
+def prepare_for_parse(text: str) -> str:
     """Prepare OCR results for running them thru an LLM."""
     text = fix_entities(text)
     text = remove_identical_lines(text)

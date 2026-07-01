@@ -17,13 +17,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     prompt = prompt_util.Prompt.load(args.prompt)
     field_classes = prompt.field_classes()
-    headers = prompt.column_names()
 
     columns = df.columns
     if args.column:
         columns = args.column
     columns = [c for c in columns if c not in ("source", "text", "elapsed", "status")]
-    columns = [c for c in columns if c in headers and c in field_classes]
+    columns = [c for c in columns if c in prompt.column_names and c in field_classes]
 
     input_rows = df.to_dict("records")
     input_rows = input_rows[: args.limit]

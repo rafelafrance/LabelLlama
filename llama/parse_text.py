@@ -48,8 +48,8 @@ def lm_extract(args: argparse.Namespace) -> None:
         for d in docs
         if d["status"] == "success" and d["source"] not in already_parsed
     ]
-    logging.info(f"There are {doc_count} texts to parse.")
-    logging.info(f"{len(already_parsed)} texts were already parsed.")
+    logging.info(f"There are {doc_count} documents to parse.")
+    logging.info(f"{len(already_parsed)} documents were already parsed.")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     prompt.log_size()
@@ -100,7 +100,7 @@ def parser(
 ) -> dict:
     began = datetime.now()
 
-    text = fix_ocr.prepare_for_llm(doc["text"])
+    text = fix_ocr.prepare_for_parse(doc["text"])
 
     url = f"{args.api_host}/chat/completions"
     headers = {
@@ -133,7 +133,7 @@ def parser(
         status = "success"
 
     except requests.exceptions.RequestException as err:
-        logging.exception(f"API error for: {Path(doc['source']).name}")
+        logging.exception(f"Parse error for: {Path(doc['source']).name}")
         text = str(err)
         status = "ERROR"
 

@@ -50,54 +50,19 @@ IMAGE_ERRORS = (
 # Set a timeout for requests
 socket.setdefaulttimeout(TIMEOUT)
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 
 def main(args: argparse.Namespace) -> None:
     log.started(args=args)
 
     args.image_dir.mkdir(parents=True, exist_ok=True)
 
-    if args.multimedia_tsv:
-        df = pd.read_csv(
-            args.multimedia_tsv,
-            sep="\t",
-            nrows=args.limit,
-            usecols=["gbifID", "format", "identifier", "title"],
-        )
-        rows = df.to_dict("records")
-    elif args.api_download_json:
-        rows = []
-        with args.api_download_json.open() as fh:
-            for row in json.load(fh):
-                if row.get("taxonRank") not in ("SPECIES", "SUBSPECIES", "VARIETY"):
-                    continue
-                title = " ".join(
-                    [
-                        n
-                        for t in ["genus", "specificEpithet", "infraspecificEpithet"]
-                        if (n := row.get(t))
-                    ]
-                )
-                media_recs = [
-                    {
-                        "gbifID": row["gbifID"],
-                        "format": r["format"],
-                        "identifier": r["identifier"],
-                        "title": f"{title}_{i}",
-                    }
-                    for i, r in enumerate(row["media"], 1)
-                    if (
-                        r.get("format")
-                        and r.get("identifier")
-                        and r["format"].endswith("jpeg")
-                    )
-                ]
-                rows += media_recs
-        rows = rows[: args.limit]
-    else:
-        error = "You must choose either --multimedia-tsv or --api-download-json"
-        raise ValueError(error)
+    df = pd.read_csv(
+        args.multimedia_tsv,
+        sep="\t",
+        usecols=["gbifID", "format", "identifier", "title"],
+    )
+    rows = df.to_dict("records")
+    rows = rows[args.offset : args.offset + args.limit]
 
     with tqdm(total=len(rows)) as pbar:
         results = []
@@ -163,36 +128,51 @@ def parse_args() -> argparse.Namespace:
         description=textwrap.dedent("""Download images."""),
     )
     arg_parser.add_argument(
-        "--api-download-json",
-        type=Path,
-        metavar="PATH",
-        help="""This JSON file is one option for getting image download links.""",
-    )
-    arg_parser.add_argument(
         "--multimedia-tsv",
         type=Path,
+        required=True,
         metavar="PATH",
-        help="""This TSV file is another option for getting image download links.""",
+        help="""This TSV file is holding download links.""",
     )
     arg_parser.add_argument(
         "--image-dir",
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Place downloaded images into subdirectories of this directory.""",
+        help="""Place downloaded images into this directory.""",
+    )
+    arg_parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        metavar="INT",
+        help="""Offset into the multimedia file. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--limit",
         type=int,
+        default=400,
         metavar="INT",
-        help="""Limit to this many completed downloads. (default: %(default)s)""",
+        help="""Limit to this many downloads attempts. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--threads",
-        metavar="INT",
         type=int,
         default=1,
+        metavar="INT",
         help="""How many worker threads to spawn. (default: %(default)s)""",
+    )
+    arg_parser.add_argument(
+        "--log-file",
+        type=Path,
+        metavar="path",
+        help="""Append logging notices to this file. It also logs the script options
+            so you may use this to keep track of what you did.""",
+    )
+    arg_parser.add_argument(
+        "--notes",
+        metavar="string",
+        help="""Notes for logging. They only appear in the log file.""",
     )
     args = arg_parser.parse_args()
     return args
