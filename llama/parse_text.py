@@ -24,10 +24,8 @@ FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
 
 DEFAULT_POOL = 10
 
-FLUSH = 10
 
-
-def lm_extract(args: argparse.Namespace) -> None:
+def parse_text(args: argparse.Namespace) -> None:
     job_began = timer.job_began(args.log_file, args=args)
 
     mode = "w"
@@ -42,14 +40,13 @@ def lm_extract(args: argparse.Namespace) -> None:
         }
 
     docs = io_util.read_list_of_dicts(args.ocr_file, fill_na="", limit=args.limit)
-    doc_count = len(docs)
-    docs = [
-        d
-        for d in docs
-        if d["status"] == "success" and d["source"] not in already_parsed
-    ]
-    logging.info(f"There are {doc_count} documents to parse.")
-    logging.info(f"{len(already_parsed)} documents were already parsed.")
+    docs_success = [d for d in docs if d["status"] == "success"]
+    docs = [d for d in docs_success if d["source"] not in already_parsed]
+
+    docs_todo, done = len(docs_success), len(already_parsed)
+    logging.info(f"There are {docs_todo} documents to parse.")
+    logging.info(f"{done} documents were already parsed.")
+    logging.info(f"There are {docs_todo - done} docs left to parse.")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     prompt.log_size()
@@ -76,13 +73,12 @@ def lm_extract(args: argparse.Namespace) -> None:
             futures = {
                 executor.submit(parser, args, doc, prompt, session): doc for doc in docs
             }
-            for i, future in enumerate(as_completed(futures), 1):
+            for future in as_completed(futures):
                 result = future.result()
                 statuses[result["status"]] += 1
                 writer.writerow(result)
                 pbar.update(1)
-                if i % FLUSH == 0:
-                    parse_file.flush()
+                parse_file.flush()
 
     logging.info(
         f"Total {len(docs)} documents processed with {statuses['ERROR']} errors "
@@ -274,4 +270,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    lm_extract(ARGS)
+    parse_text(ARGS)

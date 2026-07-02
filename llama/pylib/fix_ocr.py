@@ -40,6 +40,7 @@ def filter_lines(text: str) -> str:
     """
     lines = [ln for ln in text.splitlines() if not FILTER_PATTERN.search(ln)]
     text = "\n".join(lines)
+    text = text.strip()
     return text
 
 
@@ -63,6 +64,7 @@ def remove_identical_lines(text: str) -> str:
             seen.add(ln)
             lines.append(ln)
     text = "\n".join(lines)
+    text = text.strip()
     return text
 
 
@@ -96,6 +98,7 @@ def prepare_for_parse(text: str) -> str:
     text = remove_identical_lines(text)
     text = filter_lines(text)
     text = join_lines(text)
+    text = text.strip()
     return text
 
 
@@ -103,6 +106,7 @@ def clean_ocr(text: str) -> str:
     """Clean OCR results."""
     text = fix_entities(text)
     text = remove_identical_lines(text)
+    text = text.strip()
     return text
 
 
@@ -115,4 +119,5 @@ def html_to_md(text: str) -> str:
         escape_underscores=False,
         escape_misc=False,
     )
+    text = text.strip()
     return text

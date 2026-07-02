@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# for org in "missouri"; do
 # for org in "ariz" "brit" "cornell" "harvard" "jepson" "mich" "missouri" "ncu" "wash" "wisc" "wtu"; do
-for org in "phenobase_100"; do
+for org in "phenobase"; do
     uv run llama/parse_text.py \
         --ocr-file "data/herbarium/ocr_chandra/ocr_${org}_images.csv" \
         --parse-file "data/herbarium/qwen36_35b_a3b_raw/qwen36_35b_a3b_${org}.csv" \

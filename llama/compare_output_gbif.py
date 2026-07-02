@@ -25,15 +25,19 @@ Output format: more or less
 """
 
 import argparse
+import logging
 import textwrap
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
+import jinja2
 import pandas as pd
 from rapidfuzz import fuzz
+from tqdm import tqdm
 
 from llama.pylib import io_util, log
 
@@ -52,16 +56,18 @@ class ScoreCat(Enum):
 class Score:
     cat: ScoreCat
     score: float | None = None
-    method: str | None = None
-    gbif_field: str | None = None
-    gbif_data: str | None = None
+    method: str = ""
+    gbif_field: str = ""
+    gbif_data: str = ""
+
+    def __gt__(self, other: Score) -> bool:
+        return (self.score, -len(self.gbif_data)) > (other.score, -len(other.gbif_data))
+
+    def has_value(self) -> bool:
+        return bool(self.gbif_field)
 
     @staticmethod
-    def is_score(row: dict) -> str:
-        return row["row_type"] if row["row_type"].endswith("score") else ""
-
-    @staticmethod
-    def tally(row_groups: dict[str, list[dict]]) -> dict:
+    def tally(row_groups: list[RowGroup]) -> dict:
         # The tally is a 3-level dict
         stats = defaultdict(
             lambda: defaultdict(
@@ -76,36 +82,81 @@ class Score:
             )
         )
         # Accumulate the scores
-        for group in row_groups.values():
-            for row in group:
-                if row_type := Score.is_score(row):
-                    for col, score in row.items():
-                        if col == "row_type":
-                            continue
-                        match score.cat:
-                            case ScoreCat.gbif_has_value:
-                                stats[row_type][col]["gbif_has_value_count"] += 1
-                                stats[row_type][col]["gbif_has_value_score"] += (
-                                    score.score
-                                )
-                            case ScoreCat.both_empty:
-                                stats[row_type][col]["field_empty_count"] += 1
-                            case ScoreCat.search_fail:
-                                stats[row_type][col]["search_fail_count"] += 1
-                            case ScoreCat.search_success:
-                                stats[row_type][col]["search_success_count"] += 1
-                                stats[row_type][col]["search_success_average"] += (
-                                    score.score
-                                )
+        for group in row_groups:
+            for score_row in group.score_rows:
+                row_type = ""
+                for col, score in score_row.items():
+                    if col == "row_type":
+                        row_type = score
+                        continue
+                    match score.cat:
+                        case ScoreCat.gbif_has_value:
+                            stats[row_type][col]["gbif_has_value_count"] += 1
+                            stats[row_type][col]["gbif_has_value_average"] += (
+                                score.score
+                            )
+                        case ScoreCat.both_empty:
+                            stats[row_type][col]["field_empty_count"] += 1
+                        case ScoreCat.search_fail:
+                            stats[row_type][col]["search_fail_count"] += 1
+                        case ScoreCat.search_success:
+                            stats[row_type][col]["search_success_count"] += 1
+                            stats[row_type][col]["search_success_average"] += (
+                                score.score
+                            )
         # Make score sums an average
         for row_type in stats.values():
-            for col in row_type:
+            for col in row_type.values():
                 if col["gbif_has_value_count"] != 0:
-                    col["gbif_has_value_score"] /= col["gbif_has_value_count"]
+                    col["gbif_has_value_average"] /= col["gbif_has_value_count"]
                 if col["search_success_count"] != 0:
                     col["search_success_average"] /= col["search_success_count"]
 
         return stats
+
+
+@dataclass
+class RowGroup:
+    first_columns: dict[str, str] = field(default_factory=dict)
+    gbif_row: dict[str, Any] = field(default_factory=dict)
+    parse_rows: list[dict[str, str]] = field(default_factory=list)
+    score_rows: list[dict[str, Any]] = field(default_factory=list)
+
+    def format(self, output_type: str) -> RowGroup:
+        self.format_gbif_row(output_type)
+        self.format_score_rows(output_type)
+        return self
+
+    def format_gbif_row(self, output_type: str) -> None:
+        for col, scores in self.gbif_row.items():
+            if col == "row_type":
+                continue
+            match output_type:
+                case ".html":
+                    values = [
+                        f"<span class='label'>{s.gbif_field}</span> {s.gbif_dat}"
+                        for s in scores
+                    ]
+                    self.gbif_row[col] = "<br/>".join(values)
+                case ".ods":
+                    self.gbif_row[col] = ",\n".join(
+                        [f"{s.gbif_field}: {s.gbif_data}" for s in scores]
+                    )
+
+    def format_score_rows(self, output_type: str) -> None:
+        for score_row in self.score_rows:
+            for col, score in score_row.items():
+                if col == "row_type":
+                    continue
+                match output_type:
+                    case ".html":
+                        self.gbif_row[col] = (
+                            f"<span class='label'>{score.gbif_field}</span> "
+                            f"{score.method}: {score.score:0.2f}"
+                        )
+                    case ".ods":
+                        value = f"{score.score:0.2f}" if score.score is not None else ""
+                        self.gbif_row[col] = f"{score.method}: {value}"
 
 
 def score_against_gbif(args: argparse.Namespace) -> None:
@@ -124,19 +175,18 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     image_paths = set(gbif_by_image)
     column_keys = {}
 
-    # Get llm data
-    llm_data = defaultdict(dict)
-    for llm_file in args.llm_file:
-        llm_df = io_util.read_to_df(llm_file)
+    # Get parsed data
+    parsed_data = defaultdict(dict)
+    for parse_file in args.parse_file:
+        llm_df = io_util.read_to_df(parse_file)
         column_keys |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 
         llm_list = llm_df.to_dict("records")
-        llm_data[llm_file.stem] = {r["source"]: r for r in llm_list}
+        parsed_data[parse_file.stem] = {r["source"]: r for r in llm_list}
 
     # Finish building the row index
     image_paths = sorted(image_paths)
-    image_paths = image_paths[: args.limit] if args.limit else image_paths
 
     # Get common columns in the original order
     columns = [k for k in column_keys if k not in FIRST_COLUMNS]
@@ -155,53 +205,57 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         for i, (image_path, gbif) in enumerate(gbif_by_image.items(), 1)
     }
 
-    # Build report cells
-    row_groups: dict[str, list[dict]] = {}
-    for image_path in image_paths:
+    output_type = args.output_file.suffix.lower()
+
+    # Build report lines
+    row_groups: list[RowGroup] = []
+    for image_path in tqdm(image_paths, desc="building"):
+        row_group = RowGroup(first_columns=first_columns[image_path])
+
         # Build skeleton of the GBIF row. It gets filled in during scoring.
         # It will ultimately contain a list of score results.
         gbif_input = gbif_by_image[image_path]
         gbif_row: dict[str, Any] = {"row_type": "GBIF"} | {c: [] for c in columns}
+        row_group.gbif_row = gbif_row
 
         # Build the LLM and score rows
-        llm_rows, score_rows = [], []
-        for llm_file in args.llm_file:
+        for parse_file in args.parse_file:
             # Build LLM row. It just holds the LLM results as is
-            llm_row: dict[str, str] = {"row_type": llm_file.stem} | {
-                c: llm_data[llm_file.stem][c] for c in column_keys
+            llm_row: dict[str, str] = {"row_type": parse_file.stem} | {
+                c: parsed_data[parse_file.stem][image_path][c] for c in columns
             }
-            llm_rows.append(llm_row)
+            row_group.parse_rows.append(llm_row)
 
             # Build score row by scoring each column. This also fills in the GBIF cell
-            score_row: dict[str, str | Score] = {"row_type": f"{llm_file.stem} score"}
+            score_row: dict[str, str | Score] = {"row_type": f"{parse_file.stem} score"}
             for col in columns:
                 actual = llm_row[col]
                 score = calc_score(col, actual, gbif_input, gbif_search)
                 score_row[col] = score
-                if score.gbif_field:
+                if score.has_value:
                     gbif_row[col].append(score)
-            score_rows.append(score_row)
+            row_group.score_rows.append(score_row)
 
-        row_groups[image_path] = [gbif_row, *llm_rows, *score_rows]
+        row_groups.append(row_group.format(output_type))
 
+    logging.info("Tally scores")
     stats = Score.tally(row_groups)
 
-    match args.output_file.suffix.lower():
+    match output_type:
         case ".html":
-            pass
-            # write_html(
-            #     html_file=args.output_file,
-            #     columns=columns,
-            #     row_groups=row_groups,
-            #     row_span=len(llm_dicts) * 2 + 1,  # gbif + llm + score per file
-            #     gbif_search=gbif_search,
-            #     stats=stats,
-            #     notes=args.notes,
-            # )
+            row_span = len(args.parse_file) * 2 + 1  # gbif + parse rows + score rows
+            write_html(
+                html_file=args.output_file,
+                columns=columns,
+                row_groups=row_groups,
+                row_span=row_span,
+                gbif_search=gbif_search,
+                stats=stats,
+                notes=args.notes,
+            )
         case ".ods":
             write_ods(
                 ods_file=args.output_file,
-                first_columns=first_columns,
                 row_groups=row_groups,
                 gbif_search=gbif_search,
                 stats=stats,
@@ -211,7 +265,9 @@ def score_against_gbif(args: argparse.Namespace) -> None:
 
 
 def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Score:
-    expect = gbif_input[col]
+    expect = gbif_input.get(col)
+
+    # If the GBIF column has a value then we score against that
     if expect:
         score = fuzz.partial_ratio(expect, actual) / 100.0
         return Score(
@@ -222,11 +278,18 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
             gbif_data=expect,
         )
 
+    # If there is not value to score against then we can't search for a value
     if not actual:
         return Score(cat=ScoreCat.both_empty, method="NONE")
 
-    max_score = (-1.0, 0)
-    max_field, max_expect = "", ""
+    # Try searching for a matching value in gbif_search columns and pick the best one
+    max_score = Score(
+        cat=ScoreCat.search_success,
+        score=-1.0,
+        method="FPR",
+        gbif_field="",
+        gbif_data="",
+    )
 
     for search_field in gbif_search.get(col, []):
         expect = gbif_input.get(search_field, "")
@@ -234,104 +297,78 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
             continue
 
         score = fuzz.partial_ratio(expect, gbif_input[search_field]) / 100.0
-        if (score, -len(expect)) > max_score and score > 0.0:
-            max_field = search_field
-            max_expect = expect
-            max_score = (score, -len(expect))
-
-    if max_field:
-        return Score(
+        current = Score(
             cat=ScoreCat.search_success,
-            score=max_score[0],
+            score=fuzz.partial_ratio(expect, gbif_input[search_field]) / 100.0,
             method="FPR",
-            gbif_field=max_field,
-            gbif_data=max_expect,
+            gbif_field=search_field,
+            gbif_data=expect,
         )
+        max_score = max(current, max_score)
 
-    return Score(cat=ScoreCat.search_fail)
+    return max_score if max_score.has_value else Score(cat=ScoreCat.search_fail)
 
 
 def write_ods(
     ods_file: Path,
-    first_columns: dict,
-    row_groups: dict[str, list[dict]],
+    row_groups: list[RowGroup],
     gbif_search: dict,
     stats: dict,
 ) -> None:
-    # Build the stats tab
+    logging.info("Building stats tab")
     stats_rows = []
     for stem, fields in stats.items():
         for col, data in fields.items():
             stats_rows.append({"file": stem, "column": col, **data})
     stats_df = pd.DataFrame(stats_rows)
 
-    # Build the detail tab
-    # rows = []
-    # for image_path, row_group in row_groups.items():
-    #     first = first_columns[image_path]
-    #     row = first
-    #     for row in row_group:
-    #         row_type = row["row_type"]
-    #         formatted = {"row_type": row["row_type"]}
-    #         for col, val in {col: val for col, val in row.items() if col != "row_type"}:
-    #             if row_type == "GBIF":
-    #                 formatted[col] = ",\n".join(
-    #                     [f"{s.gbif_field}: {s.gbif_data}" for s in val]
-    #                 )
-    #             if row_type.endswith("score"):
-    #                 formatted[col] =
-    #         rows.append(formatted)
+    rows = []
+    for row_group in tqdm(row_groups, desc="build detail"):
+        rows.append(row_group.first_columns | row_group.gbif_row)
+        rows += [row_group.first_columns | row for row in row_group.parse_rows]
+        rows += [row_group.first_columns | row for row in row_group.score_rows]
+    group_df = pd.DataFrame(rows)
 
-    #     # gbif_row = {c: cell_groups[image][c].gbif_cell for c in columns}
-    #     rows.append(first | gbif_row)
-    #     for col in columns:
-    #         row_group.append({col})
+    logging.info("Building GBIF search tab")
+    gbif_rows = [
+        {"field": k, "search fields": ", ".join(v)} for k, v in gbif_search.items()
+    ]
+    gbif_df = pd.DataFrame(gbif_rows)
 
-    # for group in row_groups:
-    #     group_rows.append(group.gbif_row)
-    #     group_rows += group.llm_rows
-    #     group_rows += group.score_rows
-    # group_df = pd.DataFrame(group_rows)
-
-    # gbif_rows = [
-    #     {"field": k, "search fields": ", ".join(v)} for k, v in gbif_search.items()
-    # ]
-    # gbif_df = pd.DataFrame(gbif_rows)
-
+    logging.info(f"Write {ods_file.stem}")
     with pd.ExcelWriter(ods_file, engine="odf") as writer:
         stats_df.to_excel(writer, sheet_name="statistics", index=False)
-        # group_df.to_excel(writer, sheet_name="detail", index=False)
-        # gbif_df.to_excel(writer, sheet_name="gbif_search_fields", index=False)
+        group_df.to_excel(writer, sheet_name="detail", index=False)
+        gbif_df.to_excel(writer, sheet_name="gbif_search_fields", index=False)
 
 
-# def write_html(
-#     html_file: Path | str,
-#     columns: list[str],
-#     row_groups: list[RowGroup],
-#     row_span: int,
-#     gbif_search: dict,
-#     stats: dict,
-#     notes: str,
-# ) -> None:
+def write_html(
+    html_file: Path | str,
+    columns: list[str],
+    row_groups: list[RowGroup],
+    row_span: int,
+    gbif_search: dict,
+    stats: dict,
+    notes: str,
+) -> None:
+    env = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(Path(__file__).resolve().parent / "templates"),
+        autoescape=True,
+    )
 
-#     env = jinja2.Environment(
-#         loader=jinja2.FileSystemLoader(Path(__file__).resolve().parent / "templates"),
-#         autoescape=True,
-#     )
+    template = env.get_template("compare_output_gbif.html").render(
+        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
+        columns=columns,
+        headers=FIRST_COLUMNS + columns,
+        row_groups=row_groups,
+        row_span=row_span,
+        gbif_search=gbif_search,
+        stats=stats,
+        notes=notes,
+    )
 
-#     template = env.get_template("compare_output_gbif.html").render(
-#         now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-#         columns=columns,
-#         headers=FIRST_COLUMNS + columns,
-#         groups=row_groups,
-#         row_span=row_span,
-#         gbif_search=gbif_search,
-#         stats=stats,
-#         notes=notes,
-#     )
-
-#     with Path(html_file).open("w") as fout:
-#         fout.write(template)
+    with Path(html_file).open("w") as fout:
+        fout.write(template)
 
 
 def get_gbif_search() -> dict[str, list[str]]:
@@ -388,12 +425,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The GBIF data to compare against.""",
     )
     io_group.add_argument(
-        "--llm-file",
+        "--parse-file",
         type=Path,
         required=True,
         action="append",
         metavar="path",
-        help="""The cleaned LLM results file. You may compare several files at once.""",
+        help="""The cleaned LLM parse file. You may compare several files at once.""",
     )
     io_group.add_argument(
         "--output-file",

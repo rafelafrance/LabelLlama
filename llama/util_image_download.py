@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import logging
 import socket
 import textwrap
@@ -14,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 import PIL
 import requests
-from PIL import Image, ImageFile
+from PIL import Image
 from tqdm import tqdm
 
 from llama.pylib import log

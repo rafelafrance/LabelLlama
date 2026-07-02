@@ -24,7 +24,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     columns = [c for c in columns if c not in ("source", "text", "elapsed", "status")]
     columns = [c for c in columns if c in prompt.column_names and c in field_classes]
 
-    input_rows = df.to_dict("records")
+    input_rows = [r for r in df.to_dict("records") if r["status"] == "success"]
     input_rows = input_rows[: args.limit]
 
     output_rows = []

@@ -42,9 +42,7 @@
             </li>
             <li>
                 FPR = Fuzzy Partial Ratio: The best indel distance of the shorter string
-                against the longer one. Note that a Levenshtein Ratio is converted to
-                the Fuzzy Partial Ratio when matching against a presumably larger
-                aggregate GBIF field.
+                against the longer one.
             </li>
             <li>
                 CUST = Custom scoring. Typically used when abbreviations etc. are
@@ -114,26 +112,26 @@
                 </tr>
             </thead>
             <tbody>
-                {% for group in groups %}
+                {% for group in row_groups %}
                 <tr class="gold">
                     <td rowspan="{{row_span}}">
-                        <span class="text">{{ group.gbif_row.text }}</span>
+                        <span class="text">{{ group.first_columns.text }}</span>
                     </td>
                     <td rowspan="{{row_span}}">
-                        <a class="source" href="{{ group.gbif_row.href | safe }}"
-                            >{{ group.gbif_row.source | safe }}</a
+                        <a class="source" href="{{ group.first_columns.href | safe }}"
+                            >{{ group.first_columns.image_path | safe }}</a
                         >
                     </td>
                     <td rowspan="{{row_span}}">
-                        <span>{{ group.gbif_row.row }}</span>
+                        <span>{{ group.first_columns.row_num }}</span>
                     </td>
-                    <td><span class="type">{{ group.gbif_row.type }}</span></td>
+                    <td><span class="type">{{ group.gbif_row.row_type }}</span></td>
                     {% for column in columns %}
                     <td><span>{{ group.gbif_row[column] | safe }}</span></td>
                     {% endfor %}
                 </tr>
 
-                {% for llm_row in group.llm_rows %}
+                {% for llm_row in group.parse_rows %}
                 <tr class="clean">
                     <td><span class="type">{{ llm_row.type }}</span></td>
                     {% for column in columns %}

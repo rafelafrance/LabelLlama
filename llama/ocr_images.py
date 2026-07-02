@@ -20,9 +20,9 @@ MIN_SIZE = 1024
 
 COLUMN_NAMES = ["status", "source", "text", "elapsed"]
 
-DEFAULT_POOL = 10
+IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
-FLUSH = 10
+DEFAULT_POOL = 10
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -39,10 +39,15 @@ def ocr_images(args: argparse.Namespace) -> None:
             if r.get("source") and r.get("status") == "success"
         }
 
-    image_paths = sorted(Path().glob(args.image_glob))
+    image_paths = sorted(
+        [p for p in args.image_dir.glob("*") if p.suffix.lower() in IMAGE_SUFFIXES]
+    )
     image_paths = image_paths[: args.limit]
-    logging.info(f"There are {len(image_paths)} images to OCR")
-    logging.info(f"{len(already_read)} images were already read.")
+
+    total, done = len(image_paths), len(already_read)
+    logging.info(f"There are {total} images to OCR")
+    logging.info(f"{done} images were already done.")
+    logging.info(f"There are {total - done} images left to OCR.")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     prompt.log_size()
@@ -75,13 +80,12 @@ def ocr_images(args: argparse.Namespace) -> None:
                 for image_path in tasks
             }
 
-            for i, future in enumerate(as_completed(futures), 1):
+            for future in as_completed(futures):
                 result = future.result()
                 statuses[result["status"]] += 1
                 writer.writerow(result)
                 pbar.update(1)
-                if i % FLUSH == 0:
-                    ocr_file.flush()
+                ocr_file.flush()
 
     logging.info(
         f"Total {len(image_paths)} documents processed with {statuses['ERROR']} errors "
@@ -161,26 +165,24 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     io_group = arg_parser.add_argument_group("I/O options")
     io_group.add_argument(
-        "--image-glob",
+        "--image-dir",
         required=True,
-        metavar="glob",
-        help="""Get all images matching this glob/pattern. You may need to quote this
-            argument. An example: 'museum/data/images1/*.jpg'""",
+        metavar="PATH",
+        help="""OCR all images in this directory.""",
     )
     io_group.add_argument(
         "--ocr-file",
         type=Path,
         required=True,
-        metavar="path",
-        help="""Put OCRed text into this file. This appends data to the file.
-            An example: data/museum/data/images1.csv""",
+        metavar="PATH",
+        help="""Put OCRed text into this file. This appends data to the file.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(
         "--prompt",
         type=Path,
         default="prompts/ocr_v2.md",
-        metavar="path",
+        metavar="PATH",
         help="""A markdown file with a prompt used to OCR images.
             (default: %(default)s)""",
     )
@@ -188,13 +190,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--model",
         default="chandra-ocr",
-        metavar="string",
+        metavar="STRING",
         help="""Use this language model. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--api-host",
         default="http://localhost:1234/v1",
-        metavar="string",
+        metavar="STRING",
         help="""URL for the language model. (default: %(default)s)
             The default is for LM-Studio, but you could use Ollama's or another
             URL here.""",
@@ -203,7 +205,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--threads",
         type=int,
         default=2,
-        metavar="int",
+        metavar="INT",
         help="""How many parallel threads to run. (default: %(default)s)
             Increase this if the model server is powerful enough.""",
     )
@@ -211,7 +213,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--temperature",
         type=float,
         default=0.1,
-        metavar="float",
+        metavar="FLOAT",
         help="""Model's temperature. (default: %(default)s)
             We don't want the model to get creative, so keep this value low.""",
     )
@@ -219,7 +221,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--max-tokens",
         type=int,
         default=2048,
-        metavar="int",
+        metavar="INT",
         help="""The OCR model's response maximum tokens. (default: %(default)s)
             2048 tokens is roughly 1.5K words, which is more than enough for most
             museum specimens. I keep this low to truncate model loops.""",
@@ -228,7 +230,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--timeout",
         type=int,
         default=120,
-        metavar="int",
+        metavar="INT",
         help="""How long to wait for the OCR model to complete in seconds.
             (default: %(default)s) 2 minutes is a life time for OCR.""",
     )
@@ -242,20 +244,20 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     logging_group.add_argument(
         "--log-file",
         type=Path,
-        metavar="path",
+        metavar="PATH",
         help="""Append logging notices to this file. It also logs the script options
             so you may use this to keep track of what you did.""",
     )
     logging_group.add_argument(
         "--notes",
-        metavar="string",
+        metavar="STRING",
         help="""Notes for logging. They only appear in the log file.""",
     )
     debugging_group = arg_parser.add_argument_group("debugging options")
     debugging_group.add_argument(
         "--limit",
         type=int,
-        metavar="int",
+        metavar="INT",
         help="""Only OCR this many images.""",
     )
     ns: argparse.Namespace = arg_parser.parse_args(args)
