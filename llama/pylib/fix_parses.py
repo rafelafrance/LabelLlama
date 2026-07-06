@@ -20,9 +20,9 @@ YEAR = r"([12]\d\d\d|\d\d)"
 YEAR4 = r"([12]\d\d\d)"
 MON_NUM = r"[01]?\d"  # Month as a number
 
-EMPTY: tuple = ("[]", '""', "''", '{""}', "[", "]", "[empty]", "nan")
+EMPTY: tuple = ("[]", '""', "''", '{""}', "[", "]", "[empty]", "{empty}", "nan")
 OPEN: tuple = ("(", "[", "{")
-CLOSE: tuple = ("", "", "")
+CLOSE: tuple = (")", "]", "}")
 
 
 def to_str(value: Any) -> str:

@@ -150,13 +150,13 @@ class RowGroup:
                     continue
                 match output_type:
                     case ".html":
-                        self.gbif_row[col] = (
+                        score_row[col] = (
                             f"<span class='label'>{score.gbif_field}</span> "
                             f"{score.method}: {score.score:0.2f}"
                         )
                     case ".ods":
                         value = f"{score.score:0.2f}" if score.score is not None else ""
-                        self.gbif_row[col] = f"{score.method}: {value}"
+                        score_row[col] = f"{score.method}: {value}"
 
 
 def score_against_gbif(args: argparse.Namespace) -> None:
@@ -236,10 +236,13 @@ def score_against_gbif(args: argparse.Namespace) -> None:
                     gbif_row[col].append(score)
             row_group.score_rows.append(score_row)
 
-        row_groups.append(row_group.format(output_type))
+        row_groups.append(row_group)
 
     logging.info("Tally scores")
     stats = Score.tally(row_groups)
+
+    for row_group in tqdm(row_groups, desc="format"):
+        row_group.format(output_type)
 
     match output_type:
         case ".html":

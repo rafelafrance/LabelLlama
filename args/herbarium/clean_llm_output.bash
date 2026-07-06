@@ -10,7 +10,7 @@ for parse_file in data/herbarium/gpt_nano_raw/*.csv; do
         --parse-file "$parse_file" \
         --clean-file "$clean_dir"/"$name"_clean.csv \
         --prompt prompts/fields/herbarium.md \
-        --log-file data/herbarium/clean.log
+        --log-file data/herbarium/gpt_nano_clean/clean.log
 done
 
 # #####################################################################################
@@ -23,5 +23,5 @@ for parse_file in data/herbarium/qwen36_35b_a3b_raw/*.csv; do
         --parse-file "$parse_file" \
         --clean-file "$clean_dir"/"$name"_clean.csv \
         --prompt prompts/fields/herbarium.md \
-        --log-file data/herbarium/clean.log
+        --log-file data/herbarium/qwen36_35b_a3b_clean/clean.log
 done

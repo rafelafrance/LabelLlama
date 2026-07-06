@@ -44,7 +44,9 @@ def read_to_df(path: Path, *, limit: int | None = None) -> pd.DataFrame:
     return df
 
 
-def output_file(path: Path, data: list[dict[str, Any]], mode: MODE = "w") -> None:
+def output_list_of_dicts(
+    path: Path, data: list[dict[str, Any]], mode: MODE = "w"
+) -> None:
     df = pd.DataFrame(data).fillna("")
 
     match path.suffix:

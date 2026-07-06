@@ -11,46 +11,20 @@ from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
-import PIL
 import requests
 from PIL import Image
 from tqdm import tqdm
 
-from llama.pylib import log
+from llama.pylib import image_util, log
 
-TIMEOUT = 12  # Seconds to wait for a server reply
+TIMEOUT = 20  # Seconds to wait for a server reply
 DELAY = 2  # Seconds to delay between attempts to download an image
 
-Image.MAX_IMAGE_PIXELS = 300_000_000
-
-TOO_DAMN_SMALL = 10_000
-TOO_BIG = 32_000_000
-
-
-IMAGE_ERRORS = (
-    AttributeError,
-    BufferError,
-    ConnectionError,
-    EOFError,
-    FileNotFoundError,
-    IOError,
-    Image.DecompressionBombError,
-    Image.UnidentifiedImageError,
-    IndexError,
-    OSError,
-    RuntimeError,
-    SyntaxError,
-    TimeoutError,
-    TypeError,
-    ValueError,
-    requests.exceptions.ReadTimeout,
-    PIL.UnidentifiedImageError,
-)
 # Set a timeout for requests
 socket.setdefaulttimeout(TIMEOUT)
 
 
-def main(args: argparse.Namespace) -> None:
+def download_images(args: argparse.Namespace) -> None:
     log.started(args=args)
 
     args.image_dir.mkdir(parents=True, exist_ok=True)
@@ -58,9 +32,11 @@ def main(args: argparse.Namespace) -> None:
     df = pd.read_csv(
         args.multimedia_tsv,
         sep="\t",
-        usecols=["gbifID", "format", "identifier", "title"],
+        usecols=["gbifID", "format", "identifier"],
+        dtype=str,
     )
     rows = df.to_dict("records")
+    logging.info(f"There are {len(rows)} records")
     rows = rows[args.offset : args.offset + args.limit]
 
     with tqdm(total=len(rows)) as pbar:
@@ -85,9 +61,8 @@ def main(args: argparse.Namespace) -> None:
 
 
 def download(row: dict, image_dir: Path) -> str:
-    title = row["title"].replace(" ", "_")
     suffix = row["format"].rsplit("/", maxsplit=1)[-1]
-    path: Path = image_dir / f"{row['gbifID']}_{title}.{suffix}"
+    path: Path = image_dir / f"{row['gbifID']}.{suffix}"
 
     if path.exists():
         return "exists"
@@ -95,11 +70,6 @@ def download(row: dict, image_dir: Path) -> str:
     try:
         data = requests.get(row["identifier"], timeout=TIMEOUT).content
 
-    except requests.exceptions.RequestException:
-        logging.exception("Download error")
-        return "error"
-
-    try:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)  # No EXIF warnings
 
@@ -108,17 +78,11 @@ def download(row: dict, image_dir: Path) -> str:
             # with path.open("wb") as f:
             #     f.write(data)
 
-    except IMAGE_ERRORS:
-        logging.exception("Download error")
+    except image_util.IMAGE_ERRORS:
+        logging.exception(f"Download error: {row['identifier']}")
         return "error"
 
     return "download"
-
-
-def log_counts(counts: dict[str, int]) -> None:
-    for key, value in counts.items():
-        msg = f"Count {key} = {value}"
-        logging.info(msg)
 
 
 def parse_args() -> argparse.Namespace:
@@ -152,7 +116,7 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=400,
         metavar="INT",
-        help="""Limit to this many downloads attempts. (default: %(default)s)""",
+        help="""Limit to this many downloads. (default: %(default)s)""",
     )
     arg_parser.add_argument(
         "--threads",
@@ -179,4 +143,4 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    main(ARGS)
+    download_images(ARGS)

@@ -119,5 +119,9 @@ def html_to_md(text: str) -> str:
         escape_underscores=False,
         escape_misc=False,
     )
+
+    # Remove bold and italic ( "**text**" and "_text_") markdown notations
+    text = re.sub(r"([*_]+)([\w\s]*)\1", r"\2", text)
+
     text = text.strip()
     return text

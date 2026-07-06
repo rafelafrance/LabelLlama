@@ -50,7 +50,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
         output_rows.append(out_row)
 
-    io_util.output_file(args.clean_file, output_rows)
+    io_util.output_list_of_dicts(args.clean_file, output_rows)
 
     log.finished()
 

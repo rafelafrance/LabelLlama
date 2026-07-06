@@ -1,6 +1,6 @@
 ---
 name: ocr_v2
-description: OCR labels on images of museum specimens. Optimized for Qwen models.
+description: OCR labels on images of museum specimens.
 ---
 
 # Base Prompt
@@ -35,3 +35,4 @@ This includes:
 - **Do not** describe what you see in the image.
 - **Do not** add any introductory or concluding remarks.
 - **Do not** hallucinate text that is not present in the image.
+- **Do not** repeat yourself.

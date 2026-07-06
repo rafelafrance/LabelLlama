@@ -14,13 +14,12 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, io_util, prompt_util, timer
+from llama.pylib import fix_ocr, image_util, io_util, prompt_util, timer
 
 MIN_SIZE = 1024
 
 COLUMN_NAMES = ["status", "source", "text", "elapsed"]
 
-IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 DEFAULT_POOL = 10
 
@@ -39,10 +38,7 @@ def ocr_images(args: argparse.Namespace) -> None:
             if r.get("source") and r.get("status") == "success"
         }
 
-    image_paths = sorted(
-        [p for p in args.image_dir.glob("*") if p.suffix.lower() in IMAGE_SUFFIXES]
-    )
-    image_paths = image_paths[: args.limit]
+    image_paths = image_util.get_images(args.image_dir, args.limit)
 
     total, done = len(image_paths), len(already_read)
     logging.info(f"There are {total} images to OCR")
@@ -138,7 +134,7 @@ def call_ocr(
         content = result["choices"][0]["message"]["content"] or ""
 
         if args.convert_html:
-            text = fix_ocr.html_to_md(content)
+            content = fix_ocr.html_to_md(content)
 
         text = fix_ocr.clean_ocr(content)
         status = "success"
@@ -166,6 +162,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     io_group = arg_parser.add_argument_group("I/O options")
     io_group.add_argument(
         "--image-dir",
+        type=Path,
         required=True,
         metavar="PATH",
         help="""OCR all images in this directory.""",
