@@ -4,9 +4,9 @@ I use these Markdown files to generate prompts for various tasks. None of these 
 
 There are three types:
 
-1. Simple prompts only have a `Base Prompt` section. I just pull in the text below the `Base Prompt` heading. See [ocr.md](ocr.md) for an example of this type of prompt.
+1. Simple prompts only have a `Base Prompt` section. I just pull in the text below the `Base Prompt` heading. See [ocr_v1.md](ocr_v1.md) for an example of this type of prompt.
 
-2. `Output Field` prompts extend `Base Prompts`with a list of target fields links to include. See [herbarium.md](fields/herbarium.md) for an example. 
+2. `Output Field` prompts extend `Base Prompts`with a list of target fields links to include. See [herbarium_v1.md](fields/herbarium_v1.md) for an example. 
    
    The list of field prompts get expanded with contents of the field prompt Markdown files when generating the full prompt to the LLM.
    
@@ -16,7 +16,7 @@ There are three types:
    
    The expansion of the `Output Field`prompts (without the label text itself) can be a little over 26K characters which is less than 4K words long.
 
-3. Field prompts hold the individual field descriptions used in the prompts. It contains the data types and instructions to the LLM on how to recognize and process the target data. See [scientificName.md](fields/taxon/scientificName.md) for an example. 
+3. Field prompts hold the individual field descriptions used in the prompts. It contains the data types and instructions to the LLM on how to recognize and process the target data. See [scientificName_v1.md](fields/taxon/scientificName_v1.md) for an example. 
    
    The field prompts themselves are stored other subdirectories under the `fields` directory based upon their research domain or Darwin Core category.
    
