@@ -23,10 +23,8 @@ Output format: more or less
 import argparse
 import textwrap
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 
-import jinja2
 import pandas as pd
 
 from llama.fields.base_field import BaseField
@@ -147,60 +145,14 @@ def score_against_gold(args: argparse.Namespace) -> None:
 
         row_groups.append(group)
 
-    # Write report
-    match args.output_file.suffix.lower():
-        case ".html":
-            row_span = len(args.parse_file) * 2 + 1  # gold + parse rows + score rows
-            write_html(
-                html_file=args.html_file,
-                columns=FIRST_COLUMNS + columns,
-                fields=columns,
-                row_groups=row_groups,
-                row_span=row_span,
-                notes=args.notes,
-            )
-        case ".csv":
-            write_csv(
-                csv_file=args.output_file,
-                row_groups=row_groups,
-            )
-
-    log.finished()
-
-
-def write_html(
-    html_file: Path,
-    columns: list[str],
-    fields: list[str],
-    row_groups: list[RowGroup],
-    row_span: int,
-    notes: str,
-) -> None:
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(Path(__file__).resolve().parent / "templates"),
-        autoescape=True,
-    )
-
-    template = env.get_template("compare_output_gold.html").render(
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-        columns=columns,
-        fields=fields,
-        groups=row_groups,
-        row_span=row_span,
-        notes=notes,
-    )
-
-    with html_file.open("w") as fout:
-        fout.write(template)
-
-
-def write_csv(csv_file: Path, row_groups: list[RowGroup]) -> None:
     rows = []
     for group in row_groups:
         rows += group.flatten()
 
     df = pd.DataFrame(rows)
-    df.to_csv(csv_file, index=False)
+    df.to_csv(args.output_csv, index=False)
+
+    log.finished()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -228,7 +180,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The gold standard to compare against.""",
     )
     io_group.add_argument(
-        "--llm-file",
+        "--parse-file",
         type=Path,
         required=True,
         action="append",
@@ -236,10 +188,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The cleaned LLM results file. You may compare several files at once.""",
     )
     io_group.add_argument(
-        "--html-file",
+        "--output-csv",
         type=Path,
         required=True,
-        help="""Write the comparison results to this HTML file.""",
+        metavar="path",
+        help="""Write the comparison results to this CSV file.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(

@@ -263,25 +263,12 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     for row_group in tqdm(row_groups, desc="format"):
         row_group.format(output_type)
 
-    match output_type:
-        case ".html":
-            row_span = len(args.parse_file) * 2 + 1  # gbif + parse rows + score rows
-            write_html(
-                html_file=args.output_file,
-                columns=columns,
-                row_groups=row_groups,
-                row_span=row_span,
-                gbif_search=gbif_search,
-                stats=stats,
-                notes=args.notes,
-            )
-        case ".ods":
-            write_ods(
-                ods_file=args.output_file,
-                row_groups=row_groups,
-                gbif_search=gbif_search,
-                stats=stats,
-            )
+    write_ods(
+        ods_file=args.output_csv,
+        row_groups=row_groups,
+        gbif_search=gbif_search,
+        stats=stats,
+    )
 
     log.finished()
 
@@ -367,36 +354,6 @@ def write_ods(
 
 
 # ----------------------------------------------------------------------------------
-def write_html(
-    html_file: Path | str,
-    columns: list[str],
-    row_groups: list[RowGroup],
-    row_span: int,
-    gbif_search: dict,
-    stats: dict,
-    notes: str,
-) -> None:
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(Path(__file__).resolve().parent / "templates"),
-        autoescape=True,
-    )
-
-    template = env.get_template("compare_output_gbif.html").render(
-        now=datetime.now().strftime("%Y-%m-%d %H:%M"),
-        columns=columns,
-        headers=FIRST_COLUMNS + columns,
-        row_groups=row_groups,
-        row_span=row_span,
-        gbif_search=gbif_search,
-        stats=stats,
-        notes=notes,
-    )
-
-    with Path(html_file).open("w") as fout:
-        fout.write(template)
-
-
-# ----------------------------------------------------------------------------------
 def get_gbif_search() -> dict[str, list[str]]:
     with GBIF_SEARCH_MD.open() as inf:
         lines = [ln for line in inf.readlines() if (ln := line.strip())]
@@ -460,11 +417,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The cleaned LLM parse file. You may compare several files at once.""",
     )
     io_group.add_argument(
-        "--output-file",
+        "--output-csv",
         type=Path,
         required=True,
-        help="""Write the comparison results to this file. The file suffix
-            (.html or .ods) determines the file type.""",
+        metavar="path",
+        help="""Write the comparison results to this CSV file.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(

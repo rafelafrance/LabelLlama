@@ -33,15 +33,14 @@ Output format: more or less
 
 import argparse
 import textwrap
+from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import jinja2
+from pandas._testing import pd
 
-from llama.fields.base_field import BaseField
-from llama.pylib import io_util, log, prompt_util
+from llama.pylib import io_util, log
 
 FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
 
@@ -51,6 +50,11 @@ class RowGroup:
     first_columns: dict[str, str] = field(default_factory=dict)
     parse_rows: list[dict[str, str]] = field(default_factory=list)
     winner_row: dict[str, Any] = field(default_factory=dict)
+
+    def flatten(self) -> list[dict]:
+        rows = [self.first_columns | row for row in self.parse_rows]
+        rows += [self.first_columns | self.winner_row]
+        return rows
 
 
 def compare_model_winner(args: argparse.Namespace) -> None:
@@ -82,6 +86,7 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     # Get common columns in the original order
     columns = [k for k in column_keys if k not in FIRST_COLUMNS]
 
+    row_groups = []
     for i, image_path in enumerate(image_paths, 1):
         group = RowGroup(
             first_columns={
@@ -97,31 +102,26 @@ def compare_model_winner(args: argparse.Namespace) -> None:
                 {"row_type": stem, **{c: parsed_data[stem].get(c, "") for c in columns}}
             )
 
+        for col in columns:
+            values = [row[col] for row in group.parse_rows]
+            counts = Counter(values).most_common(2)
+            winner = counts[0][0]
+            if args.majority and float(counts[0][1]) < len(values) / 2.0:
+                winner = ""
+            if counts[0][1] != counts[1][1]:
+                winner = ""
+            group.winner_row[col] = winner
+
+        row_groups.append(group)
+
+    rows = []
+    for group in row_groups:
+        rows += group.flatten()
+
+    df = pd.DataFrame(rows)
+    df.to_csv(args.output_csv, index=False)
+
     log.finished()
-
-
-def write_html(
-    html_file: Path,
-    columns: list[str],
-    fields: list[str],
-    row_groups: list[RowGroup],
-    row_span: int,
-) -> None:
-    env = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(Path() / "llama" / "templates"),
-        autoescape=True,
-    )
-
-    template = env.get_template("compare_output_gold.html").render(
-        now=datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M"),
-        columns=columns,
-        fields=fields,
-        groups=groups,
-        row_span=row_span,
-    )
-
-    with html_file.open("w") as fout:
-        fout.write(template)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -155,11 +155,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The cleaned LLM parse file. You may compare several files at once.""",
     )
     io_group.add_argument(
-        "--output-file",
+        "--output-csv",
         type=Path,
         required=True,
-        help="""Write the comparison results to this file. The file suffix
-            (.html or .ods) determines the file type.""",
+        metavar="path",
+        help="""Write the comparison results to this CSV file.""",
     )
     winner_group = arg_parser.add_argument_group("Majority options")
     winner_group.add_argument(
