@@ -41,7 +41,7 @@ from tqdm import tqdm
 
 from llama.pylib import io_util, log
 
-FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
+FIRST_COLUMNS = ["text", "image_path", "row_group"]  # , "row_type"]
 GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
 
 
@@ -129,6 +129,19 @@ class Score:
 # ----------------------------------------------------------------------------------
 @dataclass
 class RowGroup:
+    """
+    A group of rows that get displayed together.
+
+    The entire group is indexed by the image source. So, for each OCRed image or other
+    source like CSV we have:
+        - The "first" columns. Which are handled differently, see above.
+        - A golden row with the expected values for each image.
+        - A set of LLM runs against the OCRed data. Each run tries a different model,
+          or other parameters in an attempt to get as close to the expected golden
+          values as possible.
+        - A set of scores for each LLM run. How well did the model actually do?
+    """
+
     first_columns: dict[str, str] = field(default_factory=dict)
     gbif_row: dict[str, Any] = field(default_factory=dict)
     parse_rows: list[dict[str, str]] = field(default_factory=list)
@@ -219,7 +232,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
                 "text": ocr_by_image[image_path]["text"],
                 "image_path": image_path,
                 "href": gbif_by_image[image_path]["identifier"],
-                "row_num": str(i),
+                "row_group": str(i),
             }
         )
 

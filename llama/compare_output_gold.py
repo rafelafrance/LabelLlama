@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
-"""Compare LLM outputs against a gold standard."""
+"""
+Compare LLM outputs against a gold standard.
+
+Output format: more or less
+    Index: <row_group>.<column>.<llm_index>
+
+| Text | Source  | Row group | Type    |  Column 1   |  Column 2   | ... |  Column n   |
+|------|---------|-----------|---------|-------------|-------------| ... |-------------|
+|      |         |           | gold    | gold  1.1   | gold  1.2   | ... | gold  1.n   |
+|      |         |           | llm 1   | value 1.1.1 | value 1.2.1 | ... | value 1.n.1 |
+| text | /path/1 |     1     | llm 2   | value 1.1.2 | value 1.2.2 | ... | value 1.n.2 |
+|      |         |           | score 1 | score 1.1.1 | score 1.2.1 | ... | score 1.n.1 |
+|      |         |           | score 2 | score 1.1.2 | score 1.2.2 | ... | score 1.n.2 |
+|------|---------|-----------|---------|-------------|-------------| ... |-------------|
+|      |         |           | gold    | gold  2.1   | gold  2.2   | ... | gold  2.n   |
+|      |         |           | llm 1   | value 2.1.1 | value 2.2.1 | ... | value 2.n.1 |
+| text | /path/2 |     2     | llm 2   | value 2.2.1 | value 2.2.2 | ... | value 2.n.2 |
+|      |         |           | score 1 | score 2.1.1 | score 2.2.1 | ... | score 2.n.1 |
+|      |         |           | score 2 | score 2.2.1 | score 2.2.2 | ... | score 2.n.2 |
+"""
 
 import argparse
 import textwrap
@@ -13,7 +32,13 @@ from tqdm import tqdm
 from llama.fields.base_field import BaseField
 from llama.pylib import io_util, log, prompt_util
 
-FIRST_COLUMNS = ["text", "source", "row", "type"]
+FIRST_COLUMNS = ["text", "source", "row_group"]  # , "row_type"]
+
+
+@dataclass
+class Score:
+    score: float = 0.0
+    method: str = ""
 
 
 @dataclass
@@ -23,6 +48,7 @@ class RowGroup:
 
     The entire group is indexed by the image source. So, for each OCRed image or other
     source like CSV we have:
+        - The "first" columns. Which are handled differently, see above.
         - A golden row with the expected values for each image.
         - A set of LLM runs against the OCRed data. Each run tries a different model,
           or other parameters in an attempt to get as close to the expected golden
@@ -30,6 +56,7 @@ class RowGroup:
         - A set of scores for each LLM run. How well did the model actually do?
     """
 
+    first_columns: dict[str, str] = field(default_factory=dict)
     gold_row: dict = field(default_factory=dict)
     llm_rows: list[dict] = field(default_factory=list)
     score_rows: list[dict] = field(default_factory=list)
@@ -85,8 +112,8 @@ def score_against_gold(args: argparse.Namespace) -> None:
             gold_row={
                 "text": ocr_dict.get(source, {}).get("text", ""),
                 "source": gold["source"],
-                "row": i,
-                "type": "gold",
+                "row_group": i,
+                "row_type": "gold",
                 **{f: gold.get(f, "") for f in columns},
             }
         )
