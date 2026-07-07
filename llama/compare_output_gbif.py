@@ -45,6 +45,10 @@ FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
 GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
 
 
+# ----------------------------------------------------------------------------------
+SEARCH_SUCCESS_THRESHOLD = 0.5
+
+
 class ScoreCat(Enum):
     gbif_has_value = auto()
     both_empty = auto()
@@ -55,7 +59,7 @@ class ScoreCat(Enum):
 @dataclass
 class Score:
     cat: ScoreCat
-    score: float | None = None
+    score: float = 0.0
     method: str = ""
     gbif_field: str = ""
     gbif_data: str = ""
@@ -63,8 +67,9 @@ class Score:
     def __gt__(self, other: Score) -> bool:
         return (self.score, -len(self.gbif_data)) > (other.score, -len(other.gbif_data))
 
+    @property
     def has_value(self) -> bool:
-        return bool(self.gbif_field)
+        return self.score > SEARCH_SUCCESS_THRESHOLD
 
     @staticmethod
     def tally(row_groups: list[RowGroup]) -> dict:
@@ -109,12 +114,19 @@ class Score:
             for col in row_type.values():
                 if col["gbif_has_value_count"] != 0:
                     col["gbif_has_value_average"] /= col["gbif_has_value_count"]
+                    col["gbif_has_value_average"] = (
+                        f"{col['gbif_has_value_average']:0.2f}"
+                    )
                 if col["search_success_count"] != 0:
                     col["search_success_average"] /= col["search_success_count"]
+                    col["search_success_average"] = (
+                        f"{col['search_success_average']:0.2f}"
+                    )
 
         return stats
 
 
+# ----------------------------------------------------------------------------------
 @dataclass
 class RowGroup:
     first_columns: dict[str, str] = field(default_factory=dict)
@@ -134,13 +146,14 @@ class RowGroup:
             match output_type:
                 case ".html":
                     values = [
-                        f"<span class='label'>{s.gbif_field}</span> {s.gbif_dat}"
+                        f"<span class='label'>{s.gbif_field}</span> {s.gbif_data}"
                         for s in scores
+                        if s.has_value
                     ]
                     self.gbif_row[col] = "<br/>".join(values)
                 case ".ods":
                     self.gbif_row[col] = ",\n".join(
-                        [f"{s.gbif_field}: {s.gbif_data}" for s in scores]
+                        [f"{s.gbif_field} {s.gbif_data}" for s in scores if s.has_value]
                     )
 
     def format_score_rows(self, output_type: str) -> None:
@@ -152,13 +165,14 @@ class RowGroup:
                     case ".html":
                         score_row[col] = (
                             f"<span class='label'>{score.gbif_field}</span> "
-                            f"{score.method}: {score.score:0.2f}"
+                            f"{score.method} {score.score:0.2f}"
                         )
                     case ".ods":
-                        value = f"{score.score:0.2f}" if score.score is not None else ""
-                        score_row[col] = f"{score.method}: {value}"
+                        value = f"{score.score:0.2f}" if score.has_value else ""
+                        score_row[col] = f"{score.gbif_field} {score.method} {value}"
 
 
+# ----------------------------------------------------------------------------------
 def score_against_gbif(args: argparse.Namespace) -> None:
     """Compare LLM outputs against gbif data and write an HTML report."""
     log.started(args.log_file, args=args)
@@ -187,6 +201,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
 
     # Finish building the row index
     image_paths = sorted(image_paths)
+    image_paths = image_paths[: args.limit]
 
     # Get common columns in the original order
     columns = [k for k in column_keys if k not in FIRST_COLUMNS]
@@ -194,23 +209,19 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     # If the gbif cells do not match the llm cells then search for aligned data in gbif
     gbif_search = get_gbif_search()
 
-    # First columns get handled differently in some outputs. See module doc string
-    first_columns = {
-        image_path: {
-            "text": ocr_by_image[image_path]["text"],
-            "image_path": image_path,
-            "href": gbif["identifier"],
-            "row_num": str(i),
-        }
-        for i, (image_path, gbif) in enumerate(gbif_by_image.items(), 1)
-    }
-
     output_type = args.output_file.suffix.lower()
 
     # Build report lines
     row_groups: list[RowGroup] = []
-    for image_path in tqdm(image_paths, desc="building"):
-        row_group = RowGroup(first_columns=first_columns[image_path])
+    for i, image_path in enumerate(image_paths, 1):
+        row_group = RowGroup(
+            first_columns={
+                "text": ocr_by_image[image_path]["text"],
+                "image_path": image_path,
+                "href": gbif_by_image[image_path]["identifier"],
+                "row_num": str(i),
+            }
+        )
 
         # Build skeleton of the GBIF row. It gets filled in during scoring.
         # It will ultimately contain a list of score results.
@@ -267,6 +278,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     log.finished()
 
 
+# ----------------------------------------------------------------------------------
 def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Score:
     expect = gbif_input.get(col)
 
@@ -283,35 +295,31 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
 
     # If there is not value to score against then we can't search for a value
     if not actual:
-        return Score(cat=ScoreCat.both_empty, method="NONE")
+        return Score(cat=ScoreCat.both_empty, method="")
 
     # Try searching for a matching value in gbif_search columns and pick the best one
-    max_score = Score(
-        cat=ScoreCat.search_success,
-        score=-1.0,
-        method="FPR",
-        gbif_field="",
-        gbif_data="",
-    )
+    max_score = Score(cat=ScoreCat.search_fail)
 
     for search_field in gbif_search.get(col, []):
         expect = gbif_input.get(search_field, "")
         if not expect:
             continue
 
-        score = fuzz.partial_ratio(expect, gbif_input[search_field]) / 100.0
+        score = fuzz.partial_ratio(expect, actual) / 100.0
         current = Score(
             cat=ScoreCat.search_success,
-            score=fuzz.partial_ratio(expect, gbif_input[search_field]) / 100.0,
+            score=score,
             method="FPR",
             gbif_field=search_field,
             gbif_data=expect,
         )
-        max_score = max(current, max_score)
+        if score > SEARCH_SUCCESS_THRESHOLD:
+            max_score = max(current, max_score)
 
-    return max_score if max_score.has_value else Score(cat=ScoreCat.search_fail)
+    return max_score
 
 
+# ----------------------------------------------------------------------------------
 def write_ods(
     ods_file: Path,
     row_groups: list[RowGroup],
@@ -338,13 +346,14 @@ def write_ods(
     ]
     gbif_df = pd.DataFrame(gbif_rows)
 
-    logging.info(f"Write {ods_file.stem}")
+    logging.info(f"Write {ods_file.name}")
     with pd.ExcelWriter(ods_file, engine="odf") as writer:
         stats_df.to_excel(writer, sheet_name="statistics", index=False)
         group_df.to_excel(writer, sheet_name="detail", index=False)
         gbif_df.to_excel(writer, sheet_name="gbif_search_fields", index=False)
 
 
+# ----------------------------------------------------------------------------------
 def write_html(
     html_file: Path | str,
     columns: list[str],
@@ -374,6 +383,7 @@ def write_html(
         fout.write(template)
 
 
+# ----------------------------------------------------------------------------------
 def get_gbif_search() -> dict[str, list[str]]:
     with GBIF_SEARCH_MD.open() as inf:
         lines = [ln for line in inf.readlines() if (ln := line.strip())]
@@ -388,6 +398,7 @@ def get_gbif_search() -> dict[str, list[str]]:
     return search
 
 
+# ----------------------------------------------------------------------------------
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
@@ -454,6 +465,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--notes",
         metavar="string",
         help="""Notes for logging.""",
+    )
+    debugging_group = arg_parser.add_argument_group("debugging options")
+    debugging_group.add_argument(
+        "--limit",
+        type=int,
+        metavar="int",
+        help="""Limit to this many row groups.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

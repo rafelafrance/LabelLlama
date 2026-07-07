@@ -98,6 +98,7 @@
   
   ##### family
 - family
+- scientificName
 - verbatimScientificName
 - taxonRemarks
 - dynamicProperties
@@ -172,6 +173,7 @@
   
   ##### infraspecificEpithetAuthorship
 - infraspecificEpithetAuthorship
+- scientificName
 - taxonRemarks
 - dynamicProperties
 - fieldNotes
@@ -179,6 +181,7 @@
   
   ##### infraspecificEpithet
 - infraspecificEpithet
+- scientificName
 - taxonRemarks
 - dynamicProperties
 - fieldNotes
@@ -282,6 +285,7 @@
   
   ##### scientificNameAuthorship
 - scientificNameAuthorship
+- scientificName
 - taxonRemarks
 - verbatimScientificName
 - dynamicProperties
