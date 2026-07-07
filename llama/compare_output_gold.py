@@ -27,12 +27,12 @@ from datetime import datetime
 from pathlib import Path
 
 import jinja2
-from tqdm import tqdm
+import pandas as pd
 
 from llama.fields.base_field import BaseField
 from llama.pylib import io_util, log, prompt_util
 
-FIRST_COLUMNS = ["text", "source", "row_group"]  # , "row_type"]
+FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
 
 
 @dataclass
@@ -58,8 +58,14 @@ class RowGroup:
 
     first_columns: dict[str, str] = field(default_factory=dict)
     gold_row: dict = field(default_factory=dict)
-    llm_rows: list[dict] = field(default_factory=list)
+    parse_rows: list[dict] = field(default_factory=list)
     score_rows: list[dict] = field(default_factory=list)
+
+    def flatten(self) -> list[dict]:
+        rows = [self.first_columns | self.gold_row]
+        rows += [self.first_columns | row for row in self.parse_rows]
+        rows += [self.first_columns | row for row in self.score_rows]
+        return rows
 
 
 def score_against_gold(args: argparse.Namespace) -> None:
@@ -73,28 +79,29 @@ def score_against_gold(args: argparse.Namespace) -> None:
 
     # Read OCR data
     ocr_df = io_util.read_to_df(args.ocr_file)
-    ocr_dict = {o["source"]: o for o in ocr_df.to_dict("records")}
+    ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Read Gold data
     gold_df = io_util.read_to_df(args.gold_file)
-    gold_dict = {g["source"]: g for g in gold_df.to_dict("records")}
+    gold_by_image = {g["source"]: g for g in gold_df.to_dict("records")}
 
     # Init row and column indexes
-    row_index = set(gold_dict)
-    columns = dict.fromkeys(gold_dict)
+    image_paths = set(gold_by_image)
+    columns = dict.fromkeys(gold_by_image)
 
-    # Read LLM data
-    llm_dicts = {}
-    for llm_file in args.llm_file:
-        llm_df = io_util.read_to_df(llm_file)
-        llm_dict = {r["source"]: r for r in llm_df.to_dict("records")}
-        llm_dicts[llm_file.stem] = llm_dict
-        row_index &= set(llm_dict)
+    # Get parsed data
+    parsed_data = {}
+    for parse_file in args.llm_file:
+        llm_df = io_util.read_to_df(parse_file)
         columns |= dict.fromkeys(llm_df.columns)
+        image_paths &= set(llm_df["source"])
 
-    # Init the row index
-    row_index = sorted(row_index)
-    row_index = row_index[: args.limit] if args.limit else row_index
+        llm_list = llm_df.to_dict("records")
+        parsed_data[parse_file.stem] = {r["source"]: r for r in llm_list}
+
+    # Finish building the row index
+    image_paths = sorted(image_paths)
+    image_paths = image_paths[: args.limit]
 
     # Get common rows in the original order
     columns = [k for k in columns if k not in FIRST_COLUMNS]
@@ -102,36 +109,38 @@ def score_against_gold(args: argparse.Namespace) -> None:
     # Load scoring classes
     field_classes = prompt_util.Prompt.load(args.prompt).field_classes()
 
-    # Build comparison rows for each group
+    # Build rows for each group
     row_groups = []
-    for i, source in tqdm(enumerate(row_index, 1), total=len(row_index)):
-        gold = gold_dict[source]
+    for i, image_path in enumerate(image_paths, 1):
+        gold = gold_by_image[image_path]
 
-        # Build the golden row
         group = RowGroup(
-            gold_row={
-                "text": ocr_dict.get(source, {}).get("text", ""),
+            first_columns={
+                "text": ocr_by_image[image_path]["text"],
                 "source": gold["source"],
-                "row_group": i,
-                "row_type": "gold",
+                "row_group": str(i),
+            },
+            gold_row={
+                "row_type": "GOLD",
                 **{f: gold.get(f, "") for f in columns},
-            }
+            },
         )
 
-        # Build LLM rows and score rows
-        for stem, llm_dict in llm_dicts.items():
+        # Build parse rows and score rows
+        for parse_file in args.parse_file:
+            stem = parse_file.stem
             # Build an LLM row
-            group.llm_rows.append(
-                {"type": stem, **{c: llm_dict.get(c, "") for c in columns}}
+            group.parse_rows.append(
+                {"row_type": stem, **{c: parsed_data[stem].get(c, "") for c in columns}}
             )
             # Build a score row
-            score_row = {"type": f"score: {stem}"}
+            score_row = {"row_type": f"score {stem}"}
             for col in columns:
                 field_class = field_classes.get(col, BaseField)
                 score = field_class.score(
                     str(gold.get(col, "")),
-                    str(llm_dict.get(col, "")),
-                    llm_dict,
+                    str(parsed_data[stem].get(col, "")),
+                    parsed_data[stem],
                 )
                 score_row[col] = f"{score:0.2f}"
             group.score_rows.append(score_row)
@@ -139,19 +148,27 @@ def score_against_gold(args: argparse.Namespace) -> None:
         row_groups.append(group)
 
     # Write report
-    write_template(
-        html_file=args.html_file,
-        columns=FIRST_COLUMNS + columns,
-        fields=columns,
-        row_groups=row_groups,
-        row_span=len(args.llm_file) * 2 + 1,  # gold + llm + score per file
-        notes=args.notes,
-    )
+    match args.output_file.suffix.lower():
+        case ".html":
+            row_span = len(args.parse_file) * 2 + 1  # gold + parse rows + score rows
+            write_html(
+                html_file=args.html_file,
+                columns=FIRST_COLUMNS + columns,
+                fields=columns,
+                row_groups=row_groups,
+                row_span=row_span,
+                notes=args.notes,
+            )
+        case ".csv":
+            write_csv(
+                csv_file=args.output_file,
+                row_groups=row_groups,
+            )
 
     log.finished()
 
 
-def write_template(
+def write_html(
     html_file: Path,
     columns: list[str],
     fields: list[str],
@@ -175,6 +192,15 @@ def write_template(
 
     with html_file.open("w") as fout:
         fout.write(template)
+
+
+def write_csv(csv_file: Path, row_groups: list[RowGroup]) -> None:
+    rows = []
+    for group in row_groups:
+        rows += group.flatten()
+
+    df = pd.DataFrame(rows)
+    df.to_csv(csv_file, index=False)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

@@ -41,7 +41,7 @@ from tqdm import tqdm
 
 from llama.pylib import io_util, log
 
-FIRST_COLUMNS = ["text", "image_path", "row_group"]  # , "row_type"]
+FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type"]
 GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
 
 
@@ -242,18 +242,18 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         gbif_row: dict[str, Any] = {"row_type": "GBIF"} | {c: [] for c in columns}
         row_group.gbif_row = gbif_row
 
-        # Build the LLM and score rows
+        # Build the parse and score rows
         for parse_file in args.parse_file:
             # Build LLM row. It just holds the LLM results as is
-            llm_row: dict[str, str] = {"row_type": parse_file.stem} | {
+            parse_row: dict[str, str] = {"row_type": parse_file.stem} | {
                 c: parsed_data[parse_file.stem][image_path][c] for c in columns
             }
-            row_group.parse_rows.append(llm_row)
+            row_group.parse_rows.append(parse_row)
 
             # Build score row by scoring each column. This also fills in the GBIF cell
             score_row: dict[str, str | Score] = {"row_type": f"{parse_file.stem} score"}
             for col in columns:
-                actual = llm_row[col]
+                actual = parse_row[col]
                 score = calc_score(col, actual, gbif_input, gbif_search)
                 score_row[col] = score
                 if score.has_value:

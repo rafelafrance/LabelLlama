@@ -25,32 +25,32 @@
                 {% for group in groups %}
                 <tr class="gold">
                     <td rowspan="{{row_span}}">
-                        <span class="text">{{ group.gold_row.text }}</span>
+                        <span class="text">{{ group.first_columns.text }}</span>
                     </td>
                     <td rowspan="{{row_span}}">
-                        <span>{{ group.source | safe }}</span>
+                        <span>{{ group.first_columns.source | safe }}</span>
                     </td>
                     <td rowspan="{{row_span}}">
-                        <span>{{ group.gold_row.row }}</span>
+                        <span>{{ group.first_columns.row_group }}</span>
                     </td>
-                    <td><span class="type">{{ group.gold_row.type }}</span></td>
+                    <td><span class="type">{{ group.gold_row.row_type }}</span></td>
                     {% for field in fields %}
                     <td>{{ group.gold_row[field] | safe }}</td>
                     {% endfor %}
                 </tr>
 
-                {% for clean_row in group.clean_rows %}
+                {% for parse_row in group.parse_rows %}
                 <tr class="clean">
-                    <td><span class="type">{{ clean_row.type }}</span></td>
+                    <td><span class="type">{{ parse_row.row_type }}</span></td>
                     {% for field in fields %}
-                    <td>{{ clean_row[field] | safe }}</td>
+                    <td>{{ parse_row[field] | safe }}</td>
                     {% endfor %}
                 </tr>
-                {% endfor %} {% for clean_row in group.score_rows %}
+                {% endfor %} {% for score_row in group.score_rows %}
                 <tr class="score">
-                    <td><span class="type">{{ clean_row.type }}</span></td>
+                    <td><span class="type">{{ score_row.row_type }}</span></td>
                     {% for field in fields %}
-                    <td>{{ clean_row[field] | safe }}</td>
+                    <td>{{ score_row[field] | safe }}</td>
                     {% endfor %}
                 </tr>
                 {% endfor %} {% endfor %}
