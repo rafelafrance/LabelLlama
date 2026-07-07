@@ -28,7 +28,7 @@ import argparse
 import logging
 import textwrap
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -41,7 +41,7 @@ from tqdm import tqdm
 
 from llama.pylib import io_util, log
 
-FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type"]
+FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type", "source"]
 GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
 
 
@@ -50,10 +50,24 @@ SEARCH_SUCCESS_THRESHOLD = 0.5
 
 
 class ScoreCat(Enum):
-    gbif_has_value = auto()
-    both_empty = auto()
+    align_both = auto()
+    align_gbif_empty = auto()
+    align_parse_empty = auto()
+    not_aligned_parse_empty = auto()
     search_fail = auto()
     search_success = auto()
+
+
+@dataclass
+class Tally:
+    align_both_count: int = 0
+    align_both_average: float = 0.0
+    align_gbif_empty_count: int = 0
+    align_parse_empty_count: int = 0
+    not_aligned_parse_empty_count: int = 0
+    search_fail_count: int = 0
+    search_success_count: int = 0
+    search_success_average: float = 0.0
 
 
 @dataclass
@@ -67,25 +81,11 @@ class Score:
     def __gt__(self, other: Score) -> bool:
         return (self.score, -len(self.gbif_data)) > (other.score, -len(other.gbif_data))
 
-    @property
-    def has_value(self) -> bool:
-        return self.score > SEARCH_SUCCESS_THRESHOLD
-
     @staticmethod
     def tally(row_groups: list[RowGroup]) -> dict:
         # The tally is a 3-level dict
-        stats = defaultdict(
-            lambda: defaultdict(
-                lambda: {
-                    "gbif_has_value_count": 0,
-                    "gbif_has_value_average": 0.0,
-                    "field_empty_count": 0,
-                    "search_fail_count": 0,
-                    "search_success_count": 0,
-                    "search_success_average": 0.0,
-                }
-            )
-        )
+        tallies = defaultdict(lambda: defaultdict(Tally))
+
         # Accumulate the scores
         for group in row_groups:
             for score_row in group.score_rows:
@@ -95,33 +95,29 @@ class Score:
                         row_type = score
                         continue
                     match score.cat:
-                        case ScoreCat.gbif_has_value:
-                            stats[row_type][col]["gbif_has_value_count"] += 1
-                            stats[row_type][col]["gbif_has_value_average"] += (
-                                score.score
-                            )
-                        case ScoreCat.both_empty:
-                            stats[row_type][col]["field_empty_count"] += 1
+                        case ScoreCat.align_both:
+                            tallies[row_type][col].align_both_count += 1
+                            tallies[row_type][col].align_both_average += score.score
+                        case ScoreCat.align_gbif_empty:
+                            tallies[row_type][col].align_gbif_empty_count += 1
+                        case ScoreCat.align_parse_empty:
+                            tallies[row_type][col].align_parse_empty_count += 1
+                        case ScoreCat.not_aligned_parse_empty:
+                            tallies[row_type][col].not_aligned_parse_empty_count += 1
                         case ScoreCat.search_fail:
-                            stats[row_type][col]["search_fail_count"] += 1
+                            tallies[row_type][col].search_fail_count += 1
                         case ScoreCat.search_success:
-                            stats[row_type][col]["search_success_count"] += 1
-                            stats[row_type][col]["search_success_average"] += (
-                                score.score
-                            )
+                            tallies[row_type][col].search_success_count += 1
+                            tallies[row_type][col].search_success_average += score.score
         # Make score sums an average
-        for row_type in stats.values():
-            for col in row_type.values():
-                if col["gbif_has_value_count"] != 0:
-                    col["gbif_has_value_average"] /= col["gbif_has_value_count"]
-                    col["gbif_has_value_average"] = (
-                        f"{col['gbif_has_value_average']:0.2f}"
-                    )
-                if col["search_success_count"] != 0:
-                    col["search_success_average"] /= col["search_success_count"]
-                    col["search_success_average"] = (
-                        f"{col['search_success_average']:0.2f}"
-                    )
+        stats = defaultdict(lambda: defaultdict(dict))
+        for row_type, columns in tallies.items():
+            for col, tally in columns.items():
+                if tally.align_both_count != 0:
+                    tally.align_both_average /= tally.align_both_count
+                if tally.search_success_count != 0:
+                    tally.search_success_average /= tally.search_success_count
+                stats[row_type][col] = {k: v or "" for k, v in asdict(tally).items()}
 
         return stats
 
@@ -161,12 +157,11 @@ class RowGroup:
                     values = [
                         f"<span class='label'>{s.gbif_field}</span> {s.gbif_data}"
                         for s in scores
-                        if s.has_value
                     ]
                     self.gbif_row[col] = "<br/>".join(values)
                 case ".ods":
                     self.gbif_row[col] = ",\n".join(
-                        [f"{s.gbif_field} {s.gbif_data}" for s in scores if s.has_value]
+                        [f"{s.gbif_field} {s.gbif_data}" for s in scores]
                     )
 
     def format_score_rows(self, output_type: str) -> None:
@@ -181,7 +176,7 @@ class RowGroup:
                             f"{score.method} {score.score:0.2f}"
                         )
                     case ".ods":
-                        value = f"{score.score:0.2f}" if score.has_value else ""
+                        value = f"{score.score:0.2f}"
                         score_row[col] = f"{score.gbif_field} {score.method} {value}"
 
 
@@ -203,7 +198,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     column_keys = {}
 
     # Get parsed data
-    parsed_data = defaultdict(dict)
+    parsed_data = {}
     for parse_file in args.parse_file:
         llm_df = io_util.read_to_df(parse_file)
         column_keys |= dict.fromkeys(llm_df.columns)
@@ -256,7 +251,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
                 actual = parse_row[col]
                 score = calc_score(col, actual, gbif_input, gbif_search)
                 score_row[col] = score
-                if score.has_value:
+                if score.gbif_field:
                     gbif_row[col].append(score)
             row_group.score_rows.append(score_row)
 
@@ -296,10 +291,15 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
     expect = gbif_input.get(col)
 
     # If the GBIF column has a value then we score against that
-    if expect:
+    if expect is not None:
+        expect = expect.strip()
+        if not expect:
+            return Score(cat=ScoreCat.align_gbif_empty)
+        if not actual:
+            return Score(cat=ScoreCat.align_parse_empty)
         score = fuzz.partial_ratio(expect, actual) / 100.0
         return Score(
-            cat=ScoreCat.gbif_has_value,
+            cat=ScoreCat.align_both,
             score=score,
             method="FPR",
             gbif_field=col,
@@ -308,7 +308,7 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
 
     # If there is not value to score against then we can't search for a value
     if not actual:
-        return Score(cat=ScoreCat.both_empty, method="")
+        return Score(cat=ScoreCat.not_aligned_parse_empty, method="")
 
     # Try searching for a matching value in gbif_search columns and pick the best one
     max_score = Score(cat=ScoreCat.search_fail)
@@ -326,7 +326,7 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
             gbif_field=search_field,
             gbif_data=expect,
         )
-        if score > SEARCH_SUCCESS_THRESHOLD:
+        if score >= SEARCH_SUCCESS_THRESHOLD:
             max_score = max(current, max_score)
 
     return max_score
