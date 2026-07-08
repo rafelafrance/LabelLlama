@@ -37,11 +37,9 @@ import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from pprint import pp
 from typing import Any
 
-from pandas._testing import pd
-from pandas.core.arrays.arrow.accessors import pa
+import pandas as pd
 
 from llama.pylib import io_util, log
 
@@ -142,8 +140,8 @@ def compare_model_winner(args: argparse.Namespace) -> None:
         for stem, count in counts.items():
             totals[stem][col] = count / len(image_paths)
             totals[stem]["average"] += totals[stem][col]
-    for stem in totals.keys():
-        totals[stem]["average"] /= len(tally)
+    for counts in totals.values():
+        counts["average"] /= len(tally)
 
     summary_df = pd.DataFrame(totals.values())
 
