@@ -15,7 +15,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, image_util, prompt_util, timer
+from llama.pylib import fix_ocr, image_util, log, prompt_util
 
 MIN_SIZE = 1024
 
@@ -26,7 +26,7 @@ DEFAULT_POOL = 10
 
 
 def ocr_images(args: argparse.Namespace) -> None:
-    job_began = timer.job_began(args.log_file, args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     mode = "w"  # Used as a flag for writing the header elsewise "a" would work
     already_read = set()
@@ -89,7 +89,7 @@ def ocr_images(args: argparse.Namespace) -> None:
         f"and {len(already_read)} documents were skipped."
     )
 
-    timer.job_elapsed(job_began)
+    log.job_elapsed(job_began)
 
 
 def call_ocr(
@@ -149,7 +149,7 @@ def call_ocr(
         "status": status,
         "source": str(image_path),
         "text": text,
-        "elapsed": str(timer.task_elapsed(began)),
+        "elapsed": str(log.task_elapsed(began)),
     }
 
     return result

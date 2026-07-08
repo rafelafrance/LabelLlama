@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, prompt_util, timer
+from llama.pylib import fix_ocr, log, prompt_util
 
 MIN_SIZE = 1024
 
@@ -27,7 +27,7 @@ DEFAULT_POOL = 10
 
 
 def parse_text(args: argparse.Namespace) -> None:
-    job_began = timer.job_began(args.log_file, args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     mode = "w"
     already_parsed = set()
@@ -86,7 +86,7 @@ def parse_text(args: argparse.Namespace) -> None:
         f"and {len(already_parsed)} documents were skipped."
     )
 
-    timer.job_elapsed(job_began)
+    log.job_elapsed(job_began)
 
 
 def parser(
@@ -138,7 +138,7 @@ def parser(
         "status": status,
         "source": doc["source"],
         "text": text,
-        "elapsed": str(timer.task_elapsed(began)),
+        "elapsed": str(log.task_elapsed(began)),
     } | extracted
 
     return result
