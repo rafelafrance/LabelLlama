@@ -40,7 +40,7 @@ from tqdm import tqdm
 from llama.pylib import log
 
 FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type", "source"]
-GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
+GBIF_SEARCH_MD = Path(__file__).resolve().parent / "pylib" / "gbif_search.md"
 
 
 # ----------------------------------------------------------------------------------
