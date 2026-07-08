@@ -32,13 +32,16 @@ Output format: more or less
 """
 
 import argparse
+import logging
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
+from pprint import pp
 from typing import Any
 
 from pandas._testing import pd
+from pandas.core.arrays.arrow.accessors import pa
 
 from llama.pylib import io_util, log
 
@@ -66,7 +69,7 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     ocr_by_image = {o["source"]: o for o in ocr_list}
 
     # Init 2 of the 3 indexes for the quasi 3D struct, see this script's doc string
-    image_paths = set()
+    image_paths = set(ocr_by_image)
     column_keys = {}
 
     # Get parsed data
@@ -82,11 +85,12 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     # Finish building the row index
     image_paths = sorted(image_paths)
     image_paths = image_paths[: args.limit]
+    logging.info(f"Reporting on {len(image_paths)} images")
 
     # Get common columns in the original order
     columns = [k for k in column_keys if k not in FIRST_COLUMNS]
 
-    tally = defaultdict(list)
+    tally = defaultdict(lambda: {p.stem: 0 for p in args.parse_file})
     row_groups = []
     for i, image_path in enumerate(image_paths, 1):
         group = RowGroup(
@@ -99,24 +103,28 @@ def compare_model_winner(args: argparse.Namespace) -> None:
         # Build parse rows
         for parse_file in args.parse_file:
             stem = parse_file.stem
+            row = parsed_data[stem][image_path]
             group.parse_rows.append(
-                {"row_type": stem, **{c: parsed_data[stem].get(c, "") for c in columns}}
+                {"row_type": stem, **{c: row.get(c, "") for c in columns}}
             )
 
         # Get the winners
         for col in columns:
             values = defaultdict(list)
             for row in group.parse_rows:
-                values[col].append(row["row_type"])
-            counts = sorted(values.items(), key=lambda p: len(p[1]))
+                values[row[col]].append(row["row_type"])
+            counts = sorted(values.items(), key=lambda v: len(v[1]))
             winner = counts[0]
-            if (len(winner[1]) == len(counts[1][1])) or (
-                args.majority and float(len(winner[1])) < len(values) / 2.0
-            ):
-                winner = None
-            if winner:
-                group.winner_row[col] = winner[0]
-                tally[col] += winner[1]  # #######################################
+            result = winner[0]
+            if len(counts) > 1 and len(winner[1]) == len(counts[1][1]):
+                result = "<no_winner>"
+            if args.majority and float(len(winner[1])) < len(values) / 2.0:
+                result = "<no_winner>"
+            result = result or "<empty>"
+            group.winner_row[col] = result
+            if result != "<no_winner>":
+                for w in winner[1]:
+                    tally[col][w] += 1
 
         row_groups.append(group)
 
@@ -124,8 +132,24 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     for group in row_groups:
         rows += group.flatten()
 
-    df = pd.DataFrame(rows)
-    df.to_csv(args.output_csv, index=False)
+    detail_df = pd.DataFrame(rows)
+
+    totals: dict[str, dict[str, Any]] = {
+        f.stem: {"row_group": "Total", "row_type": f.stem, "average": 0.0}
+        for f in args.parse_file
+    }
+    for col, counts in tally.items():
+        for stem, count in counts.items():
+            totals[stem][col] = count / len(image_paths)
+            totals[stem]["average"] += totals[stem][col]
+    for stem in totals.keys():
+        totals[stem]["average"] /= len(tally)
+
+    summary_df = pd.DataFrame(totals.values())
+
+    with pd.ExcelWriter(args.output_ods, engine="odf") as writer:
+        detail_df.to_excel(writer, sheet_name="detail", index=False)
+        summary_df.to_excel(writer, sheet_name="summary", index=False)
 
     log.finished()
 
@@ -161,16 +185,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The cleaned LLM parse file. You may compare several files at once.""",
     )
     io_group.add_argument(
-        "--output-csv",
+        "--output-ods",
         type=Path,
         required=True,
         metavar="path",
-        help="""Write the comparison results to this CSV file.""",
+        help="""Write the comparison results to this spreadsheet.""",
     )
     winner_group = arg_parser.add_argument_group("Majority options")
     winner_group.add_argument(
         "--majority",
-        action="store_try",
+        action="store_true",
         help="""Only report the a majority result as the winner.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
@@ -185,6 +209,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--notes",
         metavar="string",
         help="""Notes for logging.""",
+    )
+    debugging_group = arg_parser.add_argument_group("debugging options")
+    debugging_group.add_argument(
+        "--limit",
+        type=int,
+        metavar="int",
+        help="""Limit to this many row groups.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

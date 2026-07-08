@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for org in "nau"; do
+for org in "brit" "carnegie" "cas" "cornell" "field" "harvard" "mo" "nau" "ny" "ufl" "wisc" "wsu"; do
     uv run llama/parse_text.py \
         --ocr-file "data/herbarium/ocr_olmocr2/ocr_${org}_images.csv" \
         --parse-file "data/herbarium/gemma4_12b_raw/gemma4_12b_${org}.csv" \
@@ -9,7 +9,6 @@ for org in "nau"; do
         --api-host "http://localhost:1234/v1" \
         --temperature 0.1 \
         --timeout 300 \
-        --threads 2 \
-        --limit 50 \
+        --threads 4 \
         --log-file data/herbarium/gemma4_12b_raw/parse_text.log
 done
