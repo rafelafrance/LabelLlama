@@ -37,7 +37,7 @@ import pandas as pd
 from rapidfuzz import fuzz
 from tqdm import tqdm
 
-from llama.pylib import io_util, log
+from llama.pylib import log
 
 FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type", "source"]
 GBIF_SEARCH_MD = Path(__file__).resolve().parent / "templates" / "gbif_search.md"
@@ -190,12 +190,12 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
     # Read OCR data
-    ocr_list = io_util.read_list_of_dicts(args.ocr_file)
-    ocr_by_image = {o["source"]: o for o in ocr_list}
+    ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
+    ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Read GBIF data
-    gbif_list = io_util.read_list_of_dicts(args.gbif_file)
-    gbif_by_image = {g["source"]: g for g in gbif_list}
+    gbif_df = pd.read_csv(args.gbif_file, dtype=str).fillna("")
+    gbif_by_image = {g["source"]: g for g in gbif_df.to_dict("records")}
 
     # Init 2 of the 3 indexes for the quasi 3D struct, see this script's doc string
     image_paths = set(gbif_by_image)
@@ -204,7 +204,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     # Get parsed data
     parsed_data = {}
     for parse_file in args.parse_file:
-        llm_df = io_util.read_to_df(parse_file)
+        llm_df = pd.read_csv(args.parse_file, dtype=str).fillna("")
         column_keys |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 

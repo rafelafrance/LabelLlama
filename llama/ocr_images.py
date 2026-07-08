@@ -10,11 +10,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, image_util, io_util, prompt_util, timer
+from llama.pylib import fix_ocr, image_util, prompt_util, timer
 
 MIN_SIZE = 1024
 
@@ -31,7 +32,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     already_read = set()
     if args.ocr_file.exists() and args.ocr_file.stat().st_size >= MIN_SIZE:
         mode = "a"
-        records = io_util.read_list_of_dicts(args.ocr_file)
+        records = pd.read_csv(args.ocr_file, dtype=str).fillna("").to_dict("records")
         already_read = {
             r["source"]
             for r in records
@@ -172,7 +173,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         required=True,
         metavar="PATH",
-        help="""Put OCRed text into this file. This appends data to the file.""",
+        help="""Put OCRed text into this CSV file. This appends data to the file.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(

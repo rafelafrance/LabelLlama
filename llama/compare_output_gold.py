@@ -28,7 +28,7 @@ from pathlib import Path
 import pandas as pd
 
 from llama.fields.base_field import BaseField
-from llama.pylib import io_util, log, prompt_util
+from llama.pylib import log, prompt_util
 
 FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
 
@@ -76,11 +76,11 @@ def score_against_gold(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
     # Read OCR data
-    ocr_df = io_util.read_to_df(args.ocr_file)
+    ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
     ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Read Gold data
-    gold_df = io_util.read_to_df(args.gold_file)
+    gold_df = pd.read_csv(args.gold_file, dtype=str).fillna("")
     gold_by_image = {g["source"]: g for g in gold_df.to_dict("records")}
 
     # Init row and column indexes
@@ -90,7 +90,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     # Get parsed data
     parsed_data = {}
     for parse_file in args.llm_file:
-        llm_df = io_util.read_to_df(parse_file)
+        llm_df = pd.read_csv(parse_file, dtype=str).fillna("")
         columns |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 

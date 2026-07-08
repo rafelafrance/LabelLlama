@@ -11,12 +11,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import requests
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, io_util, prompt_util, timer
+from llama.pylib import fix_ocr, prompt_util, timer
 
 MIN_SIZE = 1024
 
@@ -32,14 +33,14 @@ def parse_text(args: argparse.Namespace) -> None:
     already_parsed = set()
     if args.parse_file.exists() and args.parse_file.stat().st_size >= MIN_SIZE:
         mode = "a"
-        records = io_util.read_list_of_dicts(args.parse_file)
+        records = pd.read_csv(args.parse_file, dtype=str).fillna("").to_dict("records")
         already_parsed = {
             r["source"]
             for r in records
             if r.get("source") and r.get("status") == "success"
         }
 
-    docs = io_util.read_list_of_dicts(args.ocr_file, fill_na="", limit=args.limit)
+    docs = pd.read_csv(args.ocr_file, dtype=str).fillna("").to_dict("records")
     docs_success = [d for d in docs if d["status"] == "success"]
     docs = [d for d in docs_success if d["source"] not in already_parsed]
 

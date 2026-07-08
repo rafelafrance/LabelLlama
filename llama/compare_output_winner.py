@@ -41,7 +41,7 @@ from typing import Any
 
 import pandas as pd
 
-from llama.pylib import io_util, log
+from llama.pylib import log
 
 FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
 
@@ -63,8 +63,8 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
     # Read OCR data
-    ocr_list = io_util.read_list_of_dicts(args.ocr_file)
-    ocr_by_image = {o["source"]: o for o in ocr_list}
+    ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
+    ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Init 2 of the 3 indexes for the quasi 3D struct, see this script's doc string
     image_paths = set(ocr_by_image)
@@ -73,7 +73,7 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     # Get parsed data
     parsed_data = {}
     for parse_file in args.parse_file:
-        llm_df = io_util.read_to_df(parse_file)
+        llm_df = pd.read_csv(parse_file, dtype=str).fillna("")
         column_keys |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 

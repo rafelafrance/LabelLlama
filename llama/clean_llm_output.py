@@ -5,15 +5,16 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 from tqdm import tqdm
 
-from llama.pylib import io_util, log, prompt_util
+from llama.pylib import log, prompt_util
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
-    df = io_util.read_to_df(args.parse_file, limit=args.limit)
+    df = pd.read_csv(args.parse_file, dtype=str).fillna("")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     field_classes = prompt.field_classes()
@@ -50,7 +51,8 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
         output_rows.append(out_row)
 
-    io_util.output_list_of_dicts(args.clean_file, output_rows)
+    df = pd.DataFrame(output_rows)
+    df.to_csv(args.clean_file, index=False)
 
     log.finished()
 
@@ -82,15 +84,14 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         required=True,
         metavar="path",
-        help="""Clean the LM this results in this file.""",
+        help="""Clean the LM in this results CSV file.""",
     )
     io_group.add_argument(
         "--clean-file",
         type=Path,
         required=True,
         metavar="path",
-        help="""Write the cleaned data to this file.
-           Handles (.json, .jsonl, .csv, .tsv, .html)""",
+        help="""Write the cleaned data to this CSV file.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(
