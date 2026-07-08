@@ -187,7 +187,7 @@ class RowGroup:
 # ----------------------------------------------------------------------------------
 def score_against_gbif(args: argparse.Namespace) -> None:
     """Compare LLM outputs against gbif data and write an HTML report."""
-    log.started(args.log_file, args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     # Read OCR data
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
@@ -274,7 +274,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         stats=stats,
     )
 
-    log.finished()
+    log.job_elapsed(job_began)
 
 
 # ----------------------------------------------------------------------------------

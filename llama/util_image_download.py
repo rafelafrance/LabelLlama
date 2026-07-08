@@ -25,7 +25,7 @@ socket.setdefaulttimeout(TIMEOUT)
 
 
 def download_images(args: argparse.Namespace) -> None:
-    log.started(args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     args.image_dir.mkdir(parents=True, exist_ok=True)
 
@@ -57,7 +57,7 @@ def download_images(args: argparse.Namespace) -> None:
         f"exists {counts['exists']} errors {counts['error']}"
     )
 
-    log.finished()
+    log.job_elapsed(job_began)
 
 
 def download(row: dict, image_dir: Path) -> str:

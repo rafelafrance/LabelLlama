@@ -15,7 +15,7 @@ csv.field_size_limit(sys.maxsize)
 
 
 def get_gbif(args: argparse.Namespace) -> None:
-    log.started(args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     logging.info("Building stems")
     gbif_ids = {p.stem: str(p) for p in args.image_dir.glob("*")}
@@ -60,7 +60,7 @@ def get_gbif(args: argparse.Namespace) -> None:
     df = pd.DataFrame(gbif)
     df.to_csv(args.gbif_file, index=False)
 
-    log.finished()
+    log.job_elapsed(job_began)
 
 
 def parse_args() -> argparse.Namespace:

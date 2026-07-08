@@ -1,3 +1,13 @@
+"""
+Setup a logger and log basic information about a script.
+
+Also time how long processes take.
+
+This is not a high-performance timer, it is used to get a general idea of how long
+certain processes take. I want the times in a format that I can easily report to
+non-technical people.
+"""
+
 import logging
 import sys
 from datetime import datetime
@@ -43,16 +53,6 @@ def log_args(args: Namespace) -> None:
         if key != "api_key":
             msg = f"Argument: {key} = {val}"
             logging.info(msg)
-
-
-"""
-Time how long processes take.
-
-This is not a high-performance timer, it is used to get a general idea of how long
-certain processes take. I want the times in a format that I can easily report to
-non-technical people. The times will live in CSV/TSV/whatever files and will get
-looked at by others.
-"""
 
 
 def job_began(

@@ -12,7 +12,7 @@ from llama.pylib import log, prompt_util
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
-    log.started(args.log_file, args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     df = pd.read_csv(args.parse_file, dtype=str).fillna("")
 
@@ -54,7 +54,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     df = pd.DataFrame(output_rows)
     df.to_csv(args.clean_file, index=False)
 
-    log.finished()
+    log.job_elapsed(job_began)
 
 
 def debugging(args: argparse.Namespace) -> bool:

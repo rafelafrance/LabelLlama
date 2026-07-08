@@ -73,7 +73,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     I'm building table with groups of rows. Each group of rows is indexed by
     the image source (its path).
     """
-    log.started(args.log_file, args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     # Read OCR data
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
@@ -152,7 +152,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     df = pd.DataFrame(rows)
     df.to_csv(args.output_csv, index=False)
 
-    log.finished()
+    log.job_elapsed(job_began)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

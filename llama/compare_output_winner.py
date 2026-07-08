@@ -60,7 +60,7 @@ class RowGroup:
 
 def compare_model_winner(args: argparse.Namespace) -> None:
     """Compare LLM outputs against each other and choose a winner."""
-    log.started(args.log_file, args=args)
+    job_began = log.job_began(args.log_file, args=args)
 
     # Read OCR data
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
@@ -149,7 +149,7 @@ def compare_model_winner(args: argparse.Namespace) -> None:
         detail_df.to_excel(writer, sheet_name="detail", index=False)
         summary_df.to_excel(writer, sheet_name="summary", index=False)
 
-    log.finished()
+    log.job_elapsed(job_began)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
