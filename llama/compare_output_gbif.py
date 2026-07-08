@@ -29,12 +29,10 @@ import logging
 import textwrap
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
-import jinja2
 import pandas as pd
 from rapidfuzz import fuzz
 from tqdm import tqdm
@@ -50,9 +48,10 @@ SEARCH_SUCCESS_THRESHOLD = 0.5
 
 
 class ScoreCat(Enum):
-    align_both = auto()
-    align_gbif_empty = auto()
-    align_parse_empty = auto()
+    aligned_both_full = auto()
+    aligned_both_empty = auto()
+    aligned_gbif_empty = auto()
+    aligned_parse_empty = auto()
     not_aligned_parse_empty = auto()
     search_fail = auto()
     search_success = auto()
@@ -60,10 +59,11 @@ class ScoreCat(Enum):
 
 @dataclass
 class Tally:
-    align_both_count: int = 0
-    align_both_average: float = 0.0
-    align_gbif_empty_count: int = 0
-    align_parse_empty_count: int = 0
+    aligned_both_full_count: int = 0
+    aligned_both_full_average: float = 0.0
+    aligned_both_empty_count: int = 0
+    aligned_gbif_empty_count: int = 0
+    aligned_parse_empty_count: int = 0
     not_aligned_parse_empty_count: int = 0
     search_fail_count: int = 0
     search_success_count: int = 0
@@ -95,13 +95,17 @@ class Score:
                         row_type = score
                         continue
                     match score.cat:
-                        case ScoreCat.align_both:
-                            tallies[row_type][col].align_both_count += 1
-                            tallies[row_type][col].align_both_average += score.score
-                        case ScoreCat.align_gbif_empty:
-                            tallies[row_type][col].align_gbif_empty_count += 1
-                        case ScoreCat.align_parse_empty:
-                            tallies[row_type][col].align_parse_empty_count += 1
+                        case ScoreCat.aligned_both_full:
+                            tallies[row_type][col].aligned_both_full_count += 1
+                            tallies[row_type][
+                                col
+                            ].aligned_both_full_average += score.score
+                        case ScoreCat.aligned_both_empty:
+                            tallies[row_type][col]
+                        case ScoreCat.aligned_gbif_empty:
+                            tallies[row_type][col].aligned_gbif_empty_count += 1
+                        case ScoreCat.aligned_parse_empty:
+                            tallies[row_type][col].aligned_parse_empty_count += 1
                         case ScoreCat.not_aligned_parse_empty:
                             tallies[row_type][col].not_aligned_parse_empty_count += 1
                         case ScoreCat.search_fail:
@@ -113,8 +117,8 @@ class Score:
         stats = defaultdict(lambda: defaultdict(dict))
         for row_type, columns in tallies.items():
             for col, tally in columns.items():
-                if tally.align_both_count != 0:
-                    tally.align_both_average /= tally.align_both_count
+                if tally.aligned_both_full_count != 0:
+                    tally.aligned_both_full_average /= tally.aligned_both_full_count
                 if tally.search_success_count != 0:
                     tally.search_success_average /= tally.search_success_count
                 stats[row_type][col] = {k: v or "" for k, v in asdict(tally).items()}
@@ -217,7 +221,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     # If the gbif cells do not match the llm cells then search for aligned data in gbif
     gbif_search = get_gbif_search()
 
-    output_type = args.output_file.suffix.lower()
+    output_type = args.output_csv.suffix.lower()
 
     # Build report lines
     row_groups: list[RowGroup] = []
@@ -280,13 +284,15 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
     # If the GBIF column has a value then we score against that
     if expect is not None:
         expect = expect.strip()
+        if not expect and not actual:
+            return Score(cat=ScoreCat.aligned_both_empty)
         if not expect:
-            return Score(cat=ScoreCat.align_gbif_empty)
+            return Score(cat=ScoreCat.aligned_gbif_empty)
         if not actual:
-            return Score(cat=ScoreCat.align_parse_empty)
+            return Score(cat=ScoreCat.aligned_parse_empty)
         score = fuzz.partial_ratio(expect, actual) / 100.0
         return Score(
-            cat=ScoreCat.align_both,
+            cat=ScoreCat.aligned_both_full,
             score=score,
             method="FPR",
             gbif_field=col,

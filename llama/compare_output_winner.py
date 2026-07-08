@@ -33,7 +33,7 @@ Output format: more or less
 
 import argparse
 import textwrap
-from collections import Counter
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -86,6 +86,7 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     # Get common columns in the original order
     columns = [k for k in column_keys if k not in FIRST_COLUMNS]
 
+    tally = defaultdict(list)
     row_groups = []
     for i, image_path in enumerate(image_paths, 1):
         group = RowGroup(
@@ -102,15 +103,20 @@ def compare_model_winner(args: argparse.Namespace) -> None:
                 {"row_type": stem, **{c: parsed_data[stem].get(c, "") for c in columns}}
             )
 
+        # Get the winners
         for col in columns:
-            values = [row[col] for row in group.parse_rows]
-            counts = Counter(values).most_common(2)
-            winner = counts[0][0]
-            if args.majority and float(counts[0][1]) < len(values) / 2.0:
-                winner = ""
-            if counts[0][1] != counts[1][1]:
-                winner = ""
-            group.winner_row[col] = winner
+            values = defaultdict(list)
+            for row in group.parse_rows:
+                values[col].append(row["row_type"])
+            counts = sorted(values.items(), key=lambda p: len(p[1]))
+            winner = counts[0]
+            if (len(winner[1]) == len(counts[1][1])) or (
+                args.majority and float(len(winner[1])) < len(values) / 2.0
+            ):
+                winner = None
+            if winner:
+                group.winner_row[col] = winner[0]
+                tally[col] += winner[1]  # #######################################
 
         row_groups.append(group)
 
