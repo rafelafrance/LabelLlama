@@ -176,15 +176,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         metavar="path",
         help="""Parse label text from this file. We need only 'source' and 'text'
-            columns for valid input, so any CSV/TSV/JSON/JSONL file with those columns
-            is fine.""",
+            columns for valid input, so any CSV file with those columns is fine.""",
     )
     io_group.add_argument(
         "--parse-file",
         type=Path,
         metavar="path",
-        help="""Write the LM results to this file.
-           Handles (.json, .jsonl, .csv, .tsv)""",
+        help="""Write the LM results to this CSV file."""
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(

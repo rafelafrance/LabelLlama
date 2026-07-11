@@ -434,10 +434,9 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             """
             Compare the outputs of language model extracts against GBIF data.
 
-            Sometimes you don't have an actual gold standard but you do have actual
-            GBIF data associated with the label images. Here I try to leverage the
-            GBIF data as a quasi-gold standard and compare the extracted data against
-            that.
+            Sometimes you don't have an actual gold standard but you do have GBIF data
+            associated with the label images. Here I try to leverage the GBIF data as a
+            quasi-gold standard and compare the extracted data against that.
 
             The problem with using GBIF data is that many columns from GBIF do not
             align with the columns in the LLM output data. For instance a UTM may be
@@ -489,7 +488,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         metavar="float",
         help="""A match between GBIF and the LLM/parser cells must be >= this value
             to be considered a success. We don't want to match on single characters
-            or other trash matches. (default %(default)s""",
+            or other trash matches. (default %(default)s)""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
