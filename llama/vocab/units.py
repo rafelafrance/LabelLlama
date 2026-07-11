@@ -8,6 +8,7 @@ with UNITS_CSV.open() as f:
     reader = csv.DictReader(f)
     UNITS = {r["pattern"]: r["replace"] for r in reader}
 
+
 def normalize(units: str) -> str:
     lc = units.lower()
     return UNITS.get(lc, lc)

@@ -49,6 +49,8 @@ scratch/
 old/
 .old/
 experiments/
+zig/
+odin/
 
 # AI agent
 .pi/

@@ -133,10 +133,12 @@ class TestFixValues(unittest.TestCase):
         assert fix_parses.to_list_of_strs(11) == ["11"]
 
     def test_to_list_of_strs_03(self) -> None:
-        assert (
-            fix_parses.to_list_of_strs([1, 2.0, True, float("nan")])
-            == ["1", "2.0", "True", ""]
-        )
+        assert fix_parses.to_list_of_strs([1, 2.0, True, float("nan")]) == [
+            "1",
+            "2.0",
+            "True",
+            "",
+        ]
 
     def test_to_list_of_strs_04(self) -> None:
         assert fix_parses.to_list_of_strs(object()) == []
@@ -152,9 +154,7 @@ class TestFixValues(unittest.TestCase):
         assert fix_parses.to_list_of_ints(11) == [11]
 
     def test_to_list_of_ints_03(self) -> None:
-        assert (
-            fix_parses.to_list_of_ints([1, 2.0, True, float("inf")]) == [1, 2, 1]
-        )
+        assert fix_parses.to_list_of_ints([1, 2.0, True, float("inf")]) == [1, 2, 1]
 
     def test_to_list_of_ints_04(self) -> None:
         assert fix_parses.to_list_of_ints(object()) == []
@@ -167,10 +167,11 @@ class TestFixValues(unittest.TestCase):
         assert fix_parses.to_list_of_floats(11) == [11.0]
 
     def test_to_list_of_floats_03(self) -> None:
-        assert (
-            fix_parses.to_list_of_floats([1, 2.3, True, float("nan")])
-            == [1.0, 2.3, 1.0]
-        )
+        assert fix_parses.to_list_of_floats([1, 2.3, True, float("nan")]) == [
+            1.0,
+            2.3,
+            1.0,
+        ]
 
     def test_to_list_of_floats_04(self) -> None:
         assert fix_parses.to_list_of_floats(object()) == []
@@ -233,10 +234,13 @@ class TestFixValues(unittest.TestCase):
         assert fix_parses.hallucinated_str("TEST", "words and more words") == ""
 
     def test_hallucinated_str_03(self) -> None:
-        assert fix_parses.hallucinated_str(
-            "Atongan River",
-            "Katanglad Mts Atongan River October 1991",
-        ) == "Atongan River"
+        assert (
+            fix_parses.hallucinated_str(
+                "Atongan River",
+                "Katanglad Mts Atongan River October 1991",
+            )
+            == "Atongan River"
+        )
 
     # ---------------------------------------------------------------------
     def test_remove_leading_punct_01(self) -> None:

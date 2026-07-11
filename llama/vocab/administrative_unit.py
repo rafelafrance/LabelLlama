@@ -11,8 +11,8 @@ CA_CSV: Path = Path(__file__).parent / "terms" / "ca_provinces.csv"
 # -----------------------------------------------------------------------
 COUNTRY_ROWS = pd.read_csv(COUNTRY_CSV).to_dict(orient="records")
 COUNTRY: dict[str, str] = {
-    r["country"].lower():
-        fix_parses.title_with_exceptions(r["country"]) for r in COUNTRY_ROWS
+    r["country"].lower(): fix_parses.title_with_exceptions(r["country"])
+    for r in COUNTRY_ROWS
 }
 
 # -----------------------------------------------------------------------

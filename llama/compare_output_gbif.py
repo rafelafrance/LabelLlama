@@ -44,13 +44,9 @@ GBIF_SEARCH_MD = Path(__file__).resolve().parent / "pylib" / "gbif_search.md"
 
 
 # ----------------------------------------------------------------------------------
-SEARCH_SUCCESS_THRESHOLD = 0.5
-
-
 class ScoreCat(Enum):
     aligned_both_full = auto()
     aligned_both_empty = auto()
-    aligned_gbif_empty = auto()
     aligned_parse_empty = auto()
     not_aligned_parse_empty = auto()
     search_fail = auto()
@@ -60,14 +56,39 @@ class ScoreCat(Enum):
 @dataclass
 class Tally:
     aligned_both_full_count: int = 0
-    aligned_both_full_average: float = 0.0
     aligned_both_empty_count: int = 0
-    aligned_gbif_empty_count: int = 0
     aligned_parse_empty_count: int = 0
+    aligned_search_fail_count: int = 0
+    aligned_search_success_count: int = 0
     not_aligned_parse_empty_count: int = 0
-    search_fail_count: int = 0
-    search_success_count: int = 0
-    search_success_average: float = 0.0
+    not_aligned_search_fail_count: int = 0
+    not_aligned_search_success_count: int = 0
+    score_sum: float = 0.0
+
+    @property
+    def total_scoreable(self) -> int:
+        return (
+            self.aligned_both_full_count
+            + self.aligned_both_empty_count
+            + self.aligned_parse_empty_count
+            + self.aligned_search_fail_count
+            + self.aligned_search_success_count
+            + self.not_aligned_search_success_count
+        )
+
+    @property
+    def total_count(self) -> int:
+        return (
+            self.total_scoreable
+            + self.not_aligned_search_fail_count
+            + self.not_aligned_parse_empty_count
+        )
+
+    @property
+    def average_score(self) -> float:
+        if self.total_scoreable == 0:
+            return 0.0
+        return self.score_sum / self.total_scoreable
 
 
 @dataclass
@@ -77,6 +98,7 @@ class Score:
     method: str = ""
     gbif_field: str = ""
     gbif_data: str = ""
+    is_aligned: bool = False
 
     def __gt__(self, other: Score) -> bool:
         return (self.score, -len(self.gbif_data)) > (other.score, -len(other.gbif_data))
@@ -92,36 +114,49 @@ class Score:
                 row_type = ""
                 for col, score in score_row.items():
                     if col == "row_type":
-                        row_type = score
+                        row_type = score  # Score is the row_type in this case
                         continue
+                    tally = tallies[row_type][col]
                     match score.cat:
                         case ScoreCat.aligned_both_full:
-                            tallies[row_type][col].aligned_both_full_count += 1
-                            tallies[row_type][
-                                col
-                            ].aligned_both_full_average += score.score
+                            tally.aligned_both_full_count += 1
+                            tally.score_sum += score.score
+
                         case ScoreCat.aligned_both_empty:
-                            tallies[row_type][col]
-                        case ScoreCat.aligned_gbif_empty:
-                            tallies[row_type][col].aligned_gbif_empty_count += 1
+                            tally.aligned_both_empty_count += 1
+                            tally.score_sum += score.score
+
                         case ScoreCat.aligned_parse_empty:
-                            tallies[row_type][col].aligned_parse_empty_count += 1
+                            tally.aligned_parse_empty_count += 1
+                            tally.score_sum += score.score
+
                         case ScoreCat.not_aligned_parse_empty:
-                            tallies[row_type][col].not_aligned_parse_empty_count += 1
-                        case ScoreCat.search_fail:
-                            tallies[row_type][col].search_fail_count += 1
-                        case ScoreCat.search_success:
-                            tallies[row_type][col].search_success_count += 1
-                            tallies[row_type][col].search_success_average += score.score
+                            tally.not_aligned_parse_empty_count += 1
+
+                        case ScoreCat.search_fail if score.is_aligned:
+                            tally.aligned_search_fail_count += 1
+                            tally.score_sum += score.score
+
+                        case ScoreCat.search_fail if not score.is_aligned:
+                            tally.not_aligned_search_fail_count += 1
+
+                        case ScoreCat.search_success if score.is_aligned:
+                            tally.aligned_search_success_count += 1
+                            tally.score_sum += score.score
+
+                        case ScoreCat.search_success if not score.is_aligned:
+                            tally.not_aligned_search_success_count += 1
+                            tally.score_sum += score.score
+
         # Make score sums an average
         stats = defaultdict(lambda: defaultdict(dict))
         for row_type, columns in tallies.items():
             for col, tally in columns.items():
-                if tally.aligned_both_full_count != 0:
-                    tally.aligned_both_full_average /= tally.aligned_both_full_count
-                if tally.search_success_count != 0:
-                    tally.search_success_average /= tally.search_success_count
-                stats[row_type][col] = {k: v or "" for k, v in asdict(tally).items()}
+                row = {k: v or "" for k, v in asdict(tally).items() if k != "score_sum"}
+                row["total_scoreable"] = tally.total_scoreable
+                row["total_count"] = tally.total_count
+                row["average_score"] = tally.average_score
+                stats[row_type][col] = row
 
         return stats
 
@@ -204,7 +239,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     # Get parsed data
     parsed_data = {}
     for parse_file in args.parse_file:
-        llm_df = pd.read_csv(args.parse_file, dtype=str).fillna("")
+        llm_df = pd.read_csv(parse_file, dtype=str).fillna("")
         column_keys |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 
@@ -253,7 +288,9 @@ def score_against_gbif(args: argparse.Namespace) -> None:
             score_row: dict[str, str | Score] = {"row_type": f"{parse_file.stem} score"}
             for col in columns:
                 actual = parse_row[col]
-                score = calc_score(col, actual, gbif_input, gbif_search)
+                score = calc_score(
+                    col, actual, gbif_input, gbif_search, args.success_threshold
+                )
                 score_row[col] = score
                 if score.gbif_field:
                     gbif_row[col].append(score)
@@ -278,33 +315,47 @@ def score_against_gbif(args: argparse.Namespace) -> None:
 
 
 # ----------------------------------------------------------------------------------
-def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Score:
-    expect = gbif_input.get(col)
+def calc_score(
+    col: str, actual: str, gbif_input: dict, gbif_search: dict, success_threshold: float
+) -> Score:
+    """Calculate the score of a LLM/parsed cell against a matching GBIF cell."""
+    is_aligned = False
 
     # If the GBIF column has a value then we score against that
-    if expect is not None:
-        expect = expect.strip()
+    if col in gbif_input:
+        expect = gbif_input.get(col).strip()
         if not expect and not actual:
-            return Score(cat=ScoreCat.aligned_both_empty)
+            return Score(
+                cat=ScoreCat.aligned_both_empty,
+                score=1.0,
+                method="EQ",
+                gbif_field=col,
+                is_aligned=True,
+            )
         if not expect:
-            return Score(cat=ScoreCat.aligned_gbif_empty)
+            is_aligned = True
+            # return Score(cat=ScoreCat.aligned_gbif_empty)
         if not actual:
-            return Score(cat=ScoreCat.aligned_parse_empty)
-        score = fuzz.partial_ratio(expect, actual) / 100.0
-        return Score(
-            cat=ScoreCat.aligned_both_full,
-            score=score,
-            method="FPR",
-            gbif_field=col,
-            gbif_data=expect,
-        )
+            return Score(cat=ScoreCat.aligned_parse_empty, is_aligned=True)
+        if expect and actual:
+            score = fuzz.partial_ratio(expect, actual) / 100.0
+            return Score(
+                cat=ScoreCat.aligned_both_full,
+                score=score,
+                method="FPR",
+                gbif_field=col,
+                gbif_data=expect,
+                is_aligned=True,
+            )
 
     # If there is not value to score against then we can't search for a value
     if not actual:
-        return Score(cat=ScoreCat.not_aligned_parse_empty, method="")
+        return Score(
+            cat=ScoreCat.not_aligned_parse_empty, method="BLANK", is_aligned=is_aligned
+        )
 
     # Try searching for a matching value in gbif_search columns and pick the best one
-    max_score = Score(cat=ScoreCat.search_fail)
+    max_score = Score(cat=ScoreCat.search_fail, is_aligned=is_aligned)
 
     for search_field in gbif_search.get(col, []):
         expect = gbif_input.get(search_field, "")
@@ -318,8 +369,9 @@ def calc_score(col: str, actual: str, gbif_input: dict, gbif_search: dict) -> Sc
             method="FPR",
             gbif_field=search_field,
             gbif_data=expect,
+            is_aligned=is_aligned,
         )
-        if score >= SEARCH_SUCCESS_THRESHOLD:
+        if score >= success_threshold:
             max_score = max(current, max_score)
 
     return max_score
@@ -428,6 +480,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         required=True,
         metavar="path",
         help="""Write the comparison results to this CSV file.""",
+    )
+    settings_group = arg_parser.add_argument_group("program settings")
+    settings_group.add_argument(
+        "--success-threshold",
+        type=float,
+        default=0.5,
+        metavar="float",
+        help="""A match between GBIF and the LLM/parser cells must be >= this value
+            to be considered a success. We don't want to match on single characters
+            or other trash matches. (default %(default)s""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
