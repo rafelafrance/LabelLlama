@@ -7,7 +7,7 @@ from typing import Any, ClassVar
 
 import yaml
 
-FIELD_PROMPT_DIR = Path("prompts") / "fields"
+FIELD_PROMPT_DIR = Path("prompts")
 
 MIN_PROMPT_LEN = 40
 
@@ -71,7 +71,7 @@ class FieldPrompt:
 @dataclass
 class Prompt:
     # -------------- ClassVars ---------------
-    text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
+    text_prompt: ClassVar[str] = "Extract data from this `text (str):\n"
     # ----------------------------------------
 
     name: str
@@ -128,15 +128,14 @@ class Prompt:
 
     @property
     def system_prompt(self) -> str:
-        if self._system_prompt:
-            return self._system_prompt
-        self._system_prompt = "\n\n".join(
-            [
-                p
-                for p in (self.base_prompt, self.field_prompts, self.field_template)
-                if p
-            ]
-        )
+        if not self._system_prompt:
+            self._system_prompt = "\n\n".join(
+                [
+                    p
+                    for p in (self.base_prompt, self.field_prompts, self.field_template)
+                    if p
+                ]
+            )
         return self._system_prompt
 
     @property

@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+from pandas.core.col import col
 import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
@@ -51,7 +52,7 @@ def extract(args: argparse.Namespace) -> None:
     statuses = {"success": 0, "error": 0, "blank": 0}
 
     with args.extractions.open(mode) as extract:
-        writer = csv.DictWriter(extract, FIRST_COLUMNS + prompt.columns)
+        writer = csv.DictWriter(extract, fieldnames=FIRST_COLUMNS + prompt.column_names)
         if mode == "w":
             writer.writeheader()
 
@@ -67,12 +68,10 @@ def extract(args: argparse.Namespace) -> None:
                 session.mount("http://", adapter)
                 session.mount("https://", adapter)
 
-            futures = {
-                executor.submit(
-                    send_to_llm, args, image_path, prompt, session
-                ): image_path
+            futures = [
+                executor.submit(send_to_llm, args, image_path, prompt, session)
                 for image_path in tasks
-            }
+            ]
 
             for future in as_completed(futures):
                 result = future.result()
@@ -106,7 +105,7 @@ def send_to_llm(
     headers = {"Content-Type": "application/json"}
     payload = {
         "messages": [
-            {"role": "system", "content": prompt.prompt},
+            {"role": "system", "content": prompt.system_prompt},
             {
                 "role": "user",
                 "content": [
@@ -168,23 +167,22 @@ def llm_reply_to_dict(content: str, prompt: prompt_util.Prompt) -> dict:
     return as_dict
 
 
-def clean_reply(dirty_row: dict, prompt: prompt_util.Prompt) -> dict:
-    clean_row = {}
+def clean_reply(in_row: dict, prompt: prompt_util.Prompt) -> dict:
+    out_row = {}
 
     for column in prompt.column_names:
         field_action = prompt.field_classes[column]
 
-        dirty_data = {k: dirty_row.get(k) for k in field_action.get_field_names()}
+        in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
-        clean_field = field_action(**dirty_data)
-        clean_field.cross_field_update(dirty_row)
+        out_field = field_action(**in_data)
+        out_field.cross_field_update(in_row)
 
-        clean_data = {
-            k: getattr(clean_field, k) for k in clean_field.get_visible_fields()
-        }
-        clean_row |= clean_data
+        cell = getattr(out_field, column)
+        cell = "" if cell == column else cell  # Stop echo where llm sets value to label
+        out_row[column] = cell
 
-    return clean_row
+    return out_row
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

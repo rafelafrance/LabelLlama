@@ -23,7 +23,7 @@ MON_NUM = r"[01]?\d"  # Month as a number
 EMPTY: set = {
     "[]", '""', "''", '{""}', "[", "]", "[empty]", "{empty}", "nan",
     "(blank)", "(not present)", "(empty)", "—", "blank", "empty", "not present",
-    "not specified",
+    "not specified", "none",
 }
 OPEN: tuple = ("(", "[", "{")
 CLOSE: tuple = (")", "]", "}")
