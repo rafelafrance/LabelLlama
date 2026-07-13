@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Habit(BaseField):
     habit: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        self.habit = fix_parses.hallucinated_str(self.habit, text)
+    def __post_init__(self) -> None:
+        self.habit = fix_parses.to_str(self.habit)

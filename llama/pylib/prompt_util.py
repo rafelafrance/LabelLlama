@@ -81,6 +81,8 @@ class Prompt:
     field_prompts: str = ""
     field_template: str = ""
     _system_prompt: str = ""
+    _columns: list[str] = field(default_factory=list)
+    _field_classes: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: Path) -> Prompt:
@@ -137,17 +139,22 @@ class Prompt:
         )
         return self._system_prompt
 
+    @property
     def field_classes(self) -> dict[str, Any]:
         """Return field classes indexed by column/header name."""
-        return {f.name: f.field_class() for f in self.fields.values()}
+        if not self._field_classes:
+            self._field_classes = {
+                f.name: f.field_class() for f in self.fields.values()
+            }
+        return self._field_classes
 
     @property
     def column_names(self) -> list[str]:
         """Get all column names."""
-        columns = []
-        for field_ in self.fields.values():
-            columns += field_.columns
-        return columns
+        if not self._columns:
+            for field_ in self.fields.values():
+                self._columns += field_.columns
+        return self._columns
 
     def build_field_prompts(self) -> str:
         formatted = [

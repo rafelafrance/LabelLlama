@@ -10,9 +10,7 @@ class VerbatimEventDate(BaseField):
     verbatimEventDate: str = ""
     eventDate: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
-
+    def __post_init__(self) -> None:
         self.verbatimEventDate = fix_parses.to_str(self.verbatimEventDate)
 
         # Remove the date label

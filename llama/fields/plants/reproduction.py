@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Reproduction(BaseField):
     reproduction: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        self.reproduction = fix_parses.hallucinated_str(self.reproduction, text)
+    def __post_init__(self) -> None:
+        self.reproduction = fix_parses.to_str(self.reproduction)

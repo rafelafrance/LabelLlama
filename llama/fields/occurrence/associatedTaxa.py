@@ -8,9 +8,7 @@ from llama.pylib import fix_parses
 class AssociatedTaxa(BaseField):
     associatedTaxa: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
-
+    def __post_init__(self) -> None:
         self.associatedTaxa = fix_parses.to_str(self.associatedTaxa)
         self.associatedTaxa = self.associatedTaxa.replace("*", "")
         self.associatedTaxa = fix_parses.remove_trailing_punct(self.associatedTaxa)

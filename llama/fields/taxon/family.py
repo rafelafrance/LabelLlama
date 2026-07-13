@@ -14,8 +14,7 @@ class Family(BaseField):
 
     family: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
+    def __post_init__(self) -> None:
         self.family = fix_parses.to_str(self.family).title()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

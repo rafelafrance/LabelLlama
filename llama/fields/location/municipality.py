@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Municipality(BaseField):
     municipality: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        self.municipality = fix_parses.hallucinated_str(self.municipality, text)
+    def __post_init__(self) -> None:
+        self.municipality = fix_parses.to_str(self.municipality)

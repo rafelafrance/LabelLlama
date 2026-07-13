@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Woodiness(BaseField):
     woodiness: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        self.woodiness = fix_parses.hallucinated_str(self.woodiness, text)
+    def __post_init__(self) -> None:
+        self.woodiness = fix_parses.to_str(self.woodiness)

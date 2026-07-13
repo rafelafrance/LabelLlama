@@ -15,8 +15,7 @@ class Utm(BaseField):
     utmEasting: str = ""
     utmZone: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
+    def __post_init__(self) -> None:
         self.utm = fix_parses.to_str(self.utm)
 
         self.utmNorthing = fix_parses.to_str(self.utmNorthing)

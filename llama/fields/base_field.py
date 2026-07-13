@@ -1,4 +1,4 @@
-from dataclasses import InitVar, dataclass, fields
+from dataclasses import dataclass, fields
 from typing import Any, ClassVar
 
 import Levenshtein
@@ -9,8 +9,6 @@ class BaseField:
     # --------------
     scoring_method: ClassVar[str] = "LR"
     # --------------
-
-    text: InitVar[str] = ""
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
         del record

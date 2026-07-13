@@ -6,7 +6,7 @@ There are three types:
 
 1. Simple prompts only have a `Base Prompt` section. I just pull in the text below the `Base Prompt` heading. See [ocr_v1.md](ocr_v1.md) for an example of this type of prompt.
 
-2. `Output Field` prompts extend `Base Prompts`with a list of target fields links to include. See [herbarium_v1.md](fields/herbarium_v1.md) for an example. 
+2. `Output Field` prompts extend `Base Prompts`with a list of target fields links to include. See [herbarium_v1.md](herbarium_v1.md) for an example. 
    
    The list of field prompts get expanded with contents of the field prompt Markdown files when generating the full prompt to the LLM.
    

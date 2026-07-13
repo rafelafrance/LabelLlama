@@ -8,8 +8,7 @@ from llama.pylib import fix_parses
 class InfraspecificEpithetAuthorship(BaseField):
     infraspecificEpithetAuthorship: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
+    def __post_init__(self) -> None:
         self.infraspecificEpithetAuthorship = fix_parses.to_str(
             self.infraspecificEpithetAuthorship
         )

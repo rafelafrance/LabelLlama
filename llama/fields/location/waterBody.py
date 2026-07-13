@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class WaterBody(BaseField):
     waterBody: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        self.waterBody = fix_parses.hallucinated_str(self.waterBody, text)
+    def __post_init__(self) -> None:
+        self.waterBody = fix_parses.to_str(self.waterBody)

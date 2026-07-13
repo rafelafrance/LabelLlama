@@ -8,7 +8,5 @@ from llama.pylib import fix_parses
 class PlantHeight(BaseField):
     plantHeight: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
-
+    def __post_init__(self) -> None:
         self.plantHeight = fix_parses.to_str(self.plantHeight)

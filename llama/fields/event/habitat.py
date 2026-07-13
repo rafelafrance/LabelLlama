@@ -16,9 +16,7 @@ class Habitat(BaseField):
 
     habitat: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
-
+    def __post_init__(self) -> None:
         self.habitat = fix_parses.to_str(self.habitat)
 
         # Remove the habitat label

@@ -16,8 +16,7 @@ class Locality(BaseField):
 
     locality: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
+    def __post_init__(self) -> None:
         self.locality = fix_parses.to_str(self.locality)
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

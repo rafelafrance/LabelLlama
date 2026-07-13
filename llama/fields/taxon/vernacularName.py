@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class VernacularName(BaseField):
     vernacularName: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        self.vernacularName = fix_parses.hallucinated_str(self.vernacularName, text)
+    def __post_init__(self) -> None:
+        self.vernacularName = fix_parses.to_str(self.vernacularName)

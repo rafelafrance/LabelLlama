@@ -10,9 +10,7 @@ from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 class Country(BaseField):
     country: str = ""
 
-    def __post_init__(self, text: str) -> None:
-        del text
-
+    def __post_init__(self) -> None:
         self.country = fix_parses.title_with_exceptions(self.country)
 
     def cross_field_update(self, record: dict[str, Any]) -> None:
