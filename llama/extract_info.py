@@ -5,7 +5,6 @@ import base64
 import csv
 import logging
 import re
-from tempfile import gettempdir
 import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -16,7 +15,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_parses, image_util, log, prompt_util
+from llama.pylib import image_util, log, prompt_util
 
 FIRST_COLUMNS = ["status", "source", "elapsed"]
 MIN_SIZE = 1024
