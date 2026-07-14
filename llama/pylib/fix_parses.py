@@ -21,9 +21,13 @@ YEAR4 = r"([12]\d\d\d)"
 MON_NUM = r"[01]?\d"  # Month as a number
 
 EMPTY: set = {
-    "[]", '""', "''", '{""}', "[", "]", "[empty]", "{empty}", "nan",
-    "(blank)", "(not present)", "(empty)", "—", "blank", "empty", "not present",
-    "not specified", "none",
+    "''", "[", "]", "[]", "—", '""', '{""}',
+    "nan",
+    "blank", "(blank)", "[blank]", "{blank}",
+    "empty", "(empty)", "[empty]", "{empty}",
+    "none", "(none)", "[none]", "{none}",
+    "not present", "(not present)", "[not present]", "{not present}",
+    "not specified", "(not specified)", "[not specified]", "{not specified}",
 }
 OPEN: tuple = ("(", "[", "{")
 CLOSE: tuple = (")", "]", "}")
@@ -285,6 +289,8 @@ def reduce_str_list(value: list[str] | str) -> str:
 
 def hallucinated_str(value: str, text: str) -> str:
     value = to_str(value)
+    if not text:
+        return value
     pattern = re.escape(str(value))
     value = value if re.search(pattern, text, flags=re.IGNORECASE) else ""
     return value

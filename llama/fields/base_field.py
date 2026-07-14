@@ -18,7 +18,6 @@ class BaseField:
     def __post_init__(self, text:str) -> None:
         """Stop LLM from setting the field value to the label (echo)."""
         del text
-
         first_field = self.get_field_names()[0]
         if getattr(self, first_field) == first_field:
             setattr(self, first_field, "")

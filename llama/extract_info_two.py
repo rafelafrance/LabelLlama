@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Extract text information from images of museum specimens using two models."""
+
 import argparse
 import base64
 import csv
