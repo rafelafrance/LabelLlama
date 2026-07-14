@@ -8,5 +8,6 @@ from llama.pylib import fix_parses
 class InstitutionCode(BaseField):
     institutionCode: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.institutionCode = fix_parses.to_str(self.institutionCode)

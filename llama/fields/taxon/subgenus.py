@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Subgenus(BaseField):
     subgenus: str = ""
 
-    def __post_init__(self) -> None:
-        self.subgenus = fix_parses.to_str(self.subgenus)
+    def __post_init__(self, text: str) -> None:
+        self.subgenus = fix_parses.hallucinated_str(self.subgenus, text)

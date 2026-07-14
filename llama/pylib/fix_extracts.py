@@ -285,6 +285,8 @@ def reduce_str_list(value: list[str] | str) -> str:
 
 def hallucinated_str(value: str, text: str) -> str:
     value = to_str(value)
+    if not text:
+        return value
     pattern = re.escape(str(value))
     value = value if re.search(pattern, text, flags=re.IGNORECASE) else ""
     return value

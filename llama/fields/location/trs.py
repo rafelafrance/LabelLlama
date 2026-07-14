@@ -13,7 +13,8 @@ class Trs(BaseField):
     trsSection: str = ""
     trsQuad: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.trs = fix_parses.to_str(self.trs)
 
         self.trsTownship = fix_parses.to_str(self.trsTownship)

@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Suborder(BaseField):
     suborder: str = ""
 
-    def __post_init__(self) -> None:
-        self.suborder = fix_parses.to_str(self.suborder)
+    def __post_init__(self, text: str) -> None:
+        self.suborder = fix_parses.hallucinated_str(self.suborder, text)

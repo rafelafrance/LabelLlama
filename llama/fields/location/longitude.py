@@ -8,5 +8,6 @@ from llama.pylib import fix_parses
 class Longitude(BaseField):
     longitude: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.longitude = fix_parses.to_str(self.longitude)

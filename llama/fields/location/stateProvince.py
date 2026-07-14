@@ -11,7 +11,7 @@ LABELS = re.compile(r"\s*(Departamento de|District|Provincia de)\s*", re.IGNOREC
 class StateProvince(BaseField):
     stateProvince: str = ""
 
-    def __post_init__(self) -> None:
-        self.stateProvince = fix_parses.to_str(self.stateProvince)
+    def __post_init__(self, text: str) -> None:
+        self.stateProvince = fix_parses.hallucinated_str(self.stateProvince, text)
         self.stateProvince = fix_parses.title_with_exceptions(self.stateProvince)
         self.stateProvince = LABELS.sub("", self.stateProvince)

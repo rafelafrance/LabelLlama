@@ -9,7 +9,9 @@ from llama.pylib import fix_parses
 class EventDate(BaseField):
     eventDate: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.eventDate = fix_parses.to_str(self.eventDate)
 
         # Remove the date label

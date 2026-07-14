@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class OccurrenceID(BaseField):
     occurrenceID: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.occurrenceID = fix_parses.to_str(self.occurrenceID)
         self.occurrenceID = re.sub(r"(#|Nº)", "", self.occurrenceID)
 

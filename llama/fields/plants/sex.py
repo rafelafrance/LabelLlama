@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class Sex(BaseField):
     sex: str = ""
 
-    def __post_init__(self) -> None:
-        self.sex = fix_parses.to_str(self.sex)
+    def __post_init__(self, text: str) -> None:
+        self.sex = fix_parses.hallucinated_str(self.sex, text)

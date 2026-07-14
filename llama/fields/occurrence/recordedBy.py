@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class RecordedBy(BaseField):
     recordedBy: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.recordedBy = fix_parses.to_str(self.recordedBy)
 
         # Remove the collector label

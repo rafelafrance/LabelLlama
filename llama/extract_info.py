@@ -11,7 +11,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from pandas.core.col import col
 import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm

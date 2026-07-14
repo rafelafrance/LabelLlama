@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class SpecificEpithet(BaseField):
     specificEpithet: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.specificEpithet = fix_parses.to_str(self.specificEpithet).lower()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

@@ -10,7 +10,8 @@ from llama.pylib import fix_parses
 class FruitPresent(BaseField):
     fruitPresent: bool | str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.fruitPresent = fix_parses.to_bool(self.fruitPresent)
 
         # Handle the case where the word "fruits" is being used as true

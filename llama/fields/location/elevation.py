@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class Elevation(BaseField):
     elevation: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.elevation = fix_parses.to_str(self.elevation)
         self.clean_verbatim_elevation()
 

@@ -8,5 +8,6 @@ from llama.pylib import fix_parses
 class InfraspecificEpithet(BaseField):
     infraspecificEpithet: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.infraspecificEpithet = fix_parses.to_str(self.infraspecificEpithet).lower()

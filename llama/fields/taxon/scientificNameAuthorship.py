@@ -8,7 +8,8 @@ from llama.pylib import fix_parses
 class ScientificNameAuthorship(BaseField):
     scientificNameAuthorship: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.scientificNameAuthorship = fix_parses.to_str(self.scientificNameAuthorship)
         self.scientificNameAuthorship = fix_parses.clean_str_ends(
             self.scientificNameAuthorship

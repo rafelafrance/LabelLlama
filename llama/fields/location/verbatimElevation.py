@@ -15,7 +15,8 @@ class VerbatimElevation(BaseField):
     elevation: float | str = ""
     maximumElevation: float | str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.verbatimElevation = fix_parses.to_str(self.verbatimElevation)
         self._elevationValues = fix_parses.to_list_of_floats(self._elevationValues)
         self.elevationUnits = fix_parses.to_list_of_strs(self.elevationUnits)

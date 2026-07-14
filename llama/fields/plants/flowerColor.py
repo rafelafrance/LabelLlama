@@ -8,6 +8,6 @@ from llama.pylib import fix_parses
 class FlowerColor(BaseField):
     flowerColor: str = ""
 
-    def __post_init__(self) -> None:
-        self.flowerColor = fix_parses.to_str(self.flowerColor)
+    def __post_init__(self, text: str) -> None:
+        self.flowerColor = fix_parses.hallucinated_str(self.flowerColor, text)
         self.flowerColor = fix_parses.remove_trailing_punct(self.flowerColor)

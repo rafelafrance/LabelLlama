@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class Genus(BaseField):
     genus: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.genus = fix_parses.to_str(self.genus).capitalize()
 
     def cross_field_update(self, record: dict[str, Any]) -> None:

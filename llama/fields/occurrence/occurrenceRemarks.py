@@ -16,7 +16,8 @@ class OccurrenceRemarks(BaseField):
 
     occurrenceRemarks: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.occurrenceRemarks = fix_parses.to_str(self.occurrenceRemarks)
 
         # Remove easy to get ID number labels

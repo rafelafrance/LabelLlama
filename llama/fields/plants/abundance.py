@@ -8,6 +8,6 @@ from llama.pylib import fix_parses
 class Abundance(BaseField):
     abundance: str = ""
 
-    def __post_init__(self) -> None:
-        self.abundance = fix_parses.to_str(self.abundance)
+    def __post_init__(self, text: str) -> None:
+        self.abundance = fix_parses.hallucinated_str(self.abundance, text)
         self.abundance = fix_parses.remove_trailing_punct(self.abundance)

@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class Sex(BaseField):
     sex: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.sex = fix_parses.to_str(self.sex)
 
         sex = set()

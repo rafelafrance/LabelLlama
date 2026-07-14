@@ -9,7 +9,9 @@ from llama.pylib import fix_parses
 class County(BaseField):
     county: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.county = fix_parses.to_str(self.county)
 
         # Remove the county label

@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class GeodeticDatum(BaseField):
     geodeticDatum: str = ""
 
-    def __post_init__(self) -> None:
-        self.geodeticDatum = fix_parses.to_str(self.geodeticDatum)
+    def __post_init__(self, text: str) -> None:
+        self.geodeticDatum = fix_parses.hallucinated_str(self.geodeticDatum, text)

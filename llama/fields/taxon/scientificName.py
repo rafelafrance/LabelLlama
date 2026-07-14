@@ -9,7 +9,8 @@ from llama.pylib import fix_parses
 class ScientificName(BaseField):
     scientificName: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
         self.scientificName = fix_parses.to_str(self.scientificName)
         self.scientificName = re.sub(r"[^\w\s]", "", self.scientificName).strip()
 

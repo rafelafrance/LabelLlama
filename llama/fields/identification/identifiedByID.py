@@ -9,7 +9,9 @@ from llama.pylib import fix_parses
 class IdentifiedByID(BaseField):
     identifiedByID: str = ""
 
-    def __post_init__(self) -> None:
+    def __post_init__(self, text: str) -> None:
+        del text
+
         self.identifiedByID = fix_parses.to_str(self.identifiedByID)
         self.identifiedByID = re.sub(r"(#|Nº)", "", self.identifiedByID)
 

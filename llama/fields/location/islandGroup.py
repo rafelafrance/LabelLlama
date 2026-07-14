@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class IslandGroup(BaseField):
     islandGroup: str = ""
 
-    def __post_init__(self) -> None:
-        self.islandGroup = fix_parses.to_str(self.islandGroup)
+    def __post_init__(self, text: str) -> None:
+        self.islandGroup = fix_parses.hallucinated_str(self.islandGroup, text)

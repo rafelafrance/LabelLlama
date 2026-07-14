@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class LifeCycle(BaseField):
     lifeCycle: str = ""
 
-    def __post_init__(self) -> None:
-        self.lifeCycle = fix_parses.to_str(self.lifeCycle)
+    def __post_init__(self, text: str) -> None:
+        self.lifeCycle = fix_parses.hallucinated_str(self.lifeCycle, text)

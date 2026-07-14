@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class LeafDuration(BaseField):
     leafDuration: str = ""
 
-    def __post_init__(self) -> None:
-        self.leafDuration = fix_parses.to_str(self.leafDuration)
+    def __post_init__(self, text: str) -> None:
+        self.leafDuration = fix_parses.hallucinated_str(self.leafDuration, text)

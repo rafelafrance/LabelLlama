@@ -8,5 +8,5 @@ from llama.pylib import fix_parses
 class LifeForm(BaseField):
     lifeForm: str = ""
 
-    def __post_init__(self) -> None:
-        self.lifeForm = fix_parses.to_str(self.lifeForm)
+    def __post_init__(self, text: str) -> None:
+        self.lifeForm = fix_parses.hallucinated_str(self.lifeForm, text)
