@@ -182,7 +182,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--parse-file",
         type=Path,
         metavar="path",
-        help="""Write the LM results to this CSV file."""
+        help="""Write the LM results to this CSV file.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(

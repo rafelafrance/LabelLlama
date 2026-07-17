@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 
-"""Extract text information from images of museum specimens using one model."""
+"""
+Extract text information from images of museum specimens using two models.
+
+One model for OCR and another model for parsing. Will this speed up the pipeline or
+even make things more convenient or make these scripts more amenable to an agent?
+The is really just combining these 3 scripts into a single script.
+- llama/ocr_images.py
+- llama/parse_text.py
+- llama/clean_llm_output.py
+"""
 
 import argparse
 import base64
@@ -236,7 +245,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=2,
         metavar="int",
-        help="""How many parallel threads to run. (default: %(default)s)"""
+        help="""How many parallel threads to run. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--timeout",

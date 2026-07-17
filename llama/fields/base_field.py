@@ -15,13 +15,6 @@ class BaseField:
     def cross_field_update(self, record: dict[str, Any]) -> None:
         del record
 
-    def __post_init__(self, text:str) -> None:
-        """Stop LLM from setting the field value to the label (echo)."""
-        del text
-        first_field = self.get_field_names()[0]
-        if getattr(self, first_field) == first_field:
-            setattr(self, first_field, "")
-
     @classmethod
     def get_field_names(cls) -> list[str]:
         """Get all of the field names within a class."""

@@ -2,7 +2,7 @@
 
 # for org in "brit" "carnegie" "cornell" "field" "harvard" "nau" "ufl" "wisc" "wsu"; do
 for org in "brit"; do
-    uv run ./llama/extract_info_one.py \
+    uv run ./llama/extract_info_one_model.py \
         --image-dir "data/herbarium/images/${org}_images" \
         --extractions "data/herbarium/extractions/extractions_${org}.csv" \
         --api-host http://localhost:8080/v1 \

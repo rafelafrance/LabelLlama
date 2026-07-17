@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Extract text information from images of museum specimens using two models."""
+"""Extract text information from images of museum specimens using one model."""
 
 import argparse
 import base64
@@ -236,7 +236,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=2,
         metavar="int",
-        help="""How many parallel threads to run. (default: %(default)s)"""
+        help="""How many parallel threads to run. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--timeout",
