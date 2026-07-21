@@ -12,9 +12,6 @@ class BaseField:
 
     text: InitVar[str] = ""
 
-    def cross_field_update(self, record: dict[str, Any]) -> None:
-        del record
-
     @classmethod
     def get_field_names(cls) -> list[str]:
         """Get all of the field names within a class."""

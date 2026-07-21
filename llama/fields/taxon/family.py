@@ -18,14 +18,6 @@ class Family(BaseField):
         del text
         self.family = fix_parses.to_str(self.family).title()
 
-    def cross_field_update(self, record: dict[str, Any]) -> None:
-        """Add a family name using the genus if the family is missing."""
-        if not self.family:
-            sci_name = fix_parses.to_str(record.get("scientificName", ""))
-            words = sci_name.split()
-            genus = words[0] if len(words) > 0 else ""
-            self.family = GENUS_TO_FAMILY.get(genus, "")
-
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
         genus = record.get("scientificName", "").split()

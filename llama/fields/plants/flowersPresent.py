@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass
-from typing import Any
 
 from llama.fields.base_field import BaseField
 from llama.pylib import fix_parses
@@ -22,8 +21,3 @@ class FlowersPresent(BaseField):
             )
 
         self.flowersPresent = self.flowersPresent or ""
-
-    def cross_field_update(self, record: dict[str, Any]) -> None:
-        """Set flowersPresent to True if there are flower colors."""
-        if not self.flowersPresent and record["flowerColor"]:
-            self.flowersPresent = True

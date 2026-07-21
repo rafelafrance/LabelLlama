@@ -11,8 +11,8 @@ from typing import Any
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 
-INT = re.compile(r"\d+")
-FLOAT = re.compile(r" \d+ (?: \.\d* )? | \.\d+", flags=re.VERBOSE)
+INT = re.compile(r"[\d,]+")
+FLOAT = re.compile(r" \d+ [\d,.]* | \.\d+", flags=re.VERBOSE)
 
 # For parsing dates
 SEP = r"[\s(.,/_'-]+"  # Date month, day, year separators
@@ -140,7 +140,7 @@ def to_list_of_ints(value: Any) -> list[int]:
     match value:
         case str():
             value = re.sub(r",", "", value)
-            return [int(v) for v in INT.findall(value)]
+            return [i for v in INT.findall(value) if (i := str_to_int(v)) is not None]
         case float() if math.isnan(value) or math.isinf(value):
             return []
         case int() | float() | bool():
@@ -159,7 +159,9 @@ def to_list_of_floats(value: Any) -> list[float]:
     match value:
         case str():
             value = re.sub(r",", "", value)
-            return [float(v) for v in FLOAT.findall(value)]
+            return [
+                f for v in FLOAT.findall(value) if (f := str_to_float(v)) is not None
+            ]
         case float() if math.isnan(value) or math.isinf(value):
             return []
         case int() | float() | bool():
@@ -173,13 +175,13 @@ def to_list_of_floats(value: Any) -> list[float]:
 
 
 def str_to_float(value: str) -> float | None:
-    value = re.sub(r",", "", value)
+    value = value.replace(",", "")
     m = FLOAT.search(value)
     return float(m[0]) if m else None
 
 
 def str_to_int(value: str) -> int | None:
-    value = re.sub(r",", "", value)
+    value = value.replace(",", "")
     m = INT.search(value)
     return int(m[0]) if m else None
 

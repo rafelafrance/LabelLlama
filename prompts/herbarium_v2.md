@@ -76,6 +76,8 @@ I want you to extract the following information, if the information is not there
 
 # Calculated Fields
 
+- [eventDate](../llama/calculated/event/eventDate.py)
+- [elevation](../llama/calculated/location/elevation.py)
 - [country](../llama/calculated/location/country.py)
 - [locality](../llama/calculated/location/locality.py)
 - [recordNumber](../llama/calculated/occurrence/recordNumber.py)
