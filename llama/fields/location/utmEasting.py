@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from llama.fields.base_field import BaseField
+from llama.fields.extracted_field import ExtractedField
 from llama.pylib import fix_parses
 
 # Remove these extra values
@@ -8,7 +8,7 @@ EMPTY_NE: tuple = ("0", "0.0")
 
 
 @dataclass
-class UtmEasting(BaseField):
+class UtmEasting(ExtractedField):
     utmEasting: str = ""
 
     def __post_init__(self, text: str) -> None:

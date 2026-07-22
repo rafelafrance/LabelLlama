@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 
-from llama.fields.base_field import BaseField
+from llama.fields.extracted_field import ExtractedField
 from llama.pylib import fix_parses
 
 
 @dataclass
-class PlantSizes(BaseField):
+class PlantSizes(ExtractedField):
     plantSizes: list[str] | str = field(default_factory=list)
 
     def __post_init__(self, text: str) -> None:

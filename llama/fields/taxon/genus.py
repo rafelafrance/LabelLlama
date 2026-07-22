@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Any
 
-from llama.fields.base_field import BaseField
+from llama.fields.extracted_field import ExtractedField
 from llama.pylib import fix_parses
 
 
 @dataclass
-class Genus(BaseField):
+class Genus(ExtractedField):
     genus: str = ""
 
     def __post_init__(self, text: str) -> None:

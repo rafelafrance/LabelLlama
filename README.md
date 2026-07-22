@@ -1,4 +1,4 @@
-# Label Llamam
+# Label Llama
 
 ## The view from 30,000 feet
 
@@ -26,15 +26,13 @@ uv sync
 
 #### LMStudio
 
-lmstudio` is a wrapper and GUI around the `llama.cpp` library.
+lmstudio`is a wrapper and GUI around the`llama.cpp`library.
 The GUI is convenient for downloading and running models locally.
-Note you may run LM-Studio headless with `lms daemon`.
+Note you may run LM-Studio headless with`lms daemon`.
 Of, course you don't have to run any models locally.
 I use local models to OCR text on images of specimens and cleaning LM output some fields.
 
 You can get the LM-Studio GUI and daemon [here](https://lmstudio.ai/)
-
-
 
 ```bash
 lms daemon up

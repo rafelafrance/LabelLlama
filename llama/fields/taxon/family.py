@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from llama.fields.base_field import BaseField
+from llama.fields.extracted_field import ExtractedField
 from llama.pylib import fix_parses
 from llama.vocab.taxon import GENUS_TO_FAMILY
 
 
 @dataclass
-class Family(BaseField):
+class Family(ExtractedField):
     # --------------
     scoring_method: ClassVar[str] = "CUST"
     # --------------
@@ -27,4 +27,4 @@ class Family(BaseField):
         if not expect and GENUS_TO_FAMILY.get(genus) == actual:
             return 1.0
 
-        return BaseField.score(expect, actual, record)  # Default to edit distance
+        return ExtractedField.score(expect, actual, record)  # Default to edit distance

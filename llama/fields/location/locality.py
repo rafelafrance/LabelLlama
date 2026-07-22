@@ -3,12 +3,12 @@ from typing import Any, ClassVar
 
 from rapidfuzz import fuzz
 
-from llama.fields.base_field import BaseField
+from llama.fields.extracted_field import ExtractedField
 from llama.pylib import fix_parses
 
 
 @dataclass
-class Locality(BaseField):
+class Locality(ExtractedField):
     # --------------
     scoring_method: ClassVar[str] = "FPR"
     # --------------

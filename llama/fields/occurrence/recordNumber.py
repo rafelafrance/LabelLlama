@@ -1,14 +1,14 @@
 import re
 from dataclasses import dataclass
 
-from llama.fields.base_field import BaseField
+from llama.fields.extracted_field import ExtractedField
 from llama.pylib import fix_parses
 
 SOURCE_THRESHOLD = 75.0
 
 
 @dataclass
-class RecordNumber(BaseField):
+class RecordNumber(ExtractedField):
     recordNumber: str = ""
 
     def __post_init__(self, text: str) -> None:
