@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from llama.calculated.calculated_field import CalculatedField
-from llama.pylib import fix_parses
 from llama.vocab import about, units
 
 
@@ -21,12 +20,12 @@ class Elevation(CalculatedField):
     elevationEstimated: bool | str = ""
 
     def __post_init__(self, record: dict[str, Any]) -> None:
-        elev = fix_parses.to_str(record.get("verbatimElevation"))
+        elev = self.to_str(record.get("verbatimElevation"))
 
         units_ = [u.lower() for u in units.get_length_units(elev)]
 
-        values = fix_parses.FLOAT.findall(elev)
-        values = fix_parses.to_list_of_floats(values)
+        values = self.FLOAT.findall(elev)
+        values = self.to_list_of_floats(values)
 
         # Make sure every value has units
         if len(values) > len(units_):

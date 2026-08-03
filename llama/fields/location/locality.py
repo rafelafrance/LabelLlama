@@ -4,7 +4,6 @@ from typing import Any, ClassVar
 from rapidfuzz import fuzz
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import fix_parses
 
 
 @dataclass
@@ -17,7 +16,7 @@ class Locality(ExtractedField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.locality = fix_parses.to_str(self.locality)
+        self.locality = self.to_str(self.locality)
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

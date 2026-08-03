@@ -3,9 +3,11 @@ from typing import Any, ClassVar
 
 import Levenshtein
 
+from llama.pylib.fix_parses import FixParses
+
 
 @dataclass
-class BaseField:
+class BaseField(FixParses):
     # --------------
     scoring_method: ClassVar[str] = "LR"
     # --------------

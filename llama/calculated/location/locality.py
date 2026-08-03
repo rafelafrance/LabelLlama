@@ -5,7 +5,6 @@ from typing import Any, ClassVar
 from rapidfuzz import fuzz
 
 from llama.calculated.calculated_field import CalculatedField
-from llama.pylib import fix_parses
 
 
 @dataclass
@@ -28,7 +27,7 @@ class Locality(CalculatedField):
             r"\b(co\.?|county)\b", "", self.locality, flags=re.IGNORECASE
         )
 
-        self.locality = fix_parses.clean_str_ends(self.locality)
+        self.locality = self.clean_str_ends(self.locality)
         self.locality = " ".join(self.locality.split())
 
     @staticmethod

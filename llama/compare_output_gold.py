@@ -105,7 +105,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     columns = [k for k in columns if k not in FIRST_COLUMNS]
 
     # Load scoring classes
-    field_classes = prompt_util.Prompt.load(args.prompt).field_classes()
+    field_classes = prompt_util.Prompt.load(args.prompt).field_classes
 
     # Build rows for each group
     row_groups = []

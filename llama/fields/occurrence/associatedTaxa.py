@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import fix_parses
 
 
 @dataclass
@@ -10,7 +9,7 @@ class AssociatedTaxa(ExtractedField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.associatedTaxa = fix_parses.to_str(self.associatedTaxa)
+        self.associatedTaxa = self.to_str(self.associatedTaxa)
         self.associatedTaxa = self.associatedTaxa.replace("*", "")
-        self.associatedTaxa = fix_parses.remove_trailing_punct(self.associatedTaxa)
+        self.associatedTaxa = self.remove_trailing_punct(self.associatedTaxa)
         self.associatedTaxa = " ".join(self.associatedTaxa.split())

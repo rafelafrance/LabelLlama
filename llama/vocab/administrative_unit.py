@@ -1,8 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
-
-from llama.pylib import fix_parses
+from pylib.fix_parses import FixParses
 
 COUNTRY_CSV: Path = Path(__file__).parent / "terms" / "countries.csv"
 USA_CSV: Path = Path(__file__).parent / "terms" / "us_locations.csv"
@@ -11,7 +10,7 @@ CA_CSV: Path = Path(__file__).parent / "terms" / "ca_provinces.csv"
 # -----------------------------------------------------------------------
 COUNTRY_ROWS = pd.read_csv(COUNTRY_CSV).to_dict(orient="records")
 COUNTRY: dict[str, str] = {
-    r["country"].lower(): fix_parses.title_with_exceptions(r["country"])
+    r["country"].lower(): FixParses.title_with_exceptions(r["country"])
     for r in COUNTRY_ROWS
 }
 

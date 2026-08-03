@@ -2,7 +2,6 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import fix_parses
 
 
 @dataclass
@@ -11,5 +10,5 @@ class TrsQuad(ExtractedField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.trsQuad = fix_parses.to_str(self.trsQuad)
+        self.trsQuad = self.to_str(self.trsQuad)
         self.trsQuad = re.sub(r"\b(quad\w*|q\.?)\b", "", self.trsQuad).strip()

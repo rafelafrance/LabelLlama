@@ -2,7 +2,6 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import fix_parses
 
 
 @dataclass
@@ -11,7 +10,7 @@ class OccurrenceID(ExtractedField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.occurrenceID = fix_parses.to_str(self.occurrenceID)
+        self.occurrenceID = self.to_str(self.occurrenceID)
         self.occurrenceID = re.sub(r"(#|Nº)", "", self.occurrenceID)
 
         # Remove the label

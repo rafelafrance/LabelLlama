@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import fix_parses
 from llama.vocab.taxon import GENUS_TO_FAMILY
 
 
@@ -16,7 +15,7 @@ class Family(ExtractedField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.family = fix_parses.to_str(self.family).title()
+        self.family = self.to_str(self.family).title()
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:

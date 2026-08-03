@@ -2,7 +2,6 @@ import re
 from dataclasses import dataclass
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import fix_parses
 
 
 @dataclass
@@ -12,7 +11,7 @@ class EventDate(ExtractedField):
     def __post_init__(self, text: str) -> None:
         del text
 
-        self.eventDate = fix_parses.to_str(self.eventDate)
+        self.eventDate = self.to_str(self.eventDate)
 
         # Remove the date label
         self.eventDate = re.sub(
@@ -21,6 +20,6 @@ class EventDate(ExtractedField):
 
         # Handle date ranges
         dates = self.eventDate.split("|")
-        dates = [fix_parses.date_to_iso(d) for d in dates]
+        dates = [self.date_to_iso(d) for d in dates]
 
         self.eventDate = self.eventDate or " to ".join(dates)
