@@ -71,7 +71,7 @@ class FieldPrompt:
 @dataclass
 class Prompt:
     # -------------- ClassVars ---------------
-    text_prompt: ClassVar[str] = "Extract data from this `text (str):\n"
+    text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
     # ----------------------------------------
 
     name: str
