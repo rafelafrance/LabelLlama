@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-"""Extract text information from images of museum specimens using one model."""
+"""
+Extract text information from images of museum specimens using a single model.
+
+Normally, I would use 2 models, one for OCR and another for parsing text.
+"""
 
 import argparse
 import base64

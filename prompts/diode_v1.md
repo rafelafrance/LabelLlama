@@ -1,5 +1,5 @@
 ---
-name: diode
+name: diode_v1
 description: Extract information from labels on images of Odonata museum specimens.
 ---
 

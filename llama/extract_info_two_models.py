@@ -4,8 +4,8 @@
 Extract text information from images of museum specimens using two models.
 
 One model for OCR and another model for parsing. Will this speed up the pipeline or
-even make things more convenient or make these scripts more amenable to an agent?
-The is really just combining these 3 scripts into a single script.
+even make things more convenient.
+The is really just combining these 3 scripts merged into a single script.
 - llama/ocr_images.py
 - llama/parse_text.py
 - llama/clean_llm_output.py

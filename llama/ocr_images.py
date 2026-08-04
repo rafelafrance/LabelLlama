@@ -7,20 +7,16 @@ import logging
 import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, image_util, log, prompt_util
-
-MIN_SIZE = 1024
-
-COLUMN_NAMES = ["status", "source", "text", "elapsed"]
-
+from llama.pylib import fix_ocr, log, prompt_util
+from llama.pylib.ocr_util import OcrDocs, OcrModelArgs, OcrResult, OcrStatus
 
 DEFAULT_POOL = 10
 
@@ -28,34 +24,30 @@ DEFAULT_POOL = 10
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    mode = "w"  # Used as a flag for writing the header elsewise "a" would work
-    already_read = set()
-    if args.ocr_file.exists() and args.ocr_file.stat().st_size >= MIN_SIZE:
-        mode = "a"
-        records = pd.read_csv(args.ocr_file, dtype=str).fillna("").to_dict("records")
-        already_read = {
-            r["source"]
-            for r in records
-            if r.get("source") and r.get("status") == "success"
-        }
+    ocr_docs = OcrDocs.read_image_dir(args.image_dir, args.ocr_file, args.limit)
+    tasks = ocr_docs.to_do()
 
-    image_paths = image_util.get_images(args.image_dir, args.limit)
-
-    total, done = len(image_paths), len(already_read)
-    logging.info(f"There are {total} images to OCR")
-    logging.info(f"{done} images were already done.")
-    logging.info(f"There are {total - done} images left to OCR.")
+    logging.info(f"There are {ocr_docs.total} images to OCR")
+    logging.info(f"{ocr_docs.previously_done} images were already done.")
+    logging.info(f"There are {ocr_docs.remaining} images left to OCR.")
 
     prompt = prompt_util.Prompt.load(args.prompt)
     prompt.log_size()
 
-    tasks = [path for path in image_paths if str(path) not in already_read]
-
     statuses = defaultdict(int)
 
-    with args.ocr_file.open(mode) as ocr_file:
-        writer = csv.DictWriter(ocr_file, COLUMN_NAMES)
-        if mode == "w":
+    model_args = OcrModelArgs(
+        api_host=args.api_host,
+        model_name=args.model_name,
+        temperature=args.temperature,
+        max_tokens=args.max_tokans,
+        timeout=args.timeout,
+        convert_html=args.convert_html,
+    )
+
+    with args.ocr_file.open(ocr_docs.ocr_file_mode) as ocr_file:
+        writer = csv.DictWriter(ocr_file, ocr_docs.column_names)
+        if ocr_docs.ocr_file_mode == "w":
             writer.writeheader()
 
         with (
@@ -70,34 +62,34 @@ def ocr_images(args: argparse.Namespace) -> None:
                 session.mount("http://", adapter)
                 session.mount("https://", adapter)
 
-            futures = {
+            futures = [
                 executor.submit(
-                    call_ocr, args, image_path, prompt.system_prompt, session
-                ): image_path
+                    call_ocr, model_args, image_path, prompt.system_prompt, session
+                )
                 for image_path in tasks
-            }
+            ]
 
             for future in as_completed(futures):
                 result = future.result()
-                statuses[result["status"]] += 1
-                writer.writerow(result)
+                statuses[result.status] += 1
+                writer.writerow(asdict(result))
                 pbar.update(1)
                 ocr_file.flush()
 
     logging.info(
-        f"Total {len(image_paths)} documents processed with {statuses['ERROR']} errors "
-        f"and {len(already_read)} documents were skipped."
+        f"Total {ocr_docs.total} documents processed with {statuses['ERROR']} errors "
+        f"and {ocr_docs.previously_done} documents were skipped."
     )
 
     log.job_elapsed(job_began)
 
 
 def call_ocr(
-    args: argparse.Namespace,
+    args: OcrModelArgs,
     image_path: Path,
     sys_prompt: str,
     session: requests.Session,
-) -> dict:
+) -> OcrResult:
     began = datetime.now()
 
     with image_path.open("rb") as f:
@@ -106,7 +98,7 @@ def call_ocr(
     url = f"{args.api_host}/chat/completions"
     headers = {"Content-Type": "application/json"}
     payload = {
-        "model": args.model,
+        "model": args.model_name,
         "messages": [
             {"role": "system", "content": sys_prompt},
             {
@@ -138,19 +130,19 @@ def call_ocr(
             content = fix_ocr.html_to_md(content)
 
         text = fix_ocr.clean_ocr(content)
-        status = "success"
+        status = OcrStatus.SUCCESS
 
     except requests.exceptions.RequestException as err:
         logging.exception(f"OCR error for: {image_path.name}")
         text = str(err)
-        status = "ERROR"
+        status = OcrStatus.ERROR
 
-    result = {
-        "status": status,
-        "source": str(image_path),
-        "text": text,
-        "elapsed": str(log.task_elapsed(began)),
-    }
+    result = OcrResult(
+        status=status,
+        source=str(image_path),
+        elapsed=str(log.task_elapsed(began)),
+        text=text,
+    )
 
     return result
 
@@ -185,15 +177,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             (default: %(default)s)""",
     )
     model_group = arg_parser.add_argument_group("model options")
+    model_defaults = OcrModelArgs()
     model_group.add_argument(
-        "--model",
-        default="chandra-ocr",
+        "--model-name",
+        default=model_defaults.model_name,
         metavar="STRING",
         help="""Use this language model. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--api-host",
-        default="http://localhost:1234/v1",
+        default=model_defaults.api_host,
         metavar="STRING",
         help="""URL for the language model. (default: %(default)s)
             The default is for LM-Studio, but you could use Ollama's or another
@@ -202,7 +195,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--threads",
         type=int,
-        default=2,
+        default=model_defaults.threads,
         metavar="INT",
         help="""How many parallel threads to run. (default: %(default)s)
             Increase this if the model server is powerful enough.""",
@@ -210,7 +203,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--temperature",
         type=float,
-        default=0.1,
+        default=model_defaults.temperature,
         metavar="FLOAT",
         help="""Model's temperature. (default: %(default)s)
             We don't want the model to get creative, so keep this value low.""",
@@ -218,7 +211,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--max-tokens",
         type=int,
-        default=2048,
+        default=model_defaults.max_tokens,
         metavar="INT",
         help="""The OCR model's response maximum tokens. (default: %(default)s)
             2048 tokens is roughly 1.5K words, which is more than enough for most
@@ -227,7 +220,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--timeout",
         type=int,
-        default=120,
+        default=model_defaults.timeout,
         metavar="INT",
         help="""How long to wait for the OCR model to complete in seconds.
             (default: %(default)s) 2 minutes is a life time for OCR.""",

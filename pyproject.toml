@@ -11,7 +11,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Raphael LaFrance", email = "raphael.lafrance@gmail.com" }]
 requires-python = ">=3.14"
 dependencies = [
-  "avif[pillow]>=2026.4.7",
+  "duckdb>=1.5.5",
   "jinja2>=3.1.6",
   "levenshtein>=0.27.3",
   "lxml>=6.1.1",
@@ -20,12 +20,10 @@ dependencies = [
   "pandas>=3.0.3",
   "pillow>=12.3.0",
   "pyarrow>=22.0.0",
-  "pygbif>=0.6.6",
   "python-dotenv>=1.2.2",
   "pyyaml>=6.0.3",
   "rapidfuzz>=3.14.3",
   "requests>=2.34.2",
-  "rich>=15.0.0",
   "tqdm>=4.67.1",
 ]
 
@@ -54,6 +52,7 @@ ignore = [
   "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
   "C901",    # Function is too complex (n > 10)
   "COM812",  # Trailing comma missing
+  "CPY001",  # Missing copyright notice at top of file
   "D100",    # Missing docstring in public module
   "D101",    # Missing docstring in public class
   "D102",    # Missing docstring in public method
