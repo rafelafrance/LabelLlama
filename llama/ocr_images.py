@@ -24,7 +24,9 @@ DEFAULT_POOL = 10
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    ocr_docs = OcrDocs.read_image_dir(args.image_dir, args.ocr_file, args.limit)
+    ocr_docs = OcrDocs.ocr_docs(
+        args.image_dir, args.image_glob, args.ocr_file, args.limit
+    )
     tasks = ocr_docs.to_do()
 
     logging.info(f"There are {ocr_docs.total} images to OCR")
@@ -40,13 +42,13 @@ def ocr_images(args: argparse.Namespace) -> None:
         api_host=args.api_host,
         model_name=args.model_name,
         temperature=args.temperature,
-        max_tokens=args.max_tokans,
+        max_tokens=args.max_tokens,
         timeout=args.timeout,
         convert_html=args.convert_html,
     )
 
     with args.ocr_file.open(ocr_docs.ocr_file_mode) as ocr_file:
-        writer = csv.DictWriter(ocr_file, ocr_docs.column_names)
+        writer = csv.DictWriter(ocr_file, ocr_docs.field_names)
         if ocr_docs.ocr_file_mode == "w":
             writer.writeheader()
 
@@ -155,10 +157,14 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     io_group = arg_parser.add_argument_group("I/O options")
     io_group.add_argument(
         "--image-dir",
-        type=Path,
-        required=True,
         metavar="PATH",
         help="""OCR all images in this directory.""",
+    )
+    io_group.add_argument(
+        "--image-glob",
+        metavar="GLOB",
+        help="""Get all images matching this glob/pattern. You will need to quote this
+            argument. An example: 'museum/data/images1/*.jpg'""",
     )
     io_group.add_argument(
         "--ocr-file",

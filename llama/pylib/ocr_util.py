@@ -40,25 +40,40 @@ class OcrResult:
 @dataclass
 class OcrDocs:
     image_dir: Path | None = None
+    image_glob: str = ""
     ocr_file: Path | None = None
+    ocr_file_mode: str = "w"
     image_paths: list[Path] = field(default_factory=list)
     already_read: set[str] = field(default_factory=set)
     records: list[OcrResult] = field(default_factory=list)
-    ocr_file_mode: str = "w"
+    limit: int | None = None
 
     @classmethod
-    def read_image_dir(
-        cls, image_dir: Path, ocr_file: Path | None = None, limit: int | None = None
+    def ocr_docs(
+        cls,
+        image_dir: Path,
+        image_glob: str = "",
+        ocr_file: Path | None = None,
+        limit: int | None = None,
     ) -> OcrDocs:
         docs = cls(
             image_dir=image_dir,
+            image_glob=image_glob,
             ocr_file=ocr_file,
+            limit=limit,
         )
-        docs.image_paths = image_util.get_images(image_dir, limit)
 
+        docs.image_paths = image_util.get_images(image_dir, image_glob)
+        docs.image_paths = docs.image_paths[:limit]
+
+        docs.read_ocr_records(ocr_file)
+        docs.get_already_read()
+        return docs
+
+    def read_ocr_records(self, ocr_file: Path | None) -> None:
         if ocr_file and ocr_file.exists() and ocr_file.stat().st_size >= MIN_SIZE:
-            docs.ocr_file_mode = "a"
-            docs.records = [
+            self.ocr_file_mode = "a"
+            self.records = [
                 OcrResult(
                     status=r.get("status", ""),
                     source=r.get("source", ""),
@@ -67,16 +82,17 @@ class OcrDocs:
                 )
                 for r in pd.read_csv(ocr_file, dtype=str).fillna("").to_dict("records")
             ]
-            docs.already_read = {
-                r.source
-                for r in docs.records
-                if r.source and r.status == OcrStatus.SUCCESS
-            }
-        return docs
+
+    def get_already_read(self) -> None:
+        self.already_read = {
+            r.source
+            for r in self.records
+            if r.source and r.status.lower() == OcrStatus.SUCCESS
+        }
 
     @property
-    def column_names(self) -> list[str]:
-        return [f.name for f in fields(OcrDocs)]
+    def field_names(self) -> list[str]:
+        return [f.name for f in fields(OcrResult)]
 
     @property
     def total(self) -> int:
