@@ -31,7 +31,7 @@ Your job is to extract written or typed information from the image.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 
-# Output Fields
+# LLM Fields
 
 - [scientificName](fields_v2/taxon/scientificName_v2.md)
 - [scientificNameAuthorship](fields_v2/taxon/scientificNameAuthorship_v2.md)

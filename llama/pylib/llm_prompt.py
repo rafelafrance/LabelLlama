@@ -14,8 +14,8 @@ MIN_PROMPT_LEN = 40
 # The system prompt section of the prompt
 SYS_PROMPT = re.compile(r"^Base\s+Prompt", flags=re.IGNORECASE)
 
-# The output fields section of the prompt
-OUT_FIELDS = re.compile(r"^Output\s+Fields", flags=re.IGNORECASE)
+# The output LLM fields section of the prompt
+LLM_FIELDS = re.compile(r"^LLM\s+Fields", flags=re.IGNORECASE)
 
 
 def get_front_yaml(text: str, path: Path) -> dict:
@@ -69,7 +69,7 @@ class FieldPrompt:
 
 
 @dataclass
-class Prompt:
+class ParserPrompt:
     # -------------- ClassVars ---------------
     text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
     # ----------------------------------------
@@ -85,7 +85,7 @@ class Prompt:
     _field_classes: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: Path) -> Prompt:
+    def load(cls, path: Path) -> ParserPrompt:
         with path.open() as f:
             text = f.read()
 
@@ -103,9 +103,9 @@ class Prompt:
             if SYS_PROMPT.match(section):
                 sys_prompt = SYS_PROMPT.sub("", section).strip()
 
-            # Get output fields list section
-            elif OUT_FIELDS.match(section):
-                section = OUT_FIELDS.sub("", section).strip()
+            # Get output LLM fields list section
+            elif LLM_FIELDS.match(section):
+                section = LLM_FIELDS.sub("", section).strip()
                 links = re.findall(r"\([\w/]+\.md\)", section)
                 for link in links:
                     link = link.removeprefix("(").removesuffix(")")
