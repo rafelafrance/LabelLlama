@@ -69,7 +69,7 @@ class FieldPrompt:
 
 
 @dataclass
-class ParserPrompt:
+class LlmPrompt:
     # -------------- ClassVars ---------------
     text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
     # ----------------------------------------

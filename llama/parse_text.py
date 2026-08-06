@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, log, prompt_util
+from llama.pylib import fix_ocr, llm_prompt, log
 
 MIN_SIZE = 1024
 
@@ -49,7 +49,7 @@ def parse_text(args: argparse.Namespace) -> None:
     logging.info(f"{done} documents were already parsed.")
     logging.info(f"There are {docs_todo - done} docs left to parse.")
 
-    prompt = prompt_util.Prompt.load(args.prompt)
+    prompt = llm_prompt.LlmPrompt.load(args.prompt)
     prompt.log_size()
 
     statuses = defaultdict(int)
@@ -92,7 +92,7 @@ def parse_text(args: argparse.Namespace) -> None:
 def parser(
     args: argparse.Namespace,
     doc: dict,
-    prompt: prompt_util.Prompt,
+    prompt: llm_prompt.LlmPrompt,
     session: requests.Session,
 ) -> dict:
     began = datetime.now()
@@ -145,7 +145,7 @@ def parser(
 
 
 def llm_reply_to_dict(content: str, columns: list[str]) -> dict:
-    """Convert an LM reply in prompt_util.get_field_template format to a dict."""
+    """Convert an LM reply in llm_prompt.get_field_template format to a dict."""
     # Get field names and the values
     splits = re.split(r"^<< ## (\w+) ## >>$", content, flags=re.MULTILINE)
 

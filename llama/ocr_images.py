@@ -15,7 +15,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, log, prompt_util
+from llama.pylib import fix_ocr, llm_prompt, log
 from llama.pylib.ocr_docs import OcrDocs, OcrModelArgs, OcrResult, OcrStatus
 
 DEFAULT_POOL = 10
@@ -33,7 +33,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     logging.info(f"{ocr_docs.previously_done} images were already done.")
     logging.info(f"There are {ocr_docs.remaining} images left to OCR.")
 
-    prompt = prompt_util.Prompt.load(args.prompt)
+    prompt = llm_prompt.LlmPrompt.load(args.prompt)
     prompt.log_size()
 
     statuses = defaultdict(int)
