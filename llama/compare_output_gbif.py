@@ -323,7 +323,7 @@ def calc_score(
 
     # If the GBIF column has a value then we score against that
     if col in gbif_input:
-        expect = gbif_input.get(col).strip()
+        expect = gbif_input.get(col, "").strip()
         if not expect and not actual:
             return Score(
                 cat=ScoreCat.aligned_both_empty,

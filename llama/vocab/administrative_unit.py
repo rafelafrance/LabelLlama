@@ -1,7 +1,8 @@
 from pathlib import Path
 
 import pandas as pd
-from pylib.fix_parses import FixParses
+
+from llama.pylib.fix_parses import FixParses
 
 COUNTRY_CSV: Path = Path(__file__).parent / "terms" / "countries.csv"
 USA_CSV: Path = Path(__file__).parent / "terms" / "us_locations.csv"

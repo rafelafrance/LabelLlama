@@ -9,8 +9,6 @@ import yaml
 
 FIELD_PROMPT_DIR = Path("prompts")
 
-MIN_PROMPT_LEN = 40
-
 # The system prompt section of the prompt
 SYS_PROMPT = re.compile(r"^Base\s+Prompt", flags=re.IGNORECASE)
 
@@ -85,7 +83,7 @@ class LlmPrompt:
     _field_classes: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, path: Path) -> ParserPrompt:
+    def load(cls, path: Path) -> LlmPrompt:
         with path.open() as f:
             text = f.read()
 

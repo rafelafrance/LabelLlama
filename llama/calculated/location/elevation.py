@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from llama.calculated.calculated_field import CalculatedField
+from llama.pylib.fix_parses import FLOAT
 from llama.vocab import about, units
 
 
@@ -24,7 +25,7 @@ class Elevation(CalculatedField):
 
         units_ = [u.lower() for u in units.get_length_units(elev)]
 
-        values = self.FLOAT.findall(elev)
+        values = FLOAT.findall(elev)
         values = self.to_list_of_floats(values)
 
         # Make sure every value has units
