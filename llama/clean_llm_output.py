@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 from tqdm import tqdm
 
-from llama.pylib import llm_prompt, log
+from llama.pylib import log, parser_util
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
@@ -16,7 +16,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     df = pd.read_csv(args.parse_file, dtype=str).fillna("")
 
-    prompt = llm_prompt.LlmPrompt.load(args.prompt)
+    prompt = parser_util.ParserPrompt.load(args.prompt)
     field_classes = prompt.field_classes
 
     columns = df.columns

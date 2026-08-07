@@ -28,7 +28,7 @@ from pathlib import Path
 import pandas as pd
 
 from llama.fields.extracted_field import ExtractedField
-from llama.pylib import llm_prompt, log
+from llama.pylib import log, parser_util
 
 FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
 
@@ -105,7 +105,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     columns = [k for k in columns if k not in FIRST_COLUMNS]
 
     # Load scoring classes
-    field_classes = llm_prompt.LlmPrompt.load(args.prompt).field_classes
+    field_classes = parser_util.ParserPrompt.load(args.prompt).field_classes
 
     # Build rows for each group
     row_groups = []

@@ -4,63 +4,67 @@ import argparse
 import csv
 import logging
 import os
-import re
 import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import pandas as pd
 import requests
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, llm_prompt, log
+from llama.pylib import fix_ocr, log
+from llama.pylib.parser_util import (
+    FIRST_COLUMNS,
+    ParsedDocs,
+    ParserArgs,
+    ParserCleaner,
+    ParserPrompt,
+)
+
+if TYPE_CHECKING:
+    from llama.pylib.ocr_util import OcrResult
 
 MIN_SIZE = 1024
-
-FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
-
 DEFAULT_POOL = 10
 
 
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    mode = "w"
-    already_parsed = set()
-    if args.parse_file.exists() and args.parse_file.stat().st_size >= MIN_SIZE:
-        mode = "a"
-        records = pd.read_csv(args.parse_file, dtype=str).fillna("").to_dict("records")
-        already_parsed = {
-            r["source"]
-            for r in records
-            if r.get("source") and r.get("status") == "success"
-        }
+    parsed_docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
 
-    docs = pd.read_csv(args.ocr_file, dtype=str).fillna("").to_dict("records")
-    docs_success = [d for d in docs if d["status"] == "success"]
-    docs = [d for d in docs_success if d["source"] not in already_parsed]
+    logging.info(f"There are {len(parsed_docs.ocr_records)} documents to parse.")
+    logging.info(f"{len(parsed_docs.already_parsed)} documents were already parsed.")
+    if parsed_docs.limit:
+        logging.info(f"Limited to {parsed_docs.limit} images.")
+    logging.info(f"There are {len(parsed_docs.tasks)} docs left to parse.")
 
-    docs_todo, done = len(docs_success), len(already_parsed)
-    logging.info(f"There are {docs_todo} documents to parse.")
-    logging.info(f"{done} documents were already parsed.")
-    logging.info(f"There are {docs_todo - done} docs left to parse.")
-
-    prompt = llm_prompt.LlmPrompt.load(args.prompt)
+    prompt = ParserPrompt.load(args.prompt)
     prompt.log_size()
 
     statuses = defaultdict(int)
 
-    with args.parse_file.open(mode) as parse_file:
+    parser_args = ParserArgs(
+        prompt=prompt,
+        model_name=args.model_name,
+        api_host=args.api_host,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens,
+        timeout=args.timeout,
+        threads=args.threads,
+    )
+
+    with args.parse_file.open(parsed_docs.parsed_file_mode) as parse_file:
         writer = csv.DictWriter(parse_file, FIRST_COLUMNS + prompt.column_names)
-        if mode == "w":
+        if parsed_docs.parsed_file_mode == "w":
             writer.writeheader()
 
         with (
-            tqdm(total=len(docs)) as pbar,
+            tqdm(total=len(parsed_docs.tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
             requests.Session() as session,
         ):
@@ -72,7 +76,8 @@ def parse_text(args: argparse.Namespace) -> None:
                 session.mount("https://", adapter)
 
             futures = {
-                executor.submit(parser, args, doc, prompt, session): doc for doc in docs
+                executor.submit(parser, parser_args, ocr_result, session)
+                for ocr_result in parsed_docs.tasks
             }
             for future in as_completed(futures):
                 result = future.result()
@@ -82,22 +87,22 @@ def parse_text(args: argparse.Namespace) -> None:
                 parse_file.flush()
 
     logging.info(
-        f"Total {len(docs)} documents processed with {statuses['ERROR']} errors "
-        f"and {len(already_parsed)} documents were skipped."
+        f"Total {len(parsed_docs.tasks)} documents processed "
+        f"with {statuses['ERROR']} errors "
+        f"and {len(parsed_docs.already_parsed)} documents were skipped."
     )
 
     log.job_elapsed(job_began)
 
 
 def parser(
-    args: argparse.Namespace,
-    doc: dict,
-    prompt: llm_prompt.LlmPrompt,
+    args: ParserArgs,
+    ocr_result: OcrResult,
     session: requests.Session,
 ) -> dict:
     began = datetime.now()
 
-    text = fix_ocr.prepare_for_parse(doc["text"])
+    text = fix_ocr.prepare_for_parse(ocr_result.text)
 
     url = f"{args.api_host}/chat/completions"
     headers = {
@@ -105,10 +110,10 @@ def parser(
         "Authorization": f"Bearer {os.getenv('LLM_API_KEY')}",
     }
     payload = {
-        "model": args.model,
+        "model": args.model_name,
         "messages": [
-            {"role": "system", "content": prompt.system_prompt},
-            {"role": "user", "content": prompt.build_text_prompt(text)},
+            {"role": "system", "content": args.prompt.system_prompt},
+            {"role": "user", "content": args.prompt.build_text_prompt(text)},
         ],
     }
     if args.temperature is not None:
@@ -125,42 +130,22 @@ def parser(
         result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
-        extracted = llm_reply_to_dict(content, prompt.column_names)
-
+        extracted = ParserCleaner.llm_reply_to_dict(content, args.prompt.column_names)
         status = "success"
 
     except requests.exceptions.RequestException as err:
-        logging.exception(f"Parse error for: {Path(doc['source']).name}")
+        logging.exception(f"Parse error for: {Path(ocr_result.source).name}")
         text = str(err)
         status = "ERROR"
 
     result = {
         "status": status,
-        "source": doc["source"],
-        "text": text,
+        "source": ocr_result.source,
         "elapsed": str(log.task_elapsed(began)),
+        "text": text,
     } | extracted
 
     return result
-
-
-def llm_reply_to_dict(content: str, columns: list[str]) -> dict:
-    """Convert an LM reply in llm_prompt.get_field_template format to a dict."""
-    # Get field names and the values
-    splits = re.split(r"^<< ## (\w+) ## >>$", content, flags=re.MULTILINE)
-
-    # Remove first blank split
-    if splits[0].strip() == "":
-        splits = splits[1:]
-
-    # Try to match field names with values
-    as_dict = {
-        k: v.strip()
-        for k, v in zip(splits[::2], splits[1::2], strict=False)
-        if k in columns
-    }
-
-    return as_dict
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -195,7 +180,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     model_group = arg_parser.add_argument_group("model options")
     model_group.add_argument(
-        "--model",
+        "--model-name",
         default="lm_studio/google/gemma-4-26b-a4b",
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.

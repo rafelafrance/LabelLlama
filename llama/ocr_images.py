@@ -15,8 +15,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.pylib import fix_ocr, llm_prompt, log
-from llama.pylib.ocr_docs import OcrDocs, OcrModelArgs, OcrResult, OcrStatus
+from llama.pylib import fix_ocr, log, parser_util
+from llama.pylib.ocr_util import OcrDocs, OcrModelArgs, OcrResult, OcrStatus
 
 DEFAULT_POOL = 10
 
@@ -24,16 +24,15 @@ DEFAULT_POOL = 10
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    ocr_docs = OcrDocs.ocr_docs(
-        args.image_dir, args.image_glob, args.ocr_file, args.limit
-    )
-    tasks = ocr_docs.to_do()
+    ocr_docs = OcrDocs.build(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
-    logging.info(f"There are {ocr_docs.total} images to OCR")
-    logging.info(f"{ocr_docs.previously_done} images were already done.")
-    logging.info(f"There are {ocr_docs.remaining} images left to OCR.")
+    logging.info(f"There are {len(ocr_docs.image_paths)} images to OCR")
+    logging.info(f"{len(ocr_docs.ocr_success)} images were already done.")
+    if ocr_docs.limit:
+        logging.info(f"Limited to {ocr_docs.limit} images.")
+    logging.info(f"There are {len(ocr_docs.tasks)} images left to OCR.")
 
-    prompt = llm_prompt.LlmPrompt.load(args.prompt)
+    prompt = parser_util.ParserPrompt.load(args.prompt)
     prompt.log_size()
 
     statuses = defaultdict(int)
@@ -53,7 +52,7 @@ def ocr_images(args: argparse.Namespace) -> None:
             writer.writeheader()
 
         with (
-            tqdm(total=len(tasks)) as pbar,
+            tqdm(total=len(ocr_docs.tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
             requests.Session() as session,
         ):
@@ -68,7 +67,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 executor.submit(
                     call_ocr, model_args, image_path, prompt.system_prompt, session
                 )
-                for image_path in tasks
+                for image_path in ocr_docs.tasks
             ]
 
             for future in as_completed(futures):
@@ -79,8 +78,8 @@ def ocr_images(args: argparse.Namespace) -> None:
                 ocr_file.flush()
 
     logging.info(
-        f"Total {ocr_docs.total} documents processed with {statuses['ERROR']} errors "
-        f"and {ocr_docs.previously_done} documents were skipped."
+        f"Total {len(ocr_docs.tasks)} documents processed "
+        f"with {statuses['ERROR']} errors"
     )
 
     log.job_elapsed(job_began)
