@@ -44,8 +44,8 @@ class OcrDocs:
     image_paths: list[Path] = field(default_factory=list)
     ocr_file: Path | None = None
     ocr_file_mode: str = "w"
-    ocr_records: list[OcrResult] = field(default_factory=list)
-    ocr_success: set[str] = field(default_factory=set)
+    ocr_records: list[OcrResult] = field(default_factory=list[OcrResult])
+    ocr_success: set[str] = field(default_factory=set[str])
     tasks: list[Path] = field(default_factory=list)
     limit: int | None = None
 

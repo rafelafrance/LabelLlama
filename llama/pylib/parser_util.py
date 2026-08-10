@@ -38,12 +38,52 @@ class ParseStatus(StrEnum):
 
 
 @dataclass
+class FieldPrompt:
+    name: str
+    description: str
+    module: Path
+    columns: list[str] = field(default_factory=list[str])
+    prompts: list[str] = field(default_factory=list[str])
+
+    @classmethod
+    def load(cls, link: str) -> FieldPrompt:
+        path = FIELD_PROMPT_DIR / link
+        with path.open() as f:
+            text = f.read()
+
+        front = get_front_yaml(text, path)
+
+        sections = re.split(r"^(?<!#)#\sPrompt\s+(\w+)$", text, flags=re.MULTILINE)
+        columns, prompts = [], []
+        for column, prompt in zip(sections[1::2], sections[2::2], strict=True):
+            columns.append(column.strip())
+            prompts.append(prompt.strip())
+
+        field_prompt = cls(
+            name=front["name"],
+            description=front["description"],
+            module=Path(front["module"]),
+            columns=columns,
+            prompts=prompts,
+        )
+
+        return field_prompt
+
+    def field_class(self) -> Any:
+        cls_name = self.name[0].upper() + self.name[1:]
+        mod_name = str(self.module).removesuffix(".py").replace("/", ".")
+        module = importlib.import_module(mod_name)
+        cls = getattr(module, cls_name)
+        return cls
+
+
+@dataclass
 class PromptFileParser:
     name: str = ""
     description: str = ""
     base_prompt: str = ""
-    fields: dict[str, FieldPrompt] = field(default_factory=dict)
-    calc_fields: dict[str, str] = field(default_factory=dict)
+    fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
+    calc_fields: dict[str, str] = field(default_factory=dict[str, str])
 
     @classmethod
     def load(cls, prompt_path: Path) -> PromptFileParser:
@@ -102,46 +142,6 @@ class ParserArgs:
 
 
 @dataclass
-class FieldPrompt:
-    name: str
-    description: str
-    module: Path
-    columns: list[str] = field(default_factory=list)
-    prompts: list[str] = field(default_factory=list)
-
-    @classmethod
-    def load(cls, link: str) -> FieldPrompt:
-        path = FIELD_PROMPT_DIR / link
-        with path.open() as f:
-            text = f.read()
-
-        front = get_front_yaml(text, path)
-
-        sections = re.split(r"^(?<!#)#\sPrompt\s+(\w+)$", text, flags=re.MULTILINE)
-        columns, prompts = [], []
-        for column, prompt in zip(sections[1::2], sections[2::2], strict=True):
-            columns.append(column.strip())
-            prompts.append(prompt.strip())
-
-        field_prompt = cls(
-            name=front["name"],
-            description=front["description"],
-            module=Path(front["module"]),
-            columns=columns,
-            prompts=prompts,
-        )
-
-        return field_prompt
-
-    def field_class(self) -> Any:
-        cls_name = self.name[0].upper() + self.name[1:]
-        mod_name = str(self.module).removesuffix(".py").replace("/", ".")
-        module = importlib.import_module(mod_name)
-        cls = getattr(module, cls_name)
-        return cls
-
-
-@dataclass
 class ParserPrompt:
     # -------------- ClassVars ---------------
     text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
@@ -150,11 +150,11 @@ class ParserPrompt:
     name: str
     description: str
     base_prompt: str = ""
-    fields: dict[str, FieldPrompt] = field(default_factory=dict)
+    fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
     field_prompts: str = ""
     field_template: str = ""
     _system_prompt: str = ""
-    _columns: list[str] = field(default_factory=list)
+    _columns: list[str] = field(default_factory=list[str])
 
     @classmethod
     def load(cls, prompt_path: Path) -> ParserPrompt:
@@ -224,12 +224,12 @@ class ParserPrompt:
 @dataclass
 class ParsedDocs:
     ocr_file: Path | None = None
-    ocr_records: list[OcrResult] = field(default_factory=list)
+    ocr_records: list[OcrResult] = field(default_factory=list[OcrResult])
     parsed_file: Path | None = None
     parsed_file_mode: str = "w"
-    parsed_records: list[dict] = field(default_factory=list)
-    already_parsed: set[str] = field(default_factory=set)
-    tasks: list[OcrResult] = field(default_factory=list)
+    parsed_records: list[dict] = field(default_factory=list[dict])
+    already_parsed: set[str] = field(default_factory=set[str])
+    tasks: list[OcrResult] = field(default_factory=list[OcrResult])
     limit: int | None = None
 
     @classmethod
@@ -277,8 +277,8 @@ class ParsedDocs:
 
 @dataclass
 class ParserCleaner:
-    fields: dict[str, FieldPrompt] = field(default_factory=dict)
-    _field_classes: dict[str, Any] = field(default_factory=dict)
+    fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
+    _field_classes: dict[str, Any] = field(default_factory=dict[str, Any])
 
     @property
     def field_classes(self) -> dict[str, Any]:
@@ -293,7 +293,7 @@ class ParserCleaner:
     def llm_reply_to_dict(content: str, columns: list[str]) -> dict:
         """Convert an LM reply in llm_prompt.get_field_template format to a dict."""
         # Get field names and the values
-        splits = re.split(r"^<< ## (\w+) ## >>$", content, flags=re.MULTILINE)
+        splits = re.split(r"^<< ## (\w+) ##(?: >>)?$", content, flags=re.MULTILINE)
 
         # Remove first blank split
         if splits[0].strip() == "":

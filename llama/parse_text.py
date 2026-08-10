@@ -35,7 +35,7 @@ DEFAULT_POOL = 10
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    parsed_docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
+    parsed_docs = ParsedDocs.build(args.parse_file, args.ocr_file, args.limit)
 
     logging.info(f"There are {len(parsed_docs.ocr_records)} documents to parse.")
     logging.info(f"{len(parsed_docs.already_parsed)} documents were already parsed.")
