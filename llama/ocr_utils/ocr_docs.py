@@ -1,40 +1,16 @@
 from dataclasses import dataclass, field, fields
-from enum import StrEnum
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from llama.ocr_utils.ocr_result import OcrResult
+from llama.ocr_utils.ocr_status import OcrStatus
 from llama.pylib import image_util
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 MIN_SIZE = 1024
-
-
-class OcrStatus(StrEnum):
-    SUCCESS = "success"
-    ERROR = "ERROR"
-    UNKNOWN = ""
-
-
-@dataclass
-class OcrModelArgs:
-    api_host: str = "http://localhost:1234/v1"
-    model_name: str = "chandra-ocr"
-    temperature: float = 0.1
-    max_tokens: int = 2048
-    timeout: int = 120
-    convert_html: bool = False
-    threads: int = 2
-
-
-@dataclass
-class OcrResult:
-    status: OcrStatus = OcrStatus.UNKNOWN
-    source: str = ""
-    elapsed: str = ""
-    text: str = ""
 
 
 @dataclass

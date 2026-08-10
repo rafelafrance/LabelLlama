@@ -15,8 +15,11 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
+from llama.ocr_utils.ocr_docs import OcrDocs
+from llama.ocr_utils.ocr_model_args import OcrModelArgs
+from llama.ocr_utils.ocr_result import OcrResult
+from llama.ocr_utils.ocr_status import OcrStatus
 from llama.pylib import fix_ocr, log, parser_util
-from llama.pylib.ocr_util import OcrDocs, OcrModelArgs, OcrResult, OcrStatus
 
 DEFAULT_POOL = 10
 

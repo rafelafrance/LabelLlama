@@ -26,7 +26,7 @@ from llama.pylib.parser_util import (
 )
 
 if TYPE_CHECKING:
-    from llama.pylib.ocr_util import OcrResult
+    from llama.ocr_utils.ocr_result import OcrResult
 
 MIN_SIZE = 1024
 DEFAULT_POOL = 10
