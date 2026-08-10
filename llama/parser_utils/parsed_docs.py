@@ -46,17 +46,16 @@ class ParsedDocs:
             and parsed_file.exists()
             and parsed_file.stat().st_size >= MIN_SIZE
         ):
-            self.parsed_file_mode = "a"
-            df = pd.read_csv(parsed_file, dtype=str).fillna("")
-            self.parsed_records = df.to_dict("records")
+            records = pd.read_csv(parsed_file, dtype=str).fillna("").to_dict("records")
         return records, mode
 
     def get_already_parsed(self) -> set[str]:
-        return {
+        done = {
             r["source"]
             for r in self.parsed_records
             if r["status"] == ParseStatus.SUCCESS
         }
+        return done
 
     def get_tasks(self) -> list[OcrResult]:
         return sorted(

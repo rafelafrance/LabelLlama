@@ -33,7 +33,7 @@ DEFAULT_POOL = 10
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    parsed_docs = ParsedDocs.build(args.parse_file, args.ocr_file, args.limit)
+    parsed_docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
 
     logging.info(f"There are {len(parsed_docs.ocr_records)} documents to parse.")
     logging.info(f"{len(parsed_docs.already_parsed)} documents were already parsed.")
@@ -56,8 +56,8 @@ def parse_text(args: argparse.Namespace) -> None:
         threads=args.threads,
     )
 
-    with args.parse_file.open(parsed_docs.parsed_file_mode) as parse_file:
-        writer = csv.DictWriter(parse_file, FIRST_COLUMNS + prompt.column_names)
+    with args.parsed_file.open(parsed_docs.parsed_file_mode) as parsed_file:
+        writer = csv.DictWriter(parsed_file, FIRST_COLUMNS + prompt.column_names)
         if parsed_docs.parsed_file_mode == "w":
             writer.writeheader()
 
@@ -82,7 +82,7 @@ def parse_text(args: argparse.Namespace) -> None:
                 statuses[result["status"]] += 1
                 writer.writerow(result)
                 pbar.update(1)
-                parse_file.flush()
+                parsed_file.flush()
 
     logging.info(
         f"Total {len(parsed_docs.tasks)} documents processed "
@@ -162,7 +162,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             columns for valid input, so any CSV file with those columns is fine.""",
     )
     io_group.add_argument(
-        "--parse-file",
+        "--parsed-file",
         type=Path,
         metavar="path",
         help="""Write the LM results to this CSV file.""",
