@@ -6,6 +6,8 @@ import yaml
 if TYPE_CHECKING:
     from pathlib import Path
 
+FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
+
 
 def get_front_yaml(text: str, path: Path) -> dict:
     top = re.search("^---$.*^---$", text, flags=re.MULTILINE | re.DOTALL)

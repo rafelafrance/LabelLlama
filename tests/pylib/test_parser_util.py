@@ -1,7 +1,7 @@
 import unittest
 from textwrap import dedent
 
-from llama.pylib import parser_util
+from llama.parser_utils.parser_cleaner import ParserCleaner
 
 
 class TestParserUtil(unittest.TestCase):
@@ -62,5 +62,5 @@ class TestParserUtil(unittest.TestCase):
             "habitat": "",
             "occurrenceRemarks": "",
         }
-        actual = parser_util.ParserCleaner.llm_reply_to_dict(text, columns)
+        actual = ParserCleaner.llm_reply_to_dict(text, columns)
         assert actual == expect

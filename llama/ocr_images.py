@@ -19,7 +19,8 @@ from llama.ocr_utils.ocr_docs import OcrDocs
 from llama.ocr_utils.ocr_model_args import OcrModelArgs
 from llama.ocr_utils.ocr_result import OcrResult
 from llama.ocr_utils.ocr_status import OcrStatus
-from llama.pylib import fix_ocr, log, parser_util
+from llama.parser_utils.parser_prompt import ParserPrompt
+from llama.pylib import fix_ocr, log
 
 DEFAULT_POOL = 10
 
@@ -35,7 +36,7 @@ def ocr_images(args: argparse.Namespace) -> None:
         logging.info(f"Limited to {ocr_docs.limit} images.")
     logging.info(f"There are {len(ocr_docs.tasks)} images left to OCR.")
 
-    prompt = parser_util.ParserPrompt.load(args.prompt)
+    prompt = ParserPrompt.load(args.prompt)
     prompt.log_size()
 
     statuses = defaultdict(int)

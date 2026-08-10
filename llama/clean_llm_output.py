@@ -3,12 +3,12 @@
 import argparse
 import textwrap
 from pathlib import Path
-from typing import Any
 
 import pandas as pd
 from tqdm import tqdm
 
-from llama.pylib import log, parser_util
+from llama.parser_utils.parser_cleaner import ParserCleaner
+from llama.pylib import log
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
@@ -16,14 +16,10 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     df = pd.read_csv(args.parse_file, dtype=str).fillna("")
 
-    prompt = parser_util.ParserPrompt.load(args.prompt)
-    field_classes = prompt.field_classes
+    cleaner = ParserCleaner.load(args.prompt)
 
-    columns = df.columns
-    if args.column:
-        columns = args.column
-    columns = [c for c in columns if c not in ("source", "text", "elapsed", "status")]
-    columns = [c for c in columns if c in prompt.column_names and c in field_classes]
+    columns = [c for c in df.columns if c in cleaner.field_names]
+    calc_columns = [c for c in df.columns if c in cleaner.calc_field_names]
 
     input_rows = [r for r in df.to_dict("records") if r["status"] == "success"]
     input_rows = input_rows[: args.limit]
@@ -34,20 +30,28 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         out_row = {"source": in_row["source"], "text": in_row["text"]}
 
         for column in columns:
-            field_action = field_classes[column]
+            field_action = cleaner.field_classes[column]
 
             in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
             out_field = field_action(**in_data)
-            out_field.cross_field_update(in_row)
-
             out_data = {
                 k: getattr(out_field, k) for k in out_field.get_visible_fields()
             }
             out_row |= out_data
 
-            if debugging(args):
-                print_debug_info(in_row, out_data)
+        for column in calc_columns:
+            field_action = cleaner.calc_field_classes[column]
+
+            in_data = {
+                k: out_row.get(k, in_row.get(k)) for k in field_action.get_field_names()
+            }
+
+            out_field = field_action(**in_data)
+            out_data = {
+                k: getattr(out_field, k) for k in out_field.get_visible_fields()
+            }
+            out_row |= out_data
 
         output_rows.append(out_row)
 
@@ -55,20 +59,6 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     df.to_csv(args.clean_file, index=False)
 
     log.job_elapsed(job_began)
-
-
-def debugging(args: argparse.Namespace) -> bool:
-    return args.column or args.limit
-
-
-def print_debug_info(in_row: dict[str, Any], out_row: dict[str, Any]) -> None:
-    print(in_row["source"])
-    trimmed = {k: v for k, v in out_row.items() if k not in ("source", "text")}
-    for column, value in trimmed.items():
-        if column in in_row:
-            print(f"{'before ' + column:>40}: {in_row[column]}")
-        print(f"{'after ' + column:>40}: {value}")
-    print()
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -116,12 +106,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Notes for logging. They only appear in the log file.""",
     )
     debugging_group = arg_parser.add_argument_group("debugging options")
-    debugging_group.add_argument(
-        "--column",
-        action="append",
-        metavar="string",
-        help="""Just parse one column.""",
-    )
     debugging_group.add_argument(
         "--limit",
         type=int,

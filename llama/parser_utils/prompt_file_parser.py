@@ -8,7 +8,6 @@ from llama.parser_utils.parser_util import get_front_yaml
 
 FIELD_PROMPT_DIR = Path("prompts")
 
-FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
 
 # Regexes for getting the sections of a prompt markdown file
 SYS_PROMPT = re.compile(r"^Base\s+Prompt", flags=re.IGNORECASE)
