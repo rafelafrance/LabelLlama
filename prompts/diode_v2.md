@@ -64,4 +64,3 @@ I want you to extract the following information, if the information is not there
 - [eventDate](../llama/calculated/event/eventDate.py)
 - [country](../llama/calculated/location/country.py)
 - [locality](../llama/calculated/location/locality.py)
-- [recordNumber](../llama/calculated/occurrence/recordNumber.py)

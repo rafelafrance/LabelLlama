@@ -15,8 +15,9 @@ class Locality(CalculatedField):
 
     locality: str = ""
 
-    def __post_init__(self, record: dict[str, Any]) -> None:
+    def __post_init__(self, record: dict[str, Any] | None) -> None:
         """Remove country, state/province, and county."""
+        record = record or {}
         for field_name in ("country", "stateProvince", "county"):
             if value := record.get(field_name):
                 # Remove the field from this string

@@ -13,8 +13,9 @@ class Family(CalculatedField):
 
     family: str = ""
 
-    def __post_init__(self, record: dict[str, Any]) -> None:
+    def __post_init__(self, record: dict[str, Any] | None) -> None:
         """Add a family name using the genus if the family is missing."""
+        record = record or {}
         if not self.family:
             sci_name = record.get("scientificName", "")
             words = sci_name.split()

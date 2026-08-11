@@ -12,8 +12,8 @@ from typing import Any
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 
-INT = re.compile(r"[\d,]+")
-FLOAT = re.compile(r" \d+ [\d,.]* | \.\d+", flags=re.VERBOSE)
+INT = re.compile(r"[-]?[\d,]+")
+FLOAT = re.compile(r" [-]? \d+ [\d,.]* | \.\d+", flags=re.VERBOSE)
 
 # For parsing dates
 SEP = r"[\s(.,/_'-]+"  # Date month, day, year separators

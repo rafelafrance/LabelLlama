@@ -20,7 +20,8 @@ class Elevation(CalculatedField):
     elevationUnits: str = ""
     elevationEstimated: bool | str = ""
 
-    def __post_init__(self, record: dict[str, Any]) -> None:
+    def __post_init__(self, record: dict[str, Any] | None) -> None:
+        record = record or {}
         elev = self.to_str(record.get("verbatimElevation"))
 
         units_ = [u.lower() for u in units.get_length_units(elev)]

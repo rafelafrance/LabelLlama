@@ -8,11 +8,12 @@ from llama.calculated.calculated_field import CalculatedField
 class EventDate(CalculatedField):
     eventDate: str = ""
 
-    def __post_init__(self, record: dict[str, Any]) -> None:
+    def __post_init__(self, record: dict[str, Any] | None) -> None:
+        record = record or {}
         event_date = self.to_str(record.get("verbatimEventDate"))
 
         # Handle date ranges
-        dates = event_date.split("|")
-        dates = [self.date_to_iso(d) for d in dates]
-
-        self.eventDate = self.eventDate.replace("|", " to ")
+        if event_date:
+            dates = event_date.split("|")
+            dates = [self.date_to_iso(d) for d in dates]
+            self.eventDate = " to ".join(dates)

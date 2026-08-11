@@ -6,6 +6,7 @@ from typing import Any
 
 @dataclass
 class CalcField:
+    name: str
     module: Path
     columns: list[str] = field(default_factory=list[str])
     field_class: Any = None
@@ -13,12 +14,13 @@ class CalcField:
     @classmethod
     def load(cls, link: str) -> CalcField:
         lnk = Path(link)
-        cls_name = lnk.stem
+        cls_name = lnk.stem[0].upper() + lnk.stem[1:]
         mod_name = link.removeprefix("../").removesuffix(".py").replace("/", ".")
         module = importlib.import_module(mod_name)
         field_class = getattr(module, cls_name)
 
         calc_field = cls(
+            name=lnk.stem,
             module=lnk,
             columns=field_class().get_field_names(),
             field_class=getattr(module, cls_name),

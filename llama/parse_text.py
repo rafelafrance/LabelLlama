@@ -87,7 +87,7 @@ def parse_text(args: argparse.Namespace) -> None:
     logging.info(
         f"Total {len(parsed_docs.tasks)} documents processed "
         f"with {statuses['ERROR']} errors "
-        f"and {len(parsed_docs.already_parsed)} documents were skipped."
+        f"and {len(parsed_docs.already_parsed)} documents skipped."
     )
 
     log.job_elapsed(job_began)

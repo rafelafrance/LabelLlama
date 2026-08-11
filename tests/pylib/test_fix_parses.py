@@ -70,6 +70,9 @@ class TestFixValues(unittest.TestCase):
     def test_to_int_07(self) -> None:
         assert self.fp.to_int(float("inf")) is None
 
+    def test_to_int_08(self) -> None:
+        assert self.fp.to_int(-1) == -1
+
     # ---------------------------------------------------------------------
     def test_to_float_01(self) -> None:
         assert self.fp.to_float("test") is None
@@ -91,6 +94,9 @@ class TestFixValues(unittest.TestCase):
 
     def test_to_float_07(self) -> None:
         assert self.fp.to_float(float("inf")) is None
+
+    def test_to_float_08(self) -> None:
+        assert self.fp.to_float(-1.4) == -1.4
 
     # ---------------------------------------------------------------------
     def test_to_bool_01(self) -> None:

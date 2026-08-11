@@ -9,8 +9,9 @@ from llama.vocab.administrative_unit import US_COUNTY, US_STATE, USA
 class Country(CalculatedField):
     country: str = ""
 
-    def __post_init__(self, record: dict[str, Any]) -> None:
+    def __post_init__(self, record: dict[str, Any] | None) -> None:
         """Make a blank country = USA if state or county is known to be in the US."""
+        record = record or {}
         self.country = USA.get(self.country, self.country)
         us_county = record.get("county", "")
         us_county = us_county.lower() in US_COUNTY

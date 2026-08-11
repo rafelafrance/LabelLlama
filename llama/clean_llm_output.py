@@ -14,12 +14,12 @@ from llama.pylib import log
 def postprocess_fields(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    df = pd.read_csv(args.parse_file, dtype=str).fillna("")
+    df = pd.read_csv(args.parsed_file, dtype=str).fillna("")
 
     cleaner = ParserCleaner.load(args.prompt)
 
-    columns = [c for c in df.columns if c in cleaner.field_names]
-    calc_columns = [c for c in df.columns if c in cleaner.calc_field_names]
+    columns = [c for c in df.columns if c in cleaner.field_classes]
+    calc_columns = list(cleaner.calc_field_classes)
 
     input_rows = [r for r in df.to_dict("records") if r["status"] == "success"]
     input_rows = input_rows[: args.limit]
@@ -43,11 +43,9 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         for column in calc_columns:
             field_action = cleaner.calc_field_classes[column]
 
-            in_data = {
-                k: out_row.get(k, in_row.get(k)) for k in field_action.get_field_names()
-            }
+            in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
-            out_field = field_action(**in_data)
+            out_field = field_action(in_row, **in_data)
             out_data = {
                 k: getattr(out_field, k) for k in out_field.get_visible_fields()
             }
@@ -70,7 +68,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     io_group = arg_parser.add_argument_group("I/O options")
     io_group.add_argument(
-        "--parse-file",
+        "--parsed-file",
         type=Path,
         required=True,
         metavar="path",

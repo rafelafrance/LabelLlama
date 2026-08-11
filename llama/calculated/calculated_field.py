@@ -1,4 +1,4 @@
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass
 from typing import Any
 
 from llama.pylib.base_field import BaseField
@@ -6,4 +6,4 @@ from llama.pylib.base_field import BaseField
 
 @dataclass
 class CalculatedField(BaseField):
-    record: InitVar[dict[str, Any]] = field(default_factory=dict)
+    record: InitVar[dict[str, Any] | None] = None

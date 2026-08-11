@@ -21,7 +21,7 @@ class PromptFileParser:
     description: str = ""
     base_prompt: str = ""
     fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
-    calc_fields: dict[str, str] = field(default_factory=dict[str, str])
+    calc_fields: dict[str, CalcField] = field(default_factory=dict[str, CalcField])
 
     @classmethod
     def load(cls, prompt_path: Path) -> PromptFileParser:
@@ -46,17 +46,17 @@ class PromptFileParser:
             # Get output LLM fields list section
             elif LLM_FIELDS.match(section):
                 section = LLM_FIELDS.sub("", section).strip()
-                links = re.findall(r"\([\w/]+\.md\)", section)
+                links = re.findall(r"\([\w/.]+\)", section)
                 for lnk in links:
                     lnk = lnk.removeprefix("(").removesuffix(")")
                     fields[lnk] = FieldPrompt.load(lnk)
 
             elif CALC_FIELDS.match(section):
                 section = CALC_FIELDS.sub("", section).strip()
-                links = re.findall(r"\([\w/]+\.py\)", section)
+                links = re.findall(r"\([\w/.]+\)", section)
                 for lnk in links:
                     lnk = lnk.removeprefix("(").removesuffix(")")
-                    calc_fields[lnk] = CalcField(lnk)
+                    calc_fields[lnk] = CalcField.load(lnk)
 
         prompt = cls(
             name=front["name"],
