@@ -1,9 +1,8 @@
-import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
 from llama.parser_utils.field_prompt import FieldPrompt
-from llama.parser_utils.prompt_file_parser import PromptFileParser
+from llama.pylib.prompt_file_parser import PromptFileParser
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -12,16 +11,16 @@ if TYPE_CHECKING:
 @dataclass
 class ParserPrompt:
     # -------------- ClassVars ---------------
-    text_prompt: ClassVar[str] = "Extract data from this `text` (str):\n"
+    text_msg: ClassVar[str] = """Extract data from this `text` (str):\n"""
     # ----------------------------------------
 
-    name: str
-    description: str
-    base_prompt: str = ""
+    name: str = ""
+    description: str = ""
+    system_msg: str = ""
     fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
     field_prompts: str = ""
     field_template: str = ""
-    _system_prompt: str = ""
+    _user_msg: str = ""
     _columns: list[str] = field(default_factory=list[str])
 
     @classmethod
@@ -30,7 +29,7 @@ class ParserPrompt:
         prompt = cls(
             name=prompt_parser.name,
             description=prompt_parser.description,
-            base_prompt=prompt_parser.base_prompt,
+            system_msg=prompt_parser.system_msg,
             fields=prompt_parser.fields,
         )
         if prompt.fields:
@@ -40,16 +39,12 @@ class ParserPrompt:
         return prompt
 
     @property
-    def system_prompt(self) -> str:
-        if not self._system_prompt:
-            self._system_prompt = "\n\n".join(
-                [
-                    p
-                    for p in (self.base_prompt, self.field_prompts, self.field_template)
-                    if p
-                ]
+    def user_msg(self) -> str:
+        if not self._user_msg:
+            self._user_msg = "\n\n".join(
+                [p for p in (self.field_prompts, self.field_template) if p]
             )
-        return self._system_prompt
+        return self._user_msg
 
     @property
     def column_names(self) -> list[str]:
@@ -77,13 +72,5 @@ class ParserPrompt:
         self.field_template = "\n\n".join(template)
         return self.field_template
 
-    def log_size(self) -> None:
-        sys_prompt = self.system_prompt
-        length = len(sys_prompt)
-        words = len(sys_prompt.split())
-        logging.info(
-            f"Prompt lengths (without payload) = {length} characters, {words} words"
-        )
-
-    def build_text_prompt(self, text: str) -> str:
-        return self.text_prompt + text
+    def build_text_msg(self, text: str) -> str:
+        return self.text_msg + text

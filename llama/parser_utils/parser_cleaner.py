@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from llama.parser_utils.prompt_file_parser import PromptFileParser
+from llama.pylib.prompt_file_parser import PromptFileParser
 
 if TYPE_CHECKING:
     from pathlib import Path

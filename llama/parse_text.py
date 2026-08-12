@@ -42,7 +42,6 @@ def parse_text(args: argparse.Namespace) -> None:
     logging.info(f"There are {len(parsed_docs.tasks)} docs left to parse.")
 
     prompt = ParserPrompt.load(args.prompt)
-    prompt.log_size()
 
     statuses = defaultdict(int)
 
@@ -110,8 +109,9 @@ def parser(
     payload = {
         "model": args.model_name,
         "messages": [
-            {"role": "system", "content": args.prompt.system_prompt},
-            {"role": "user", "content": args.prompt.build_text_prompt(text)},
+            {"role": "system", "content": args.prompt.system_msg},
+            {"role": "user", "content": args.prompt.user_msg},
+            {"role": "user", "content": args.prompt.build_text_msg(text)},
         ],
     }
     if args.temperature is not None:
@@ -177,9 +177,10 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             For example prompts/fields/herbarium_v1.md.""",
     )
     model_group = arg_parser.add_argument_group("model options")
+    model_defaults = ParserArgs(ParserPrompt())
     model_group.add_argument(
         "--model-name",
-        default="lm_studio/google/gemma-4-26b-a4b",
+        default=model_defaults.model_name,
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.
             cost trade off between local and hosted models. Local models are cheaper
@@ -187,7 +188,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     model_group.add_argument(
         "--api-host",
-        default="http://localhost:1234/v1",
+        default=model_defaults.api_host,
         metavar="string",
         help="""URL for the LM model. (default %(default)s
             The default is for LM-Studio, but I also use ChatGPT-nano and other
@@ -196,7 +197,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--threads",
         type=int,
-        default=10,
+        default=model_defaults.threads,
         metavar="int",
         help="""How many parallel threads to run. (default: %(default)s) For
             ChatGPT-nano I will increase this to 20 or more, and for a local model
@@ -220,7 +221,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--timeout",
         type=int,
-        default=120,
+        default=model_defaults.timeout,
         metavar="int",
         help="""How long to wait for the LM to respond in seconds.
             (default: %(default)s) 2 minutes is a life time for parsing label text.""",

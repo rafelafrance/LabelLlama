@@ -15,11 +15,11 @@ import requests
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
+from llama.ocr_utils.ocr_args import OcrArgs
 from llama.ocr_utils.ocr_docs import OcrDocs
-from llama.ocr_utils.ocr_model_args import OcrModelArgs
+from llama.ocr_utils.ocr_prompt import OcrPrompt
 from llama.ocr_utils.ocr_result import OcrResult
 from llama.ocr_utils.ocr_status import OcrStatus
-from llama.parser_utils.parser_prompt import ParserPrompt
 from llama.pylib import fix_ocr, log
 
 DEFAULT_POOL = 10
@@ -36,12 +36,12 @@ def ocr_images(args: argparse.Namespace) -> None:
         logging.info(f"Limited to {ocr_docs.limit} images.")
     logging.info(f"There are {len(ocr_docs.tasks)} images left to OCR.")
 
-    prompt = ParserPrompt.load(args.prompt)
-    prompt.log_size()
+    prompt = OcrPrompt.load(args.prompt)
 
     statuses = defaultdict(int)
 
-    model_args = OcrModelArgs(
+    model_args = OcrArgs(
+        prompt=prompt,
         api_host=args.api_host,
         model_name=args.model_name,
         temperature=args.temperature,
@@ -68,9 +68,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 session.mount("https://", adapter)
 
             futures = [
-                executor.submit(
-                    call_ocr, model_args, image_path, prompt.system_prompt, session
-                )
+                executor.submit(call_ocr, model_args, image_path, session)
                 for image_path in ocr_docs.tasks
             ]
 
@@ -89,12 +87,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     log.job_elapsed(job_began)
 
 
-def call_ocr(
-    args: OcrModelArgs,
-    image_path: Path,
-    sys_prompt: str,
-    session: requests.Session,
-) -> OcrResult:
+def call_ocr(args: OcrArgs, image_path: Path, session: requests.Session) -> OcrResult:
     began = datetime.now()
 
     with image_path.open("rb") as f:
@@ -105,7 +98,7 @@ def call_ocr(
     payload = {
         "model": args.model_name,
         "messages": [
-            {"role": "system", "content": sys_prompt},
+            {"role": "system", "content": args.prompt.system_msg},
             {
                 "role": "user",
                 "content": [
@@ -186,7 +179,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             (default: %(default)s)""",
     )
     model_group = arg_parser.add_argument_group("model options")
-    model_defaults = OcrModelArgs()
+    model_defaults = OcrArgs(OcrPrompt())
     model_group.add_argument(
         "--model-name",
         default=model_defaults.model_name,

@@ -3,7 +3,7 @@ name: diode_v1
 description: Extract information from labels on images of Odonata museum specimens.
 ---
 
-# Base Prompt
+# System Message
 
 You will be given OCRed text, and you need to extract
 structured biological and collection metadata from the label text.

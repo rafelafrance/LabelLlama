@@ -10,7 +10,7 @@ FIELD_PROMPT_DIR = Path("prompts")
 
 
 # Regexes for getting the sections of a prompt markdown file
-SYS_PROMPT = re.compile(r"^Base\s+Prompt", flags=re.IGNORECASE)
+SYS_MSG = re.compile(r"^System\s+Message", flags=re.IGNORECASE)
 LLM_FIELDS = re.compile(r"^LLM\s+Fields", flags=re.IGNORECASE)
 CALC_FIELDS = re.compile(r"^Calculated\s+Fields", flags=re.IGNORECASE)
 
@@ -19,7 +19,7 @@ CALC_FIELDS = re.compile(r"^Calculated\s+Fields", flags=re.IGNORECASE)
 class PromptFileParser:
     name: str = ""
     description: str = ""
-    base_prompt: str = ""
+    system_msg: str = ""
     fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
     calc_fields: dict[str, CalcField] = field(default_factory=dict[str, CalcField])
 
@@ -33,15 +33,15 @@ class PromptFileParser:
         # Split Markdown file into sections using headers
         sections = re.split(r"^(?<!#)#\s", text, flags=re.MULTILINE)
 
-        sys_prompt = ""
+        sys_msg = ""
         fields, calc_fields = {}, {}
 
         for section in sections:
             section = section.strip()
 
             # Get system prompt section
-            if SYS_PROMPT.match(section):
-                sys_prompt = SYS_PROMPT.sub("", section).strip()
+            if SYS_MSG.match(section):
+                sys_msg = SYS_MSG.sub("", section).strip()
 
             # Get output LLM fields list section
             elif LLM_FIELDS.match(section):
@@ -61,7 +61,7 @@ class PromptFileParser:
         prompt = cls(
             name=front["name"],
             description=front["description"],
-            base_prompt=sys_prompt,
+            system_msg=sys_msg,
             fields=fields,
             calc_fields=calc_fields,
         )

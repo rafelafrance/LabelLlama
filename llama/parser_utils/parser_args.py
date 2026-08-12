@@ -10,7 +10,7 @@ class ParserArgs:
     prompt: ParserPrompt
     model_name: str = "qwen/qwen3.6-35b-a3b"
     api_host: str = "http://localhost:1234/v1"
-    temperature: float = 0.1
-    max_tokens: int = 2048
+    temperature: float | None = None
+    max_tokens: int | None = None
     timeout: int = 300
     threads: int = 4

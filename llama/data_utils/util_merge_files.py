@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from llama.pylib import io_util, log
+from llama.pylib import log
 
 csv.field_size_limit(sys.maxsize)
 
@@ -16,7 +16,9 @@ csv.field_size_limit(sys.maxsize)
 def merge_files(args: argparse.Namespace) -> None:
     log.started(args=args)
 
-    dfs = [io_util.read_to_df(path) for path in Path().glob(args.input_glob)]
+    dfs = [
+        pd.read_csv(path, dtype=str).fillna("") for path in Path().glob(args.input_glob)
+    ]
     df = pd.concat(dfs)
     df.to_csv(args.output_file, index=False)
 

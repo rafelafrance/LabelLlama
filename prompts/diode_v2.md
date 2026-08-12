@@ -3,7 +3,7 @@ name: diode_v2
 description: Extract information from labels on images of Odonata museum specimens.
 ---
 
-# Base Prompt
+# System Message
 
 You will receive an image of a museum specimen with attached labels.
 Your job is to extract written or typed information from the image.
