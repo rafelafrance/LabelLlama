@@ -13,11 +13,12 @@ class Family(CalculatedField):
 
     family: str = ""
 
-    def __post_init__(self, record: dict[str, Any] | None) -> None:
+    def __post_init__(self, cleaned_rec: dict[str, Any] | None) -> None:
         """Add a family name using the genus if the family is missing."""
-        record = record or {}
+        cleaned_rec = cleaned_rec or {}
+
         if not self.family:
-            sci_name = record.get("scientificName", "")
+            sci_name = cleaned_rec.get("scientificName", "")
             words = sci_name.split()
             genus = words[0] if len(words) > 0 else ""
             self.family = GENUS_TO_FAMILY.get(genus, "")

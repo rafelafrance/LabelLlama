@@ -33,14 +33,14 @@ class ParsedDocs:
         docs.ocr_records = OcrDocs.get_ocr_records(ocr_file)
         docs.ocr_records = docs.ocr_records[:limit]
 
-        docs.parsed_records, docs.parsed_file_mode = docs.read_parsed_records(
+        docs.parsed_records, docs.parsed_file_mode = docs._read_parsed_records(
             parsed_file
         )
-        docs.already_parsed = docs.get_already_parsed()
-        docs.tasks = docs.get_tasks()
+        docs.already_parsed = docs._get_already_parsed()
+        docs.tasks = docs._get_tasks()
         return docs
 
-    def read_parsed_records(self, parsed_file: Path | None) -> tuple[list[dict], str]:
+    def _read_parsed_records(self, parsed_file: Path | None) -> tuple[list[dict], str]:
         mode = "w"
         records = []
         if (
@@ -52,14 +52,14 @@ class ParsedDocs:
             records = pd.read_csv(parsed_file, dtype=str).fillna("").to_dict("records")
         return records, mode
 
-    def get_already_parsed(self) -> set[str]:
+    def _get_already_parsed(self) -> set[str]:
         return {
             r["source"]
             for r in self.parsed_records
             if r["status"] == ParseStatus.SUCCESS
         }
 
-    def get_tasks(self) -> list[OcrResult]:
+    def _get_tasks(self) -> list[OcrResult]:
         return sorted(
             [r for r in self.ocr_records if r.source not in self.already_parsed],
             key=lambda r: r.source,

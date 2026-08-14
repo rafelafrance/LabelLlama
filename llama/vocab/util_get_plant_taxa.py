@@ -21,17 +21,17 @@ def get_taxa(args: argparse.Namespace) -> None:
     log.started(args.log_file, args=args)
 
     taxa = {}
-    taxa |= read_wcvp_taxa(args.wcvp_file)
-    taxa |= read_itis_taxa(args.itis_db)
+    taxa |= _read_wcvp_taxa(args.wcvp_file)
+    taxa |= _read_itis_taxa(args.itis_db)
 
     taxa = dict(sorted(taxa.items()))
 
-    write_csv(taxa)
+    _write_csv(taxa)
 
     log.finished()
 
 
-def write_csv(taxa: dict[str, str]) -> None:
+def _write_csv(taxa: dict[str, str]) -> None:
     path = Path(__file__).parent / "terms" / "genus_to_family.csv"
 
     with path.open("w") as out:
@@ -41,7 +41,7 @@ def write_csv(taxa: dict[str, str]) -> None:
             writer.writerow([genus, family])
 
 
-def read_wcvp_taxa(wcvp_file: Path) -> dict[str, str]:
+def _read_wcvp_taxa(wcvp_file: Path) -> dict[str, str]:
     taxa = {}
     with wcvp_file.open() as in_file:
         reader = csv.DictReader(in_file, delimiter="|")
@@ -50,7 +50,7 @@ def read_wcvp_taxa(wcvp_file: Path) -> dict[str, str]:
     return taxa
 
 
-def read_itis_taxa(itis_db: Path) -> dict[str, str]:
+def _read_itis_taxa(itis_db: Path) -> dict[str, str]:
     taxa = {}
 
     kingdom_id, family_id, genus_id = 3, 140, 180

@@ -40,7 +40,7 @@ from tqdm import tqdm
 from llama.pylib import log
 
 FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type", "source"]
-GBIF_SEARCH_MD = Path(__file__).resolve().parent / "pylib" / "gbif_search.md"
+GBIF_SEARCH_MD = Path("llama") / "reports" / "gbif_search.md"
 
 
 # ----------------------------------------------------------------------------------
@@ -116,46 +116,48 @@ class Score:
                     if col == "row_type":
                         row_type = score  # Score is the row_type in this case
                         continue
-                    tally = tallies[row_type][col]
+                    tally_ = tallies[row_type][col]
                     match score.cat:
                         case ScoreCat.aligned_both_full:
-                            tally.aligned_both_full_count += 1
-                            tally.score_sum += score.score
+                            tally_.aligned_both_full_count += 1
+                            tally_.score_sum += score.score
 
                         case ScoreCat.aligned_both_empty:
-                            tally.aligned_both_empty_count += 1
-                            tally.score_sum += score.score
+                            tally_.aligned_both_empty_count += 1
+                            tally_.score_sum += score.score
 
                         case ScoreCat.aligned_parse_empty:
-                            tally.aligned_parse_empty_count += 1
-                            tally.score_sum += score.score
+                            tally_.aligned_parse_empty_count += 1
+                            tally_.score_sum += score.score
 
                         case ScoreCat.not_aligned_parse_empty:
-                            tally.not_aligned_parse_empty_count += 1
+                            tally_.not_aligned_parse_empty_count += 1
 
                         case ScoreCat.search_fail if score.is_aligned:
-                            tally.aligned_search_fail_count += 1
-                            tally.score_sum += score.score
+                            tally_.aligned_search_fail_count += 1
+                            tally_.score_sum += score.score
 
                         case ScoreCat.search_fail if not score.is_aligned:
-                            tally.not_aligned_search_fail_count += 1
+                            tally_.not_aligned_search_fail_count += 1
 
                         case ScoreCat.search_success if score.is_aligned:
-                            tally.aligned_search_success_count += 1
-                            tally.score_sum += score.score
+                            tally_.aligned_search_success_count += 1
+                            tally_.score_sum += score.score
 
                         case ScoreCat.search_success if not score.is_aligned:
-                            tally.not_aligned_search_success_count += 1
-                            tally.score_sum += score.score
+                            tally_.not_aligned_search_success_count += 1
+                            tally_.score_sum += score.score
 
         # Make score sums an average
         stats = defaultdict(lambda: defaultdict(dict))
         for row_type, columns in tallies.items():
-            for col, tally in columns.items():
-                row = {k: v or "" for k, v in asdict(tally).items() if k != "score_sum"}
-                row["total_scoreable"] = tally.total_scoreable
-                row["total_count"] = tally.total_count
-                row["average_score"] = tally.average_score
+            for col, tally_ in columns.items():
+                row = {
+                    k: v or "" for k, v in asdict(tally_).items() if k != "score_sum"
+                }
+                row["total_scoreable"] = tally_.total_scoreable
+                row["total_count"] = tally_.total_count
+                row["average_score"] = tally_.average_score
                 stats[row_type][col] = row
 
         return stats
@@ -183,11 +185,11 @@ class RowGroup:
     score_rows: list[dict[str, Any]] = field(default_factory=list)
 
     def format(self, output_type: str) -> RowGroup:
-        self.format_gbif_row(output_type)
-        self.format_score_rows(output_type)
+        self._format_gbif_row(output_type)
+        self._format_score_rows(output_type)
         return self
 
-    def format_gbif_row(self, output_type: str) -> None:
+    def _format_gbif_row(self, output_type: str) -> None:
         for col, scores in self.gbif_row.items():
             if col == "row_type":
                 continue
@@ -203,7 +205,7 @@ class RowGroup:
                         [f"{s.gbif_field} {s.gbif_data}" for s in scores]
                     )
 
-    def format_score_rows(self, output_type: str) -> None:
+    def _format_score_rows(self, output_type: str) -> None:
         for score_row in self.score_rows:
             for col, score in score_row.items():
                 if col == "row_type":
@@ -254,7 +256,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     columns = [k for k in column_keys if k not in FIRST_COLUMNS]
 
     # If the gbif cells do not match the llm cells then search for aligned data in gbif
-    gbif_search = get_gbif_search()
+    gbif_search = _get_gbif_search()
 
     output_type = args.output_csv.suffix.lower()
 
@@ -288,7 +290,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
             score_row: dict[str, str | Score] = {"row_type": f"{parse_file.stem} score"}
             for col in columns:
                 actual = parse_row[col]
-                score = calc_score(
+                score = _calc_score(
                     col, actual, gbif_input, gbif_search, args.success_threshold
                 )
                 score_row[col] = score
@@ -304,7 +306,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     for row_group in tqdm(row_groups, desc="format"):
         row_group.format(output_type)
 
-    write_ods(
+    _write_ods(
         ods_file=args.output_csv,
         row_groups=row_groups,
         gbif_search=gbif_search,
@@ -315,7 +317,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
 
 
 # ----------------------------------------------------------------------------------
-def calc_score(
+def _calc_score(
     col: str, actual: str, gbif_input: dict, gbif_search: dict, success_threshold: float
 ) -> Score:
     """Calculate the score of a LLM/parsed cell against a matching GBIF cell."""
@@ -378,7 +380,7 @@ def calc_score(
 
 
 # ----------------------------------------------------------------------------------
-def write_ods(
+def _write_ods(
     ods_file: Path,
     row_groups: list[RowGroup],
     gbif_search: dict,
@@ -412,7 +414,7 @@ def write_ods(
 
 
 # ----------------------------------------------------------------------------------
-def get_gbif_search() -> dict[str, list[str]]:
+def _get_gbif_search() -> dict[str, list[str]]:
     with GBIF_SEARCH_MD.open() as inf:
         lines = [ln for line in inf.readlines() if (ln := line.strip())]
     key = ""

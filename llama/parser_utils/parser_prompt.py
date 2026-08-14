@@ -33,10 +33,28 @@ class ParserPrompt:
             fields=prompt_parser.fields,
         )
         if prompt.fields:
-            prompt.field_prompts = prompt.build_field_prompts()
-            prompt.field_template = prompt.build_field_template()
+            prompt.field_prompts = prompt._build_field_prompts()
+            prompt.field_template = prompt._build_field_template()
 
         return prompt
+
+    def _build_field_prompts(self) -> str:
+        formatted = [
+            f"{i}. {p}"
+            for f in self.fields.values()
+            for i, p in enumerate(f.prompts, 1)
+        ]
+        self.field_prompts = "\n".join(formatted)
+        return self.field_prompts
+
+    def _build_field_template(self) -> str:
+        template = ["Structure all output with the following template."]
+        template += [
+            f"<< ## {c} ## >>\n{{{c}}}" for f in self.fields.values() for c in f.columns
+        ]
+        template.append("<< ## completed ## >>")
+        self.field_template = "\n\n".join(template)
+        return self.field_template
 
     @property
     def user_msg(self) -> str:
@@ -53,24 +71,6 @@ class ParserPrompt:
             for field_ in self.fields.values():
                 self._columns += field_.columns
         return self._columns
-
-    def build_field_prompts(self) -> str:
-        formatted = [
-            f"{i}. {p}"
-            for f in self.fields.values()
-            for i, p in enumerate(f.prompts, 1)
-        ]
-        self.field_prompts = "\n".join(formatted)
-        return self.field_prompts
-
-    def build_field_template(self) -> str:
-        template = ["Structure all output with the following template."]
-        template += [
-            f"<< ## {c} ## >>\n{{{c}}}" for f in self.fields.values() for c in f.columns
-        ]
-        template.append("<< ## completed ## >>")
-        self.field_template = "\n\n".join(template)
-        return self.field_template
 
     def build_text_msg(self, text: str) -> str:
         return self.text_msg + text

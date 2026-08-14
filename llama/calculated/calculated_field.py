@@ -6,4 +6,4 @@ from llama.pylib.base_field import BaseField
 
 @dataclass
 class CalculatedField(BaseField):
-    record: InitVar[dict[str, Any] | None] = None
+    cleaned_rec: InitVar[dict[str, Any] | None] = None

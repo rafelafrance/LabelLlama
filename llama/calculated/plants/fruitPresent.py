@@ -8,8 +8,11 @@ from llama.calculated.calculated_field import CalculatedField
 class FruitPresent(CalculatedField):
     fruitPresent: bool | str = ""
 
-    def __post_init__(self, record: dict[str, Any] | None) -> None:
+    def __post_init__(self, cleaned_rec: dict[str, Any] | None) -> None:
         """Set fruitPresent to True if there are fruit colors."""
-        record = record or {}
-        if not self.fruitPresent and (record["fruitColor"] or record["fruitFacts"]):
+        cleaned_rec = cleaned_rec or {}
+
+        if not self.fruitPresent and (
+            cleaned_rec["fruitColor"] or cleaned_rec["fruitFacts"]
+        ):
             self.fruitPresent = True

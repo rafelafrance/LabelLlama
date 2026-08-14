@@ -45,7 +45,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
             in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
-            out_field = field_action(in_row, **in_data)
+            out_field = field_action(out_row, **in_data)
             out_data = {
                 k: getattr(out_field, k) for k in out_field.get_visible_fields()
             }

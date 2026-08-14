@@ -43,12 +43,12 @@ class OcrDocs:
         docs.image_paths = image_util.get_images(image_dir, image_glob)
         docs.image_paths = docs.image_paths[:limit]
 
-        docs.ocr_records, docs.ocr_file_mode = docs.read_ocr_records(ocr_file)
-        docs.ocr_success = docs.get_already_read()
-        docs.tasks = docs.get_tasks()
+        docs.ocr_records, docs.ocr_file_mode = docs._read_ocr_records(ocr_file)
+        docs.ocr_success = docs._get_already_read()
+        docs.tasks = docs._get_tasks()
         return docs
 
-    def read_ocr_records(self, ocr_file: Path | None) -> tuple[list[OcrResult], str]:
+    def _read_ocr_records(self, ocr_file: Path | None) -> tuple[list[OcrResult], str]:
         mode = "w"
         records = []
         if ocr_file and ocr_file.exists() and ocr_file.stat().st_size >= MIN_SIZE:
@@ -64,6 +64,16 @@ class OcrDocs:
             ]
         return records, mode
 
+    def _get_already_read(self) -> set[str]:
+        return {
+            r.source
+            for r in self.ocr_records
+            if r.source and r.status.lower() == OcrStatus.SUCCESS
+        }
+
+    def _get_tasks(self) -> list[Path]:
+        return sorted(p for p in self.image_paths if str(p) not in self.ocr_success)
+
     @staticmethod
     def get_ocr_records(ocr_file: Path | None) -> list[OcrResult]:
         records = []
@@ -78,16 +88,6 @@ class OcrDocs:
                 for r in pd.read_csv(ocr_file, dtype=str).fillna("").to_dict("records")
             ]
         return records
-
-    def get_already_read(self) -> set[str]:
-        return {
-            r.source
-            for r in self.ocr_records
-            if r.source and r.status.lower() == OcrStatus.SUCCESS
-        }
-
-    def get_tasks(self) -> list[Path]:
-        return sorted(p for p in self.image_paths if str(p) not in self.ocr_success)
 
     @property
     def field_names(self) -> list[str]:

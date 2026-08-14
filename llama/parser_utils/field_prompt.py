@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from llama.pylib.prompt_file_parser import get_front_yaml
+from llama.pylib.prompt_util import get_front_yaml
 
 FIELD_PROMPT_DIR = Path("prompts")
 

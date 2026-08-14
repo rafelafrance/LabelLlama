@@ -15,11 +15,12 @@ class Locality(CalculatedField):
 
     locality: str = ""
 
-    def __post_init__(self, record: dict[str, Any] | None) -> None:
+    def __post_init__(self, cleaned_rec: dict[str, Any] | None) -> None:
         """Remove country, state/province, and county."""
-        record = record or {}
+        cleaned_rec = cleaned_rec or {}
+
         for field_name in ("country", "stateProvince", "county"):
-            if value := record.get(field_name):
+            if value := cleaned_rec.get(field_name):
                 # Remove the field from this string
                 pattern = re.escape(str(value))
                 self.locality = re.sub(pattern, "", self.locality, flags=re.IGNORECASE)
