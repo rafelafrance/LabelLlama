@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class OcrArgs:
     prompt: OcrPrompt
     api_host: str = "http://localhost:1234/v1"
-    model_name: str = "chandra-ocr"
+    model_id: str = "chandra-ocr"
     temperature: float = 0.1
     max_tokens: int = 2048
     timeout: int = 120

@@ -47,7 +47,7 @@ def parse_text(args: argparse.Namespace) -> None:
 
     parser_args = ParserArgs(
         prompt=prompt,
-        model_name=args.model_name,
+        model_id=args.model_id,
         api_host=args.api_host,
         temperature=args.temperature,
         max_tokens=args.max_tokens,
@@ -107,7 +107,7 @@ def parser(
         "Authorization": f"Bearer {os.getenv('LLM_API_KEY')}",
     }
     payload = {
-        "model": args.model_name,
+        "model": args.model_id,
         "messages": [
             {"role": "system", "content": args.prompt.system_msg},
             {"role": "user", "content": args.prompt.user_msg},
@@ -179,8 +179,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group = arg_parser.add_argument_group("model options")
     model_defaults = ParserArgs(ParserPrompt())
     model_group.add_argument(
-        "--model-name",
-        default=model_defaults.model_name,
+        "--model-id",
+        default=model_defaults.model_id,
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.
             cost trade off between local and hosted models. Local models are cheaper

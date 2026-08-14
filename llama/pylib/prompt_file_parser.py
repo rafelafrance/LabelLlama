@@ -30,7 +30,7 @@ class PromptFileParser:
 
         front = get_front_yaml(text, prompt_path)
 
-        # Split Markdown file into sections using headers
+        # Split Markdown file into sections
         sections = re.split(r"^(?<!#)#\s", text, flags=re.MULTILINE)
 
         sys_msg = ""
@@ -51,6 +51,7 @@ class PromptFileParser:
                     lnk = lnk.removeprefix("(").removesuffix(")")
                     fields[lnk] = FieldPrompt.load(lnk)
 
+            # Get calculated fields
             elif CALC_FIELDS.match(section):
                 section = CALC_FIELDS.sub("", section).strip()
                 links = re.findall(r"\([\w/.]+\)", section)

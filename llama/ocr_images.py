@@ -43,7 +43,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     model_args = OcrArgs(
         prompt=prompt,
         api_host=args.api_host,
-        model_name=args.model_name,
+        model_id=args.model_id,
         temperature=args.temperature,
         max_tokens=args.max_tokens,
         timeout=args.timeout,
@@ -96,7 +96,7 @@ def call_ocr(args: OcrArgs, image_path: Path, session: requests.Session) -> OcrR
     url = f"{args.api_host}/chat/completions"
     headers = {"Content-Type": "application/json"}
     payload = {
-        "model": args.model_name,
+        "model": args.model_id,
         "messages": [
             {"role": "system", "content": args.prompt.system_msg},
             {
@@ -181,8 +181,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group = arg_parser.add_argument_group("model options")
     model_defaults = OcrArgs(OcrPrompt())
     model_group.add_argument(
-        "--model-name",
-        default=model_defaults.model_name,
+        "--model-id",
+        default=model_defaults.model_id,
         metavar="STRING",
         help="""Use this language model. (default: %(default)s)""",
     )
