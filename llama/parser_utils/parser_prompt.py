@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 @dataclass
 class ParserPrompt:
     # -------------- ClassVars ---------------
-    text_msg: ClassVar[str] = """Extract data from this `text` (str):\n"""
+    text_msg: ClassVar[str] = """Extract data from this `text` (str):\n\n"""
     # ----------------------------------------
 
     name: str = ""
