@@ -2,9 +2,10 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import yaml
+
 from llama.parser_utils.calc_field import CalcField
 from llama.parser_utils.field_prompt import FieldPrompt
-from llama.parser_utils.parser_util import get_front_yaml
 
 FIELD_PROMPT_DIR = Path("prompts")
 
@@ -13,6 +14,16 @@ FIELD_PROMPT_DIR = Path("prompts")
 SYS_MSG = re.compile(r"^System\s+Message", flags=re.IGNORECASE)
 LLM_FIELDS = re.compile(r"^LLM\s+Fields", flags=re.IGNORECASE)
 CALC_FIELDS = re.compile(r"^Calculated\s+Fields", flags=re.IGNORECASE)
+
+
+def get_front_yaml(text: str, path: Path) -> dict:
+    top = re.search("^---$.*^---$", text, flags=re.MULTILINE | re.DOTALL)
+    if not top:
+        raise ValueError(f"Improperly formatted prompt file. {path}")
+
+    top = top.group(0).replace("---", "")
+    front = yaml.safe_load(top)
+    return front
 
 
 @dataclass

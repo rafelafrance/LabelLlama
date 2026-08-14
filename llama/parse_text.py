@@ -16,11 +16,10 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
-from llama.parser_utils.parsed_docs import ParsedDocs
+from llama.parser_utils.parsed_docs import FIRST_COLUMNS, ParsedDocs
 from llama.parser_utils.parser_args import ParserArgs
 from llama.parser_utils.parser_cleaner import ParserCleaner
 from llama.parser_utils.parser_prompt import ParserPrompt
-from llama.parser_utils.parser_util import FIRST_COLUMNS
 from llama.pylib import fix_ocr, log
 
 if TYPE_CHECKING:

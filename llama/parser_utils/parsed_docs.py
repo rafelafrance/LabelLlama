@@ -10,6 +10,8 @@ from llama.parser_utils.parser_status import ParseStatus
 if TYPE_CHECKING:
     from pathlib import Path
 
+FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
+
 
 @dataclass
 class ParsedDocs:
