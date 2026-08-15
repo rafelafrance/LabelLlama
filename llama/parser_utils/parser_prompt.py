@@ -41,11 +41,11 @@ class ParserPrompt:
     def _build_field_prompts(self) -> str:
         formatted = [
             f"{i}. {p}"
-            for f in self.fields.values()
-            for i, p in enumerate(f.prompts, 1)
+            for i, f in enumerate(self.fields.values(), 1)
+            for p in f.prompts
         ]
         self.field_prompts = "\n".join(formatted)
-        return self.field_prompts
+        return "\n" + self.field_prompts
 
     def _build_field_template(self) -> str:
         template = ["Structure all output with the following template."]

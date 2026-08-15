@@ -1,20 +1,24 @@
 # Prompts
 
-I use these Markdown files to generate prompts for various tasks. None of these Markdown files are designed to stand on their own. They are all modified in some way before being sent to the LLM. See [llm_prompt.py](../llama/pylib/llm_prompt.py).
+I use these Markdown files to generate prompts for various tasks.
+None of these Markdown files are designed to stand on their own.
+They are all modified in some way before being sent to the LLM.
+See [llm_prompt.py](../llama/pylib/llm_prompt.py).
 
 There are three types:
 
 1. Simple prompts only have a `System Message` section. I just pull in the text below the `System Message` heading. See [ocr_v1.md](ocr_v1.md) for an example of this type of prompt.
 
-2. `Output Field` prompts extend `System Messages`with a list of target fields links to include. See [herbarium_v1.md](herbarium_v1.md) for an example.
+2. `LLM Fields` prompts extend the `System Message`with a list of target fields links to include. See [herbarium_v2.md](herbarium_v2.md) for an example. It also may have a list of calculated fields.
 
    The list of field prompts get expanded with contents of the field prompt Markdown files when generating the full prompt to the LLM.
 
    Field lists have many overlapping fields like scientificName that gets reused all over the place.
 
-   `Output Field` prompts are stored in the `fields` subdirectories directory.
+   `LLM Fields` prompts are stored in the `fields` subdirectories directory.
 
-   The expansion of the `Output Field`prompts (without the label text itself) can be a little over 26K characters which is less than 4K words long.
+   There is also an optional `Calculated Fields` section.
+   These are fields that take in data from previously parsed data and generate a new field from that data. See [eventDate](../llama/calculated/event/eventDate.py) for an example.
 
 3. Field prompts hold the individual field descriptions used in the prompts. It contains the data types and instructions to the LLM on how to recognize and process the target data. See [scientificName_v1.md](fields/taxon/scientificName_v1.md) for an example.
 
