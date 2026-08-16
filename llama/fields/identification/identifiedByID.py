@@ -1,11 +1,19 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class IdentifiedByID(ExtractedField):
+class IdentifiedByID(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the globally unique identifier for the person, group, or organization
+        responsible for assigning the taxon to the specimen
+        """
+    # --------------
+
     identifiedByID: str = ""
 
     def __post_init__(self, text: str) -> None:

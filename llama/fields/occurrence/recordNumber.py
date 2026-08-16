@@ -1,13 +1,21 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 SOURCE_THRESHOLD = 75.0
 
 
 @dataclass
-class RecordNumber(ExtractedField):
+class RecordNumber(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the record number — an identifier assigned to the occurrence at the time
+        it was recorded
+        """
+    # --------------
+
     recordNumber: str = ""
 
     def __post_init__(self, text: str) -> None:

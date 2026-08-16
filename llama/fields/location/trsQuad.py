@@ -1,11 +1,18 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class TrsQuad(ExtractedField):
+class TrsQuad(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the quadrangle (quad) name associated with the TRS coordinates
+        """
+    # --------------
+
     trsQuad: str = ""
 
     def __post_init__(self, text: str) -> None:

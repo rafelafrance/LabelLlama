@@ -1,10 +1,17 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class ScientificNameAuthorship(ExtractedField):
+class ScientificNameAuthorship(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the authorship citation for the species-level scientific name
+        """
+    # --------------
+
     scientificNameAuthorship: str = ""
 
     def __post_init__(self, text: str) -> None:

@@ -1,10 +1,19 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class AssociatedTaxa(ExtractedField):
+class AssociatedTaxa(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the name(s) of other species found with or near the specimen.
+        This field captures taxa associated with the collection but not the primary
+        specimen itself
+        """
+    # --------------
+
     associatedTaxa: str = ""
 
     def __post_init__(self, text: str) -> None:

@@ -1,13 +1,21 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 # Remove these extra values
 EMPTY_NE: tuple = ("0", "0.0")
 
 
 @dataclass
-class UtmEasting(ExtractedField):
+class UtmEasting(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the easting portion of the Universal Transverse Mercator (UTM)
+        coordinates
+        """
+    # --------------
+
     utmEasting: str = ""
 
     def __post_init__(self, text: str) -> None:

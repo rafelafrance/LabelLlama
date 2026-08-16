@@ -1,13 +1,17 @@
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 from llama.vocab.taxon import GENUS_TO_FAMILY
 
 
 @dataclass
-class Family(ExtractedField):
+class Family(LlmField):
     # --------------
+    description: ClassVar[str] = """
+        Extract the taxonomic family of the specimen (e.g., 'Rosaceae', 'Asteraceae',
+        'Fabaceae')
+        """
     scoring_method: ClassVar[str] = "CUST"
     # --------------
 
@@ -26,4 +30,4 @@ class Family(ExtractedField):
         if not expect and GENUS_TO_FAMILY.get(genus) == actual:
             return 1.0
 
-        return ExtractedField.score(expect, actual, record)  # Default to edit distance
+        return LlmField.score(expect, actual, record)  # Default to edit distance

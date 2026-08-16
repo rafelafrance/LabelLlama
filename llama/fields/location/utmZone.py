@@ -1,11 +1,18 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class UtmZone(ExtractedField):
+class UtmZone(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the zone portion of the Universal Transverse Mercator (UTM) coordinates
+        """
+    # --------------
+
     utmZone: str = ""
 
     def __post_init__(self, text: str) -> None:

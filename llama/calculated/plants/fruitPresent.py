@@ -13,6 +13,6 @@ class FruitPresent(CalculatedField):
         cleaned_rec = cleaned_rec or {}
 
         if not self.fruitPresent and (
-            cleaned_rec["fruitColor"] or cleaned_rec["fruitFacts"]
+            cleaned_rec.get("fruitColor") or cleaned_rec.get("fruitFacts")
         ):
             self.fruitPresent = True

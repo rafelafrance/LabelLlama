@@ -1,10 +1,17 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class FruitColor(ExtractedField):
+class FruitColor(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the color(s) of the fruits of the specimen
+        """
+    # --------------
+
     fruitColor: str = ""
 
     def __post_init__(self, text: str) -> None:

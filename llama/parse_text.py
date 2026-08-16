@@ -78,7 +78,7 @@ def parse_text(args: argparse.Namespace) -> None:
             for future in as_completed(futures):
                 result = future.result()
                 statuses[result["status"]] += 1
-                writer.writerow(result)
+                # writer.writerow(result)  # ########################################
                 pbar.update(1)
                 parsed_file.flush()
 
@@ -109,7 +109,6 @@ def parser(
         "model": args.model_id,
         "messages": [
             {"role": "system", "content": args.prompt.system_msg},
-            {"role": "user", "content": args.prompt.user_msg},
             {"role": "user", "content": args.prompt.build_text_msg(text)},
         ],
     }
@@ -117,6 +116,8 @@ def parser(
         payload["temperature"] = args.temperature
     if args.max_tokens is not None:
         payload["max_tokens"] = args.max_tokens
+    if args.prompt.json_schema:
+        payload["character_schema"] = args.prompt.json_schema
 
     extracted = {}
     try:
@@ -127,6 +128,7 @@ def parser(
         result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
+        print(content)  # #####################################################
         extracted = ParserCleaner.llm_reply_to_dict(content, args.prompt.column_names)
         status = "success"
 

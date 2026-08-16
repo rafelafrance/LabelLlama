@@ -4,5 +4,5 @@ from llama.pylib.base_field import BaseField
 
 
 @dataclass
-class ExtractedField(BaseField):
+class LlmField(BaseField):
     text: InitVar[str] = ""

@@ -1,13 +1,21 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 LABELS = re.compile(r"\s*(Departamento de|District|Provincia de)\s*", re.IGNORECASE)
 
 
 @dataclass
-class StateProvince(ExtractedField):
+class StateProvince(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the state, province, or equivalent first-level administrative division
+        where the specimen was collected
+        """
+    # --------------
+
     stateProvince: str = ""
 
     def __post_init__(self, text: str) -> None:

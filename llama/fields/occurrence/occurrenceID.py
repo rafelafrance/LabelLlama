@@ -1,11 +1,19 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class OccurrenceID(ExtractedField):
+class OccurrenceID(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the catalog number — the unique identifier for the specimen or record
+        within its collection or data set
+        """
+    # --------------
+
     occurrenceID: str = ""
 
     def __post_init__(self, text: str) -> None:

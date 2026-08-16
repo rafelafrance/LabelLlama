@@ -4,12 +4,16 @@ from typing import Any, ClassVar
 
 from rapidfuzz import fuzz
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class OccurrenceRemarks(ExtractedField):
+class OccurrenceRemarks(LlmField):
     # --------------
+    description: ClassVar[str] = """
+        Extract any remaining observations, notes, or comments about the specimen
+        occurrence that are not captured by other dedicated fields
+        """
     scoring_method: ClassVar[str] = "FPR"
     # --------------
 

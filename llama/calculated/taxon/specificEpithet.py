@@ -13,5 +13,6 @@ class SpecificEpithet(CalculatedField):
         cleaned_rec = cleaned_rec or {}
 
         if not self.specificEpithet:
-            words = cleaned_rec["specificEpithet"].split()
-            self.specificEpithet = words[1].lower() if len(words) > 1 else ""
+            words = cleaned_rec.get("scientificName", "").split()
+            if words:
+                self.specificEpithet = words[1].lower() if len(words) > 1 else ""

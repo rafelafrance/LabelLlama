@@ -1,10 +1,18 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class Suborder(ExtractedField):
+class Suborder(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the taxonomic suborder of the specimen (e.g., 'Violineae',
+        'Cucurbitineae', 'Heterodontina')
+        """
+    # --------------
+
     suborder: str = ""
 
     def __post_init__(self, text: str) -> None:

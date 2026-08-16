@@ -1,11 +1,18 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class VerbatimEventDate(ExtractedField):
+class VerbatimEventDate(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the date (or date range) when the specimen was collected or observed
+        """
+    # --------------
+
     verbatimEventDate: str = ""
 
     def __post_init__(self, text: str) -> None:

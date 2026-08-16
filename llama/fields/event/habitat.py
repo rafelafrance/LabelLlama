@@ -4,12 +4,16 @@ from typing import Any, ClassVar
 
 from rapidfuzz import fuzz
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class Habitat(ExtractedField):
+class Habitat(LlmField):
     # --------------
+    description: ClassVar[str] = """
+        Extract the habitat, environment, or ecological setting where the specimen was
+        collected
+        """
     scoring_method: ClassVar[str] = "FPR"
     # --------------
 

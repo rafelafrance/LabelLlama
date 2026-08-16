@@ -1,10 +1,17 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class LeafShape(ExtractedField):
+class LeafShape(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the shape of the specimen's leaf
+        """
+    # --------------
+
     leafShape: str = ""
 
     def __post_init__(self, text: str) -> None:

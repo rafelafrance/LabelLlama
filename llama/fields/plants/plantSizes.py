@@ -1,10 +1,18 @@
 from dataclasses import dataclass, field
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class PlantSizes(ExtractedField):
+class PlantSizes(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract dimensions of individual plant parts and structures, excluding the
+        overall plant height (which belongs in `plantHeight`)
+        """
+    # --------------
+
     plantSizes: list[str] | str = field(default_factory=list)
 
     def __post_init__(self, text: str) -> None:

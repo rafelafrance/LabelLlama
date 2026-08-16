@@ -1,11 +1,18 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class RecordedBy(ExtractedField):
+class RecordedBy(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the name of the person or group who collected or observed the specimen
+        """
+    # --------------
+
     recordedBy: str = ""
 
     def __post_init__(self, text: str) -> None:

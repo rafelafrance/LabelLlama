@@ -27,7 +27,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 from llama.parser_utils.parsed_docs import FIRST_COLUMNS
 from llama.parser_utils.parser_cleaner import ParserCleaner
 from llama.pylib import log
@@ -134,7 +134,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
             # Build a score row
             score_row = {"row_type": f"score {stem}"}
             for col in columns:
-                field_class = field_classes.get(col, ExtractedField)
+                field_class = field_classes.get(col, LlmField)
                 score = field_class.score(
                     str(gold.get(col, "")),
                     str(parsed_data[stem].get(col, "")),

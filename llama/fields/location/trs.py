@@ -1,10 +1,17 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class Trs(ExtractedField):
+class Trs(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the full Township-Range-Section (TRS) coordinate string from the label
+        """
+    # --------------
+
     trs: str = ""
 
     def __post_init__(self, text: str) -> None:

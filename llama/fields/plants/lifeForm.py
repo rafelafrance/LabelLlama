@@ -1,10 +1,17 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class LifeForm(ExtractedField):
+class LifeForm(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the ecological life form (aka niche) of the specimen
+        """
+    # --------------
+
     lifeForm: str = ""
 
     def __post_init__(self, text: str) -> None:

@@ -1,11 +1,18 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class ScientificName(ExtractedField):
+class ScientificName(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the scientific name of the specimen at the species level
+        """
+    # --------------
+
     scientificName: str = ""
 
     def __post_init__(self, text: str) -> None:

@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar
 
-from llama.parser_utils.field_prompt import FieldPrompt
 from llama.pylib.prompt_file_parser import PromptFileParser
 
 if TYPE_CHECKING:
@@ -11,17 +10,14 @@ if TYPE_CHECKING:
 @dataclass
 class ParserPrompt:
     # -------------- ClassVars ---------------
-    text_msg: ClassVar[str] = """Extract data from this `text` (str):\n\n"""
+    text_msg: ClassVar[str] = """Extract data from this `text`:\n\n"""
     # ----------------------------------------
 
     name: str = ""
     description: str = ""
     system_msg: str = ""
-    fields: dict[str, FieldPrompt] = field(default_factory=dict[str, FieldPrompt])
-    field_prompts: str = ""
-    field_template: str = ""
-    _user_msg: str = ""
-    _columns: list[str] = field(default_factory=list[str])
+    json_schema: str = ""
+    column_names: list[str] = field(default_factory=list[str])
 
     @classmethod
     def load(cls, prompt_path: Path) -> ParserPrompt:
@@ -30,47 +26,10 @@ class ParserPrompt:
             name=prompt_parser.name,
             description=prompt_parser.description,
             system_msg=prompt_parser.system_msg,
-            fields=prompt_parser.fields,
+            json_schema=prompt_parser.json_schema,
+            column_names=[f.name for f in prompt_parser.llm_fields],
         )
-        if prompt.fields:
-            prompt.field_prompts = prompt._build_field_prompts()
-            prompt.field_template = prompt._build_field_template()
-
         return prompt
-
-    def _build_field_prompts(self) -> str:
-        formatted = [
-            f"{i}. {p}"
-            for i, f in enumerate(self.fields.values(), 1)
-            for p in f.prompts
-        ]
-        self.field_prompts = "\n".join(formatted)
-        return "\n" + self.field_prompts
-
-    def _build_field_template(self) -> str:
-        template = ["Structure all output with the following template."]
-        template += [
-            f"<< ## {c} ## >>\n{{{c}}}" for f in self.fields.values() for c in f.columns
-        ]
-        template.append("<< ## completed ## >>")
-        self.field_template = "\n\n".join(template)
-        return self.field_template
-
-    @property
-    def user_msg(self) -> str:
-        if not self._user_msg:
-            self._user_msg = "\n\n".join(
-                [p for p in (self.field_prompts, self.field_template) if p]
-            )
-        return self._user_msg
-
-    @property
-    def column_names(self) -> list[str]:
-        """Get all column names."""
-        if not self._columns:
-            for field_ in self.fields.values():
-                self._columns += field_.columns
-        return self._columns
 
     def build_text_msg(self, text: str) -> str:
         return self.text_msg + text

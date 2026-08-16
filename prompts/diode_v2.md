@@ -31,33 +31,149 @@ Your job is to extract written or typed information from the image.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 
+Structure the output as JSON using this JSON schema.
+
+```json
+{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "diode_v2",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "scientificName": {
+          "type": "string",
+          "description": "Extract the scientific name of the specimen at the species level"
+        },
+        "scientificNameAuthorship": {
+          "type": "string",
+          "description": "Extract the authorship citation for the species-level scientific name"
+        },
+        "verbatimEventDate": {
+          "type": "string",
+          "description": "Extract the date (or date range) when the specimen was collected or observed"
+        },
+        "institutionCode": {
+          "type": "string",
+          "description": "Extract the institution code — the acronym, coden, or short name used by the institution that owns the specimen or data record"
+        },
+        "collectionCode": {
+          "type": "string",
+          "description": "Extract the collection code — the name, acronym, coden, or initialism identifying the collection or data set from which the record was derived"
+        },
+        "catalogNumber": {
+          "type": "string",
+          "description": "Extract the catalog number — the unique identifier for the specimen or record within its collection or data set"
+        },
+        "sex": {
+          "type": "string",
+          "description": "Extract the biological sex of the specimen as recorded on the label"
+        },
+        "lifeStage": {
+          "type": "string",
+          "description": "Extract the developmental or phenological stage of the insect specimen at the time of collection"
+        },
+        "verbatimLatitude": {
+          "type": "string",
+          "description": "Extract the latitude at which the specimen was collected"
+        },
+        "decimalLatitude": {
+          "type": "string",
+          "description": "Extract the decimal latitude at which the specimen was collected"
+        },
+        "verbatimLongitude": {
+          "type": "string",
+          "description": "Extract the longitude at which the specimen was collected"
+        },
+        "decimalLongitude": {
+          "type": "string",
+          "description": "Extract the decimal longitude at which the specimen was collected"
+        },
+        "recordedBy": {
+          "type": "string",
+          "description": "Extract the name of the person or group who collected or observed the specimen"
+        },
+        "recordNumber": {
+          "type": "string",
+          "description": "Extract the record number — an identifier assigned to the occurrence at the time it was recorded"
+        },
+        "identifiedBy": {
+          "type": "string",
+          "description": "Extract the name of the person or group who identified, determined, or verified the taxonomic name of the specimen. This is the determiner, not the original collector"
+        },
+        "identifiedByID": {
+          "type": "string",
+          "description": "Extract the globally unique identifier for the person, group, or organization responsible for assigning the taxon to the specimen"
+        },
+        "dateIdentified": {
+          "type": "string",
+          "description": "Extract the date (or date range) when the specimen was identified, verified, or determined"
+        },
+        "locality": {
+          "type": "string",
+          "description": "Extract the locality — the specific place or geographic description where the specimen was collected"
+        },
+        "country": {
+          "type": "string",
+          "description": "Extract the country where the specimen was collected. Return the full, standard English country name"
+        },
+        "stateProvince": {
+          "type": "string",
+          "description": "Extract the state, province, or equivalent first-level administrative division where the specimen was collected"
+        },
+        "county": {
+          "type": "string",
+          "description": "Extract the county, parish, or equivalent second-level administrative division where the specimen was collected"
+        },
+        "municipality": {
+          "type": "string",
+          "description": "Extract the municipality — the city, town, village, or other populated place where the specimen was collected"
+        },
+        "waterBody": {
+          "type": "string",
+          "description": "Extract the name of the specific body of water where the specimen was collected"
+        },
+        "habitat": {
+          "type": "string",
+          "description": "Extract the habitat, environment, or ecological setting where the specimen was collected"
+        },
+        "occurrenceRemarks": {
+          "type": "string",
+          "description": "Extract any remaining observations, notes, or comments about the specimen occurrence that are not captured by other dedicated fields."
+        }
+      }
+    }
+  }
+}
+```
+
 # LLM Fields
 
-- [scientificName](fields_v2/taxon/scientificName_v2.md)
-- [scientificNameAuthorship](fields_v2/taxon/scientificNameAuthorship_v2.md)
-- [verbatimEventDate](fields_v2/event/verbatimEventDate_v2.md)
-- [institutionCode](fields_v2/record_level/institutionCode_v2.md)
-- [collectionCode](fields_v2/record_level/collectionCode_v2.md)
-- [catalogNumber](fields_v2/occurrence/catalogNumber_v2.md)
-- [sex](fields_v2/occurrence/sex_v2.md)
-- [lifeStage](fields_v2/insects/lifeStage_v2.md)
-- [verbatimLatitude](fields_v2/location/verbatimLatitude_v2.md)
-- [decimalLatitude](fields_v2/location/decimalLatitude_v2.md)
-- [verbatimLongitude](fields_v2/location/verbatimLongitude_v2.md)
-- [decimalLongitude](fields_v2/location/decimalLongitude_v2.md)
-- [recordedBy](fields_v2/occurrence/recordedBy_v2.md)
-- [recordNumber](fields_v2/occurrence/recordNumber_v2.md)
-- [identifiedBy](fields_v2/identification/identifiedBy_v2.md)
-- [identifiedByID](fields_v2/identification/identifiedByID_v2.md)
-- [dateIdentified](fields_v2/identification/dateIdentified_v2.md)
-- [locality](fields_v2/location/locality_v2.md)
-- [country](fields_v2/location/country_v2.md)
-- [stateProvince](fields_v2/location/stateProvince_v2.md)
-- [county](fields_v2/location/county_v2.md)
-- [municipality](fields_v2/location/municipality_v2.md)
-- [waterBody](fields_v2/location/waterBody_v2.md)
-- [habitat](fields_v2/event/habitat_v2.md)
-- [occurrenceRemarks](fields_v2/occurrence/occurrenceRemarks_v2.md)
+- [scientificName](../llama/fields/taxon/scientificName.py)
+- [scientificNameAuthorship](../llama/fields/taxon/scientificNameAuthorship.py)
+- [verbatimEventDate](../llama/fields/event/verbatimEventDate.py)
+- [institutionCode](../llama/fields/record_level/institutionCode.py)
+- [collectionCode](../llama/fields/record_level/collectionCode.py)
+- [catalogNumber](../llama/fields/occurrence/catalogNumber.py)
+- [sex](../llama/fields/occurrence/sex.py)
+- [lifeStage](../llama/fields/insects/lifeStage.py)
+- [verbatimLatitude](../llama/fields/location/verbatimLatitude.py)
+- [decimalLatitude](../llama/fields/location/decimalLatitude.py)
+- [verbatimLongitude](../llama/fields/location/verbatimLongitude.py)
+- [decimalLongitude](../llama/fields/location/decimalLongitude.py)
+- [recordedBy](../llama/fields/occurrence/recordedBy.py)
+- [recordNumber](../llama/fields/occurrence/recordNumber.py)
+- [identifiedBy](../llama/fields/identification/identifiedBy.py)
+- [identifiedByID](../llama/fields/identification/identifiedByID.py)
+- [dateIdentified](../llama/fields/identification/dateIdentified.py)
+- [locality](../llama/fields/location/locality.py)
+- [country](../llama/fields/location/country.py)
+- [stateProvince](../llama/fields/location/stateProvince.py)
+- [county](../llama/fields/location/county.py)
+- [municipality](../llama/fields/location/municipality.py)
+- [waterBody](../llama/fields/location/waterBody.py)
+- [habitat](../llama/fields/event/habitat.py)
+- [occurrenceRemarks](../llama/fields/occurrence/occurrenceRemarks.py)
 
 # Calculated Fields
 

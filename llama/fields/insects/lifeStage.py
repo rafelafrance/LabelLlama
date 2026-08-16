@@ -1,10 +1,18 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class LifeStage(ExtractedField):
+class LifeStage(LlmField):
+    # --------------
+    description: ClassVar[str] = """
+        Extract the developmental or phenological stage of the insect specimen at the
+        time of collection
+        """
+    # --------------
+
     lifeStage: str = ""
 
     def __post_init__(self, text: str) -> None:

@@ -5,24 +5,26 @@ from typing import Any
 
 
 @dataclass
-class CalcField:
+class FieldAction:
     name: str
     module: Path
     columns: list[str] = field(default_factory=list[str])
     field_class: Any = None
 
     @classmethod
-    def load(cls, link: str) -> CalcField:
+    def load(cls, link: str) -> FieldAction:
         lnk = Path(link)
+
         cls_name = lnk.stem[0].upper() + lnk.stem[1:]
         mod_name = link.removeprefix("../").removesuffix(".py").replace("/", ".")
         module = importlib.import_module(mod_name)
         field_class = getattr(module, cls_name)
 
-        calc_field = cls(
+        action = cls(
             name=lnk.stem,
             module=lnk,
             columns=field_class().get_field_names(),
             field_class=getattr(module, cls_name),
         )
-        return calc_field
+
+        return action

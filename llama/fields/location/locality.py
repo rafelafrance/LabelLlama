@@ -3,12 +3,16 @@ from typing import Any, ClassVar
 
 from rapidfuzz import fuzz
 
-from llama.fields.extracted_field import ExtractedField
+from llama.fields.llm_field import LlmField
 
 
 @dataclass
-class Locality(ExtractedField):
+class Locality(LlmField):
     # --------------
+    description: ClassVar[str] = """
+        Extract the locality — the specific place or geographic description where the
+        specimen was collected
+        """
     scoring_method: ClassVar[str] = "FPR"
     # --------------
 

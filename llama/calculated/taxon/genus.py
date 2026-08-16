@@ -13,5 +13,6 @@ class Genus(CalculatedField):
         cleaned_rec = cleaned_rec or {}
 
         if not self.genus:
-            words = cleaned_rec["scientificName"].split()
-            self.genus = words[0].capitalize() if len(words) > 0 else ""
+            words = cleaned_rec.get("scientificName", "").split()
+            if words:
+                self.genus = words[0].capitalize() if len(words) > 0 else ""
