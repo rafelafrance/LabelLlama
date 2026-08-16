@@ -105,7 +105,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     columns = [k for k in columns if k not in FIRST_COLUMNS]
 
     # Load scoring classes
-    field_classes = ParserCleaner.load(args.prompt).field_classes
+    llm_field_classes = ParserCleaner.load(args.prompt).llm_field_classes
 
     # Build rows for each group
     row_groups = []
@@ -134,7 +134,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
             # Build a score row
             score_row = {"row_type": f"score {stem}"}
             for col in columns:
-                field_class = field_classes.get(col, LlmField)
+                field_class = llm_field_classes.get(col, LlmField)
                 score = field_class.score(
                     str(gold.get(col, "")),
                     str(parsed_data[stem].get(col, "")),

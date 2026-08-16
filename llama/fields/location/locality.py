@@ -11,7 +11,10 @@ class Locality(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the locality — the specific place or geographic description where the
-        specimen was collected
+        specimen was collected.
+        This does not include the country (which belongs in `country`),
+        This does not include the stateProvince (which belongs in `stateProvince`),
+        This does not include the county (which belongs in `county`).
         """
     scoring_method: ClassVar[str] = "FPR"
     # --------------

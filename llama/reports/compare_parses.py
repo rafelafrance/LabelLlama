@@ -6,6 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
+from rich import print as rprint
 
 from llama.pylib import log
 
@@ -14,25 +15,32 @@ def compare(args: argparse.Namespace) -> None:
     """Compare LLM outputs against gbif data and write an HTML report."""
     job_began = log.job_began(args.log_file, args=args)
 
-    all_ocr = defaultdict(list)
-    for ocr_file in args.ocr_file:
-        ocr = pd.read_csv(ocr_file, dtype=str).fillna("").to_dict("records")
-        for row in ocr:
-            all_ocr[row["source"]].append(row)
+    all_parses = defaultdict(list)
+    columns = []
+    for parse_file in args.parse_file:
+        parse = pd.read_csv(parse_file, dtype=str).fillna("").to_dict("records")
+        columns = [k for k in parse[0] if k not in ("text", "elapsed")]
+        for row in parse:
+            all_parses[row["source"]].append(row)
 
-    for i, (key, value) in enumerate(all_ocr.items(), 1):
+    all_parses = {k: v for k, v in all_parses.items() if len(v) > 1}
+
+    for i, (key, value) in enumerate(all_parses.items(), 1):
         print("=" * 90)
         print(i, key)
-        print()
         print("-" * 80)
-        for row in value:
-            print(row["elapsed"])
-            print()
-            print(row["text"])
+        for col in columns:
+            values = [row[col] for row in value]
+            if all(v == values[0] for v in values):
+                rprint(f"[green]{col}: {values[0]}")
+            else:
+                for v in values:
+                    rprint(f"[red]{col}: {v}")
             print("-" * 80)
         print()
-        # if i == 10:
-        #     break
+
+    print("=" * 90)
+    print(f"{len(all_parses)} compared")
 
     log.job_elapsed(job_began)
 
@@ -43,12 +51,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         description=textwrap.dedent("""Compare OCR results from different models."""),
     )
     arg_parser.add_argument(
-        "--ocr-file",
+        "--parse-file",
         type=Path,
         required=True,
         action="append",
         metavar="path",
-        help="""This file contains the original OCRed text.""",
+        help="""This file contains parsed text.""",
     )
     arg_parser.add_argument(
         "--log-file",

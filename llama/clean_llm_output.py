@@ -18,7 +18,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     cleaner = ParserCleaner.load(args.prompt)
 
-    columns = [c for c in df.columns if c in cleaner.field_classes]
+    columns = [c for c in df.columns if c in cleaner.llm_field_classes]
     calc_columns = list(cleaner.calc_field_classes)
 
     input_rows = [r for r in df.to_dict("records") if r["status"] == "success"]
@@ -30,7 +30,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         out_row = {"source": in_row["source"], "text": in_row["text"]}
 
         for column in columns:
-            field_action = cleaner.field_classes[column]
+            field_action = cleaner.llm_field_classes[column]
 
             in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from textwrap import dedent, indent
 from typing import TYPE_CHECKING, ClassVar
 
 from llama.pylib.prompt_file_parser import PromptFileParser
@@ -26,10 +27,44 @@ class ParserPrompt:
             name=prompt_parser.name,
             description=prompt_parser.description,
             system_msg=prompt_parser.system_msg,
-            json_schema=prompt_parser.json_schema,
             column_names=[f.name for f in prompt_parser.llm_fields],
         )
+        prompt.json_schema = prompt._build_json_schema(prompt_parser)
+        prompt.system_msg += dedent("""
+            \nStructure the output as JSON using this JSON schema.
+            """)
+        prompt.system_msg += prompt.json_schema
         return prompt
+
+    def _build_json_schema(self, prompt_parser: PromptFileParser) -> str:
+        prefix = dedent(f"""
+            {{
+              "type": "json_schema",
+              "json_schema": {{
+                "name": "{self.name}",
+                "schema": {{
+                  "type": "object",
+                  "properties": {{""")
+        suffix = dedent("""
+                  }
+                }
+              }
+            }
+            """)
+        llm_fields = []
+        for fld in prompt_parser.llm_fields:
+            desc = " ".join(fld.field_class.description.split())
+            prop = indent(
+                dedent(f"""
+            "{fld.name}": {{
+              "type": "string",
+              "description": "{desc}"
+            }}"""),
+                " " * 8,
+            )
+            llm_fields.append(prop)
+        schema = prefix + ",".join(llm_fields) + suffix
+        return schema
 
     def build_text_msg(self, text: str) -> str:
         return self.text_msg + text

@@ -2,23 +2,25 @@
 
 import argparse
 import csv
+import json
 import logging
 import os
 import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
 from tqdm import tqdm
 
 from llama.parser_utils.parsed_docs import FIRST_COLUMNS, ParsedDocs
 from llama.parser_utils.parser_args import ParserArgs
-from llama.parser_utils.parser_cleaner import ParserCleaner
 from llama.parser_utils.parser_prompt import ParserPrompt
 from llama.pylib import fix_ocr, log
 
@@ -78,7 +80,7 @@ def parse_text(args: argparse.Namespace) -> None:
             for future in as_completed(futures):
                 result = future.result()
                 statuses[result["status"]] += 1
-                # writer.writerow(result)  # ########################################
+                writer.writerow(result)
                 pbar.update(1)
                 parsed_file.flush()
 
@@ -128,11 +130,10 @@ def parser(
         result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
-        print(content)  # #####################################################
-        extracted = ParserCleaner.llm_reply_to_dict(content, args.prompt.column_names)
+        extracted = json.loads(content)
         status = "success"
 
-    except requests.exceptions.RequestException as err:
+    except (RequestException, JSONDecodeError) as err:
         logging.exception(f"Parse error for: {Path(ocr_result.source).name}")
         text = str(err)
         status = "ERROR"
