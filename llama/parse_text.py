@@ -78,11 +78,19 @@ def parse_text(args: argparse.Namespace) -> None:
                 for ocr_result in parsed_docs.tasks
             }
             for future in as_completed(futures):
-                result = future.result()
-                statuses[result["status"]] += 1
-                writer.writerow(result)
                 pbar.update(1)
-                parsed_file.flush()
+                result = future.result()
+                try:
+                    writer.writerow(result)
+                    statuses[result["status"]] += 1
+                    parsed_file.flush()
+                except ValueError as err:
+                    logging.exception(f"Parse error for: {Path(result.source).name}")
+                    text = str(err)
+                    logging.exception(text)
+                    writer.writerow(
+                        {"status": "ERROR", "source": result.source, "text": text}
+                    )
 
     logging.info(
         f"Total {len(parsed_docs.tasks)} documents processed "
@@ -131,9 +139,10 @@ def parser(
 
         content = result["choices"][0]["message"]["content"] or ""
         extracted = json.loads(content)
+
         status = "success"
 
-    except (RequestException, JSONDecodeError) as err:
+    except (RequestException, JSONDecodeError, ValueError) as err:
         logging.exception(f"Parse error for: {Path(ocr_result.source).name}")
         text = str(err)
         status = "ERROR"

@@ -9,6 +9,8 @@ class WaterBody(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the name of the specific body of water where the specimen was collected
+        including rivers, streams, creeks, springs, oceans, seas, lakes, ponds,
+        swamps, sloughs, marshes, fens etc.
         """
     # --------------
 
