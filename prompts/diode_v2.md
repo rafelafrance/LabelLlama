@@ -5,18 +5,8 @@ description: Extract information from labels on images of Odonata museum specime
 
 # System Message
 
-You will receive an image of a museum specimen with attached labels.
-Your job is to extract written or typed information from the image.
-
-## What to Ignore
-
-- The specimen itself (usually centered in the image)
-- Images, illustrations, or photographs within labels
-- Maps within the labels
-- Bar-codes and QR-codes
-- Rulers or scale bars
-- Stamps on the sheet
-- Color test bars or calibration strips
+You will be given OCRed text, and you need to extract
+structured biological and collection metadata from the label text.
 
 ## Output Rules
 

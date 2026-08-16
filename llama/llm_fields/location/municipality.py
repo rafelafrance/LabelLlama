@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class Municipality(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the municipality — the city, town, village, campus, or other populated
-        place where the specimen was collected
+        Extract the municipality — the city, town, village, or other populated
+        place where the specimen was collected. It may also be in the `locality`.
         """
     # --------------
 

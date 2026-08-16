@@ -5,7 +5,7 @@ import pandas as pd
 
 from llama.ocr_utils.ocr_docs import MIN_SIZE, OcrDocs
 from llama.ocr_utils.ocr_result import OcrResult
-from llama.parser_utils.parser_status import ParseStatus
+from llama.parser_utils.parser_status import ParserStatus
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -56,7 +56,7 @@ class ParsedDocs:
         return {
             r["source"]
             for r in self.parsed_records
-            if r["status"] == ParseStatus.SUCCESS
+            if r["status"] == ParserStatus.SUCCESS
         }
 
     def _get_tasks(self) -> list[OcrResult]:

@@ -14,7 +14,7 @@ class Locality(LlmField):
         specimen was collected.
         This does not include the country (which belongs in `country`),
         This does not include the stateProvince (which belongs in `stateProvince`),
-        This does not include the county (which belongs in `county`).
+        This does not include the county (which belongs in `county`)
         """
     scoring_method: ClassVar[str] = "FPR"
     # --------------
