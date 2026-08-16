@@ -3,7 +3,7 @@
 uv run llama/clean_llm_output.py \
   --in-file data/diode/gold_std/gold_qwen_2026-06-02a.csv \
   --out-file data/diode/gold_std/gold_qwen_2026-06-02a_clean.csv \
-  --prompt prompts/fields/diode.md \
+  --prompt prompts/llm_fields/diode.md \
   --log-file data/diode/gold_std/gold_std.log
 
 

@@ -4,7 +4,7 @@ for org in "brit" "carnegie" "cas" "cornell" "field" "harvard" "mo" "nau" "ny" "
     uv run llama/parse_text.py \
         --ocr-file "data/herbarium/ocr_olmocr2/ocr_${org}_images.csv" \
         --parse-file "data/herbarium/gemma4_12b_raw/gemma4_12b_${org}.csv" \
-        --prompt prompts/fields/herbarium_v1.md \
+        --prompt prompts/llm_fields/herbarium_v1.md \
         --model "google/gemma-4-12b-qat" \
         --api-host "http://localhost:1234/v1" \
         --temperature 0.1 \

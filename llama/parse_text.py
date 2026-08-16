@@ -176,7 +176,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         required=True,
         metavar="path",
         help="""A markdown file with a prompt and list of fields to parse.
-            For example prompts/fields/herbarium_v1.md.""",
+            For example prompts/llm_fields/herbarium_v1.md.""",
     )
     model_group = arg_parser.add_argument_group("model options")
     model_defaults = ParserArgs(ParserPrompt())

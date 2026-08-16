@@ -1,6 +1,6 @@
 import unittest
 
-from llama.fields.location.verbatimLatitude import VerbatimLatitude
+from llama.llm_fields.location.verbatimLatitude import VerbatimLatitude
 from llama.pylib.fix_parses import FixParses
 
 
