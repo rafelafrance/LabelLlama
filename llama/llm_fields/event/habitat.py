@@ -12,7 +12,7 @@ class Habitat(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the habitat, environment, or ecological setting where the specimen was
-        collected
+        collected. This can be a field, forest, water body, etc.
         """
     scoring_method: ClassVar[str] = "FPR"
     # --------------

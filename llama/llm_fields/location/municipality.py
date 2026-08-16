@@ -9,7 +9,8 @@ class Municipality(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the municipality — the city, town, village, or other populated
-        place where the specimen was collected. It may also be in the `locality`.
+        place where the specimen was collected. Municipalities are often also mentioned
+        in the `locality`
         """
     # --------------
 
