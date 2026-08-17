@@ -1,7 +1,7 @@
 from enum import StrEnum
 
 
-class ParserStatus(StrEnum):
+class ModelStatus(StrEnum):
     SUCCESS = "success"
     ERROR = "ERROR"
     UNKNOWN = ""

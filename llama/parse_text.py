@@ -19,13 +19,14 @@ from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.parser_utils.parsed_docs import FIRST_COLUMNS, ParsedDocs
-from llama.parser_utils.parser_args import ParserArgs
-from llama.parser_utils.parser_prompt import ParserPrompt
+from llama.model_utils.model_args import ParserArgs
+from llama.model_utils.model_prompts import ParserPrompt
+from llama.model_utils.model_status import ModelStatus
+from llama.model_utils.parsed_docs import FIRST_COLUMNS, ParsedDocs
 from llama.pylib import fix_ocr, log
 
 if TYPE_CHECKING:
-    from llama.ocr_utils.ocr_result import OcrResult
+    from llama.model_utils.ocr_docs import OcrResult
 
 MIN_SIZE = 1024
 DEFAULT_POOL = 10
@@ -34,13 +35,13 @@ DEFAULT_POOL = 10
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    parsed_docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
+    docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
 
-    logging.info(f"There are {len(parsed_docs.ocr_records)} documents to parse.")
-    logging.info(f"{len(parsed_docs.already_parsed)} documents were already parsed.")
-    if parsed_docs.limit:
-        logging.info(f"Limited to {parsed_docs.limit} images.")
-    logging.info(f"There are {len(parsed_docs.tasks)} docs left to parse.")
+    logging.info(f"There are {len(docs.ocr_records)} documents to parse.")
+    logging.info(f"{len(docs.already_parsed)} documents were already parsed.")
+    if docs.limit:
+        logging.info(f"Limited to {docs.limit} images.")
+    logging.info(f"There are {len(docs.tasks)} docs left to parse.")
 
     prompt = ParserPrompt.load(args.prompt)
 
@@ -56,13 +57,13 @@ def parse_text(args: argparse.Namespace) -> None:
         threads=args.threads,
     )
 
-    with args.parsed_file.open(parsed_docs.parsed_file_mode) as parsed_file:
+    with args.parsed_file.open(docs.file_mode) as parsed_file:
         writer = csv.DictWriter(parsed_file, FIRST_COLUMNS + prompt.column_names)
-        if parsed_docs.parsed_file_mode == "w":
+        if docs.file_mode == "w":
             writer.writeheader()
 
         with (
-            tqdm(total=len(parsed_docs.tasks)) as pbar,
+            tqdm(total=len(docs.tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
             requests.Session() as session,
         ):
@@ -75,7 +76,7 @@ def parse_text(args: argparse.Namespace) -> None:
 
             futures = {
                 executor.submit(parser, parser_args, ocr_result, session)
-                for ocr_result in parsed_docs.tasks
+                for ocr_result in docs.tasks
             }
             for future in as_completed(futures):
                 pbar.update(1)
@@ -85,17 +86,21 @@ def parse_text(args: argparse.Namespace) -> None:
                     statuses[result["status"]] += 1
                     parsed_file.flush()
                 except ValueError as err:
-                    logging.exception(f"Parse error for: {Path(result.source).name}")
+                    logging.exception(f"Parse error for: {Path(result['source']).name}")
                     text = str(err)
                     logging.exception(text)
                     writer.writerow(
-                        {"status": "ERROR", "source": result.source, "text": text}
+                        {
+                            "status": ModelStatus.ERROR,
+                            "source": result["source"],
+                            "text": text,
+                        }
                     )
 
     logging.info(
-        f"Total {len(parsed_docs.tasks)} documents processed "
-        f"with {statuses['ERROR']} errors "
-        f"and {len(parsed_docs.already_parsed)} documents skipped."
+        f"Total {len(docs.tasks)} documents processed "
+        f"with {statuses[ModelStatus.ERROR]} errors "
+        f"and {len(docs.already_parsed)} documents skipped."
     )
 
     log.job_elapsed(job_began)
@@ -140,12 +145,12 @@ def parser(
         content = result["choices"][0]["message"]["content"] or ""
         extracted = json.loads(content)
 
-        status = "success"
+        status = ModelStatus.SUCCESS
 
     except (RequestException, JSONDecodeError, ValueError) as err:
         logging.exception(f"Parse error for: {Path(ocr_result.source).name}")
         text = str(err)
-        status = "ERROR"
+        status = ModelStatus.ERROR
 
     result = {
         "status": status,

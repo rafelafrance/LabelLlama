@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from llama.ocr_utils.ocr_result import OcrResult
-from llama.ocr_utils.ocr_status import OcrStatus
+from llama.model_utils.model_status import ModelStatus
 from llama.pylib import image_util
 
 if TYPE_CHECKING:
@@ -14,12 +13,20 @@ MIN_SIZE = 1024
 
 
 @dataclass
+class OcrResult:
+    status: ModelStatus = ModelStatus.UNKNOWN
+    source: str = ""
+    elapsed: str = ""
+    text: str = ""
+
+
+@dataclass
 class OcrDocs:
     image_dir: Path | None = None
     image_glob: str = ""
     image_paths: list[Path] = field(default_factory=list)
     ocr_file: Path | None = None
-    ocr_file_mode: str = "w"
+    file_mode: str = "w"
     ocr_records: list[OcrResult] = field(default_factory=list[OcrResult])
     ocr_success: set[str] = field(default_factory=set[str])
     tasks: list[Path] = field(default_factory=list)
@@ -43,7 +50,7 @@ class OcrDocs:
         docs.image_paths = image_util.get_images(image_dir, image_glob)
         docs.image_paths = docs.image_paths[:limit]
 
-        docs.ocr_records, docs.ocr_file_mode = docs._read_ocr_records(ocr_file)
+        docs.ocr_records, docs.file_mode = docs._read_ocr_records(ocr_file)
         docs.ocr_success = docs._get_already_read()
         docs.tasks = docs._get_tasks()
         return docs
@@ -68,7 +75,7 @@ class OcrDocs:
         return {
             r.source
             for r in self.ocr_records
-            if r.source and r.status.lower() == OcrStatus.SUCCESS
+            if r.source and r.status.lower() == ModelStatus.SUCCESS
         }
 
     def _get_tasks(self) -> list[Path]:

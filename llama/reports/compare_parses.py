@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 from rich import print as rprint
 
-from llama.parser_utils.parser_status import ParserStatus
+from llama.model_utils.model_status import ModelStatus
 from llama.pylib import log
 
 
@@ -20,7 +20,7 @@ def compare(args: argparse.Namespace) -> None:
     columns = []
     for parse_file in args.parse_file:
         parse = pd.read_csv(parse_file, dtype=str).fillna("").to_dict("records")
-        parse = [p for p in parse if p["status"] == ParserStatus.SUCCESS]
+        parse = [p for p in parse if p["status"] == ModelStatus.SUCCESS]
         columns = [k for k in parse[0] if k not in ("status", "elapsed", "source")]
         for row in parse:
             all_parses[row["source"]].append(row)

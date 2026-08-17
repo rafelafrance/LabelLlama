@@ -3,9 +3,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from llama.ocr_utils.ocr_docs import MIN_SIZE, OcrDocs
-from llama.ocr_utils.ocr_result import OcrResult
-from llama.parser_utils.parser_status import ParserStatus
+from llama.model_utils.model_status import ModelStatus
+from llama.model_utils.ocr_docs import MIN_SIZE, OcrDocs, OcrResult
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -18,7 +17,7 @@ class ParsedDocs:
     ocr_file: Path | None = None
     ocr_records: list[OcrResult] = field(default_factory=list[OcrResult])
     parsed_file: Path | None = None
-    parsed_file_mode: str = "w"
+    file_mode: str = "w"
     parsed_records: list[dict] = field(default_factory=list[dict])
     already_parsed: set[str] = field(default_factory=set[str])
     tasks: list[OcrResult] = field(default_factory=list[OcrResult])
@@ -33,9 +32,7 @@ class ParsedDocs:
         docs.ocr_records = OcrDocs.get_ocr_records(ocr_file)
         docs.ocr_records = docs.ocr_records[:limit]
 
-        docs.parsed_records, docs.parsed_file_mode = docs._read_parsed_records(
-            parsed_file
-        )
+        docs.parsed_records, docs.file_mode = docs._read_parsed_records(parsed_file)
         docs.already_parsed = docs._get_already_parsed()
         docs.tasks = docs._get_tasks()
         return docs
@@ -56,7 +53,7 @@ class ParsedDocs:
         return {
             r["source"]
             for r in self.parsed_records
-            if r["status"] == ParserStatus.SUCCESS
+            if r["status"] == ModelStatus.SUCCESS
         }
 
     def _get_tasks(self) -> list[OcrResult]:

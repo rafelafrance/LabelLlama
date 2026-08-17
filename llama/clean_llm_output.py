@@ -7,7 +7,8 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from llama.parser_utils.parser_cleaner import ParserCleaner
+from llama.model_utils.model_status import ModelStatus
+from llama.model_utils.parser_cleaner import ParserCleaner
 from llama.pylib import log
 
 
@@ -21,7 +22,9 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     columns = [c for c in df.columns if c in cleaner.llm_field_classes]
     calc_columns = list(cleaner.calc_field_classes)
 
-    input_rows = [r for r in df.to_dict("records") if r["status"] == "success"]
+    input_rows = [
+        r for r in df.to_dict("records") if r["status"] == ModelStatus.SUCCESS
+    ]
     input_rows = input_rows[: args.limit]
 
     output_rows = []

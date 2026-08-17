@@ -2,8 +2,9 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from llama.parser_utils.field_action import FieldAction
-from llama.pylib.prompt_util import get_front_yaml
+import yaml
+
+from llama.model_utils.field_action import FieldAction
 
 FIELD_PROMPT_DIR = Path("prompts")
 
@@ -15,12 +16,22 @@ CALC_FIELDS = re.compile(r"^Calculated\s+Fields", flags=re.IGNORECASE)
 JSON_SCHEMA = re.compile(r"```json(.*)```", flags=re.DOTALL)
 
 
+def get_front_yaml(text: str, path: Path) -> dict:
+    top = re.search("^---$.*^---$", text, flags=re.MULTILINE | re.DOTALL)
+    if not top:
+        raise ValueError(f"Improperly formatted prompt file. {path}")
+
+    top = top.group(0).replace("---", "")
+    front = yaml.safe_load(top)
+    return front
+
+
 @dataclass
 class PromptFileParser:
     name: str = ""
     description: str = ""
     system_msg: str = ""
-    json_schema: dict = field(default_factory=dict)
+    json_schema: str = ""
     llm_fields: list[FieldAction] = field(default_factory=list[FieldAction])
     calc_fields: list[FieldAction] = field(default_factory=list[FieldAction])
 
@@ -34,7 +45,7 @@ class PromptFileParser:
         # Split Markdown file into sections
         sections = re.split(r"^(?<!#)#\s", text, flags=re.MULTILINE)
 
-        sys_msg, schema = "", {}
+        sys_msg, schema = "", ""
         llm_fields, calc_fields = [], []
 
         for section in sections:
