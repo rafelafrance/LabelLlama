@@ -7,21 +7,18 @@ import logging
 import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
 import requests
-from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
+from llama.model_utils import model_util
 from llama.model_utils.model_args import OcrArgs
 from llama.model_utils.model_prompts import OcrPrompt
 from llama.model_utils.model_status import ModelStatus
-from llama.model_utils.ocr_docs import OcrDocs, OcrResult
+from llama.model_utils.ocr_docs import OcrDocs
 from llama.pylib import fix_ocr, log
-
-DEFAULT_POOL = 10
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -29,11 +26,7 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
-    logging.info(f"There are {len(docs.image_paths)} images to OCR")
-    logging.info(f"{len(docs.ocr_success)} images were already done.")
-    if docs.limit:
-        logging.info(f"Limited to {docs.limit} images.")
-    logging.info(f"There are {len(docs.tasks)} images left to OCR.")
+    model_util.log_what_to_do(docs, "images")
 
     prompt = OcrPrompt.load(args.prompt)
 
@@ -48,8 +41,8 @@ def ocr_images(args: argparse.Namespace) -> None:
         timeout=args.timeout,
     )
 
-    with args.ocr_file.open(docs.file_mode) as ocr_file:
-        writer = csv.DictWriter(ocr_file, docs.field_names)
+    with args.ocr_file.open(docs.file_mode) as output_file:
+        writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":
             writer.writeheader()
 
@@ -58,34 +51,21 @@ def ocr_images(args: argparse.Namespace) -> None:
             ThreadPoolExecutor(max_workers=args.threads) as executor,
             requests.Session() as session,
         ):
-            if args.threads > DEFAULT_POOL:
-                adapter = HTTPAdapter(
-                    pool_connections=args.threads, pool_maxsize=args.threads
-                )
-                session.mount("http://", adapter)
-                session.mount("https://", adapter)
+            model_util.init_session_pool(session, args.threads)
 
             futures = [
-                executor.submit(call_ocr, model_args, image_path, session)
+                executor.submit(call_model, model_args, image_path, session)
                 for image_path in docs.tasks
             ]
 
             for future in as_completed(futures):
-                result = future.result()
-                statuses[result.status] += 1
-                writer.writerow(asdict(result))
-                pbar.update(1)
-                ocr_file.flush()
+                model_util.complete_task(writer, future, output_file, statuses, pbar)
 
-    logging.info(
-        f"Total {len(docs.tasks)} documents processed with "
-        f"{statuses[ModelStatus.ERROR]} errors"
-    )
-
+    model_util.log_what_was_done(docs, "images", statuses)
     log.job_elapsed(job_began)
 
 
-def call_ocr(args: OcrArgs, image_path: Path, session: requests.Session) -> OcrResult:
+def call_model(args: OcrArgs, image_path: Path, session: requests.Session) -> dict:
     began = datetime.now()
 
     with image_path.open("rb") as f:
@@ -109,9 +89,8 @@ def call_ocr(args: OcrArgs, image_path: Path, session: requests.Session) -> OcrR
                 ],
             },
         ],
-        "temperature": args.temperature,
-        "max_tokens": args.max_tokens,
     }
+    model_util.add_payload_args(args, payload)
 
     try:
         response = session.post(
@@ -130,12 +109,12 @@ def call_ocr(args: OcrArgs, image_path: Path, session: requests.Session) -> OcrR
         text = str(err)
         status = ModelStatus.ERROR
 
-    result = OcrResult(
-        status=status,
-        source=str(image_path),
-        elapsed=str(log.task_elapsed(began)),
-        text=text,
-    )
+    result = {
+        "status": status,
+        "source": str(image_path),
+        "elapsed": str(log.task_elapsed(began)),
+        "text": text,
+    }
 
     return result
 

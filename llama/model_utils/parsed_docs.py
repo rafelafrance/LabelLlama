@@ -4,23 +4,21 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from llama.model_utils.model_status import ModelStatus
-from llama.model_utils.ocr_docs import MIN_SIZE, OcrDocs, OcrResult
+from llama.model_utils.ocr_docs import MIN_SIZE, OcrDocs
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-FIRST_COLUMNS = ["status", "source", "text", "elapsed"]
 
 
 @dataclass
 class ParsedDocs:
     ocr_file: Path | None = None
-    ocr_records: list[OcrResult] = field(default_factory=list[OcrResult])
+    ocr_records: list[dict] = field(default_factory=list[dict])
     parsed_file: Path | None = None
     file_mode: str = "w"
     parsed_records: list[dict] = field(default_factory=list[dict])
-    already_parsed: set[str] = field(default_factory=set[str])
-    tasks: list[OcrResult] = field(default_factory=list[OcrResult])
+    already_done: set[str] = field(default_factory=set[str])
+    tasks: list[dict] = field(default_factory=list[dict])
     limit: int | None = None
 
     @classmethod
@@ -33,9 +31,13 @@ class ParsedDocs:
         docs.ocr_records = docs.ocr_records[:limit]
 
         docs.parsed_records, docs.file_mode = docs._read_parsed_records(parsed_file)
-        docs.already_parsed = docs._get_already_parsed()
+        docs.already_done = docs._get_already_parsed()
         docs.tasks = docs._get_tasks()
         return docs
+
+    @property
+    def input_len(self) -> int:
+        return len(self.ocr_records)
 
     def _read_parsed_records(self, parsed_file: Path | None) -> tuple[list[dict], str]:
         mode = "w"
@@ -56,8 +58,8 @@ class ParsedDocs:
             if r["status"] == ModelStatus.SUCCESS
         }
 
-    def _get_tasks(self) -> list[OcrResult]:
+    def _get_tasks(self) -> list[dict]:
         return sorted(
-            [r for r in self.ocr_records if r.source not in self.already_parsed],
-            key=lambda r: r.source,
+            [r for r in self.ocr_records if r["source"] not in self.already_done],
+            key=lambda r: r["source"],
         )

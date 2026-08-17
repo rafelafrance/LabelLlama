@@ -11,25 +11,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import requests
 from dotenv import load_dotenv
-from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
+from llama.model_utils import model_util
 from llama.model_utils.model_args import ParserArgs
 from llama.model_utils.model_prompts import ParserPrompt
 from llama.model_utils.model_status import ModelStatus
-from llama.model_utils.parsed_docs import FIRST_COLUMNS, ParsedDocs
+from llama.model_utils.parsed_docs import ParsedDocs
 from llama.pylib import fix_ocr, log
-
-if TYPE_CHECKING:
-    from llama.model_utils.ocr_docs import OcrResult
-
-MIN_SIZE = 1024
-DEFAULT_POOL = 10
 
 
 def parse_text(args: argparse.Namespace) -> None:
@@ -37,11 +30,7 @@ def parse_text(args: argparse.Namespace) -> None:
 
     docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
 
-    logging.info(f"There are {len(docs.ocr_records)} documents to parse.")
-    logging.info(f"{len(docs.already_parsed)} documents were already parsed.")
-    if docs.limit:
-        logging.info(f"Limited to {docs.limit} images.")
-    logging.info(f"There are {len(docs.tasks)} docs left to parse.")
+    model_util.log_what_to_do(docs, "documents")
 
     prompt = ParserPrompt.load(args.prompt)
 
@@ -57,8 +46,8 @@ def parse_text(args: argparse.Namespace) -> None:
         threads=args.threads,
     )
 
-    with args.parsed_file.open(docs.file_mode) as parsed_file:
-        writer = csv.DictWriter(parsed_file, FIRST_COLUMNS + prompt.column_names)
+    with args.parsed_file.open(docs.file_mode) as output_file:
+        writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":
             writer.writeheader()
 
@@ -67,53 +56,27 @@ def parse_text(args: argparse.Namespace) -> None:
             ThreadPoolExecutor(max_workers=args.threads) as executor,
             requests.Session() as session,
         ):
-            if args.threads > DEFAULT_POOL:
-                adapter = HTTPAdapter(
-                    pool_connections=args.threads, pool_maxsize=args.threads
-                )
-                session.mount("http://", adapter)
-                session.mount("https://", adapter)
+            model_util.init_session_pool(session, args.threads)
 
             futures = {
-                executor.submit(parser, parser_args, ocr_result, session)
+                executor.submit(call_model, parser_args, ocr_result, session)
                 for ocr_result in docs.tasks
             }
             for future in as_completed(futures):
-                pbar.update(1)
-                result = future.result()
-                try:
-                    writer.writerow(result)
-                    statuses[result["status"]] += 1
-                    parsed_file.flush()
-                except ValueError as err:
-                    logging.exception(f"Parse error for: {Path(result['source']).name}")
-                    text = str(err)
-                    logging.exception(text)
-                    writer.writerow(
-                        {
-                            "status": ModelStatus.ERROR,
-                            "source": result["source"],
-                            "text": text,
-                        }
-                    )
+                model_util.complete_task(writer, future, output_file, statuses, pbar)
 
-    logging.info(
-        f"Total {len(docs.tasks)} documents processed "
-        f"with {statuses[ModelStatus.ERROR]} errors "
-        f"and {len(docs.already_parsed)} documents skipped."
-    )
-
+    model_util.log_what_was_done(docs, "documents", statuses)
     log.job_elapsed(job_began)
 
 
-def parser(
+def call_model(
     args: ParserArgs,
-    ocr_result: OcrResult,
+    ocr_result: dict,
     session: requests.Session,
 ) -> dict:
     began = datetime.now()
 
-    text = fix_ocr.prepare_for_parse(ocr_result.text)
+    text = fix_ocr.prepare_for_parse(ocr_result["text"])
 
     url = f"{args.api_host}/chat/completions"
     headers = {
@@ -127,12 +90,7 @@ def parser(
             {"role": "user", "content": args.prompt.build_text_msg(text)},
         ],
     }
-    if args.temperature is not None:
-        payload["temperature"] = args.temperature
-    if args.max_tokens is not None:
-        payload["max_tokens"] = args.max_tokens
-    if args.prompt.json_schema:
-        payload["character_schema"] = args.prompt.json_schema
+    model_util.add_payload_args(args, payload)
 
     extracted = {}
     try:
@@ -148,13 +106,13 @@ def parser(
         status = ModelStatus.SUCCESS
 
     except (RequestException, JSONDecodeError, ValueError) as err:
-        logging.exception(f"Parse error for: {Path(ocr_result.source).name}")
+        logging.exception(f"Parse error for: {Path(ocr_result['source']).name}")
         text = str(err)
         status = ModelStatus.ERROR
 
     result = {
         "status": status,
-        "source": ocr_result.source,
+        "source": ocr_result["source"],
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
     } | extracted

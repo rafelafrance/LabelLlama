@@ -7,9 +7,15 @@ from llama.model_utils.prompt_file_parser import PromptFileParser
 if TYPE_CHECKING:
     from pathlib import Path
 
+FIRST_COLUMNS = ["status", "source", "elapsed", "text"]
+
 
 @dataclass
 class OcrPrompt:
+    # -------------- ClassVars ---------------
+    columns: ClassVar[list[str]] = FIRST_COLUMNS
+    # ----------------------------------------
+
     name: str = ""
     description: str = ""
     system_msg: str = ""
@@ -35,7 +41,7 @@ class ParserPrompt:
     description: str = ""
     system_msg: str = ""
     json_schema: str = ""
-    column_names: list[str] = field(default_factory=list[str])
+    columns: list[str] = field(default_factory=list[str])
 
     @classmethod
     def load(cls, prompt_path: Path) -> ParserPrompt:
@@ -44,7 +50,7 @@ class ParserPrompt:
             name=prompt_parser.name,
             description=prompt_parser.description,
             system_msg=prompt_parser.system_msg,
-            column_names=[f.name for f in prompt_parser.llm_fields],
+            columns=FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields],
         )
         prompt.json_schema = prompt._build_json_schema(prompt_parser)
         prompt.system_msg += dedent("""

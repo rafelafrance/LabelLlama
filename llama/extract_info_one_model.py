@@ -14,18 +14,14 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
-from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 
+from llama.model_utils import model_util
 from llama.model_utils.model_args import ExtractArgs
 from llama.model_utils.model_prompts import ParserPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.ocr_docs import OcrDocs
 from llama.pylib import log
-
-FIRST_COLUMNS = ["status", "source", "elapsed"]
-MIN_SIZE = 1024
-DEFAULT_POOL = 10
 
 
 def extract(args: argparse.Namespace) -> None:
@@ -33,11 +29,7 @@ def extract(args: argparse.Namespace) -> None:
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
-    logging.info(f"There are {len(docs.image_paths)} images to process")
-    logging.info(f"{len(docs.ocr_success)} images were already done.")
-    if docs.limit:
-        logging.info(f"Limited to {docs.limit} images.")
-    logging.info(f"There are {len(docs.tasks)} images left to process.")
+    model_util.log_what_to_do(docs, "images")
 
     prompt = ParserPrompt.load(args.prompt)
 
@@ -53,8 +45,8 @@ def extract(args: argparse.Namespace) -> None:
         threads=args.threads,
     )
 
-    with args.extractions.open(docs.file_mode) as parsed_file:
-        writer = csv.DictWriter(parsed_file, FIRST_COLUMNS + prompt.column_names)
+    with args.extractions.open(docs.file_mode) as output_file:
+        writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":
             writer.writeheader()
 
@@ -63,46 +55,20 @@ def extract(args: argparse.Namespace) -> None:
             ThreadPoolExecutor(max_workers=args.threads) as executor,
             requests.Session() as session,
         ):
-            if args.threads > DEFAULT_POOL:
-                adapter = HTTPAdapter(
-                    pool_connections=args.threads, pool_maxsize=args.threads
-                )
-                session.mount("http://", adapter)
-                session.mount("https://", adapter)
+            model_util.init_session_pool(session, args.threads)
 
             futures = {
-                executor.submit(parser, model_args, image_path, prompt, session)
+                executor.submit(call_model, model_args, image_path, prompt, session)
                 for image_path in docs.tasks
             }
             for future in as_completed(futures):
-                pbar.update(1)
-                result = future.result()
-                try:
-                    writer.writerow(result)
-                    statuses[result["status"]] += 1
-                    parsed_file.flush()
-                except ValueError as err:
-                    logging.exception(f"Parse error for: {Path(result['source']).name}")
-                    text = str(err)
-                    logging.exception(text)
-                    writer.writerow(
-                        {
-                            "status": ModelStatus.ERROR,
-                            "source": result["source"],
-                            "text": text,
-                        }
-                    )
+                model_util.complete_task(writer, future, output_file, statuses, pbar)
 
-    logging.info(
-        f"Total {len(docs.tasks)} documents processed "
-        f"with {statuses[ModelStatus.ERROR]} errors "
-        f"and {len(docs.ocr_success)} documents skipped."
-    )
-
+    model_util.log_what_was_done(docs, "images", statuses)
     log.job_elapsed(job_began)
 
 
-def parser(
+def call_model(
     args: ExtractArgs,
     image_path: Path,
     prompt: ParserPrompt,
@@ -129,12 +95,7 @@ def parser(
             },
         ],
     }
-    if args.temperature is not None:
-        payload["temperature"] = args.temperature
-    if args.max_tokens is not None:
-        payload["max_tokens"] = args.max_tokens
-    if args.prompt.json_schema:
-        payload["character_schema"] = args.prompt.json_schema
+    model_util.add_payload_args(args, payload)
 
     extracted = {}
     try:
@@ -149,9 +110,8 @@ def parser(
 
         status = ModelStatus.SUCCESS
 
-    except requests.exceptions.RequestException as err:
+    except requests.exceptions.RequestException:
         logging.exception(f"Extraction error for: {image_path.name}")
-        status = str(err)
         status = ModelStatus.ERROR
 
     result = {
