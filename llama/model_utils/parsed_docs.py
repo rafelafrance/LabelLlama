@@ -4,10 +4,13 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from llama.model_utils.model_status import ModelStatus
-from llama.model_utils.ocr_docs import MIN_SIZE, OcrDocs
+from llama.model_utils.ocr_docs import MIN_SIZE
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+REQUIRED_OCR_COLUMNS = {"source", "text"}
 
 
 @dataclass
@@ -23,14 +26,20 @@ class ParsedDocs:
 
     @classmethod
     def build(
-        cls, parsed_file: Path, ocr_file: Path, limit: int | None = None
+        cls,
+        parsed_file: Path,
+        ocr_file: Path,
+        limit: int | None = None,
+        expected_columns: list[str] | None = None,
     ) -> ParsedDocs:
         docs = cls(parsed_file=parsed_file, ocr_file=ocr_file, limit=limit)
 
-        docs.ocr_records = OcrDocs.get_ocr_records(ocr_file)
+        docs.ocr_records = docs._read_ocr_records(ocr_file)
         docs.ocr_records = docs.ocr_records[:limit]
 
-        docs.parsed_records, docs.file_mode = docs._read_parsed_records(parsed_file)
+        docs.parsed_records, docs.file_mode = docs._read_parsed_records(
+            parsed_file, expected_columns
+        )
         docs.already_done = docs._get_already_parsed()
         docs.tasks = docs._get_tasks()
         return docs
@@ -39,7 +48,19 @@ class ParsedDocs:
     def input_len(self) -> int:
         return len(self.ocr_records)
 
-    def _read_parsed_records(self, parsed_file: Path | None) -> tuple[list[dict], str]:
+    def _read_ocr_records(self, ocr_file: Path) -> list[dict]:
+        df = pd.read_csv(ocr_file, dtype=str).fillna("")
+        missing = REQUIRED_OCR_COLUMNS - set(df.columns)
+        if missing:
+            missing_str = ", ".join(sorted(missing))
+            raise ValueError(f"OCR file is missing required columns: {missing_str}")
+        return df.to_dict("records")
+
+    def _read_parsed_records(
+        self,
+        parsed_file: Path | None,
+        expected_columns: list[str] | None = None,
+    ) -> tuple[list[dict], str]:
         mode = "w"
         records = []
         if (
@@ -48,7 +69,12 @@ class ParsedDocs:
             and parsed_file.stat().st_size >= MIN_SIZE
         ):
             mode = "a"
-            records = pd.read_csv(parsed_file, dtype=str).fillna("").to_dict("records")
+            df = pd.read_csv(parsed_file, dtype=str).fillna("")
+            if expected_columns and list(df.columns) != expected_columns:
+                raise ValueError(
+                    "Existing parsed file columns do not match the prompt columns"
+                )
+            records = df.to_dict("records")
         return records, mode
 
     def _get_already_parsed(self) -> set[str]:

@@ -67,8 +67,9 @@ ignore = [
   "D212",    # Multi-line docstring summary should start at the first line
   "DTZ005",  # Pass a `datetime.timezone` object to the `tz` parameter
   "DTZ011",  # datetime.date.today() used
-  "ERA001",  # Remove commented-out code
+  "EM101",   # Exception must not use a string literal, assign to variable first
   "EM102",   # Exception must not use an f-string literal, assign to variable first
+  "ERA001",  # Remove commented-out code
   "FIX002",  # Line contains TODO
   "G004",    # Logging statement uses f-string
   "LOG015",  # Use own logger instead

@@ -19,6 +19,7 @@ from llama.model_utils.model_args import OcrArgs
 from llama.model_utils.model_prompts import OcrPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.ocr_docs import OcrDocs
+from llama.model_utils.thread_sessions import ThreadSessions
 from llama.pylib import fix_ocr, log
 
 
@@ -51,26 +52,32 @@ def ocr_images(args: argparse.Namespace) -> None:
             tqdm(total=len(docs.tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
         ):
+            sessions = ThreadSessions()
             futures = {
-                executor.submit(call_model, model_args, image_path): image_path
+                executor.submit(
+                    call_model, model_args, image_path, sessions
+                ): image_path
                 for image_path in docs.tasks
             }
 
-            for future in as_completed(futures):
-                model_util.complete_task(
-                    writer=writer,
-                    future=future,
-                    out_file=output_file,
-                    statuses=statuses,
-                    progress_bar=pbar,
-                    source=futures[future],
-                )
+            try:
+                for future in as_completed(futures):
+                    model_util.complete_task(
+                        writer=writer,
+                        future=future,
+                        out_file=output_file,
+                        statuses=statuses,
+                        progress_bar=pbar,
+                        source=futures[future],
+                    )
+            finally:
+                sessions.close_all()
 
     model_util.log_what_was_done(docs, "images", statuses)
     log.job_elapsed(job_began)
 
 
-def call_model(args: OcrArgs, image_path: Path) -> dict:
+def call_model(args: OcrArgs, image_path: Path, sessions: ThreadSessions) -> dict:
     began = datetime.now()
 
     try:
@@ -78,12 +85,12 @@ def call_model(args: OcrArgs, image_path: Path) -> dict:
         url = f"{args.api_host}/chat/completions"
         headers = {"Content-Type": "application/json"}
 
-        with requests.Session() as session:
-            response = session.post(
-                url, headers=headers, json=payload, timeout=args.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
+        session = sessions.get()
+        response = session.post(
+            url, headers=headers, json=payload, timeout=args.timeout
+        )
+        response.raise_for_status()
+        result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
 

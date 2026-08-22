@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import textwrap
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -22,17 +23,25 @@ from llama.model_utils.model_args import ParserArgs
 from llama.model_utils.model_prompts import ParserPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.parsed_docs import ParsedDocs
+from llama.model_utils.thread_sessions import ThreadSessions
 from llama.pylib import fix_ocr, log
+
+TRANSIENT_HTTP_STATUS = {429, 500, 502, 503, 504}
 
 
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    docs = ParsedDocs.build(args.parsed_file, args.ocr_file, args.limit)
+    prompt = ParserPrompt.load(args.prompt)
+
+    docs = ParsedDocs.build(
+        args.parsed_file,
+        args.ocr_file,
+        args.limit,
+        expected_columns=prompt.columns,
+    )
 
     model_util.log_what_to_do(docs, "documents")
-
-    prompt = ParserPrompt.load(args.prompt)
 
     statuses = defaultdict(int)
 
@@ -44,6 +53,8 @@ def parse_text(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         timeout=args.timeout,
         threads=args.threads,
+        retries=args.retries,
+        retry_backoff=args.retry_backoff,
     )
 
     with args.parsed_file.open(docs.file_mode) as output_file:
@@ -54,22 +65,26 @@ def parse_text(args: argparse.Namespace) -> None:
         with (
             tqdm(total=len(docs.tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
-            requests.Session() as session,
         ):
-            model_util.init_session_pool(session, args.threads)
-
+            sessions = ThreadSessions()
             futures = {
-                executor.submit(call_model, parser_args, ocr_result, session)
+                executor.submit(
+                    call_model, parser_args, ocr_result, sessions
+                ): ocr_result
                 for ocr_result in docs.tasks
             }
-            for future in as_completed(futures):
-                model_util.complete_task(
-                    writer=writer,
-                    future=future,
-                    out_file=output_file,
-                    statuses=statuses,
-                    progress_bar=pbar,
-                )
+            try:
+                for future in as_completed(futures):
+                    model_util.complete_task(
+                        writer=writer,
+                        future=future,
+                        out_file=output_file,
+                        statuses=statuses,
+                        progress_bar=pbar,
+                        source=futures[future]["source"],
+                    )
+            finally:
+                sessions.close_all()
 
     model_util.log_what_was_done(docs, "documents", statuses)
     log.job_elapsed(job_began)
@@ -78,17 +93,12 @@ def parse_text(args: argparse.Namespace) -> None:
 def call_model(
     args: ParserArgs,
     ocr_result: dict,
-    session: requests.Session,
+    sessions: ThreadSessions,
 ) -> dict:
     began = datetime.now()
 
     text = fix_ocr.prepare_for_parse(ocr_result["text"])
 
-    url = f"{args.api_host}/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv('LLM_API_KEY')}",
-    }
     payload = {
         "model": args.model_id,
         "messages": [
@@ -100,18 +110,21 @@ def call_model(
 
     extracted = {}
     try:
-        response = session.post(
-            url, headers=headers, json=payload, timeout=args.timeout
-        )
-        response.raise_for_status()
-        result = response.json()
+        result = post_with_retries(args, payload, sessions.get())
 
         content = result["choices"][0]["message"]["content"] or ""
-        extracted = json.loads(content)
+        extracted = parse_model_json(content)
 
         status = ModelStatus.SUCCESS
 
-    except (RequestException, JSONDecodeError, ValueError) as err:
+    except (
+        RequestException,
+        JSONDecodeError,
+        ValueError,
+        KeyError,
+        IndexError,
+        TypeError,
+    ) as err:
         logging.exception(f"Parse error for: {Path(ocr_result['source']).name}")
         text = str(err)
         status = ModelStatus.ERROR
@@ -126,6 +139,67 @@ def call_model(
     return result
 
 
+def parse_model_json(content: str) -> dict:
+    extracted = json.loads(content)
+    if not isinstance(extracted, dict):
+        raise TypeError("Model response JSON must be an object")
+    return extracted
+
+
+def post_with_retries(
+    args: ParserArgs,
+    payload: dict,
+    session: requests.Session,
+) -> dict:
+    url = f"{args.api_host}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    api_key = os.getenv("LLM_API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    last_err: Exception | None = None
+    for attempt in range(args.retries + 1):
+        try:
+            response = session.post(
+                url, headers=headers, json=payload, timeout=args.timeout
+            )
+            if response.status_code in TRANSIENT_HTTP_STATUS and attempt < args.retries:
+                sleep_before_retry(args, attempt, response=response)
+                continue
+            response.raise_for_status()
+            return response.json()
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+        ) as err:
+            last_err = err
+            if attempt >= args.retries:
+                raise
+            sleep_before_retry(args, attempt, err=err)
+
+    if last_err:
+        raise last_err
+    raise RuntimeError("Parse request failed without a response")
+
+
+def sleep_before_retry(
+    args: ParserArgs,
+    attempt: int,
+    response: requests.Response | None = None,
+    err: Exception | None = None,
+) -> None:
+    delay = args.retry_backoff * (2**attempt)
+    reason = f"HTTP {response.status_code}" if response is not None else str(err)
+    logging.warning(
+        "Retrying parse request after %s in %.1f seconds (%s/%s)",
+        reason,
+        delay,
+        attempt + 1,
+        args.retries,
+    )
+    time.sleep(delay)
+
+
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
@@ -137,6 +211,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     io_group.add_argument(
         "--ocr-file",
         type=Path,
+        required=True,
         metavar="path",
         help="""Parse label text from this file. We need only 'source' and 'text'
             columns for valid input, so any CSV file with those columns is fine.""",
@@ -144,6 +219,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     io_group.add_argument(
         "--parsed-file",
         type=Path,
+        required=True,
         metavar="path",
         help="""Write the LM results to this CSV file.""",
     )
@@ -206,6 +282,23 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""How long to wait for the LM to respond in seconds.
             (default: %(default)s) 2 minutes is a life time for parsing label text.""",
     )
+    model_group.add_argument(
+        "--retries",
+        type=int,
+        default=model_defaults.retries,
+        metavar="int",
+        help="""Retry transient parse request failures this many times.
+            (default: %(default)s)""",
+    )
+    model_group.add_argument(
+        "--retry-backoff",
+        type=float,
+        default=model_defaults.retry_backoff,
+        metavar="float",
+        help="""Initial seconds to wait before retrying transient parse request
+            failures. The delay doubles after each failed attempt.
+            (default: %(default)s)""",
+    )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
         "--log-file",
@@ -227,6 +320,22 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
+    if not ns.ocr_file.is_file():
+        arg_parser.error(f"--ocr-file is not a file: {ns.ocr_file}")
+    if not ns.prompt.is_file():
+        arg_parser.error(f"--prompt is not a file: {ns.prompt}")
+    if ns.threads < 1:
+        arg_parser.error("--threads must be >= 1")
+    if ns.timeout < 1:
+        arg_parser.error("--timeout must be >= 1")
+    if ns.max_tokens is not None and ns.max_tokens < 1:
+        arg_parser.error("--max-tokens must be >= 1")
+    if ns.limit is not None and ns.limit < 1:
+        arg_parser.error("--limit must be >= 1")
+    if ns.retries < 0:
+        arg_parser.error("--retries must be >= 0")
+    if ns.retry_backoff < 0:
+        arg_parser.error("--retry-backoff must be >= 0")
     return ns
 
 
