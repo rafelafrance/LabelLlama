@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import textwrap
 from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
 
+from llama.model_utils.model_prompts import ParserPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.parser_cleaner import ParserCleaner
 from llama.pylib import log
+
+REQUIRED_PARSED_COLUMNS = {"status", "source", "text"}
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
@@ -17,10 +21,29 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     df = pd.read_csv(args.parsed_file, dtype=str).fillna("")
 
+    prompt = ParserPrompt.load(args.prompt)
     cleaner = ParserCleaner.load(args.prompt)
 
-    columns = [c for c in df.columns if c in cleaner.llm_field_classes]
+    # Validate parsed columns
+    missing_required = REQUIRED_PARSED_COLUMNS - set(df.columns)
+    if missing_required:
+        missing = ", ".join(sorted(missing_required))
+        raise ValueError(f"Parsed file is missing required columns: {missing}")
+
+    missing_expected = set(prompt.columns) - set(df.columns)
+    if missing_expected:
+        missing = ", ".join(sorted(missing_expected))
+        raise ValueError(f"Parsed file is missing prompt columns: {missing}")
+
+    llm_columns = list(cleaner.llm_field_classes)
     calc_columns = list(cleaner.calc_field_classes)
+
+    # Build output columns
+    columns = ["source", "text"]
+    for field_class in cleaner.llm_field_classes.values():
+        columns += [c for c in field_class().get_visible_fields() if c not in columns]
+    for field_class in cleaner.calc_field_classes.values():
+        columns += [c for c in field_class().get_visible_fields() if c not in columns]
 
     input_rows = [
         r for r in df.to_dict("records") if r["status"] == ModelStatus.SUCCESS
@@ -30,33 +53,37 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     output_rows = []
 
     for in_row in tqdm(input_rows):
-        out_row = {"source": in_row["source"], "text": in_row["text"]}
+        try:
+            out_row = {"source": in_row["source"], "text": in_row["text"]}
 
-        for column in columns:
-            field_action = cleaner.llm_field_classes[column]
+            for column in llm_columns:
+                field_action = cleaner.llm_field_classes[column]
 
-            in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
+                in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
-            out_field = field_action(**in_data)
-            out_data = {
-                k: getattr(out_field, k) for k in out_field.get_visible_fields()
-            }
-            out_row |= out_data
+                out_field = field_action(text=in_row.get("text", ""), **in_data)
+                out_data = {
+                    k: getattr(out_field, k) for k in out_field.get_visible_fields()
+                }
+                out_row |= out_data
 
-        for column in calc_columns:
-            field_action = cleaner.calc_field_classes[column]
+            for column in calc_columns:
+                field_action = cleaner.calc_field_classes[column]
 
-            in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
+                in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
 
-            out_field = field_action(out_row, **in_data)
-            out_data = {
-                k: getattr(out_field, k) for k in out_field.get_visible_fields()
-            }
-            out_row |= out_data
+                out_field = field_action(out_row, **in_data)
+                out_data = {
+                    k: getattr(out_field, k) for k in out_field.get_visible_fields()
+                }
+                out_row |= out_data
 
-        output_rows.append(out_row)
+            output_rows.append(out_row)
+        except Exception:
+            logging.exception(f"Clean error for: {Path(in_row['source']).name}")
 
-    df = pd.DataFrame(output_rows)
+    df = pd.DataFrame(output_rows, columns=columns)
+    args.clean_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.clean_file, index=False)
 
     log.job_elapsed(job_began)
@@ -114,6 +141,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
+    if not ns.parsed_file.is_file():
+        arg_parser.error(f"--parsed-file is not a file: {ns.parsed_file}")
+    if not ns.prompt.is_file():
+        arg_parser.error(f"--prompt is not a file: {ns.prompt}")
+    if ns.limit is not None and ns.limit < 1:
+        arg_parser.error("--limit must be >= 1")
     return ns
 
 
