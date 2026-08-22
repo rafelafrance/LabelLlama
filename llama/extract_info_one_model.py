@@ -62,7 +62,13 @@ def extract(args: argparse.Namespace) -> None:
                 for image_path in docs.tasks
             }
             for future in as_completed(futures):
-                model_util.complete_task(writer, future, output_file, statuses, pbar)
+                model_util.complete_task(
+                    writer=writer,
+                    future=future,
+                    out_file=output_file,
+                    statuses=statuses,
+                    progress_bar=pbar,
+                )
 
     model_util.log_what_was_done(docs, "images", statuses)
     log.job_elapsed(job_began)

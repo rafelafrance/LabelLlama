@@ -63,7 +63,13 @@ def parse_text(args: argparse.Namespace) -> None:
                 for ocr_result in docs.tasks
             }
             for future in as_completed(futures):
-                model_util.complete_task(writer, future, output_file, statuses, pbar)
+                model_util.complete_task(
+                    writer=writer,
+                    future=future,
+                    out_file=output_file,
+                    statuses=statuses,
+                    progress_bar=pbar,
+                )
 
     model_util.log_what_was_done(docs, "documents", statuses)
     log.job_elapsed(job_began)
