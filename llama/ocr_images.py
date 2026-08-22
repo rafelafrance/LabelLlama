@@ -16,9 +16,9 @@ from tqdm import tqdm
 
 from llama.model_utils import model_util
 from llama.model_utils.model_args import OcrArgs
-from llama.model_utils.model_prompts import OcrPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.ocr_docs import OcrDocs
+from llama.model_utils.ocr_prompt import OcrPrompt
 from llama.model_utils.thread_sessions import ThreadSessions
 from llama.pylib import fix_ocr, log
 

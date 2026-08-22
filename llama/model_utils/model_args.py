@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from llama.model_utils.model_prompts import OcrPrompt, ParserPrompt
+    from llama.model_utils.ocr_prompt import OcrPrompt
+    from llama.model_utils.parser_prompt import ParserPrompt
 
 
 @dataclass
