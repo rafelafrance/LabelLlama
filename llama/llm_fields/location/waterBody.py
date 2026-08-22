@@ -8,10 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class WaterBody(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the name of the specific body of water where the specimen was collected
-        including rivers, streams, creeks, springs, oceans, seas, lakes, ponds,
-        swamps, sloughs, marshes, fens etc. Water bodies are often also mentioned in the
-        `locality`
+        Extract named rivers, streams, creeks, lakes, ponds, marshes, swamps, springs,
+        sloughs, or similar water bodies.
         """
     # --------------
 

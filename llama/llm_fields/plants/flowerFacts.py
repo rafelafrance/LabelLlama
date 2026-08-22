@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class FlowerFacts(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract information about flowers, excluding the flower color
-        (which belongs in `flowerColor`)
+        Extract flower-related notes other than color, such as flower presence, size,
+        shape, scent, arrangement, or openness. Put flower color in flowerColor instead.
         """
     # --------------
 

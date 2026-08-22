@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class Reproduction(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the plant's breeding system (how sexual organs are distributed among
-        flowers and individuals across the population)
+        Extract plant reproductive-system terms such as monoecious, dioecious,
+        bisexual, staminate, pistillate, perfect flowers, or sterile when stated.
         """
     # --------------
 

@@ -8,7 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class SpecificEpithet(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the taxonomic specific epithet of the specimen
+        Extract only the species epithet from the scientific name. Do not include genus,
+        infraspecific epithets, authorship, or identification qualifiers.
         """
     # --------------
 

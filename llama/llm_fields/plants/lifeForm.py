@@ -8,7 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class LifeForm(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the ecological life form (aka niche) of the specimen
+        Extract ecological life-form or niche terms such as aquatic, epiphytic,
+        parasitic, saprophytic, succulent, climbing, or terrestrial when stated.
         """
     # --------------
 

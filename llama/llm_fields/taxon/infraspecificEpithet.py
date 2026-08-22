@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class InfraspecificEpithet(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the infraspecific epithet (subspecies, variety, or form name) from the
-        scientific name
+        Extract only the infraspecific epithet from a subspecies, variety, form, or
+        cultivar name. Do not include rank markers, genus, species epithet, or authorship.
         """
     # --------------
 

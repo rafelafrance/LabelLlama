@@ -8,7 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class Habit(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the plant's habit or general growth form/shape
+        Extract the plant habit or general growth form as written, such as tree, shrub,
+        herb, vine, grass, forb, rosette, clump-forming, or prostrate.
         """
     # --------------
 

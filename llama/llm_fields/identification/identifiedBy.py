@@ -8,9 +8,9 @@ from llama.llm_fields.llm_field import LlmField
 class IdentifiedBy(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the name of the person or group who identified, determined, or verified
-        the taxonomic name of the specimen. This is the determiner, not the original
-        collector
+        Extract the determiner or verifier, often indicated by det., determined by, ID
+        by, or vid. This is the person or group who identified, determined, or verified
+        the taxonomic name, not the original collector.
         """
     # --------------
 

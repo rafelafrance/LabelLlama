@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class LifeStage(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the developmental or phenological stage of the insect specimen at the
-        time of collection
+        Extract insect life stage terms such as larva, nymph, exuvia, teneral, adult,
+        or imago when present.
         """
     # --------------
 

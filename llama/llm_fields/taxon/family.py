@@ -9,8 +9,8 @@ from llama.vocab.taxon import GENUS_TO_FAMILY
 class Family(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the taxonomic family of the specimen (e.g., 'Rosaceae', 'Asteraceae',
-        'Fabaceae')
+        Extract the taxonomic family name applied to the specimen. Use only the family
+        explicitly present in the text; do not infer family from genus.
         """
     scoring_method: ClassVar[str] = "CUST"
     # --------------

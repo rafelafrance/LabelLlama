@@ -9,7 +9,7 @@ from llama.llm_fields.llm_field import LlmField
 class Sex(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the biological sex of the specimen as recorded on the label
+        Extract the sex as recorded, including symbols such as ♂ or ♀.
         """
     # --------------
 

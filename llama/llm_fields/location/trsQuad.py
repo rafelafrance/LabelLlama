@@ -9,7 +9,8 @@ from llama.llm_fields.llm_field import LlmField
 class TrsQuad(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the quadrangle (quad) name associated with the TRS coordinates
+        Extract the named map quadrangle associated with the locality or TRS data. Do
+        not confuse quadrangle names with township, range, or section values.
         """
     # --------------
 

@@ -9,7 +9,8 @@ from llama.llm_fields.llm_field import LlmField
 class ScientificName(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the scientific name of the specimen at the species level
+        Extract the genus and species name only. Do not include authorship, sex, life
+        stage, or determination labels.
         """
     # --------------
 

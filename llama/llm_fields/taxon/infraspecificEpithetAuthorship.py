@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class InfraspecificEpithetAuthorship(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the authorship citation for the infraspecific name (subspecies, variety,
-        or form)
+        Extract only the authorship citation associated with the infraspecific name. Do
+        not include the epithet, rank marker, or species-level authorship.
         """
     # --------------
 

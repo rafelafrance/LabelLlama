@@ -8,8 +8,9 @@ from llama.llm_fields.llm_field import LlmField
 class FruitFacts(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract information about fruits, excluding the fruit color
-        (which belongs in `fruitColor`)
+        Extract fruit-related notes other than color, such as fruit presence, maturity,
+        size, shape, texture, quantity, or dehiscence. Put fruit color in fruitColor
+        instead.
         """
     # --------------
 

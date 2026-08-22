@@ -8,7 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class PlantHeight(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the overall height of the specimen or the plant as a whole
+        Extract the overall plant height exactly as written, including units and ranges.
+        Do not include dimensions of individual plant parts.
         """
     # --------------
 

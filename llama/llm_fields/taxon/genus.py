@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class Genus(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the taxonomic genus of the specimen (e.g., 'Canis', 'Salix', 'Agoseris',
-        'Drosophila')
+        Extract the genus name applied to the specimen. Do not include subgenus, species
+        epithet, authorship, qualifiers, or higher taxon names.
         """
     # --------------
 

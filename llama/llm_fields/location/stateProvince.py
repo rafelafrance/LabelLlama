@@ -11,8 +11,8 @@ LABELS = re.compile(r"\s*(Departamento de|District|Provincia de)\s*", re.IGNOREC
 class StateProvince(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the state, province, or equivalent first-level administrative division
-        where the specimen was collected
+        Extract the state, province, territory, or equivalent first-level administrative
+        division where the specimen was collected.
         """
     # --------------
 

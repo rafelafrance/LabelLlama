@@ -8,8 +8,9 @@ from llama.llm_fields.llm_field import LlmField
 class Utm(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the full Universal Transverse Mercator (UTM) coordinate string from the
-        label
+        Extract the complete Universal Transverse Mercator coordinate string exactly as
+        written, including zone, easting, northing, hemisphere, datum, and units when
+        present.
         """
     # --------------
 

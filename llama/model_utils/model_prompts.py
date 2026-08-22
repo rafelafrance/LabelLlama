@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from textwrap import dedent, indent
+from textwrap import dedent
 from typing import TYPE_CHECKING, ClassVar
 
 from llama.model_utils.prompt_file_parser import PromptFileParser
@@ -53,11 +53,20 @@ class ParserPrompt:
             columns=FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields],
         )
         prompt.json_schema = prompt._build_json_schema(prompt_parser)
+        prompt.system_msg += prompt._build_field_guidance(prompt_parser)
         prompt.system_msg += dedent("""
             \nStructure the output as JSON using this JSON schema.
             """)
         prompt.system_msg += prompt.json_schema
         return prompt
+
+    def _build_field_guidance(self, prompt_parser: PromptFileParser) -> str:
+        guidance = ["\n\n# Field Guidance\n"]
+        for fld in prompt_parser.llm_fields:
+            desc = " ".join(fld.field_class.description.split())
+            guidance.append(f"- `{fld.name}`: {desc}")
+        guidance.append("")
+        return "\n".join(guidance)
 
     def _build_json_schema(self, prompt_parser: PromptFileParser) -> str:
         prefix = dedent(f"""
@@ -68,24 +77,16 @@ class ParserPrompt:
                 "schema": {{
                   "type": "object",
                   "properties": {{""")
+        llm_fields = [
+            f'\n        "{fld.name}": {{"type": "string"}}'
+            for fld in prompt_parser.llm_fields
+        ]
         suffix = dedent("""
                   }
                 }
               }
             }
             """)
-        llm_fields = []
-        for fld in prompt_parser.llm_fields:
-            desc = " ".join(fld.field_class.description.split())
-            prop = indent(
-                dedent(f"""
-            "{fld.name}": {{
-              "type": "string",
-              "description": "{desc}"
-            }}"""),
-                " " * 8,
-            )
-            llm_fields.append(prop)
         schema = prefix + ",".join(llm_fields) + suffix
         return schema
 
