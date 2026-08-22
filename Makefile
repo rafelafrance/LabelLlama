@@ -2,7 +2,7 @@
 .ONESHELL:
 
 test:
-	uv run -m unittest discover
+	uv run pytest -q
 
 clean:
 	rm -rf .venv
