@@ -32,8 +32,8 @@ class PromptFileParser:
     description: str = ""
     system_msg: str = ""
     json_schema: str = ""
-    llm_fields: list[FieldAction] = field(default_factory=list[FieldAction])
-    calc_fields: list[FieldAction] = field(default_factory=list[FieldAction])
+    llm_fields: list[FieldAction] = field(default_factory=list)
+    calc_fields: list[FieldAction] = field(default_factory=list)
 
     @classmethod
     def load(cls, prompt_path: Path) -> PromptFileParser:

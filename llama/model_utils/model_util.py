@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     from tqdm import tqdm
 
-    from llama.model_utils.model_args import ExtractArgs, OcrArgs, ParserArgs
+    from llama.model_utils.model_args import OcrArgs, ParserArgs
     from llama.model_utils.ocr_docs import OcrDocs
     from llama.model_utils.parsed_docs import ParsedDocs
 
@@ -56,7 +56,7 @@ def complete_task(
         )
 
 
-def add_payload_args(args: ExtractArgs | OcrArgs | ParserArgs, payload: dict) -> None:
+def add_payload_args(args: OcrArgs | ParserArgs, payload: dict) -> None:
     if args.temperature is not None:
         payload["temperature"] = args.temperature
     if args.max_tokens is not None:

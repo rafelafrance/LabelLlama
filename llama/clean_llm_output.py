@@ -46,7 +46,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         columns += [c for c in field_class().get_visible_fields() if c not in columns]
 
     input_rows = [
-        r for r in df.to_dict("records") if r["status"] == ModelStatus.SUCCESS
+        r for r in df.to_dict("records") if ModelStatus.is_success(r.get("status"))
     ]
     input_rows = input_rows[: args.limit]
 

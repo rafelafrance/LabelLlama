@@ -19,7 +19,7 @@ class ParserPrompt:
     description: str = ""
     system_msg: str = ""
     json_schema: str = ""
-    columns: list[str] = field(default_factory=list[str])
+    columns: list[str] = field(default_factory=list)
 
     @classmethod
     def load(cls, prompt_path: Path) -> ParserPrompt:

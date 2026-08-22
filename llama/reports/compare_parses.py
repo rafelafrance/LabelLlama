@@ -20,7 +20,7 @@ def compare(args: argparse.Namespace) -> None:
     columns = []
     for parse_file in args.parse_file:
         parse = pd.read_csv(parse_file, dtype=str).fillna("").to_dict("records")
-        parse = [p for p in parse if p["status"] == ModelStatus.SUCCESS]
+        parse = [p for p in parse if ModelStatus.is_success(p.get("status"))]
         columns = [k for k in parse[0] if k not in ("status", "elapsed", "source")]
         for row in parse:
             all_parses[row["source"]].append(row)
