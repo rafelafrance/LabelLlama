@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class Woodiness(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract woodiness or stem-texture terms, such as woody, herbaceous, suffrutescent,
-        subshrub, shrub, tree, or vine, when explicitly stated.
+        Extract woodiness or stem-texture terms, such as woody, herbaceous,
+        suffrutescent, subshrub, shrub, tree, or vine, when explicitly stated.
         """
     # --------------
 

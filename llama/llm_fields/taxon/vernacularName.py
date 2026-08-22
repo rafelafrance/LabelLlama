@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class VernacularName(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the vernacular or common name applied to the specimen exactly as written.
-        Do not translate or invent a common name from the scientific name.
+        Extract the vernacular or common name applied to the specimen exactly as
+        written. Do not translate or invent a common name from the scientific name.
         """
     # --------------
 
