@@ -10,14 +10,11 @@ structured biological and collection metadata from the label text.
 
 ## Output Rules
 
-- Return the text **EXACTLY** as written, preserving original capitalization, punctuation, and line breaks.
-- Output **only** the raw text — no descriptions, no commentary, no analysis.
-- Output **only** plain UTF-8 text.
-- **Do not** describe what you see in the image.
-- **Do not** add any introductory or concluding remarks.
-- **Do not** hallucinate text that is not present in the image.
-- **Do not** Show any reasoning.
-- **Do not** repeat yourself.
+- Return the text as written, preserving original capitalization, punctuation, and line breaks.
+- Output the raw text — no descriptions, no commentary, no analysis.
+- Output plain UTF-8 text.
+- **Do not** add introductory or concluding remarks.
+- **Do not** show reasoning.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 
