@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils import tasks
+from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.model_args import ParserArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.parsed_docs import ParsedDocs
@@ -70,6 +70,12 @@ def parse_text(args: argparse.Namespace) -> None:
             ThreadPoolExecutor(max_workers=args.threads) as executor,
         ):
             sessions = ThreadSessions()
+            task_writer = TaskWriter(
+                writer=writer,
+                out_file=output_file,
+                statuses=statuses,
+                progress_bar=pbar,
+            )
             futures = {
                 executor.submit(
                     call_model, parser_args, ocr_result, sessions
@@ -78,14 +84,7 @@ def parse_text(args: argparse.Namespace) -> None:
             }
             try:
                 for future in as_completed(futures):
-                    tasks.complete_task(
-                        writer=writer,
-                        future=future,
-                        out_file=output_file,
-                        statuses=statuses,
-                        progress_bar=pbar,
-                        source=futures[future]["source"],
-                    )
+                    task_writer.complete(future, source=futures[future]["source"])
             finally:
                 sessions.close_all()
 
