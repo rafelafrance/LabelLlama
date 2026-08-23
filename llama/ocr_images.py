@@ -13,11 +13,11 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.model_args import OcrArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.ocr_prompt import OcrPrompt
+from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.thread_sessions import ThreadSessions
 from llama.pylib import fix_ocr, log
 
