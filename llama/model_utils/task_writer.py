@@ -20,7 +20,7 @@ class TaskWriter:
     statuses: StatusCounts
     progress_bar: tqdm
 
-    def complete(self, future: Future[dict], source: Path | str = "") -> None:
+    def write(self, future: Future[dict], source: Path | str = "") -> None:
         self.progress_bar.update(1)
         try:
             result = future.result()

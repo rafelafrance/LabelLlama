@@ -71,7 +71,7 @@ def ocr_images(args: argparse.Namespace) -> None:
 
             try:
                 for future in as_completed(futures):
-                    task_writer.complete(future, source=futures[future])
+                    task_writer.write(future, source=futures[future])
             finally:
                 sessions.close_all()
 
