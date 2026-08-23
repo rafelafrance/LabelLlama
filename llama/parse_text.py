@@ -7,7 +7,6 @@ import logging
 import os
 import textwrap
 import time
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from json.decoder import JSONDecodeError
@@ -20,7 +19,7 @@ from tqdm import tqdm
 
 from llama.model_utils import model_util
 from llama.model_utils.model_args import ParserArgs
-from llama.model_utils.model_status import ModelStatus
+from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.parsed_docs import ParsedDocs
 from llama.model_utils.parser_prompt import ParserPrompt
 from llama.model_utils.thread_sessions import ThreadSessions
@@ -43,7 +42,7 @@ def parse_text(args: argparse.Namespace) -> None:
 
     model_util.log_what_to_do(docs, "documents")
 
-    statuses = defaultdict(int)
+    statuses = StatusCounts()
 
     parser_args = ParserArgs(
         prompt=prompt,

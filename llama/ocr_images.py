@@ -6,7 +6,6 @@ import csv
 import logging
 import mimetypes
 import textwrap
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +15,7 @@ from tqdm import tqdm
 
 from llama.model_utils import model_util
 from llama.model_utils.model_args import OcrArgs
-from llama.model_utils.model_status import ModelStatus
+from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.ocr_prompt import OcrPrompt
 from llama.model_utils.thread_sessions import ThreadSessions
@@ -32,7 +31,7 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     prompt = OcrPrompt.load(args.prompt)
 
-    statuses = defaultdict(int)
+    statuses = StatusCounts()
 
     model_args = OcrArgs(
         prompt=prompt,

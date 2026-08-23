@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from llama.model_utils.model_status import ModelStatus
+from llama.model_utils.model_status import ModelStatus, StatusCounts
 
 if TYPE_CHECKING:
     import csv
@@ -21,7 +21,7 @@ def complete_task(
     writer: csv.DictWriter,
     future: Future[dict],
     out_file: io.StringIO,
-    statuses: dict,
+    statuses: StatusCounts,
     progress_bar: tqdm,
     source: Path | str = "",
 ) -> None:
@@ -39,8 +39,8 @@ def complete_task(
         }
 
     try:
+        result["status"] = statuses.count(result.get("status"))
         writer.writerow(result)
-        statuses[result["status"]] = statuses.get(result["status"], 0) + 1
         out_file.flush()
     except ValueError as err:
         logging.exception(f"Parse error for: {Path(result['source']).name}")
@@ -48,12 +48,13 @@ def complete_task(
         logging.exception(text)
         writer.writerow(
             {
-                "status": ModelStatus.ERROR,
-                "source": result["source"],
+                "status": statuses.count(ModelStatus.ERROR),
+                "source": result.get("source", str(source)),
                 "elapsed": result.get("elapsed", ""),
                 "text": text,
             }
         )
+        out_file.flush()
 
 
 def add_payload_args(args: OcrArgs | ParserArgs, payload: dict) -> None:
@@ -73,9 +74,13 @@ def log_what_to_do(docs: OcrDocs | ParsedDocs, target: str) -> None:
     logging.info(f"There are {len(docs.tasks)} {target} left to process.")
 
 
-def log_what_was_done(docs: OcrDocs | ParsedDocs, target: str, statuses: dict) -> None:
+def log_what_was_done(
+    docs: OcrDocs | ParsedDocs,
+    target: str,
+    statuses: StatusCounts,
+) -> None:
     logging.info(
         f"Total {len(docs.tasks)} {target} processed "
-        f"with {statuses[ModelStatus.ERROR]} errors "
+        f"with {statuses.get(ModelStatus.ERROR)} errors "
         f"and {len(docs.already_done)} {target} skipped."
     )
