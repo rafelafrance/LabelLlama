@@ -27,6 +27,7 @@ Your job is to transcribe all legible text from the labels, tags, and stamps on 
 
 ## Output Rules
 
+- Output plain UTF-8 text with no Markdown or HTML.
 - Return text as written, preserving original capitalization, punctuation, spelling, abbreviations, symbols, and line breaks.
 - Preserve the approximate reading order of labels: top-to-bottom, then left-to-right when labels do not clearly form a single column.
 - Add 1 newline character (`\n`) when two lines are directly above and below each other on the same label.
@@ -34,8 +35,5 @@ Your job is to transcribe all legible text from the labels, tags, and stamps on 
 - Add 2 newline characters (`\n\n`) between separate labels, tags, or stamps.
 - Transcribe only visible text. Do not infer missing words, expand abbreviations, normalize dates, or correct spelling.
 - If a character or word is illegible, omit it rather than guessing.
-- Output the raw text — no descriptions, no commentary, no analysis.
+- Output the raw text — no descriptions, no commentary, no analysis, no introductory text, no concluding remarks, or reasoning.
 - Output plain UTF-8 text with no Markdown or HTML.
-- **Do not** describe what you see in the image.
-- **Do not** add introductory or concluding remarks.
-- **Do not** show reasoning.

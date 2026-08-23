@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils import model_util
+from llama.model_utils import tasks
 from llama.model_utils.model_args import ParserArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.parsed_docs import ParsedDocs
@@ -40,7 +40,11 @@ def parse_text(args: argparse.Namespace) -> None:
         expected_columns=prompt.columns,
     )
 
-    model_util.log_what_to_do(docs, "documents")
+    logging.info(f"There are {docs.input_len} documents to process")
+    logging.info(f"{len(docs.already_done)} documents were already done.")
+    if docs.limit:
+        logging.info(f"Limited to {docs.limit} documents.")
+    logging.info(f"There are {len(docs.tasks)} documents left to process.")
 
     statuses = StatusCounts()
 
@@ -74,7 +78,7 @@ def parse_text(args: argparse.Namespace) -> None:
             }
             try:
                 for future in as_completed(futures):
-                    model_util.complete_task(
+                    tasks.complete_task(
                         writer=writer,
                         future=future,
                         out_file=output_file,
@@ -85,7 +89,11 @@ def parse_text(args: argparse.Namespace) -> None:
             finally:
                 sessions.close_all()
 
-    model_util.log_what_was_done(docs, "documents", statuses)
+    logging.info(
+        f"Total {len(docs.tasks)} documents processed "
+        f"with {statuses.get(ModelStatus.ERROR)} errors "
+        f"and {len(docs.already_done)} documents skipped."
+    )
     log.job_elapsed(job_began)
 
 
@@ -105,7 +113,12 @@ def call_model(
             {"role": "user", "content": args.prompt.build_text_msg(text)},
         ],
     }
-    model_util.add_payload_args(args, payload)
+    if args.temperature is not None:
+        payload["temperature"] = args.temperature
+    if args.max_tokens is not None:
+        payload["max_tokens"] = args.max_tokens
+    if args.prompt.json_schema:
+        payload["character_schema"] = args.prompt.json_schema
 
     extracted = {}
     try:
