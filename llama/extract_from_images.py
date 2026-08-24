@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import base64
 import csv
 import json
 import logging
+import mimetypes
 import os
 import textwrap
 import time
@@ -17,38 +19,33 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils.model_args import ParserArgs
+from llama.model_utils.model_args import ExtractArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
-from llama.model_utils.parsed_docs import ParsedDocs
+from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.parser_prompt import ParserPrompt
 from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.thread_sessions import ThreadSessions
-from llama.pylib import fix_ocr, log
+from llama.pylib import log
 
 TRANSIENT_HTTP_STATUS = {429, 500, 502, 503, 504}
 
 
-def parse_text(args: argparse.Namespace) -> None:
+def extract_from_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
     prompt = ParserPrompt.load(args.prompt)
 
-    docs = ParsedDocs.build(
-        args.parsed_file,
-        args.ocr_file,
-        args.limit,
-        expected_columns=prompt.columns,
-    )
+    docs = OcrDocs.build(args.image_dir, args.image_glob, args.parsed_file, args.limit)
 
-    logging.info(f"There are {docs.input_len} documents to process")
-    logging.info(f"{len(docs.already_done)} documents were already done.")
+    logging.info(f"There are {docs.input_len} images to process")
+    logging.info(f"{len(docs.already_done)} images were already done.")
     if docs.limit:
-        logging.info(f"Limited to {docs.limit} documents.")
-    logging.info(f"There are {len(docs.tasks)} documents left to process.")
+        logging.info(f"Limited to {docs.limit} images.")
+    logging.info(f"There are {len(docs.tasks)} images left to process.")
 
     statuses = StatusCounts()
 
-    parser_args = ParserArgs(
+    extract_args = ExtractArgs(
         prompt=prompt,
         model_id=args.model_id,
         api_host=args.api_host,
@@ -78,52 +75,67 @@ def parse_text(args: argparse.Namespace) -> None:
             )
             futures = {
                 executor.submit(
-                    call_model, parser_args, ocr_result, sessions
-                ): ocr_result
-                for ocr_result in docs.tasks
+                    call_model, extract_args, image_path, sessions
+                ): image_path
+                for image_path in docs.tasks
             }
             try:
                 for future in as_completed(futures):
-                    task_writer.write(future, source=futures[future]["source"])
+                    task_writer.write(future, source=futures[future])
             finally:
                 sessions.close_all()
 
     logging.info(
-        f"Total {len(docs.tasks)} documents processed "
+        f"Total {len(docs.tasks)} images processed "
         f"with {statuses.get(ModelStatus.ERROR)} errors "
-        f"and {len(docs.already_done)} documents skipped."
+        f"and {len(docs.already_done)} images skipped."
     )
     log.job_elapsed(job_began)
 
 
 def call_model(
-    args: ParserArgs,
-    ocr_result: dict,
+    args: ExtractArgs,
+    image_path: Path,
     sessions: ThreadSessions,
 ) -> dict:
     began = datetime.now()
 
-    text = fix_ocr.prepare_for_parse(ocr_result["text"])
-
-    payload = {
-        "model": args.model_id,
-        "messages": [
-            {"role": "system", "content": args.prompt.system_msg},
-            {"role": "user", "content": args.prompt.build_text_msg(text)},
-        ],
-    }
-    if args.temperature is not None:
-        payload["temperature"] = args.temperature
-    if args.max_tokens is not None:
-        payload["max_tokens"] = args.max_tokens
-    if args.prompt.json_schema:
-        payload["response_format"] = args.prompt.json_schema
-
-    extracted = {}
     try:
+        with image_path.open("rb") as f:
+            base64_image = base64.b64encode(f.read()).decode("utf-8")
+
+        mime_type, _ = mimetypes.guess_type(image_path)
+        if not mime_type or not mime_type.startswith("image/"):
+            mime_type = "application/octet-stream"
+
+        payload = {
+            "model": args.model_id,
+            "messages": [
+                {"role": "system", "content": args.prompt.system_msg},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}",
+                            },
+                        },
+                    ],
+                },
+            ],
+        }
+        if args.temperature is not None:
+            payload["temperature"] = args.temperature
+        if args.max_tokens is not None:
+            payload["max_tokens"] = args.max_tokens
+        if args.prompt.json_schema:
+            payload["response_format"] = args.prompt.json_schema
+
         result = post_with_retries(args, payload, sessions.get())
 
         content = result["choices"][0]["message"]["content"] or ""
+        text = content
         extracted = parse_model_json(content)
 
         status = ModelStatus.SUCCESS
@@ -135,14 +147,16 @@ def call_model(
         KeyError,
         IndexError,
         TypeError,
+        OSError,
     ) as err:
-        logging.exception(f"Parse error for: {Path(ocr_result['source']).name}")
+        logging.exception(f"Extract error for: {image_path.name}")
         text = str(err)
         status = ModelStatus.ERROR
+        extracted = {}
 
     result = {
         "status": status,
-        "source": ocr_result["source"],
+        "source": str(image_path),
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
     } | extracted
@@ -158,7 +172,7 @@ def parse_model_json(content: str) -> dict:
 
 
 def post_with_retries(
-    args: ParserArgs,
+    args: ExtractArgs,
     payload: dict,
     session: requests.Session,
 ) -> dict:
@@ -190,11 +204,11 @@ def post_with_retries(
 
     if last_err:
         raise last_err
-    raise RuntimeError("Parse request failed without a response")
+    raise RuntimeError("Extract request failed without a response")
 
 
 def sleep_before_retry(
-    args: ParserArgs,
+    args: ExtractArgs,
     attempt: int,
     response: requests.Response | None = None,
     err: Exception | None = None,
@@ -202,7 +216,7 @@ def sleep_before_retry(
     delay = args.retry_backoff * (2**attempt)
     reason = f"HTTP {response.status_code}" if response is not None else str(err)
     logging.warning(
-        "Retrying parse request after %s in %.1f seconds (%s/%s)",
+        "Retrying extract request after %s in %.1f seconds (%s/%s)",
         reason,
         delay,
         attempt + 1,
@@ -215,24 +229,29 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
         description=textwrap.dedent(
-            """Use a language model (LM) to extract information from text."""
+            """Use a language model (LM) to extract information directly from
+                images, in a single step."""
         ),
     )
     io_group = arg_parser.add_argument_group("I/O options")
     io_group.add_argument(
-        "--ocr-file",
+        "--image-dir",
         type=Path,
-        required=True,
-        metavar="path",
-        help="""Parse label text from this file. We need only 'source' and 'text'
-            columns for valid input, so any CSV file with those columns is fine.""",
+        metavar="PATH",
+        help="""Extract information from all images in this directory.""",
+    )
+    io_group.add_argument(
+        "--image-glob",
+        metavar="GLOB",
+        help="""Get all images matching this glob/pattern. You will need to quote this
+            argument. An example: 'museum/data/images1/*.jpg'""",
     )
     io_group.add_argument(
         "--parsed-file",
         type=Path,
         required=True,
         metavar="path",
-        help="""Write the LM results to this CSV file.""",
+        help="""Write the LM results to this CSV file. This appends data to the file.""",
     )
     prompt_group = arg_parser.add_argument_group("prompt options")
     prompt_group.add_argument(
@@ -241,23 +260,23 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         required=True,
         metavar="path",
         help="""A markdown file with a prompt and list of fields to parse.
-            For example prompts/llm_fields/herbarium_v1.md.""",
+            For example prompts/diode_one_v1.md.""",
     )
     model_group = arg_parser.add_argument_group("model options")
-    model_defaults = ParserArgs(ParserPrompt())
+    model_defaults = ExtractArgs(ParserPrompt())
     model_group.add_argument(
         "--model-id",
         default=model_defaults.model_id,
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.
             cost trade off between local and hosted models. Local models are cheaper
-            but hosted models are much faster.""",
+            but hosted models are much faster. The model must support images.""",
     )
     model_group.add_argument(
         "--api-host",
         default=model_defaults.api_host,
         metavar="string",
-        help="""URL for the LM model. (default %(default)s
+        help="""URL for the LM model. (default: %(default)s)
             The default is for LM-Studio, but I also use ChatGPT-nano and other
             server models.""",
     )
@@ -282,7 +301,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--max-tokens",
         type=int,
         metavar="int",
-        help="""The OCR model's response maximum tokens.
+        help="""The model's response maximum tokens.
             I use this to truncate model loops.""",
     )
     model_group.add_argument(
@@ -291,14 +310,15 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         default=model_defaults.timeout,
         metavar="int",
         help="""How long to wait for the LM to respond in seconds.
-            (default: %(default)s) 2 minutes is a life time for parsing label text.""",
+            (default: %(default)s) 5 minutes is a life time for extracting data
+            from an image.""",
     )
     model_group.add_argument(
         "--retries",
         type=int,
         default=model_defaults.retries,
         metavar="int",
-        help="""Retry transient parse request failures this many times.
+        help="""Retry transient extract request failures this many times.
             (default: %(default)s)""",
     )
     model_group.add_argument(
@@ -306,7 +326,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=float,
         default=model_defaults.retry_backoff,
         metavar="float",
-        help="""Initial seconds to wait before retrying transient parse request
+        help="""Initial seconds to wait before retrying transient extract request
             failures. The delay doubles after each failed attempt.
             (default: %(default)s)""",
     )
@@ -314,7 +334,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     logging_group.add_argument(
         "--log-file",
         type=Path,
-        metavar="string",
+        metavar="path",
         help="""Append logging notices to this file. It also logs the script arguments
             so you may use this to keep track of what you did.""",
     )
@@ -328,11 +348,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--limit",
         type=int,
         metavar="int",
-        help="""Limit to this many records.""",
+        help="""Limit to this many images.""",
     )
     ns = arg_parser.parse_args(args)
-    if not ns.ocr_file.is_file():
-        arg_parser.error(f"--ocr-file is not a file: {ns.ocr_file}")
+    if not ns.image_dir and not ns.image_glob:
+        arg_parser.error("one of --image-dir or --image-glob is required")
+    if ns.image_dir and not ns.image_dir.is_dir():
+        arg_parser.error(f"--image-dir is not a directory: {ns.image_dir}")
     if not ns.prompt.is_file():
         arg_parser.error(f"--prompt is not a file: {ns.prompt}")
     if ns.threads < 1:
@@ -353,4 +375,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    parse_text(ARGS)
+    extract_from_images(ARGS)
