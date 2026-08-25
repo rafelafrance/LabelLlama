@@ -2,16 +2,10 @@ import csv
 from concurrent.futures import Future
 from io import StringIO
 
+from tqdm import tqdm
+
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.task_writer import TaskWriter
-
-
-class ProgressBar:
-    def __init__(self) -> None:
-        self.count = 0
-
-    def update(self, value: int) -> None:
-        self.count += value
 
 
 def make_writer() -> tuple[csv.DictWriter, StringIO]:
@@ -23,7 +17,7 @@ def make_writer() -> tuple[csv.DictWriter, StringIO]:
 
 def test_task_writer_writes_successful_future() -> None:
     writer, out_file = make_writer()
-    progress_bar = ProgressBar()
+    progress_bar = tqdm()
     statuses = StatusCounts()
     future = Future()
     future.set_result(
@@ -38,14 +32,14 @@ def test_task_writer_writes_successful_future() -> None:
     task_writer = TaskWriter(writer, out_file, statuses, progress_bar)
     task_writer.write(future, source="image.jpg")
 
-    assert progress_bar.count == 1
+    assert progress_bar.n == 1
     assert statuses[ModelStatus.SUCCESS] == 1
     assert "success,image.jpg,0:00:01,label text" in out_file.getvalue()
 
 
 def test_task_writer_converts_future_exception_to_error_row() -> None:
     writer, out_file = make_writer()
-    progress_bar = ProgressBar()
+    progress_bar = tqdm()
     statuses = StatusCounts()
     future = Future()
     future.set_exception(RuntimeError("boom"))
@@ -53,14 +47,14 @@ def test_task_writer_converts_future_exception_to_error_row() -> None:
     task_writer = TaskWriter(writer, out_file, statuses, progress_bar)
     task_writer.write(future, source="image.jpg")
 
-    assert progress_bar.count == 1
+    assert progress_bar.n == 1
     assert statuses[ModelStatus.ERROR] == 1
     assert "ERROR,image.jpg,,boom" in out_file.getvalue()
 
 
 def test_task_writer_writes_fallback_error_row_for_extra_fields() -> None:
     writer, out_file = make_writer()
-    progress_bar = ProgressBar()
+    progress_bar = tqdm()
     statuses = StatusCounts()
     future = Future()
     future.set_result(
@@ -76,7 +70,7 @@ def test_task_writer_writes_fallback_error_row_for_extra_fields() -> None:
     task_writer = TaskWriter(writer, out_file, statuses, progress_bar)
     task_writer.write(future, source="image.jpg")
 
-    assert progress_bar.count == 1
+    assert progress_bar.n == 1
     assert statuses[ModelStatus.SUCCESS] == 1
     assert statuses[ModelStatus.ERROR] == 1
     assert "ERROR,image.jpg,0:00:01," in out_file.getvalue()
