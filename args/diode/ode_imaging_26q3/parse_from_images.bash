@@ -7,7 +7,7 @@ stamp=$(date +%y%m%d)
 #     --image-glob "$data_dir"/images/"*_card.*" \
 #     --parsed-file "$data_dir"/parse_from_images_"$stamp".csv \
 #     --prompt prompts/diode_one_v1.md \
-#     --model-id gpt-nano \
+#     --model-id qwen3.6-35b-a3b-mtp \
 #     --api-host https://api.openai.com/v1 \
 #     --temperature 0.1 \
 #     --timeout 300 \
@@ -25,7 +25,7 @@ uv run llama/parse_from_images.py \
     --image-glob "$data_dir"/"images/**/*_card.*" \
     --parsed-file "$data_dir"/parse_from_images_"$stamp".csv \
     --prompt prompts/diode_one_v1.md \
-    --model-id gpt-nano \
+    --model-id qwen3.6-35b-a3b-mtp \
     --api-host https://api.openai.com/v1 \
     --temperature 0.1 \
     --timeout 300 \
@@ -43,7 +43,7 @@ uv run llama/clean_llm_output.py \
 #     --image-glob "$data_dir"/"images/**/*" \
 #     --parsed-file "$data_dir"/parse_from_images_"$stamp".csv \
 #     --prompt prompts/diode_one_v1.md \
-#     --model-id gpt-nano \
+#     --model-id qwen3.6-35b-a3b-mtp \
 #     --api-host https://api.openai.com/v1 \
 #     --temperature 0.1 \
 #     --timeout 300 \

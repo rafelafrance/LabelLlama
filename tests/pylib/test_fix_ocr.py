@@ -81,7 +81,7 @@ def test_fix_entities_04() -> None:
 
 def test_fix_entities_05() -> None:
     # Entities beyond lt/gt/amp are decoded too.
-    assert fix_ocr.fix_entities('say &quot;hi&quot;') == 'say "hi"'
+    assert fix_ocr.fix_entities("say &quot;hi&quot;") == 'say "hi"'
 
 
 def test_fix_entities_06() -> None:
