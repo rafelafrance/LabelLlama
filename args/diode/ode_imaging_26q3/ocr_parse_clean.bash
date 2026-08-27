@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run the 3-step pipeline (OCR -> parse -> clean) in sequence so its output
-# can be compared against parse_from_images.bash (the 1-step path).
+# can be compared against parse_images.bash (the 1-step path).
 # Uses the same date stamp and dataset conventions as that script.
 
 set -e
@@ -32,7 +32,7 @@ stamp=$(date +%y%m%d)
 #     --threads 4 \
 #     --log-file "$data_dir"/parse_text.log
 #
-# uv run llama/clean_llm_output.py \
+# uv run llama/clean_text.py \
 #     --parsed-file "$data_dir"/parse_text_"$stamp".csv \
 #     --clean-file "$data_dir"/clean_text_"$stamp".csv \
 #     --prompt prompts/diode_v2.md \
@@ -49,7 +49,7 @@ uv run ./llama/ocr_images.py \
   --max-tokens 2048 \
   --threads 4 \
   --timeout 180 \
-  --notes "3-step pipeline run to compare against parse_from_images.bash." \
+  --notes "3-step pipeline run to compare against parse_images.bash." \
   --log-file "$data_dir"/ocr_imaging.log
 
 uv run llama/parse_text.py \
@@ -63,7 +63,7 @@ uv run llama/parse_text.py \
     --threads 4 \
     --log-file "$data_dir"/parse_text.log
 
-uv run llama/clean_llm_output.py \
+uv run llama/clean_text.py \
     --parsed-file "$data_dir"/parse_text_"$stamp".csv \
     --clean-file "$data_dir"/clean_text_"$stamp".csv \
     --prompt prompts/diode_v2.md \
@@ -93,7 +93,7 @@ uv run llama/clean_llm_output.py \
 #     --threads 4 \
 #     --log-file "$data_dir"/parse_text.log
 #
-# uv run llama/clean_llm_output.py \
+# uv run llama/clean_text.py \
 #     --parsed-file "$data_dir"/parse_text_"$stamp".csv \
 #     --clean-file "$data_dir"/clean_text_"$stamp".csv \
 #     --prompt prompts/diode_v2.md \

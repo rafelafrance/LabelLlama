@@ -109,7 +109,7 @@ def fix_entities(text: str) -> str:
 def prepare_for_parse(text: str) -> str:
     """Prepare OCR results for running them thru an LLM."""
     text = remove_identical_lines(fix_entities(text))
-    text = filter_lines(text)
+    # text = filter_lines(text)
     text = join_lines(text)
     text = text.strip()
     return text
