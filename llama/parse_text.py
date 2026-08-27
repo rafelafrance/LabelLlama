@@ -150,6 +150,7 @@ def call_model(
 
 
 def parse_model_json(content: str) -> dict:
+    content = content.replace("```json", "").replace("```", "")
     extracted = json.loads(content)
     if not isinstance(extracted, dict):
         raise TypeError("Model response JSON must be an object")
