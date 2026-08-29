@@ -282,8 +282,10 @@ class FixParses:
         value = re.sub(r'^"(.+)"$', r"\1", value)
         value = re.sub(r"^'(.+)'$", r"\1", value)
 
-        # Remove bold and italic ( "**text**" and "_text_") markdown notations
-        value = re.sub(r"([*_]+)([\w\s]*)\1", r"\2", value)
+        # Remove bold and italic ( "**text**" and "_text_") markdown notations.
+        # The markers must sit on word boundaries so ordinary tokens like
+        # "ACC_45_B" or "2020_05_01" are left untouched.
+        value = re.sub(r"(?<!\w)([*_]+)([\w\s]*)\1(?!\w)", r"\2", value)
 
         return value
 

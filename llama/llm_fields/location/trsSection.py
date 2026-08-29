@@ -19,4 +19,12 @@ class TrsSection(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         self.trsSection = self.to_str(self.trsSection)
-        self.trsSection = re.sub(r"\b(sec[\w.]|s\.?)\b", "", self.trsSection).strip()
+        # Remove the section label ("Sec", "Section", "S.", "s"). The "s" form
+        # may be followed by a dot, so it uses a lookahead instead of a \b.
+        self.trsSection = re.sub(
+            r"\bsec(?:tion)?\b|\bs\.?(?=\s|$)",
+            "",
+            self.trsSection,
+            flags=re.IGNORECASE,
+        )
+        self.trsSection = " ".join(self.trsSection.split())

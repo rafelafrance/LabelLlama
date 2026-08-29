@@ -18,4 +18,6 @@ class DecimalLatitude(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         lat = self.to_float(self.decimalLatitude)
-        self.decimalLatitude = lat if lat is not None else ""
+        # Clear values that are not a valid latitude (e.g. 95.0, or a comma
+        # misread as a thousands separator: "45,5" -> 455.0).
+        self.decimalLatitude = "" if lat is None or abs(lat) > 90 else lat

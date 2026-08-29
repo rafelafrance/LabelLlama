@@ -329,6 +329,19 @@ def test_clean_str_07() -> None:
     assert FP.clean_str('test"') == 'test"'
 
 
+def test_clean_str_08() -> None:
+    # Markdown bold and italic are still stripped.
+    assert FP.clean_str("**bold**") == "bold"
+    assert FP.clean_str("_italic_") == "italic"
+    assert FP.clean_str("a **bold** name") == "a bold name"
+
+
+def test_clean_str_09() -> None:
+    # Underscored tokens are not markdown; leave them untouched.
+    assert FP.clean_str("ACC_45_B") == "ACC_45_B"
+    assert FP.clean_str("2020_05_01") == "2020_05_01"
+
+
 # ---------------------------------------------------------------------
 def test_date_to_iso_01() -> None:
     assert FP.date_to_iso("01/ix-77") == "1977-09-01"

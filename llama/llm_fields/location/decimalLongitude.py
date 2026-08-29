@@ -18,4 +18,6 @@ class DecimalLongitude(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         long = self.to_float(self.decimalLongitude)
-        self.decimalLongitude = long if long is not None else ""
+        # Clear values that are not a valid longitude (e.g. 200.0, or a comma
+        # misread as a thousands separator: "-120,25" -> -12025.0).
+        self.decimalLongitude = "" if long is None or abs(long) > 180 else long

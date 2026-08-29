@@ -19,4 +19,6 @@ class TrsQuad(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         self.trsQuad = self.to_str(self.trsQuad)
-        self.trsQuad = re.sub(r"\b(quad\w*|q\.?)\b", "", self.trsQuad).strip()
+        self.trsQuad = re.sub(
+            r"\b(quad\w*|q\.?)\b", "", self.trsQuad, flags=re.IGNORECASE
+        ).strip()

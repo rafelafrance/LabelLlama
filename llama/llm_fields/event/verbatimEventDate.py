@@ -25,8 +25,5 @@ class VerbatimEventDate(LlmField):
             r"\bdate\b[:,.;\s]*", "", self.verbatimEventDate, flags=re.IGNORECASE
         ).strip()
 
-        # Handle date ranges
-        dates = self.verbatimEventDate.split("|")
-        dates = [self.date_to_iso(d) for d in dates]
-
-        self.verbatimEventDate = self.verbatimEventDate.replace("|", " to ")
+        # Keep the "|" separator: the EventDate calc field splits on it to
+        # normalize each part of a date range to ISO.

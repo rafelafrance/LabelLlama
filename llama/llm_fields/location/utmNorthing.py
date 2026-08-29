@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -21,5 +22,9 @@ class UtmNorthing(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         self.utmNorthing = self.to_str(self.utmNorthing)
-        self.utmNorthing = self.utmNorthing.lower().replace("n", "")
+        # Drop only a trailing hemisphere marker (e.g. "4567890 N"), leaving
+        # the value and any other text untouched.
+        self.utmNorthing = re.sub(
+            r"\s*[ns]$", "", self.utmNorthing, flags=re.IGNORECASE
+        )
         self.utmNorthing = "" if self.utmNorthing in EMPTY_NE else self.utmNorthing

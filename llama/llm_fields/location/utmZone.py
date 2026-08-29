@@ -19,4 +19,6 @@ class UtmZone(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         self.utmZone = self.to_str(self.utmZone)
-        self.utmZone = re.sub(r"\b(zone|z\.?)\b", "", self.utmZone).strip()
+        self.utmZone = re.sub(
+            r"\b(zone|z\.?)\b", "", self.utmZone, flags=re.IGNORECASE
+        ).strip()
