@@ -296,6 +296,42 @@ def test_str_to_int_03() -> None:
 
 
 # ---------------------------------------------------------------------
+def test_normalize_decimal_comma_01() -> None:
+    assert FP.normalize_decimal_comma("45,5") == "45.5"
+
+
+def test_normalize_decimal_comma_02() -> None:
+    assert FP.normalize_decimal_comma("4,5") == "4.5"
+
+
+def test_normalize_decimal_comma_03() -> None:
+    assert FP.normalize_decimal_comma("-120,25") == "-120.25"
+
+
+def test_normalize_decimal_comma_04() -> None:
+    # A trailing non-digit suffix (hemisphere, units) is preserved.
+    assert FP.normalize_decimal_comma("45,5 N") == "45.5 N"
+
+
+def test_normalize_decimal_comma_05() -> None:
+    # A dot in the value means the comma is a thousands separator.
+    assert FP.normalize_decimal_comma("1,234.5") == "1,234.5"
+
+
+def test_normalize_decimal_comma_06() -> None:
+    # Two commas are a thousands-separator chain; leave it alone.
+    assert FP.normalize_decimal_comma("1,234,567") == "1,234,567"
+
+
+def test_normalize_decimal_comma_07() -> None:
+    assert FP.normalize_decimal_comma("45.5") == "45.5"
+
+
+def test_normalize_decimal_comma_08() -> None:
+    assert FP.normalize_decimal_comma("") == ""
+
+
+# ---------------------------------------------------------------------
 def test_stringified_list_01() -> None:
     assert FP.stringified_list("[1, 2]") == [1, 2]
 

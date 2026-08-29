@@ -98,6 +98,14 @@ def test_decimal_coordinates_reject_out_of_range_values() -> None:
     assert DecimalLongitude(decimalLongitude="-120.25").decimalLongitude == -120.25
 
 
+def test_decimal_coordinates_read_decimal_commas() -> None:
+    assert DecimalLatitude(decimalLatitude="4,5").decimalLatitude == 4.5
+    assert DecimalLatitude(decimalLatitude="45,5").decimalLatitude == 45.5
+    assert DecimalLongitude(decimalLongitude="-120,25").decimalLongitude == -120.25
+    # A dot means the comma is a thousands separator: 1234.5 is out of range.
+    assert DecimalLatitude(decimalLatitude="1,234.5").decimalLatitude == ""
+
+
 def test_collector_label_is_removed_regardless_of_case() -> None:
     assert RecordedBy(recordedBy="Coll. J. Smith 45").recordedBy == "J. Smith 45"
     assert RecordedBy(recordedBy="Collector: J. Smith").recordedBy == "J. Smith"
