@@ -3,11 +3,13 @@
 import argparse
 import csv
 import logging
+import os
 import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
@@ -115,7 +117,11 @@ def call_model(args: OcrArgs, source: Path | str, sessions: ThreadSessions) -> d
             payload["max_tokens"] = args.max_tokens
 
         url = f"{args.api_host}/chat/completions"
+
         headers = {"Content-Type": "application/json"}
+        api_key = os.getenv("LLM_API_KEY")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
 
         session = sessions.get()
         response = session.post(
@@ -274,5 +280,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    load_dotenv()
     ARGS = parse_args()
     ocr_images(ARGS)
