@@ -13,7 +13,6 @@ This includes:
 - Typewritten labels
 - Handwritten labels
 - Small labels and tags
-- Printed or handwritten stamps that contain text
 - Human-readable catalog numbers printed next to barcodes or QR codes
 
 ## What to Ignore
@@ -24,6 +23,7 @@ This includes:
 - Barcodes and QR-codes themselves; do not decode machine-readable codes
 - Rulers or scale bars
 - Color test bars or calibration strips
+- Printed or handwritten stamps that contain text
 
 ## Output Rules
 
