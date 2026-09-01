@@ -1,0 +1,182 @@
+/* Styles for the single-file pipeline progress report. */
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 1em 2em 4em;
+  background: #fafafa;
+  color: #222;
+}
+
+h1 {
+  font-size: 1.5em;
+  margin-bottom: 0.25em;
+}
+
+.summary {
+  border-collapse: collapse;
+  margin: 1em 0 2.5em;
+  background: #fff;
+}
+
+.summary th,
+.summary td {
+  border: 1px solid #d9d9de;
+  padding: 0.35em 0.9em;
+  text-align: left;
+}
+
+.summary th {
+  background: #f0f0f4;
+  font-weight: 600;
+}
+
+.summary code {
+  word-break: break-all;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d9d9de;
+  border-radius: 10px;
+  margin: 0 0 2.5em;
+  padding: 1.25em 1.5em 1.5em;
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.card-head code {
+  word-break: break-all;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.78em;
+  font-weight: 600;
+  padding: 0.15em 0.65em;
+  border-radius: 999px;
+}
+
+.badge.error {
+  background: #f8d7da;
+  color: #842029;
+  border: 1px solid #f1b0b7;
+}
+
+.badge.warn {
+  background: #fff3cd;
+  color: #664d03;
+  border: 1px solid #ffe69c;
+}
+
+.stages {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1.5em minmax(0, 1fr) 1.5em minmax(0, 1fr);
+  gap: 0 1em;
+  align-items: start;
+}
+
+.arrow {
+  align-self: start;
+  margin-top: 0.2em;
+  text-align: center;
+  font-size: 1.4em;
+  color: #999;
+}
+
+.stage h3 {
+  margin: 0 0 0.6em;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+  border-bottom: 2px solid #ececf1;
+  padding-bottom: 0.4em;
+}
+
+.stage pre {
+  margin: 0;
+  padding: 0.75em;
+  background: #f7f7fa;
+  border: 1px solid #e4e4ea;
+  border-radius: 6px;
+  font-size: 0.82em;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.stage table.fields {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82em;
+}
+
+.stage table.fields th,
+.stage table.fields td {
+  border: 1px solid #e4e4ea;
+  padding: 0.3em 0.55em;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.stage table.fields thead th {
+  background: #f0f0f4;
+  font-size: 0.9em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.stage table.fields tbody th {
+  background: #f7f7fa;
+  font-weight: 600;
+  width: 42%;
+}
+
+.empty {
+  color: #aaa;
+}
+
+.stage img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.placeholder {
+  color: #842029;
+  background: #f8d7da;
+  border: 1px solid #f1b0b7;
+  border-radius: 6px;
+  padding: 0.75em;
+  font-size: 0.85em;
+}
+
+@media (max-width: 1000px) {
+  .stages {
+    grid-template-columns: 1fr;
+  }
+
+  .arrow {
+    display: none;
+  }
+}
