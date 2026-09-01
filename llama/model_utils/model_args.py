@@ -1,9 +1,16 @@
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from llama.model_utils.ocr_prompt import OcrPrompt
     from llama.model_utils.parser_prompt import ParserPrompt
+
+
+class DisableThinking(StrEnum):
+    TEMPLATE = "template"
+    DISABLE = "disable"
+    DO_NOT = "do not"
 
 
 @dataclass
@@ -26,6 +33,7 @@ class ParserArgs:
     max_tokens: int | None = None
     timeout: int = 300
     threads: int = 4
+    disable_thinking: DisableThinking = DisableThinking.TEMPLATE
 
 
 @dataclass
