@@ -43,7 +43,7 @@ import pandas as pd
 
 from llama.pylib import log
 
-FIRST_COLUMNS = ["text", "source", "row_group", "row_type"]
+FIRST_COLUMNS = ["text", "source", "row_group", "row_type", "status", "elapsed"]
 
 
 @dataclass
@@ -58,12 +58,39 @@ class RowGroup:
         return rows
 
 
+def _require_columns(df: pd.DataFrame, required: set[str], name: str) -> None:
+    missing = required - set(df.columns)
+    if missing:
+        missing_str = ", ".join(sorted(missing))
+        raise ValueError(f"{name} is missing required columns: {missing_str}")
+
+
+def _require_unique_sources(df: pd.DataFrame, name: str) -> None:
+    sources = df["source"]
+    dupes = sorted(sources[sources.duplicated()].unique())
+    if dupes:
+        shown = ", ".join(dupes[:5])
+        more = f" (+{len(dupes) - 5} more)" if len(dupes) > 5 else ""
+        raise ValueError(
+            f"{name} has duplicate source values: {shown}{more}. "
+            "Each source may appear only once."
+        )
+
+
 def compare_model_winner(args: argparse.Namespace) -> None:
     """Compare LLM outputs against each other and choose a winner."""
     job_began = log.job_began(args.log_file, args=args)
 
+    # Parse files are keyed by their basename, so basenames must be unique.
+    stems = [p.stem for p in args.parse_file]
+    if len(stems) != len(set(stems)):
+        dupes = ", ".join(sorted({s for s in stems if stems.count(s) > 1}))
+        raise ValueError(f"Parse files must have unique basenames: {dupes}")
+
     # Read OCR data
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
+    _require_columns(ocr_df, {"source", "text"}, str(args.ocr_file))
+    _require_unique_sources(ocr_df, str(args.ocr_file))
     ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Init 2 of the 3 indexes for the quasi 3D struct, see this script's doc string
@@ -74,6 +101,8 @@ def compare_model_winner(args: argparse.Namespace) -> None:
     parsed_data = {}
     for parse_file in args.parse_file:
         llm_df = pd.read_csv(parse_file, dtype=str).fillna("")
+        _require_columns(llm_df, {"source"}, str(parse_file))
+        _require_unique_sources(llm_df, str(parse_file))
         column_keys |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 
@@ -82,6 +111,8 @@ def compare_model_winner(args: argparse.Namespace) -> None:
 
     # Finish building the row index
     image_paths = sorted(image_paths)
+    if not image_paths:
+        raise ValueError("No images in common between the OCR and parse files")
     image_paths = image_paths[: args.limit]
     logging.info(f"Reporting on {len(image_paths)} images")
 
@@ -96,7 +127,8 @@ def compare_model_winner(args: argparse.Namespace) -> None:
                 "text": ocr_by_image[image_path]["text"],
                 "image_path": image_path,
                 "row_group": str(i),
-            }
+            },
+            winner_row={"row_type": "winner"},
         )
         # Build parse rows
         for parse_file in args.parse_file:
@@ -111,16 +143,16 @@ def compare_model_winner(args: argparse.Namespace) -> None:
             values = defaultdict(list)
             for row in group.parse_rows:
                 values[row[col]].append(row["row_type"])
-            counts = sorted(values.items(), key=lambda v: len(v[1]))
+            counts = sorted(values.items(), key=lambda v: len(v[1]), reverse=True)
             winner = counts[0]
             result = winner[0]
             if len(counts) > 1 and len(winner[1]) == len(counts[1][1]):
                 result = "<no_winner>"
-            if args.majority and float(len(winner[1])) < len(values) / 2.0:
+            if args.majority and len(winner[1]) <= len(group.parse_rows) / 2.0:
                 result = "<no_winner>"
             result = result or "<empty>"
             group.winner_row[col] = result
-            if result != "<no_winner>":
+            if result not in ("<no_winner>", "<empty>"):
                 for w in winner[1]:
                     tally[col][w] += 1
 
@@ -136,12 +168,13 @@ def compare_model_winner(args: argparse.Namespace) -> None:
         f.stem: {"row_group": "Total", "row_type": f.stem, "average": 0.0}
         for f in args.parse_file
     }
-    for col, counts in tally.items():
+    for col in columns:
+        counts = tally[col]
         for stem, count in counts.items():
             totals[stem][col] = count / len(image_paths)
             totals[stem]["average"] += totals[stem][col]
     for counts in totals.values():
-        counts["average"] /= len(tally)
+        counts["average"] /= len(columns)
 
     summary_df = pd.DataFrame(totals.values())
 
