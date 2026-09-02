@@ -13,6 +13,7 @@ FIELD_PROMPT_DIR = Path("prompts")
 SYS_MSG = re.compile(r"^System\s+Message", flags=re.IGNORECASE)
 LLM_FIELDS = re.compile(r"^LLM\s+Fields", flags=re.IGNORECASE)
 CALC_FIELDS = re.compile(r"^Calculated\s+Fields", flags=re.IGNORECASE)
+REQ_FIELDS = re.compile(r"^Required\s+Fields", flags=re.IGNORECASE)
 JSON_SCHEMA = re.compile(r"```json(.*)```", flags=re.DOTALL)
 
 
@@ -31,9 +32,9 @@ class PromptFileParser:
     name: str = ""
     description: str = ""
     system_msg: str = ""
-    json_schema: str = ""
     llm_fields: list[FieldAction] = field(default_factory=list)
     calc_fields: list[FieldAction] = field(default_factory=list)
+    req_fields: list[str] = field(default_factory=list)
 
     @classmethod
     def load(cls, prompt_path: Path) -> PromptFileParser:
@@ -45,8 +46,8 @@ class PromptFileParser:
         # Split Markdown file into sections
         sections = re.split(r"^(?<!#)#\s", text, flags=re.MULTILINE)
 
-        sys_msg, schema = "", ""
-        llm_fields, calc_fields = [], []
+        sys_msg = ""
+        llm_fields, calc_fields, req_fields = [], [], []
 
         for section in sections:
             section = section.strip()
@@ -54,10 +55,6 @@ class PromptFileParser:
             # Get system prompt section
             if SYS_MSG.match(section):
                 sys_msg = SYS_MSG.sub("", section).strip()
-                match = JSON_SCHEMA.search(sys_msg)
-                if match:
-                    schema = match.group(1).strip()
-                sys_msg = sys_msg.replace("```json\n", "").replace("\n```", "")
 
             # Get output LLM fields list section
             elif LLM_FIELDS.match(section):
@@ -75,12 +72,21 @@ class PromptFileParser:
                     lnk = lnk.removeprefix("(").removesuffix(")")
                     calc_fields.append(FieldAction.load(lnk))
 
+            # Get required fields
+            elif REQ_FIELDS.match(section):
+                section = REQ_FIELDS.sub("", section).strip()
+                req_fields = [
+                    name
+                    for ln in section.splitlines()
+                    if (name := re.sub(r"^\s*\-\s*", "", ln).strip())
+                ]
+
         prompt = cls(
             name=front["name"],
             description=front["description"],
             system_msg=sys_msg,
-            json_schema=schema,
             llm_fields=llm_fields,
             calc_fields=calc_fields,
+            req_fields=req_fields,
         )
         return prompt
