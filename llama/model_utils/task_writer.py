@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from llama.model_utils.model_status import ModelStatus, StatusCounts
+from llama.model_utils.ocr_docs import COLUMNS
 
 if TYPE_CHECKING:
     import csv
@@ -11,6 +12,9 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
 
     import tqdm
+
+MIN_TEXT_LEN = 32
+MIN_COLUMNS = len(COLUMNS)
 
 
 @dataclass
@@ -20,10 +24,13 @@ class TaskWriter:
     statuses: StatusCounts
     progress_bar: tqdm.tqdm
 
-    def write(self, future: Future[dict], source: Path | str = "") -> None:
+    def write(
+        self, future: Future[dict], source: Path | str = "", text: str = ""
+    ) -> None:
         self.progress_bar.update(1)
         try:
             result = future.result()
+            self.check(result, text)
         except Exception as err:
             name = Path(source).name if source else "unknown"
             logging.exception(f"Task error for: {name}")
@@ -51,3 +58,11 @@ class TaskWriter:
                 }
             )
             self.out_file.flush()
+
+    def check(self, result: dict, text: str) -> None:
+        if (
+            len(text) >= MIN_TEXT_LEN
+            and len(result) > MIN_COLUMNS
+            and all(not bool(v) for k, v in result.items() if k not in COLUMNS)
+        ):
+            raise ValueError("There is no output for this future.")

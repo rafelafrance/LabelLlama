@@ -33,6 +33,7 @@ Extract written or typed information from the image and fill in the fields below
 - Preserve the original wording, spelling, capitalization, punctuation, symbols, and abbreviations when extracting values.
 - Do not include field labels such as `det.`, `leg.`, `coll.`, `date`, `lat`, `long`, `sex`, or `catalog no.` unless they are part of the actual value.
 - If multiple compatible values are present for the same field, join them with `|`.
+- Some text may be light, particularly symbols including "♂" and "♀", get that text too.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 
@@ -63,6 +64,10 @@ I want you to extract the following information, if the information is not there
 - [waterBody](../llama/llm_fields/location/waterBody.py)
 - [habitat](../llama/llm_fields/event/habitat.py)
 - [occurrenceRemarks](../llama/llm_fields/occurrence/occurrenceRemarks.py)
+
+# Required Fields
+
+- scientificName
 
 # Calculated Fields
 

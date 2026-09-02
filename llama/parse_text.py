@@ -78,7 +78,11 @@ def parse_text(args: argparse.Namespace) -> None:
             }
             try:
                 for future in as_completed(futures):
-                    task_writer.write(future, source=futures[future]["source"])
+                    task_writer.write(
+                        future,
+                        source=futures[future]["source"],
+                        text=futures[future]["text"],
+                    )
             finally:
                 sessions.close_all()
 
