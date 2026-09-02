@@ -40,7 +40,7 @@ from tqdm import tqdm
 from llama.pylib import log
 
 FIRST_COLUMNS = ["text", "image_path", "row_group", "row_type", "source"]
-GBIF_SEARCH_MD = Path("llama") / "reports" / "gbif_search.md"
+GBIF_SEARCH_MD = Path(__file__).parent / "gbif_search.md"
 
 
 # ----------------------------------------------------------------------------------
@@ -153,7 +153,7 @@ class Score:
         for row_type, columns in tallies.items():
             for col, tally_ in columns.items():
                 row = {
-                    k: v or "" for k, v in asdict(tally_).items() if k != "score_sum"
+                    k: v for k, v in asdict(tally_).items() if k != "score_sum"
                 }
                 row["total_scoreable"] = tally_.total_scoreable
                 row["total_count"] = tally_.total_count
@@ -222,26 +222,58 @@ class RowGroup:
 
 
 # ----------------------------------------------------------------------------------
+def _require_columns(df: pd.DataFrame, required: set[str], name: str) -> None:
+    missing = required - set(df.columns)
+    if missing:
+        missing_str = ", ".join(sorted(missing))
+        raise ValueError(f"{name} is missing required columns: {missing_str}")
+
+
+def _require_unique_sources(df: pd.DataFrame, name: str) -> None:
+    sources = df["source"]
+    dupes = sorted(sources[sources.duplicated()].unique())
+    if dupes:
+        shown = ", ".join(dupes[:5])
+        more = f" (+{len(dupes) - 5} more)" if len(dupes) > 5 else ""
+        raise ValueError(
+            f"{name} has duplicate source values: {shown}{more}. "
+            "Each source may appear only once."
+        )
+
+
+# ----------------------------------------------------------------------------------
 def score_against_gbif(args: argparse.Namespace) -> None:
-    """Compare LLM outputs against gbif data and write an HTML report."""
+    """Compare LLM outputs against gbif data and write an ODS spreadsheet."""
     job_began = log.job_began(args.log_file, args=args)
+
+    # Parse files are keyed by their basename, so basenames must be unique.
+    stems = [p.stem for p in args.parse_file]
+    if len(stems) != len(set(stems)):
+        dupes = ", ".join(sorted({s for s in stems if stems.count(s) > 1}))
+        raise ValueError(f"Parse files must have unique basenames: {dupes}")
 
     # Read OCR data
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
+    _require_columns(ocr_df, {"source", "text"}, str(args.ocr_file))
+    _require_unique_sources(ocr_df, str(args.ocr_file))
     ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Read GBIF data
     gbif_df = pd.read_csv(args.gbif_file, dtype=str).fillna("")
+    _require_columns(gbif_df, {"source", "identifier"}, str(args.gbif_file))
+    _require_unique_sources(gbif_df, str(args.gbif_file))
     gbif_by_image = {g["source"]: g for g in gbif_df.to_dict("records")}
 
     # Init 2 of the 3 indexes for the quasi 3D struct, see this script's doc string
-    image_paths = set(gbif_by_image)
+    image_paths = set(gbif_by_image) & set(ocr_by_image)
     column_keys = {}
 
     # Get parsed data
     parsed_data = {}
     for parse_file in args.parse_file:
         llm_df = pd.read_csv(parse_file, dtype=str).fillna("")
+        _require_columns(llm_df, {"source"}, str(parse_file))
+        _require_unique_sources(llm_df, str(parse_file))
         column_keys |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 
@@ -258,7 +290,10 @@ def score_against_gbif(args: argparse.Namespace) -> None:
     # If the gbif cells do not match the llm cells then search for aligned data in gbif
     gbif_search = _get_gbif_search()
 
-    output_type = args.output_csv.suffix.lower()
+    # Unknown suffixes get spreadsheet formatting rather than raw Score objects.
+    output_type = args.output_ods.suffix.lower()
+    if output_type not in (".html", ".ods"):
+        output_type = ".ods"
 
     # Build report lines
     row_groups: list[RowGroup] = []
@@ -282,7 +317,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         for parse_file in args.parse_file:
             # Build LLM row. It just holds the LLM results as is
             parse_row: dict[str, str] = {"row_type": parse_file.stem} | {
-                c: parsed_data[parse_file.stem][image_path][c] for c in columns
+                c: parsed_data[parse_file.stem][image_path].get(c, "") for c in columns
             }
             row_group.parse_rows.append(parse_row)
 
@@ -307,7 +342,7 @@ def score_against_gbif(args: argparse.Namespace) -> None:
         row_group.format(output_type)
 
     _write_ods(
-        ods_file=args.output_csv,
+        ods_file=args.output_ods,
         row_groups=row_groups,
         gbif_search=gbif_search,
         stats=stats,
@@ -321,6 +356,7 @@ def _calc_score(
     col: str, actual: str, gbif_input: dict, gbif_search: dict, success_threshold: float
 ) -> Score:
     """Calculate the score of a LLM/parsed cell against a matching GBIF cell."""
+    actual = actual.strip()
     is_aligned = False
 
     # If the GBIF column has a value then we score against that
@@ -336,7 +372,6 @@ def _calc_score(
             )
         if not expect:
             is_aligned = True
-            # return Score(cat=ScoreCat.aligned_gbif_empty)
         if not actual:
             return Score(cat=ScoreCat.aligned_parse_empty, is_aligned=True)
         if expect and actual:
@@ -423,8 +458,14 @@ def _get_gbif_search() -> dict[str, list[str]]:
         if ln.startswith("#####"):
             key = ln.rsplit(maxsplit=1)[-1]
         elif ln.startswith("-"):
-            field = ln.rsplit(maxsplit=1)[-1]
-            search[key].append(field)
+            if not key:
+                logging.warning(f"Search field before any header, ignored: {ln!r}")
+                continue
+            parts = ln.split(maxsplit=1)
+            if len(parts) < 2 or not parts[1].split():
+                logging.warning(f"Malformed search field line, ignored: {ln!r}")
+                continue
+            search[key].append(parts[1].split()[0])
     return search
 
 
@@ -476,11 +517,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""The cleaned LLM parse file. You may compare several files at once.""",
     )
     io_group.add_argument(
-        "--output-csv",
+        "--output-ods",
         type=Path,
         required=True,
         metavar="path",
-        help="""Write the comparison results to this CSV file.""",
+        help="""Write the comparison results to this ODS spreadsheet.""",
     )
     settings_group = arg_parser.add_argument_group("program settings")
     settings_group.add_argument(
