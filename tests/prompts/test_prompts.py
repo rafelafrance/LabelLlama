@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from llama.prompt_utils.prompt_file_parser import FIELD_PROMPT_DIR, PromptFileParser
+from llama.prompts.prompt_file_parser import FIELD_PROMPT_DIR, PromptFileParser
 
 if TYPE_CHECKING:
     from pathlib import Path

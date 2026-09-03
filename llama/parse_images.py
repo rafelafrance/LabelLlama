@@ -18,8 +18,8 @@ from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.thread_sessions import ThreadSessions
-from llama.prompt_utils.base_prompt import Thinking
-from llama.prompt_utils.parser_prompt import ParserPrompt
+from llama.prompts.base_prompt import Thinking
+from llama.prompts.parser_prompt import ParserPrompt
 from llama.pylib import image_util, log
 
 
