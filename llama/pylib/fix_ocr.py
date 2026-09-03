@@ -21,6 +21,8 @@ FILTER_WORDS: tuple[str, ...] = (
     "natural history",
     "plant biology",
     "of sciences",
+    "sciences dept",
+    "sciences department",
 )
 
 

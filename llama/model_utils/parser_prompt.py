@@ -2,43 +2,39 @@ import json
 import re
 from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import TYPE_CHECKING, ClassVar
+from typing import Any, ClassVar
 
+from llama.model_utils.base_prompt import BasePrompt
 from llama.model_utils.ocr_prompt import FIRST_COLUMNS
 from llama.model_utils.prompt_file_parser import PromptFileParser
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
 
 @dataclass
-class ParserPrompt:
+class ParserPrompt(BasePrompt):
     # -------------- ClassVars ---------------
     text_msg: ClassVar[str] = """Extract data from this `text`:\n\n"""
     # ----------------------------------------
 
-    name: str = ""
-    description: str = ""
-    system_msg: str = ""
     json_schema: str = ""
     columns: list[str] = field(default_factory=list)
 
-    @classmethod
-    def load(cls, prompt_path: Path) -> ParserPrompt:
-        prompt_parser = PromptFileParser.load(prompt_path)
-        prompt = cls(
-            name=prompt_parser.name,
-            description=prompt_parser.description,
-            system_msg=prompt_parser.system_msg,
-            columns=FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields],
-        )
-        prompt.json_schema = prompt._build_json_schema(prompt_parser)
-        prompt.system_msg += prompt._build_field_guidance(prompt_parser)
-        prompt.system_msg += dedent("""
+    def __init__(self, **kwargs: dict[str, Any]) -> None:
+        prompt_parser = PromptFileParser.load(kwargs["prompt"])
+        self.name = prompt_parser.name
+        self.description = prompt_parser.description
+
+        self.columns = (FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields],)
+        self.json_schema = self._build_json_schema(prompt_parser)
+
+        self.system_msg = prompt_parser.system_msg
+        self.system_msg += self._build_field_guidance(prompt_parser)
+        self.system_msg += dedent("""
             \nStructure the output as JSON using this JSON schema.
             """)
-        prompt.system_msg += prompt.json_schema
-        return prompt
+        self.system_msg += self.json_schema
+
+        self.base_headers = self._headers()
+        self.base_payload = self._base_payload(**kwargs)
 
     def _build_field_guidance(self, prompt_parser: PromptFileParser) -> str:
         guidance = ["\n\n# Field Guidance\n"]
@@ -47,6 +43,24 @@ class ParserPrompt:
             guidance.append(f"- `{fld.name}`: {desc}")
         guidance.append("")
         return "\n".join(guidance)
+
+    def _base_payload(self, **kwargs: dict[str, Any]) -> dict:
+        payload = {
+            "model": kwargs["model_id"],
+            "messages": [
+                {"role": "system", "content": kwargs["system_msg"]},
+                {"role": "replace me"},
+            ],
+            "response_format": self.json_schema,
+        }
+        self._payload_args(**kwargs)
+        return payload
+
+    def payload(self, text: str) -> dict:
+        target_msg = {"role": "user", "content": self.build_text_msg(text)}
+        payload_ = self.base_payload
+        payload_["messages"][-1] = target_msg
+        return payload_
 
     def _build_json_schema(self, prompt_parser: PromptFileParser) -> str:
         obj = {

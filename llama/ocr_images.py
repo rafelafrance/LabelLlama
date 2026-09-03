@@ -3,7 +3,6 @@
 import argparse
 import csv
 import logging
-import os
 import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -13,7 +12,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils.model_args import OcrArgs
+from llama.model_utils.base_prompt import Thinking
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.ocr_prompt import OcrPrompt
@@ -24,6 +23,8 @@ from llama.pylib import fix_ocr, image_util, log
 
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
+
+    prompt = OcrPrompt(args.prompt, **args)
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
@@ -40,18 +41,7 @@ def ocr_images(args: argparse.Namespace) -> None:
         logging.info(f"Limited to {docs.limit} images.")
     logging.info(f"There are {len(docs.tasks)} images left to process.")
 
-    prompt = OcrPrompt.load(args.prompt)
-
     statuses = StatusCounts()
-
-    model_args = OcrArgs(
-        prompt=prompt,
-        api_host=args.api_host,
-        model_id=args.model_id,
-        temperature=args.temperature,
-        max_tokens=args.max_tokens,
-        timeout=args.timeout,
-    )
 
     with args.ocr_file.open(docs.file_mode) as output_file:
         writer = csv.DictWriter(output_file, prompt.columns)
@@ -70,7 +60,9 @@ def ocr_images(args: argparse.Namespace) -> None:
                 progress_bar=pbar,
             )
             futures = {
-                executor.submit(call_model, model_args, source, sessions): source
+                executor.submit(
+                    call_model, prompt, source, sessions, args.api_host, args.timeout
+                ): source
                 for source in docs.tasks
             }
 
@@ -88,44 +80,24 @@ def ocr_images(args: argparse.Namespace) -> None:
     log.job_elapsed(job_began)
 
 
-def call_model(args: OcrArgs, source: Path | str, sessions: ThreadSessions) -> dict:
+def call_model(
+    prompt: OcrPrompt,
+    source: Path | str,
+    sessions: ThreadSessions,
+    api_host: str,
+    timeout: int,
+) -> dict:
     began = datetime.now()
 
     try:
-        base64_image, mime_type = image_util.load_image(source, args.timeout)
-
-        payload = {
-            "model": args.model_id,
-            "messages": [
-                {"role": "system", "content": args.prompt.system_msg},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}",
-                            },
-                        },
-                    ],
-                },
-            ],
-        }
-        if args.temperature is not None:
-            payload["temperature"] = args.temperature
-        if args.max_tokens is not None:
-            payload["max_tokens"] = args.max_tokens
-
-        url = f"{args.api_host}/chat/completions"
-
-        headers = {"Content-Type": "application/json"}
-        api_key = os.getenv("LLM_API_KEY")
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
+        base64_image, mime_type = image_util.load_image(source, timeout)
 
         session = sessions.get()
         response = session.post(
-            url, headers=headers, json=payload, timeout=args.timeout
+            f"{api_host}/chat/completions",
+            headers=prompt.headers(),
+            prompt=prompt.payload(mime_type, base64_image),
+            timeout=timeout,
         )
         response.raise_for_status()
         result = response.json()
@@ -201,25 +173,22 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             (default: %(default)s)""",
     )
     model_group = arg_parser.add_argument_group("model options")
-    model_defaults = OcrArgs(OcrPrompt())
     model_group.add_argument(
         "--model-id",
-        default=model_defaults.model_id,
+        default="unsloth/gemma-4-E4B-it-GGUF:Q8_K_XL",
         metavar="STRING",
         help="""Use this language model. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--api-host",
-        default=model_defaults.api_host,
+        default="http://localhost:9931/v1",
         metavar="STRING",
-        help="""URL for the language model. (default: %(default)s)
-            The default is for LM-Studio, but you could use Ollama's or another
-            URL here.""",
+        help="""URL for the language model. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--threads",
         type=int,
-        default=model_defaults.threads,
+        default=2,
         metavar="INT",
         help="""How many parallel threads to run. (default: %(default)s)
             Increase this if the model server is powerful enough.""",
@@ -227,27 +196,29 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--temperature",
         type=float,
-        default=model_defaults.temperature,
         metavar="FLOAT",
-        help="""Model's temperature. (default: %(default)s)
-            We don't want the model to get creative, so keep this value low.""",
+        help="""Model's temperature.""",
     )
     model_group.add_argument(
         "--max-tokens",
         type=int,
-        default=model_defaults.max_tokens,
+        default=2048,
         metavar="INT",
-        help="""The OCR model's response maximum tokens. (default: %(default)s)
-            2048 tokens is roughly 1.5K words, which is more than enough for most
-            museum specimens. I keep this low to truncate model loops.""",
+        help="""The OCR model's response maximum tokens. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--timeout",
         type=int,
-        default=model_defaults.timeout,
+        default=120,
         metavar="INT",
         help="""How long to wait for the OCR model to complete in seconds.
             (default: %(default)s) 2 minutes is a life time for OCR.""",
+    )
+    model_group.add_argument(
+        "--thinking",
+        type=Thinking,
+        default=Thinking.DISABLE_TEMPLATE,
+        help="""How to handle model thinking. (default: %(default)s)""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(

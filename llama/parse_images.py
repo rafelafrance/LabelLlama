@@ -4,7 +4,6 @@ import argparse
 import csv
 import json
 import logging
-import os
 import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -15,7 +14,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils.model_args import DisableThinking, ExtractArgs
+from llama.model_utils.base_prompt import Thinking
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.parser_prompt import ParserPrompt
@@ -27,7 +26,7 @@ from llama.pylib import image_util, log
 def parse_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    prompt = ParserPrompt.load(args.prompt)
+    prompt = ParserPrompt.load(args.prompt, **args)
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.parsed_file, args.limit)
 
@@ -46,16 +45,6 @@ def parse_images(args: argparse.Namespace) -> None:
 
     statuses = StatusCounts()
 
-    extract_args = ExtractArgs(
-        prompt=prompt,
-        model_id=args.model_id,
-        api_host=args.api_host,
-        temperature=args.temperature,
-        max_tokens=args.max_tokens,
-        timeout=args.timeout,
-        threads=args.threads,
-    )
-
     with args.parsed_file.open(docs.file_mode) as output_file:
         writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":
@@ -73,7 +62,9 @@ def parse_images(args: argparse.Namespace) -> None:
                 progress_bar=pbar,
             )
             futures = {
-                executor.submit(call_model, extract_args, source, sessions): source
+                executor.submit(
+                    call_model, prompt, source, sessions, args.api_host, args.timeout
+                ): source
                 for source in docs.tasks
             }
             try:
@@ -94,56 +85,30 @@ def parse_images(args: argparse.Namespace) -> None:
     log.job_elapsed(job_began)
 
 
-def call_model(args: ExtractArgs, source: Path | str, sessions: ThreadSessions) -> dict:
+def call_model(
+    prompt: ParserPrompt,
+    source: Path | str,
+    sessions: ThreadSessions,
+    api_host: str,
+    timeout: int,
+) -> dict:
     began = datetime.now()
 
-    headers = {"Content-Type": "application/json"}
-    api_key = os.getenv("LLM_API_KEY")
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
     try:
-        base64_image, mime_type = image_util.load_image(source, args.timeout)
-
-        payload = {
-            "model": args.model_id,
-            "messages": [
-                {"role": "system", "content": args.prompt.system_msg},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}",
-                            },
-                        },
-                    ],
-                },
-            ],
-            "response_format": args.prompt.json_schema,
-        }
-        if args.temperature is not None:
-            payload["temperature"] = args.temperature
-        if args.max_tokens is not None:
-            payload["max_tokens"] = args.max_tokens
-
-        if args.disable_thinking == DisableThinking.TEMPLATE:
-            payload["chat_template_kwargs"] = {"enable_thinking": False}
-        elif args.disable_thinking == DisableThinking.DISABLE:
-            payload["enable_thinking"] = False
+        base64_image, mime_type = image_util.load_image(source, timeout)
 
         session = sessions.get()
         response = session.post(
-            f"{args.api_host}/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=args.timeout,
+            f"{api_host}/chat/completions",
+            headers=prompt.headers(),
+            json=prompt.payload(mime_type, base64_image),
+            timeout=timeout,
         )
         response.raise_for_status()
         result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
+
         text = content
         extracted = parse_model_json(content)
 
@@ -229,10 +194,9 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             For example prompts/diode_one_v1.md.""",
     )
     model_group = arg_parser.add_argument_group("model options")
-    model_defaults = ExtractArgs(ParserPrompt())
     model_group.add_argument(
         "--model-id",
-        default=model_defaults.model_id,
+        default="unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL",
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.
             cost trade off between local and hosted models. Local models are cheaper
@@ -240,16 +204,14 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     model_group.add_argument(
         "--api-host",
-        default=model_defaults.api_host,
+        default="http://localhost:9931/v1",
         metavar="string",
-        help="""URL for the LM model. (default: %(default)s)
-            The default is for LM-Studio, but I also use ChatGPT-nano and other
-            server models.""",
+        help="""URL for the LM model. (default: %(default)s)""",
     )
     model_group.add_argument(
         "--threads",
         type=int,
-        default=model_defaults.threads,
+        default=4,
         metavar="int",
         help="""How many parallel threads to run. (default: %(default)s) For
             ChatGPT-nano I will increase this to 20 or more, and for a local model
@@ -259,9 +221,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--temperature",
         type=float,
         metavar="float",
-        help="""Model's temperature.
-            We don't want the model to get creative, so keep this value low. Some
-            hosted servers don't like this option so there is no default.""",
+        help="""Model's temperature.""",
     )
     model_group.add_argument(
         "--max-tokens",
@@ -273,17 +233,17 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--timeout",
         type=int,
-        default=model_defaults.timeout,
+        default=300,
         metavar="int",
         help="""How long to wait for the LM to respond in seconds.
             (default: %(default)s) 5 minutes is a life time for extracting data
             from an image.""",
     )
     model_group.add_argument(
-        "--disable-thinking",
-        type=DisableThinking,
-        default=model_defaults.disable_thinking,
-        help="""If and how to disable thinking.""",
+        "--thinking",
+        type=Thinking,
+        default=Thinking.DISABLE_TEMPLATE,
+        help="""How to handle thinking.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
