@@ -4,9 +4,9 @@ from dataclasses import dataclass, field
 from textwrap import dedent
 from typing import Any, ClassVar
 
-from llama.model_utils.base_prompt import BasePrompt
-from llama.model_utils.ocr_prompt import FIRST_COLUMNS
-from llama.model_utils.prompt_file_parser import PromptFileParser
+from llama.prompt_utils.base_prompt import BasePrompt
+from llama.prompt_utils.ocr_prompt import FIRST_COLUMNS
+from llama.prompt_utils.prompt_file_parser import PromptFileParser
 
 
 @dataclass
