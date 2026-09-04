@@ -4,8 +4,8 @@ from io import StringIO
 
 from tqdm import tqdm
 
-from llama.model_utils.model_status import ModelStatus, StatusCounts
-from llama.model_utils.task_writer import TaskWriter
+from llama.results.model_status import ModelStatus, StatusCounts
+from llama.results.task_writer import TaskWriter
 
 
 def make_writer() -> tuple[csv.DictWriter, StringIO]:

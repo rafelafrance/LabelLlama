@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pandas as pd
 
-from llama.model_utils.model_status import ModelStatus
+from llama.results.model_status import ModelStatus
 from llama.pylib import image_util
 
 if TYPE_CHECKING:

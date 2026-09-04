@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from llama.model_utils.model_status import ModelStatus
-from llama.model_utils.ocr_docs import MIN_SIZE
+from llama.results.model_status import ModelStatus
+from llama.results.ocr_docs import MIN_SIZE
 
 if TYPE_CHECKING:
     from pathlib import Path
