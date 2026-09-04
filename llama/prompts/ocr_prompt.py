@@ -30,7 +30,7 @@ class OcrPrompt(BasePrompt):
                 {"role": "replace me"},
             ],
         }
-        self._payload_args(**kwargs)
+        payload.update(self._payload_args(**kwargs))
         return payload
 
     def payload(self, mime_type: str, base64_image: str) -> dict:
@@ -45,6 +45,7 @@ class OcrPrompt(BasePrompt):
                 },
             ],
         }
-        payload_ = self.base_payload
-        payload_["messages"][-1] = target_msg
+        messages = [*self.base_payload["messages"]]
+        messages[-1] = target_msg
+        payload_ = {**self.base_payload, "messages": messages}
         return payload_

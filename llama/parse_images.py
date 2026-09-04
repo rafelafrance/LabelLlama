@@ -26,7 +26,7 @@ from llama.results.task_writer import TaskWriter
 def parse_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    prompt = ParserPrompt.load(args.prompt, **args)
+    prompt = ParserPrompt(**vars(args))
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.parsed_file, args.limit)
 
