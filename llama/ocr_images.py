@@ -12,13 +12,13 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
+from llama.model_utils.model_status import ModelStatus, StatusCounts
+from llama.model_utils.ocr_docs import OcrDocs
+from llama.model_utils.task_writer import TaskWriter
+from llama.model_utils.thread_sessions import ThreadSessions
 from llama.prompts.base_prompt import Thinking
 from llama.prompts.ocr_prompt import OcrPrompt
 from llama.pylib import fix_ocr, image_util, log
-from llama.pylib.thread_sessions import ThreadSessions
-from llama.results.model_status import ModelStatus, StatusCounts
-from llama.results.ocr_docs import OcrDocs
-from llama.results.task_writer import TaskWriter
 
 
 def ocr_images(args: argparse.Namespace) -> None:

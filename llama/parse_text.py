@@ -14,13 +14,13 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
+from llama.model_utils.model_status import ModelStatus, StatusCounts
+from llama.model_utils.parsed_docs import ParsedDocs
+from llama.model_utils.task_writer import TaskWriter
+from llama.model_utils.thread_sessions import ThreadSessions
 from llama.prompts.base_prompt import Thinking
 from llama.prompts.parser_prompt import ParserPrompt
 from llama.pylib import fix_ocr, log
-from llama.pylib.thread_sessions import ThreadSessions
-from llama.results.model_status import ModelStatus, StatusCounts
-from llama.results.parsed_docs import ParsedDocs
-from llama.results.task_writer import TaskWriter
 
 
 def parse_text(args: argparse.Namespace) -> None:

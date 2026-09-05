@@ -1,4 +1,4 @@
-from llama.results.model_status import ModelStatus, StatusCounts
+from llama.model_utils.model_status import ModelStatus, StatusCounts
 
 
 def test_normalize_accepts_success_variants() -> None:

@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from llama.results.model_status import ModelStatus, StatusCounts
-from llama.results.ocr_docs import COLUMNS
+from llama.model_utils.model_status import ModelStatus, StatusCounts
+from llama.model_utils.ocr_docs import COLUMNS
 
 if TYPE_CHECKING:
     import csv

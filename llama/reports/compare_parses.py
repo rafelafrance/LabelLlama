@@ -8,8 +8,8 @@ from pathlib import Path
 import pandas as pd
 from rich import print as rprint
 
+from llama.model_utils.model_status import ModelStatus
 from llama.pylib import log
-from llama.results.model_status import ModelStatus
 
 
 def compare(args: argparse.Namespace) -> None:
