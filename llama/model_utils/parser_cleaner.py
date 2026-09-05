@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from llama.prompt_utils.prompt_file_parser import PromptFileParser
+from llama.model_utils.prompt_file_parser import PromptFileParser
 
 if TYPE_CHECKING:
     from pathlib import Path

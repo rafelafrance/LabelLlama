@@ -4,7 +4,7 @@ import argparse
 import textwrap
 from pathlib import Path
 
-from llama.prompt_utils.parser_prompt import ParserPrompt
+from llama.model_utils.parser_prompt import ParserPrompt
 
 
 def show(args: argparse.Namespace) -> None:

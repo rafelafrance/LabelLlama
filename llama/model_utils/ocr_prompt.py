@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from llama.prompt_utils.base_prompt import BasePrompt
-from llama.prompt_utils.prompt_file_parser import PromptFileParser
+from llama.model_utils.base_prompt import BasePrompt
+from llama.model_utils.prompt_file_parser import PromptFileParser
 
 FIRST_COLUMNS = ["status", "source", "elapsed", "text"]
 
