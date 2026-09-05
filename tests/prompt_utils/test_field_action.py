@@ -5,8 +5,8 @@ import pytest
 
 from llama.calc_fields.location.elevation import Elevation
 from llama.llm_fields.location.country import Country
-from llama.prompts import field_action as field_action_module
-from llama.prompts.field_action import FieldAction
+from llama.prompt_utils import field_action as field_action_module
+from llama.prompt_utils.field_action import FieldAction
 
 
 def test_load_llm_field_action() -> None:

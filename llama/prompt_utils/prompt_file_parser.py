@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from llama.prompts.field_action import FieldAction
+from llama.prompt_utils.field_action import FieldAction
 
 FIELD_PROMPT_DIR = Path("prompts")
 
