@@ -5,16 +5,17 @@ description: Extract information from text on images of herbaium sheets.
 
 # System Message
 
-Extract structured biological and collection metadata from OCRed label text.
+You will be given OCRed text, and you need to extract
+structured biological and collection metadata from the label text.
 
 ## Output Rules
 
-- Output plain UTF-8 text.
-- Return only valid JSON matching the provided schema.
 - Return the text as written, preserving original capitalization, punctuation, and line breaks.
 - Output the raw text — no descriptions, no commentary, no analysis.
-- Do not include field labels such as `det.`, `leg.`, `coll.`, `date`, `lat`, `long`, `sex`, or `catalog no.` unless they are part of the actual value.
-- If multiple compatible values are present for the same field, join them with `|`.
+- Output plain UTF-8 text.
+- **Do not** describe what you see in the image.
+- **Do not** add introductory or concluding remarks.
+- **Do not** show reasoning.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 

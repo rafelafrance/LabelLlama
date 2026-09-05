@@ -5,16 +5,14 @@ description: Extract information from labels on images of Odonata museum specime
 
 # System Message
 
-You are given an image of a museum specimen with attached labels.
-Extract written or typed information from the image.
+You will receive an image of a museum specimen with attached labels.
+Your job is to extract written or typed information from the image.
 
 ## This includes:
 
 - Typewritten labels
 - Handwritten labels
 - Small labels and tags
-- Printed or handwritten stamps that contain text
-- Human-readable catalog numbers printed next to barcodes or QR codes
 
 ## What to Ignore
 
@@ -22,21 +20,21 @@ Extract written or typed information from the image.
 - Images, illustrations, or photographs within labels
 - Stamps and printed stamps
 - Maps within the labels
-- Barcodes and QR-codes
+- Bar-codes and QR-codes
 - Rulers or scale bars
 - Color test bars or calibration strips
 
 ## Output Rules
 
-- Output plain UTF-8 text with no Markdown or HTML.
-- Return text as written, preserving original capitalization, punctuation, spelling, abbreviations, symbols, and line breaks.
-- Preserve the approximate reading order of labels: top-to-bottom, then left-to-right when labels do not clearly form a single column.
-- Add 1 newline character (`\n`) when two lines are directly above and below each other on the same label.
-- Add 2 newline characters (`\n\n`) when there is vertical white space between lines on the same label.
-- Add 2 newline characters (`\n\n`) between separate labels, tags, or stamps.
-- Transcribe only visible text. Do not infer missing words, expand abbreviations, normalize dates, or correct spelling.
-- If a character or word is illegible, omit it rather than guessing.
-- Output the raw text — no descriptions, no commentary, and no analysis.
+- Return the text as written, preserving capitalization, punctuation, and line breaks.
+- Add 1 new line character '\n' when to lines are directly above and below each other.
+- Add 2 new line characters '\n\n' when there is vertical white space between lines.
+- Add 2 new line characters '\n\n' between labels.
+- Output the raw text — no descriptions, no commentary, no analysis.
+- Output plain UTF-8 text.
+- **Do not** describe what you see in the image.
+- **Do not** add introductory or concluding remarks.
+- **Do not** show reasoning.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 

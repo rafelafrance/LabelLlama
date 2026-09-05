@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 
     from tqdm import tqdm
 
+    from llama.model_utils.model_args import OcrArgs, ParserArgs
+    from llama.model_utils.ocr_docs import OcrDocs
+    from llama.model_utils.parsed_docs import ParsedDocs
 
 
 def complete_task(
@@ -52,3 +55,32 @@ def complete_task(
             }
         )
         out_file.flush()
+
+
+def add_payload_args(args: OcrArgs | ParserArgs, payload: dict) -> None:
+    if args.temperature is not None:
+        payload["temperature"] = args.temperature
+    if args.max_tokens is not None:
+        payload["max_tokens"] = args.max_tokens
+    if hasattr(args.prompt, "json_schema") and args.prompt.json_schema:
+        payload["character_schema"] = args.prompt.json_schema
+
+
+def log_what_to_do(docs: OcrDocs | ParsedDocs, target: str) -> None:
+    logging.info(f"There are {docs.input_len} {target} to process")
+    logging.info(f"{len(docs.already_done)} {target} were already done.")
+    if docs.limit:
+        logging.info(f"Limited to {docs.limit} {target}.")
+    logging.info(f"There are {len(docs.tasks)} {target} left to process.")
+
+
+def log_what_was_done(
+    docs: OcrDocs | ParsedDocs,
+    target: str,
+    statuses: StatusCounts,
+) -> None:
+    logging.info(
+        f"Total {len(docs.tasks)} {target} processed "
+        f"with {statuses.get(ModelStatus.ERROR)} errors "
+        f"and {len(docs.already_done)} {target} skipped."
+    )
