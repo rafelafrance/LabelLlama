@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class ParserCleaner:
-    llm_field_classes: dict[str, Any] = field(default_factory=dict)
-    calc_field_classes: dict[str, Any] = field(default_factory=dict)
+    llm_field_classes: dict[str, Any] = field(default_factory=dict[str, Any])
+    calc_field_classes: dict[str, Any] = field(default_factory=dict[str, Any])
 
     @classmethod
     def load(cls, prompt_path: Path) -> ParserCleaner:

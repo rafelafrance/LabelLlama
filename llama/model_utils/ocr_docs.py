@@ -26,8 +26,8 @@ class OcrDocs:
     image_paths: list[Path] = field(default_factory=list)
     ocr_file: Path | None = None
     file_mode: str = "w"
-    ocr_records: list[dict] = field(default_factory=list)
-    already_done: set[str] = field(default_factory=set)
+    ocr_records: list[dict] = field(default_factory=list[dict])
+    already_done: set[str] = field(default_factory=set[str])
     tasks: list[Path] = field(default_factory=list)
     limit: int | None = None
 
@@ -70,7 +70,7 @@ class OcrDocs:
         return {
             r.get("source", "")
             for r in self.ocr_records
-            if r.get("source") and ModelStatus.is_success(r.get("status"))
+            if r.get("source") and r.get("status", "").lower() == ModelStatus.SUCCESS
         }
 
     def _get_tasks(self) -> list[Path]:

@@ -7,6 +7,17 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class ExtractArgs:
+    prompt: ParserPrompt
+    api_host: str = "http://localhost:1234/v1"
+    model_id: str = "qwen3.8-27b"
+    temperature: float = 0.1
+    max_tokens: int = 2048
+    timeout: int = 300
+    threads: int = 2
+
+
+@dataclass
 class OcrArgs:
     prompt: OcrPrompt
     api_host: str = "http://localhost:1234/v1"

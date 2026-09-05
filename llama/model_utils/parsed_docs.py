@@ -16,12 +16,12 @@ REQUIRED_OCR_COLUMNS = {"source", "text"}
 @dataclass
 class ParsedDocs:
     ocr_file: Path | None = None
-    ocr_records: list[dict] = field(default_factory=list)
+    ocr_records: list[dict] = field(default_factory=list[dict])
     parsed_file: Path | None = None
     file_mode: str = "w"
-    parsed_records: list[dict] = field(default_factory=list)
-    already_done: set[str] = field(default_factory=set)
-    tasks: list[dict] = field(default_factory=list)
+    parsed_records: list[dict] = field(default_factory=list[dict])
+    already_done: set[str] = field(default_factory=set[str])
+    tasks: list[dict] = field(default_factory=list[dict])
     limit: int | None = None
 
     @classmethod
@@ -81,7 +81,7 @@ class ParsedDocs:
         return {
             r["source"]
             for r in self.parsed_records
-            if ModelStatus.is_success(r.get("status"))
+            if r["status"] == ModelStatus.SUCCESS
         }
 
     def _get_tasks(self) -> list[dict]:

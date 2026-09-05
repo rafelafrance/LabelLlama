@@ -8,7 +8,7 @@ from typing import Any
 class FieldAction:
     name: str
     module: Path
-    columns: list[str] = field(default_factory=list)
+    columns: list[str] = field(default_factory=list[str])
     field_class: Any = None
 
     @classmethod
