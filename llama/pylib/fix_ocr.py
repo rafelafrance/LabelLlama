@@ -7,7 +7,8 @@ from markdownify import markdownify as md
 # language model with irrelevant data. Kept at module level so callers can
 # extend or override them without editing filter_lines.
 FILTER_WORDS: tuple[str, ...] = (
-    "academy of",
+    "academ",
+    "academy",
     "botanic garden",
     "botanical",
     "center for",
@@ -20,7 +21,7 @@ FILTER_WORDS: tuple[str, ...] = (
     "museum of",
     "natural history",
     "plant biology",
-    "of sciences",
+    "sciences",
 )
 
 
