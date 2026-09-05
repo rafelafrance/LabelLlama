@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils.base_prompt import Thinking
+from llama.model_utils.model_args import DisableThinking, ParserArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.parsed_docs import ParsedDocs
 from llama.model_utils.parser_prompt import ParserPrompt
@@ -26,7 +27,7 @@ from llama.pylib import fix_ocr, log
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    prompt = ParserPrompt.load(args.prompt, **args)
+    prompt = ParserPrompt.load(args.prompt)
 
     docs = ParsedDocs.build(
         args.parsed_file,
@@ -42,6 +43,16 @@ def parse_text(args: argparse.Namespace) -> None:
     logging.info(f"There are {len(docs.tasks)} documents left to process.")
 
     statuses = StatusCounts()
+
+    parser_args = ParserArgs(
+        prompt=prompt,
+        model_id=args.model_id,
+        api_host=args.api_host,
+        temperature=args.temperature,
+        max_tokens=args.max_tokens,
+        timeout=args.timeout,
+        threads=args.threads,
+    )
 
     with args.parsed_file.open(docs.file_mode) as output_file:
         writer = csv.DictWriter(output_file, prompt.columns)
@@ -61,12 +72,7 @@ def parse_text(args: argparse.Namespace) -> None:
             )
             futures = {
                 executor.submit(
-                    call_model,
-                    prompt,
-                    ocr_result,
-                    sessions,
-                    args.api_host,
-                    args.timeout,
+                    call_model, parser_args, ocr_result, sessions
                 ): ocr_result
                 for ocr_result in docs.tasks
             }
@@ -89,30 +95,49 @@ def parse_text(args: argparse.Namespace) -> None:
 
 
 def call_model(
-    prompt: ParserPrompt,
+    args: ParserArgs,
     ocr_result: dict,
     sessions: ThreadSessions,
-    api_host: str,
-    timeout: int,
 ) -> dict:
     began = datetime.now()
 
     text = fix_ocr.prepare_for_parse(ocr_result["text"])
 
+    headers = {"Content-Type": "application/json"}
+    api_key = os.getenv("LLM_API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    payload = {
+        "model": args.model_id,
+        "messages": [
+            {"role": "system", "content": args.prompt.system_msg},
+            {"role": "user", "content": args.prompt.build_text_msg(text)},
+        ],
+        "response_format": args.prompt.json_schema,
+    }
+    if args.temperature is not None:
+        payload["temperature"] = args.temperature
+    if args.max_tokens is not None:
+        payload["max_tokens"] = args.max_tokens
+
+    if args.disable_thinking == DisableThinking.TEMPLATE:
+        payload["chat_template_kwargs"] = {"enable_thinking": False}
+    elif args.disable_thinking == DisableThinking.DISABLE:
+        payload["enable_thinking"] = False
+
     extracted = {}
     try:
         session = sessions.get()
         response = session.post(
-            f"{api_host}/chat/completions",
-            headers=prompt.headers(),
-            json=prompt.payload(text),
-            timeout=timeout,
+            f"{args.api_host}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=args.timeout,
         )
         response.raise_for_status()
         result = response.json()
-
         content = result["choices"][0]["message"]["content"] or ""
-
         extracted = parse_model_json(content)
 
         status = ModelStatus.SUCCESS
@@ -180,9 +205,10 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
             For example prompts/llm_fields/herbarium_v1.md.""",
     )
     model_group = arg_parser.add_argument_group("model options")
+    model_defaults = ParserArgs(ParserPrompt())
     model_group.add_argument(
         "--model-id",
-        default="unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_XL",
+        default=model_defaults.model_id,
         metavar="string",
         help="""Use this language model. (default: %(default)s) There is a speed vs.
             cost trade off between local and hosted models. Local models are cheaper
@@ -190,14 +216,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     model_group.add_argument(
         "--api-host",
-        default="http://localhost:9931/v1",
+        default=model_defaults.api_host,
         metavar="string",
-        help="""URL for the LM model. (default %(default)s""",
+        help="""URL for the LM model. (default %(default)s
+            The default is for LM-Studio, but I also use ChatGPT-nano and other
+            server models.""",
     )
     model_group.add_argument(
         "--threads",
         type=int,
-        default=4,
+        default=model_defaults.threads,
         metavar="int",
         help="""How many parallel threads to run. (default: %(default)s) For
             ChatGPT-nano I will increase this to 20 or more, and for a local model
@@ -207,7 +235,9 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--temperature",
         type=float,
         metavar="float",
-        help="""Model's temperature.""",
+        help="""Model's temperature.
+            We don't want the model to get creative, so keep this value low. Some
+            hosted servers don't like this option so there is no default.""",
     )
     model_group.add_argument(
         "--max-tokens",
@@ -219,16 +249,16 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     model_group.add_argument(
         "--timeout",
         type=int,
-        default=300,
+        default=model_defaults.timeout,
         metavar="int",
         help="""How long to wait for the LM to respond in seconds.
-            (default: %(default)s).""",
+            (default: %(default)s) 2 minutes is a life time for parsing label text.""",
     )
     model_group.add_argument(
-        "--thinking",
-        type=Thinking,
-        default=Thinking.DISABLE_TEMPLATE,
-        help="""How to handle thinking.""",
+        "--disable-thinking",
+        type=DisableThinking,
+        default=model_defaults.disable_thinking,
+        help="""If and how to disable thinking.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
