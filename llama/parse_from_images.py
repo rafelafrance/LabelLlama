@@ -28,7 +28,7 @@ from llama.pylib import image_util, log
 TRANSIENT_HTTP_STATUS = {429, 500, 502, 503, 504}
 
 
-def parse_images(args: argparse.Namespace) -> None:
+def parse_from_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
     prompt = ParserPrompt.load(args.prompt)
@@ -380,4 +380,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    parse_images(ARGS)
+    parse_from_images(ARGS)

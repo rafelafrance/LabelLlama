@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run llama/clean_text.py \
+uv run llama/clean_llm_output.py \
   --in-file data/diode_geode/diode_imaging_qwen_2026-06-01a.csv \
   --out-file data/diode_geode/diode_imaging_qwen_2026-06-01a_clean.csv \
   --prompt prompts/llm_fields/diode.md \
