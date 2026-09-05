@@ -28,7 +28,7 @@ class OcrDocs:
     file_mode: str = "w"
     ocr_records: list[dict] = field(default_factory=list)
     already_done: set[str] = field(default_factory=set)
-    tasks: list[Path | str] = field(default_factory=list)
+    tasks: list[Path] = field(default_factory=list)
     limit: int | None = None
 
     @classmethod
@@ -73,7 +73,7 @@ class OcrDocs:
             if r.get("source") and ModelStatus.is_success(r.get("status"))
         }
 
-    def _get_tasks(self) -> list[Path | str]:
+    def _get_tasks(self) -> list[Path]:
         return sorted(p for p in self.image_paths if str(p) not in self.already_done)
 
     @staticmethod
