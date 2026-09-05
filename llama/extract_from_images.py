@@ -124,12 +124,13 @@ def call_model(
                     ],
                 },
             ],
-            "response_format": args.prompt.json_schema,
         }
         if args.temperature is not None:
             payload["temperature"] = args.temperature
         if args.max_tokens is not None:
             payload["max_tokens"] = args.max_tokens
+        if args.prompt.json_schema:
+            payload["response_format"] = args.prompt.json_schema
 
         result = post_with_retries(args, payload, sessions.get())
 
