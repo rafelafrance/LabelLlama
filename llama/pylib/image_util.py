@@ -1,11 +1,10 @@
 import base64
-import io
 import mimetypes
 from pathlib import Path
 
 import PIL
 import requests
-from PIL import Image, ImageOps
+from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = 300_000_000
 
@@ -82,46 +81,6 @@ def load_image(source: Path | str, timeout: int = 30) -> tuple[str, str]:
         if not mime_type or not mime_type.startswith("image/"):
             mime_type = "application/octet-stream"
     return base64_image, mime_type
-
-
-def downscale(
-    source: Path | str,
-    max_dim: int = 1200,
-    quality: int = 85,
-    timeout: int = 30,
-) -> tuple[str, str]:
-    """
-    Return (base64_image, mime_type) for a downscaled copy of the image.
-
-    If either dimension exceeds max_dim pixels the image is scaled down
-    proportionally and re-encoded as JPEG at the given quality; otherwise
-    the original bytes are returned unchanged. Works for local paths and
-    remote URLs.
-    """
-    if isinstance(source, str) and is_url(source):
-        resp = requests.get(source, timeout=timeout)
-        resp.raise_for_status()
-        data = resp.content
-        mime_type = resp.headers.get("Content-Type", "").split(";")[0].strip()
-        if not mime_type.startswith("image/"):
-            mime_type = mimetypes.guess_type(source)[0] or "image/jpeg"
-    else:
-        path = Path(source)
-        data = path.read_bytes()
-        mime_type, _ = mimetypes.guess_type(path)
-        if not mime_type or not mime_type.startswith("image/"):
-            mime_type = "image/jpeg"
-
-    with Image.open(io.BytesIO(data)) as img:
-        img = ImageOps.exif_transpose(img)
-        if max(img.size) <= max_dim:
-            return base64.b64encode(data).decode("utf-8"), mime_type
-        img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=quality)
-        return base64.b64encode(buf.getvalue()).decode("utf-8"), "image/jpeg"
 
 
 def _coerce(value: str) -> Path | str:
