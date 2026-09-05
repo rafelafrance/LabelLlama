@@ -81,32 +81,7 @@ def call_model(args: OcrArgs, image_path: Path, sessions: ThreadSessions) -> dic
     began = datetime.now()
 
     try:
-        with image_path.open("rb") as f:
-            base64_image = base64.b64encode(f.read()).decode("utf-8")
-
-        mime_type, _ = mimetypes.guess_type(image_path)
-        if not mime_type or not mime_type.startswith("image/"):
-            mime_type = "application/octet-stream"
-
-        payload = {
-            "model": args.model_id,
-            "messages": [
-                {"role": "system", "content": args.prompt.system_msg},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}",
-                            },
-                        },
-                    ],
-                },
-            ],
-        }
-        model_util.add_payload_args(args, payload)
-
+        payload = build_payload(args, image_path)
         url = f"{args.api_host}/chat/completions"
         headers = {"Content-Type": "application/json"}
 
@@ -142,6 +117,35 @@ def call_model(args: OcrArgs, image_path: Path, sessions: ThreadSessions) -> dic
     }
 
     return result
+
+
+def build_payload(args: OcrArgs, image_path: Path) -> dict:
+    with image_path.open("rb") as f:
+        base64_image = base64.b64encode(f.read()).decode("utf-8")
+
+    mime_type, _ = mimetypes.guess_type(image_path)
+    if not mime_type or not mime_type.startswith("image/"):
+        mime_type = "application/octet-stream"
+
+    payload = {
+        "model": args.model_id,
+        "messages": [
+            {"role": "system", "content": args.prompt.system_msg},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mime_type};base64,{base64_image}",
+                        },
+                    },
+                ],
+            },
+        ],
+    }
+    model_util.add_payload_args(args, payload)
+    return payload
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
