@@ -28,8 +28,3 @@ class ParserArgs:
     threads: int = 4
     retries: int = 2
     retry_backoff: float = 1.0
-
-
-@dataclass
-class ExtractArgs(ParserArgs):
-    """Args for extracting fields directly from images (no OCR step)."""

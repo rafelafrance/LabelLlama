@@ -117,7 +117,7 @@ def call_model(
     if args.max_tokens is not None:
         payload["max_tokens"] = args.max_tokens
     if args.prompt.json_schema:
-        payload["response_format"] = args.prompt.json_schema
+        payload["character_schema"] = args.prompt.json_schema
 
     extracted = {}
     try:
