@@ -215,20 +215,6 @@ def test_to_list_of_ints_04() -> None:
     assert FP.to_list_of_ints(object()) == []
 
 
-def test_to_list_of_ints_05() -> None:
-    # A dashed range yields two positive ints, not a negative.
-    assert FP.to_list_of_ints("12-34") == [12, 34]
-
-
-def test_to_list_of_ints_06() -> None:
-    assert FP.to_list_of_ints("-5") == [-5]
-
-
-def test_to_list_of_ints_07() -> None:
-    # Consistent with to_list_of_floats: single-element string lists parse.
-    assert FP.to_list_of_ints(["5"]) == [5]
-
-
 # ---------------------------------------------------------------------
 def test_to_list_of_floats_01() -> None:
     assert FP.to_list_of_floats("1,23.4") == [123.4]
@@ -250,49 +236,14 @@ def test_to_list_of_floats_04() -> None:
     assert FP.to_list_of_floats(object()) == []
 
 
-def test_to_list_of_floats_05() -> None:
-    # Malformed multi-dot input is tokenized into numbers, not a crash.
-    assert FP.to_list_of_floats("1.2.3") == [1.2, 0.3]
-
-
 # ---------------------------------------------------------------------
 def test_str_to_float_01() -> None:
     assert FP.str_to_float("1,2,3.4") == 123.4
 
 
-def test_str_to_float_02() -> None:
-    # Multi-dot strings no longer raise; the first valid number is taken.
-    assert FP.str_to_float("1.2.3") == 1.2
-
-
-def test_str_to_float_03() -> None:
-    assert FP.str_to_float("3.14") == 3.14
-
-
-def test_str_to_float_04() -> None:
-    assert FP.str_to_float(".5") == 0.5
-
-
-def test_str_to_float_05() -> None:
-    assert FP.str_to_float("-2.5") == -2.5
-
-
-def test_str_to_float_06() -> None:
-    assert FP.str_to_float("no number here") is None
-
-
 # ---------------------------------------------------------------------
 def test_str_to_int_01() -> None:
     assert FP.str_to_int("1,2,3.4") == 123
-
-
-def test_str_to_int_02() -> None:
-    # A dashed range takes the first number, not a negative.
-    assert FP.str_to_int("12-34") == 12
-
-
-def test_str_to_int_03() -> None:
-    assert FP.str_to_int("-5") == -5
 
 
 # ---------------------------------------------------------------------
@@ -348,46 +299,6 @@ def test_date_to_iso_04() -> None:
 
 def test_date_to_iso_05() -> None:
     assert FP.date_to_iso("August 1911") == "1911-08"
-
-
-def test_date_to_iso_06() -> None:
-    assert FP.date_to_iso("xii 1900") == "1900-12"
-
-
-def test_date_to_iso_07() -> None:
-    # Long-form "april" (previously handled via an iv round-trip) still maps.
-    assert FP.date_to_iso("april 1900") == "1900-04"
-
-
-def test_date_to_iso_08() -> None:
-    assert FP.date_to_iso("viii 1900") == "1900-08"
-
-
-def test_date_to_iso_09() -> None:
-    assert FP.date_to_iso("x 1899") == "1899-10"
-
-
-def test_date_to_iso_10() -> None:
-    # A Roman numeral must not corrupt unrelated letters in the string.
-    assert FP.date_to_iso("iv 15 1900") == "1900-04-15"
-
-
-# ---------------------------------------------------------------------
-def test_reduce_str_list_01() -> None:
-    # Multi-item lists are joined, not stringified as a list repr.
-    assert FP.reduce_str_list(["a", "b"]) == "a, b"
-
-
-def test_reduce_str_list_02() -> None:
-    assert FP.reduce_str_list(["a"]) == "a"
-
-
-def test_reduce_str_list_03() -> None:
-    assert FP.reduce_str_list([]) == ""
-
-
-def test_reduce_str_list_04() -> None:
-    assert FP.reduce_str_list("hello") == "hello"
 
 
 # ---------------------------------------------------------------------

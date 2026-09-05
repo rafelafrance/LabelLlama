@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
+import requests
 from requests.exceptions import RequestException
 from tqdm import tqdm
 

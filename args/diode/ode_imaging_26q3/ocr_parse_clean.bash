@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Run the 3-step pipeline (OCR -> parse -> clean) in sequence so its output
-# can be compared against parse_from_images.bash (the 1-step path).
+# can be compared against extract_from_images.bash (the 1-step path).
 # Uses the same date stamp and dataset conventions as that script.
 
 set -e
@@ -49,7 +49,7 @@ uv run ./llama/ocr_images.py \
   --max-tokens 2048 \
   --threads 4 \
   --timeout 180 \
-  --notes "3-step pipeline run to compare against parse_from_images.bash." \
+  --notes "3-step pipeline run to compare against extract_from_images.bash." \
   --log-file "$data_dir"/ocr_imaging.log
 
 uv run llama/parse_text.py \
