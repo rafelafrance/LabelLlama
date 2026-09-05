@@ -13,6 +13,7 @@ uv run ./llama/ocr_images.py \
   --max-tokens 2048 \
   --threads 4 \
   --timeout 180 \
+  --limit 10 \
   --notes "More AMNH diode images." \
   --log-file "$data_dir"/ocr_imaging.log
 
