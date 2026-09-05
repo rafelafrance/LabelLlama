@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import base64
 import csv
 import json
 import logging
+import mimetypes
 import os
 import textwrap
 import time
@@ -23,7 +25,7 @@ from llama.model_utils.ocr_docs import OcrDocs
 from llama.model_utils.parser_prompt import ParserPrompt
 from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.thread_sessions import ThreadSessions
-from llama.pylib import image_util, log
+from llama.pylib import log
 
 TRANSIENT_HTTP_STATUS = {429, 500, 502, 503, 504}
 
@@ -34,13 +36,6 @@ def extract_from_images(args: argparse.Namespace) -> None:
     prompt = ParserPrompt.load(args.prompt)
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.parsed_file, args.limit)
-
-    if args.input_file:
-        docs.tasks += [
-            s
-            for s in image_util.read_sources(args.input_file)
-            if str(s) not in docs.already_done
-        ]
 
     logging.info(f"There are {docs.input_len} images to process")
     logging.info(f"{len(docs.already_done)} images were already done.")
@@ -79,8 +74,10 @@ def extract_from_images(args: argparse.Namespace) -> None:
                 progress_bar=pbar,
             )
             futures = {
-                executor.submit(call_model, extract_args, source, sessions): source
-                for source in docs.tasks
+                executor.submit(
+                    call_model, extract_args, image_path, sessions
+                ): image_path
+                for image_path in docs.tasks
             }
             try:
                 for future in as_completed(futures):
@@ -96,11 +93,20 @@ def extract_from_images(args: argparse.Namespace) -> None:
     log.job_elapsed(job_began)
 
 
-def call_model(args: ExtractArgs, source: Path | str, sessions: ThreadSessions) -> dict:
+def call_model(
+    args: ExtractArgs,
+    image_path: Path,
+    sessions: ThreadSessions,
+) -> dict:
     began = datetime.now()
 
     try:
-        base64_image, mime_type = image_util.load_image(source, args.timeout)
+        with image_path.open("rb") as f:
+            base64_image = base64.b64encode(f.read()).decode("utf-8")
+
+        mime_type, _ = mimetypes.guess_type(image_path)
+        if not mime_type or not mime_type.startswith("image/"):
+            mime_type = "application/octet-stream"
 
         payload = {
             "model": args.model_id,
@@ -134,22 +140,22 @@ def call_model(args: ExtractArgs, source: Path | str, sessions: ThreadSessions) 
         status = ModelStatus.SUCCESS
 
     except (
-        IndexError,
-        JSONDecodeError,
-        KeyError,
-        OSError,
         RequestException,
-        TypeError,
+        JSONDecodeError,
         ValueError,
+        KeyError,
+        IndexError,
+        TypeError,
+        OSError,
     ) as err:
-        logging.exception(f"Extract error for: {source}")
+        logging.exception(f"Extract error for: {image_path.name}")
         text = str(err)
         status = ModelStatus.ERROR
         extracted = {}
 
     result = {
         "status": status,
-        "source": str(source),
+        "source": str(image_path),
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
     } | extracted
@@ -238,15 +244,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         metavar="GLOB",
         help="""Get all images matching this glob/pattern. You will need to quote this
             argument. An example: 'museum/data/images1/*.jpg'""",
-    )
-    io_group.add_argument(
-        "--input-file",
-        type=Path,
-        metavar="path",
-        help="""Read a list of image sources (local paths and/or http(s) URLs)
-            from this file, one source per line. Blank lines and lines starting
-            with '#' are ignored. Can be combined with --image-dir /
-            --image-glob, or used on its own.""",
     )
     io_group.add_argument(
         "--parsed-file",
@@ -354,10 +351,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Limit to this many images.""",
     )
     ns = arg_parser.parse_args(args)
-    if not ns.image_dir and not ns.image_glob and not ns.input_file:
-        arg_parser.error(
-            "one of --image-dir, --image-glob, or --input-file is required"
-        )
+    if not ns.image_dir and not ns.image_glob:
+        arg_parser.error("one of --image-dir or --image-glob is required")
     if ns.image_dir and not ns.image_dir.is_dir():
         arg_parser.error(f"--image-dir is not a directory: {ns.image_dir}")
     if not ns.prompt.is_file():
