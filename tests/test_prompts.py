@@ -1,13 +1,11 @@
 """Consistency checks for the prompt markdown files in prompts/."""
 
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 
 from llama.model_utils.prompt_file_parser import FIELD_PROMPT_DIR, PromptFileParser
 
-if TYPE_CHECKING:
-    from pathlib import Path
 
 PROMPT_FILES = sorted(FIELD_PROMPT_DIR.glob("*.md"))
 

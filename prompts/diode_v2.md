@@ -16,7 +16,6 @@ Extract structured biological and collection metadata from OCRed labels attached
 - Output the raw text — no descriptions, no commentary, no analysis.
 - If multiple compatible values are present for the same field, join them with `|`.
 - If a field is absent, illegible, uncertain, or not supported by the OCR text, return an empty string.
-- Some text may be light, particularly symbols including "♂" and "♀", get that text too.
 
 I want you to extract the following information.
 

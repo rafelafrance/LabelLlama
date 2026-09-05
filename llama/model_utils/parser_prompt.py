@@ -60,12 +60,12 @@ class ParserPrompt:
             fld.name: {"type": "string"} for fld in prompt_parser.llm_fields
         }
         if prompt_parser.req_fields:
-            obj["json_schema"]["required"] = prompt_parser.req_fields
+            obj["json_schema"]["schema"]["required"] = prompt_parser.req_fields
 
         schema = "\n" + json.dumps(obj, indent=2)
 
         # Compress vertically so I can read it
-        schema = re.sub(r'\s+("type": "string")\s+', r" \1 ", schema)
+        schema = re.sub(r'\s+("type": "string")\s+', r"\1", schema)
         match = re.search(r'"required": \[[^\]]+\]', schema)
         if match:
             replace = " ".join(match.group(0).split())
