@@ -58,6 +58,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     input_rows = input_rows[: args.limit]
 
     output_rows = []
+    failed: list[str] = []
 
     for in_row in tqdm(input_rows):
         try:
@@ -87,11 +88,21 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
             output_rows.append(out_row)
         except Exception:
-            logging.exception(f"Clean error for: {Path(in_row['source']).name}")
+            name = Path(in_row["source"]).name
+            failed.append(name)
+            logging.exception(f"Clean error for: {name}")
 
     df = pd.DataFrame(output_rows, columns=columns)
     args.clean_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.clean_file, index=False)
+
+    # Good rows are still written out; but a silent partial output is worse
+    # than a non-zero exit, so report the failures and fail the job.
+    if failed:
+        names = ", ".join(failed)
+        msg = f"Clean failed for {len(failed)} documents: {names}"
+        logging.error(msg)
+        raise SystemExit(1)
 
     log.job_elapsed(job_began)
 

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from llama.results.model_status import ModelStatus
-from llama.results.ocr_docs import MIN_SIZE
+from llama.results.ocr_docs import read_results_csv
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -63,18 +63,15 @@ class ParsedDocs:
     ) -> tuple[list[dict], str]:
         mode = "w"
         records = []
-        if (
-            parsed_file
-            and parsed_file.exists()
-            and parsed_file.stat().st_size >= MIN_SIZE
-        ):
-            mode = "a"
-            df = pd.read_csv(parsed_file, dtype=str).fillna("")
-            if expected_columns and list(df.columns) != expected_columns:
-                raise ValueError(
-                    "Existing parsed file columns do not match the prompt columns"
-                )
-            records = df.to_dict("records")
+        if parsed_file and parsed_file.exists() and parsed_file.stat().st_size > 0:
+            df = read_results_csv(parsed_file, "existing parsed file")
+            if df is not None:
+                if expected_columns and list(df.columns) != expected_columns:
+                    raise ValueError(
+                        "Existing parsed file columns do not match the prompt columns"
+                    )
+                mode = "a"
+                records = df.to_dict("records")
         return records, mode
 
     def _get_already_parsed(self) -> set[str]:

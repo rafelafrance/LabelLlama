@@ -6,19 +6,39 @@ import yaml
 
 from llama.prompts.field_action import FieldAction
 
-FIELD_PROMPT_DIR = Path("prompts")
+# Absolute so it works regardless of the current working directory.
+FIELD_PROMPT_DIR = Path(__file__).resolve().parents[2] / "prompts"
 
 
-# Regexes for getting the sections of a prompt markdown file
-SYS_MSG = re.compile(r"^System\s+Message", flags=re.IGNORECASE)
-LLM_FIELDS = re.compile(r"^LLM\s+Fields", flags=re.IGNORECASE)
-CALC_FIELDS = re.compile(r"^Calculated\s+Fields", flags=re.IGNORECASE)
-REQ_FIELDS = re.compile(r"^Required\s+Fields", flags=re.IGNORECASE)
+# The only headings that start a section of a prompt markdown file. Any other
+# '# ' line (e.g. a heading inside the system message body) is left alone.
+SECTION_NAMES = (
+    "System Message",
+    "LLM Fields",
+    "Calculated Fields",
+    "Required Fields",
+)
+
+# Regexes for getting the sections of a prompt markdown file. The split is
+# zero-width, so each section keeps its heading line as its first line.
+SYS_MSG = re.compile(r"^#\s*System\s+Message", flags=re.IGNORECASE)
+LLM_FIELDS = re.compile(r"^#\s*LLM\s+Fields", flags=re.IGNORECASE)
+CALC_FIELDS = re.compile(r"^#\s*Calculated\s+Fields", flags=re.IGNORECASE)
+REQ_FIELDS = re.compile(r"^#\s*Required\s+Fields", flags=re.IGNORECASE)
 JSON_SCHEMA = re.compile(r"```json(.*)```", flags=re.DOTALL)
+SECTION_SPLIT = re.compile(
+    r"^(?=#\s+(?:" + "|".join(re.escape(n) for n in SECTION_NAMES) + r")\s*$)",
+    flags=re.MULTILINE,
+)
+# A field link is a markdown link, [label](module path). Bare parentheses in
+# the prose (e.g. "(v2)") are not links.
+FIELD_LINK = re.compile(r"\[[^\]]+\]\(([\w/.]+)\)")
 
 
 def get_front_yaml(text: str, path: Path) -> dict:
-    top = re.search("^---$.*^---$", text, flags=re.MULTILINE | re.DOTALL)
+    # Non-greedy: the front matter ends at the NEXT '---' line, not the last
+    # one in the file (a later horizontal rule would swallow the document).
+    top = re.search("^---$.*?^---$", text, flags=re.MULTILINE | re.DOTALL)
     if not top:
         raise ValueError(f"Improperly formatted prompt file. {path}")
 
@@ -44,7 +64,7 @@ class PromptFileParser:
         front = get_front_yaml(text, prompt_path)
 
         # Split Markdown file into sections
-        sections = re.split(r"^(?<!#)#\s", text, flags=re.MULTILINE)
+        sections = SECTION_SPLIT.split(text)
 
         sys_msg = ""
         llm_fields, calc_fields, req_fields = [], [], []
@@ -59,18 +79,16 @@ class PromptFileParser:
             # Get output LLM fields list section
             elif LLM_FIELDS.match(section):
                 section = LLM_FIELDS.sub("", section).strip()
-                links = re.findall(r"\([\w/.]+\)", section)
-                for lnk in links:
-                    lnk = lnk.removeprefix("(").removesuffix(")")
-                    llm_fields.append(FieldAction.load(lnk))
+                llm_fields = [
+                    FieldAction.load(lnk) for lnk in FIELD_LINK.findall(section)
+                ]
 
             # Get calculated fields
             elif CALC_FIELDS.match(section):
                 section = CALC_FIELDS.sub("", section).strip()
-                links = re.findall(r"\([\w/.]+\)", section)
-                for lnk in links:
-                    lnk = lnk.removeprefix("(").removesuffix(")")
-                    calc_fields.append(FieldAction.load(lnk))
+                calc_fields = [
+                    FieldAction.load(lnk) for lnk in FIELD_LINK.findall(section)
+                ]
 
             # Get required fields
             elif REQ_FIELDS.match(section):
