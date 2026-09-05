@@ -9,8 +9,7 @@ class InfraspecificEpithet(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract only the infraspecific epithet from a subspecies, variety, form, or
-        cultivar name. Do not include rank markers, genus, species epithet,
-        or authorship.
+        cultivar name. Do not include rank markers, genus, species epithet, or authorship.
         """
     # --------------
 

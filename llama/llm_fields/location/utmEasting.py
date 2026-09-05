@@ -11,8 +11,8 @@ EMPTY_NE: tuple = ("0", "0.0")
 class UtmEasting(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract only the UTM easting value exactly as written. Do not include the zone
-        or northing value.
+        Extract only the UTM easting value exactly as written. Do not include the zone or
+        northing value.
         """
     # --------------
 
