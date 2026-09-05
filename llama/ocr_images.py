@@ -13,7 +13,7 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
-from llama.model_utils.task_writer import TaskWriter
+from llama.model_utils import tasks
 from llama.model_utils.model_args import OcrArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.ocr_docs import OcrDocs
@@ -56,12 +56,6 @@ def ocr_images(args: argparse.Namespace) -> None:
             ThreadPoolExecutor(max_workers=args.threads) as executor,
         ):
             sessions = ThreadSessions()
-            task_writer = TaskWriter(
-                writer=writer,
-                out_file=output_file,
-                statuses=statuses,
-                progress_bar=pbar,
-            )
             futures = {
                 executor.submit(
                     call_model, model_args, image_path, sessions
@@ -71,7 +65,14 @@ def ocr_images(args: argparse.Namespace) -> None:
 
             try:
                 for future in as_completed(futures):
-                    task_writer.complete(future, source=futures[future])
+                    tasks.complete_task(
+                        writer=writer,
+                        future=future,
+                        out_file=output_file,
+                        statuses=statuses,
+                        progress_bar=pbar,
+                        source=futures[future],
+                    )
             finally:
                 sessions.close_all()
 
