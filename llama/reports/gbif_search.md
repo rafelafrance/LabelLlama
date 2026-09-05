@@ -446,4 +446,5 @@
 - woodiness
 - dynamicProperties
 - fieldNotes
+- fieldNotes
 - occurrenceRemarks

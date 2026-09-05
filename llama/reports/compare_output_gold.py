@@ -34,6 +34,12 @@ from llama.pylib import log
 
 
 @dataclass
+class Score:
+    score: float = 0.0
+    method: str = ""
+
+
+@dataclass
 class RowGroup:
     """
     A group of rows that get displayed together.
@@ -60,62 +66,31 @@ class RowGroup:
         return rows
 
 
-def _require_columns(df: pd.DataFrame, required: set[str], name: str) -> None:
-    missing = required - set(df.columns)
-    if missing:
-        missing_str = ", ".join(sorted(missing))
-        raise ValueError(f"{name} is missing required columns: {missing_str}")
-
-
-def _require_unique_sources(df: pd.DataFrame, name: str) -> None:
-    sources = df["source"]
-    dupes = sorted(sources[sources.duplicated()].unique())
-    if dupes:
-        shown = ", ".join(dupes[:5])
-        more = f" (+{len(dupes) - 5} more)" if len(dupes) > 5 else ""
-        raise ValueError(
-            f"{name} has duplicate source values: {shown}{more}. "
-            "Each source may appear only once."
-        )
-
-
 def score_against_gold(args: argparse.Namespace) -> None:
     """
-    Compare LLM outputs against a gold standard and write a CSV report.
+    Compare LLM outputs against a gold standard and write an HTML report.
 
     I'm building table with groups of rows. Each group of rows is indexed by
     the image source (its path).
     """
     job_began = log.job_began(args.log_file, args=args)
 
-    # Parse files are keyed by their basename, so basenames must be unique.
-    stems = [p.stem for p in args.parse_file]
-    if len(stems) != len(set(stems)):
-        dupes = ", ".join(sorted({s for s in stems if stems.count(s) > 1}))
-        raise ValueError(f"Parse files must have unique basenames: {dupes}")
-
     # Read OCR data
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
-    _require_columns(ocr_df, {"source", "text"}, str(args.ocr_file))
-    _require_unique_sources(ocr_df, str(args.ocr_file))
     ocr_by_image = {o["source"]: o for o in ocr_df.to_dict("records")}
 
     # Read Gold data
     gold_df = pd.read_csv(args.gold_file, dtype=str).fillna("")
-    _require_columns(gold_df, {"source"}, str(args.gold_file))
-    _require_unique_sources(gold_df, str(args.gold_file))
     gold_by_image = {g["source"]: g for g in gold_df.to_dict("records")}
 
     # Init row and column indexes
-    image_paths = set(gold_by_image) & set(ocr_by_image)
-    columns = dict.fromkeys(gold_df.columns)
+    image_paths = set(gold_by_image)
+    columns = dict.fromkeys(gold_by_image)
 
     # Get parsed data
     parsed_data = {}
-    for parse_file in args.parse_file:
+    for parse_file in args.llm_file:
         llm_df = pd.read_csv(parse_file, dtype=str).fillna("")
-        _require_columns(llm_df, {"source"}, str(parse_file))
-        _require_unique_sources(llm_df, str(parse_file))
         columns |= dict.fromkeys(llm_df.columns)
         image_paths &= set(llm_df["source"])
 
@@ -152,10 +127,9 @@ def score_against_gold(args: argparse.Namespace) -> None:
         # Build parse rows and score rows
         for parse_file in args.parse_file:
             stem = parse_file.stem
-            row = parsed_data[stem][image_path]
             # Build an LLM row
             group.parse_rows.append(
-                {"row_type": stem, **{c: row.get(c, "") for c in columns}}
+                {"row_type": stem, **{c: parsed_data[stem].get(c, "") for c in columns}}
             )
             # Build a score row
             score_row = {"row_type": f"score {stem}"}
@@ -163,8 +137,8 @@ def score_against_gold(args: argparse.Namespace) -> None:
                 field_class = llm_field_classes.get(col, LlmField)
                 score = field_class.score(
                     str(gold.get(col, "")),
-                    str(row.get(col, "")),
-                    row,
+                    str(parsed_data[stem].get(col, "")),
+                    parsed_data[stem],
                 )
                 score_row[col] = f"{score:0.2f}"
             group.score_rows.append(score_row)
@@ -241,13 +215,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--notes",
         metavar="string",
         help="""Notes for logging.""",
-    )
-    debugging_group = arg_parser.add_argument_group("debugging options")
-    debugging_group.add_argument(
-        "--limit",
-        type=int,
-        metavar="int",
-        help="""Limit to this many row groups.""",
     )
     ns = arg_parser.parse_args(args)
     return ns
