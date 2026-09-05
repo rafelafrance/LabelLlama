@@ -19,10 +19,6 @@ INT = re.compile(r"(?<!\d)-?\d[\d,]*")
 # A single optional decimal point; repeated separators like "1.2.3" no longer
 # match as one token (and float() is still guarded in str_to_float).
 FLOAT = re.compile(r"-?\d+(?:\.\d+)?|\.\d+")
-# A single comma with digits on both sides and no dot in the value is a
-# decimal comma (European convention): "45,5" means 45.5, not 455. A tail of
-# non-digit, non-dot characters (e.g. " N") is allowed and preserved.
-DECIMAL_COMMA = re.compile(r"^([+-]?\d+),(\d+)([^.\d]*)$")
 
 # For parsing dates
 SEP = r"[\s(.,/_'-]+"  # Date month, day, year separators
@@ -228,17 +224,6 @@ class FixParses:
                 return [f for v in value if (f := self.to_float(v))]
             case _:
                 return []
-
-    def normalize_decimal_comma(self, value: str) -> str:
-        """
-        Convert an unambiguous decimal comma to a dot, else pass through.
-
-        Only "45,5" style values are converted: exactly one comma, digits on
-        both sides, and no dot in the value. "1,234.5" (a dot present) and
-        "1,234,567" (two commas) keep their thousands-separator meaning.
-        """
-        m = DECIMAL_COMMA.fullmatch(value)
-        return f"{m.group(1)}.{m.group(2)}{m.group(3)}" if m else value
 
     def str_to_float(self, value: str) -> float | None:
         """Extract the first float from a string, or None if there is none."""
