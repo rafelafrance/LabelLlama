@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from llama.prompts.base_prompt import Thinking
 from llama.prompts.parser_cleaner import ParserCleaner
 from llama.prompts.parser_prompt import ParserPrompt
 from llama.pylib import log
@@ -22,13 +21,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
 
     df = pd.read_csv(args.parsed_file, dtype=str).fillna("")
 
-    prompt = ParserPrompt(
-        prompt=args.prompt,
-        model_id="",
-        temperature=None,
-        max_tokens=None,
-        thinking=Thinking.USE_SERVER,
-    )
+    prompt = ParserPrompt.load(args.prompt)
     cleaner = ParserCleaner.load(args.prompt)
 
     # Validate parsed columns

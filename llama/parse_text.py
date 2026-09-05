@@ -26,7 +26,7 @@ from llama.results.task_writer import TaskWriter
 def parse_text(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    prompt = ParserPrompt(**vars(args))
+    prompt = ParserPrompt.load(args.prompt, **args)
 
     docs = ParsedDocs.build(
         args.parsed_file,

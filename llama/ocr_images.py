@@ -24,7 +24,7 @@ from llama.results.task_writer import TaskWriter
 def ocr_images(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    prompt = OcrPrompt(**vars(args))
+    prompt = OcrPrompt(args.prompt, **args)
 
     docs = OcrDocs.build(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
@@ -96,7 +96,7 @@ def call_model(
         response = session.post(
             f"{api_host}/chat/completions",
             headers=prompt.headers(),
-            json=prompt.payload(mime_type, base64_image),
+            prompt=prompt.payload(mime_type, base64_image),
             timeout=timeout,
         )
         response.raise_for_status()

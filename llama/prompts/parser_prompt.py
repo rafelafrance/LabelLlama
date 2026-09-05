@@ -23,7 +23,7 @@ class ParserPrompt(BasePrompt):
         self.name = prompt_parser.name
         self.description = prompt_parser.description
 
-        self.columns = FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields]
+        self.columns = (FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields],)
         self.json_schema = self._build_json_schema(prompt_parser)
 
         self.system_msg = prompt_parser.system_msg
@@ -48,19 +48,18 @@ class ParserPrompt(BasePrompt):
         payload = {
             "model": kwargs["model_id"],
             "messages": [
-                {"role": "system", "content": self.system_msg},
+                {"role": "system", "content": kwargs["system_msg"]},
                 {"role": "replace me"},
             ],
             "response_format": self.json_schema,
         }
-        payload.update(self._payload_args(**kwargs))
+        self._payload_args(**kwargs)
         return payload
 
     def payload(self, text: str) -> dict:
         target_msg = {"role": "user", "content": self.build_text_msg(text)}
-        messages = [*self.base_payload["messages"]]
-        messages[-1] = target_msg
-        payload_ = {**self.base_payload, "messages": messages}
+        payload_ = self.base_payload
+        payload_["messages"][-1] = target_msg
         return payload_
 
     def _build_json_schema(self, prompt_parser: PromptFileParser) -> str:

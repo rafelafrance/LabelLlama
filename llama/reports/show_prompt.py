@@ -4,18 +4,11 @@ import argparse
 import textwrap
 from pathlib import Path
 
-from llama.prompts.base_prompt import Thinking
 from llama.prompts.parser_prompt import ParserPrompt
 
 
 def show(args: argparse.Namespace) -> None:
-    prompt = ParserPrompt(
-        prompt=args.prompt,
-        model_id="",
-        temperature=None,
-        max_tokens=None,
-        thinking=Thinking.USE_SERVER,
-    )
+    prompt = ParserPrompt.load(args.prompt)
     print(prompt.system_msg)
 
 
