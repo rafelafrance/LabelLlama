@@ -20,9 +20,9 @@ from tqdm import tqdm
 
 from llama.model_utils import model_util
 from llama.model_utils.model_args import ParserArgs
+from llama.model_utils.model_prompts import ParserPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.parsed_docs import ParsedDocs
-from llama.model_utils.parser_prompt import ParserPrompt
 from llama.model_utils.thread_sessions import ThreadSessions
 from llama.pylib import fix_ocr, log
 

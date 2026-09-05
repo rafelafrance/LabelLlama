@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from requests.adapters import HTTPAdapter
+
 from llama.model_utils.model_status import ModelStatus
 
 if TYPE_CHECKING:
@@ -9,11 +11,21 @@ if TYPE_CHECKING:
     import io
     from concurrent.futures import Future
 
+    from requests import Session
     from tqdm import tqdm
 
     from llama.model_utils.model_args import ExtractArgs, OcrArgs, ParserArgs
     from llama.model_utils.ocr_docs import OcrDocs
     from llama.model_utils.parsed_docs import ParsedDocs
+
+DEFAULT_POOL = 10
+
+
+def init_session_pool(session: Session, threads: int) -> None:
+    if threads > DEFAULT_POOL:
+        adapter = HTTPAdapter(pool_connections=threads, pool_maxsize=threads)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
 
 
 def complete_task(

@@ -8,9 +8,9 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
+from llama.model_utils.model_prompts import ParserPrompt
 from llama.model_utils.model_status import ModelStatus
 from llama.model_utils.parser_cleaner import ParserCleaner
-from llama.model_utils.parser_prompt import ParserPrompt
 from llama.pylib import log
 
 REQUIRED_PARSED_COLUMNS = {"status", "source", "text"}
