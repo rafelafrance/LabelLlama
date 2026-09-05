@@ -29,30 +29,17 @@ def init_session_pool(session: Session, threads: int) -> None:
 
 
 def complete_task(
-    *,
     writer: csv.DictWriter,
     future: Future[dict],
     out_file: io.StringIO,
     statuses: dict,
     progress_bar: tqdm,
-    source: Path | str = "",
 ) -> None:
     progress_bar.update(1)
-    try:
-        result = future.result()
-    except Exception as err:
-        name = Path(source).name if source else "unknown"
-        logging.exception(f"Task error for: {name}")
-        result = {
-            "status": ModelStatus.ERROR,
-            "source": str(source),
-            "elapsed": "",
-            "text": str(err),
-        }
-
+    result = future.result()
     try:
         writer.writerow(result)
-        statuses[result["status"]] = statuses.get(result["status"], 0) + 1
+        statuses[result["status"]] += 1
         out_file.flush()
     except ValueError as err:
         logging.exception(f"Parse error for: {Path(result['source']).name}")
@@ -62,7 +49,6 @@ def complete_task(
             {
                 "status": ModelStatus.ERROR,
                 "source": result["source"],
-                "elapsed": result.get("elapsed", ""),
                 "text": text,
             }
         )

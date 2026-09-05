@@ -4,7 +4,6 @@ import argparse
 import base64
 import csv
 import logging
-import mimetypes
 import textwrap
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -50,54 +49,62 @@ def ocr_images(args: argparse.Namespace) -> None:
         with (
             tqdm(total=len(docs.tasks)) as pbar,
             ThreadPoolExecutor(max_workers=args.threads) as executor,
+            requests.Session() as session,
         ):
-            futures = {
-                executor.submit(call_model, model_args, image_path): image_path
+            model_util.init_session_pool(session, args.threads)
+
+            futures = [
+                executor.submit(call_model, model_args, image_path, session)
                 for image_path in docs.tasks
-            }
+            ]
 
             for future in as_completed(futures):
-                model_util.complete_task(
-                    writer=writer,
-                    future=future,
-                    out_file=output_file,
-                    statuses=statuses,
-                    progress_bar=pbar,
-                    source=futures[future],
-                )
+                model_util.complete_task(writer, future, output_file, statuses, pbar)
 
     model_util.log_what_was_done(docs, "images", statuses)
     log.job_elapsed(job_began)
 
 
-def call_model(args: OcrArgs, image_path: Path) -> dict:
+def call_model(args: OcrArgs, image_path: Path, session: requests.Session) -> dict:
     began = datetime.now()
 
-    try:
-        payload = build_payload(args, image_path)
-        url = f"{args.api_host}/chat/completions"
-        headers = {"Content-Type": "application/json"}
+    with image_path.open("rb") as f:
+        base64_image = base64.b64encode(f.read()).decode("utf-8")
 
-        with requests.Session() as session:
-            response = session.post(
-                url, headers=headers, json=payload, timeout=args.timeout
-            )
-            response.raise_for_status()
-            result = response.json()
+    url = f"{args.api_host}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "model": args.model_id,
+        "messages": [
+            {"role": "system", "content": args.prompt.system_msg},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}",
+                        },
+                    },
+                ],
+            },
+        ],
+    }
+    model_util.add_payload_args(args, payload)
+
+    try:
+        response = session.post(
+            url, headers=headers, json=payload, timeout=args.timeout
+        )
+        response.raise_for_status()
+        result = response.json()
 
         content = result["choices"][0]["message"]["content"] or ""
 
         text = fix_ocr.clean_ocr(content)
         status = ModelStatus.SUCCESS
 
-    except (
-        OSError,
-        requests.exceptions.RequestException,
-        ValueError,
-        KeyError,
-        IndexError,
-        TypeError,
-    ) as err:
+    except requests.exceptions.RequestException as err:
         logging.exception(f"OCR error for: {image_path.name}")
         text = str(err)
         status = ModelStatus.ERROR
@@ -112,35 +119,6 @@ def call_model(args: OcrArgs, image_path: Path) -> dict:
     return result
 
 
-def build_payload(args: OcrArgs, image_path: Path) -> dict:
-    with image_path.open("rb") as f:
-        base64_image = base64.b64encode(f.read()).decode("utf-8")
-
-    mime_type, _ = mimetypes.guess_type(image_path)
-    if not mime_type or not mime_type.startswith("image/"):
-        mime_type = "application/octet-stream"
-
-    payload = {
-        "model": args.model_id,
-        "messages": [
-            {"role": "system", "content": args.prompt.system_msg},
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime_type};base64,{base64_image}",
-                        },
-                    },
-                ],
-            },
-        ],
-    }
-    model_util.add_payload_args(args, payload)
-    return payload
-
-
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     arg_parser = argparse.ArgumentParser(
         allow_abbrev=True,
@@ -149,7 +127,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     io_group = arg_parser.add_argument_group("I/O options")
     io_group.add_argument(
         "--image-dir",
-        type=Path,
         metavar="PATH",
         help="""OCR all images in this directory.""",
     )
@@ -245,10 +222,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Only OCR this many images.""",
     )
     ns: argparse.Namespace = arg_parser.parse_args(args)
-    if not ns.image_dir and not ns.image_glob:
-        arg_parser.error("one of --image-dir or --image-glob is required")
-    if ns.image_dir and not ns.image_dir.is_dir():
-        arg_parser.error(f"--image-dir is not a directory: {ns.image_dir}")
     return ns
 
 
