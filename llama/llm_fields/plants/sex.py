@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class Sex(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the sex of flowers, inflorescences, or plant individuals as written,
-        such as staminate, pistillate, male, female, bisexual, or sterile.
+        Extract the sex of the individual flower(s) or inflorescence on the specimen
         """
     # --------------
 

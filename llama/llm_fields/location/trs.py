@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class Trs(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the complete Township-Range-Section location string exactly as written,
-        including township, range, section, meridian, and aliquot parts when present.
+        Extract the full Township-Range-Section (TRS) coordinate string from the label
         """
     # --------------
 

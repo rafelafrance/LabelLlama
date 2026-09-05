@@ -11,8 +11,8 @@ SOURCE_THRESHOLD = 75.0
 class RecordNumber(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the collector number, field number, station number, or event number. Do
-        not use the catalog number.
+        Extract the record number — an identifier assigned to the occurrence at the time
+        it was recorded
         """
     # --------------
 

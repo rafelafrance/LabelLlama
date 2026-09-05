@@ -8,9 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class Island(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the island name where the specimen was collected. Do not use island
-        group, archipelago, country, state, or province names unless they are the island
-        name itself.
+        Extract the name(s) of the island(s) on or near which the specimen was collected
         """
     # --------------
 

@@ -8,7 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class CollectionCode(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the collection code only if explicitly present or unambiguous.
+        Extract the collection code — the abbreviation, acronym, coden, or initialism
+        identifying the collection or data set from which the record was derived
         """
     # --------------
 

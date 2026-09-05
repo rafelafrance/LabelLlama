@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class Suborder(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the taxonomic suborder explicitly stated for the specimen. Do not infer
-        suborder from family, genus, or common name.
+        Extract the taxonomic suborder of the specimen (e.g., 'Violineae',
+        'Cucurbitineae', 'Heterodontina')
         """
     # --------------
 

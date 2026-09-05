@@ -10,7 +10,7 @@ class IdentifiedByID(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the globally unique identifier for the person, group, or organization
-        responsible for assigning the taxon to the specimen.
+        responsible for assigning the taxon to the specimen
         """
     # --------------
 

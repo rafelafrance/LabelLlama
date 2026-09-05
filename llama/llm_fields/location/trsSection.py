@@ -9,8 +9,7 @@ from llama.llm_fields.llm_field import LlmField
 class TrsSection(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract only the section portion of a Township-Range-Section location, including
-        aliquot parts such as NE1/4 when they are part of the section description.
+        Extract the section portion of the Township-Range-Section (TRS) coordinates
         """
     # --------------
 

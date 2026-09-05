@@ -10,8 +10,11 @@ from llama.llm_fields.llm_field import LlmField
 class Locality(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the specific collecting locality. Exclude country, state, province, and
-        county when those are captured separately.
+        Extract the locality — the specific place or geographic description where the
+        specimen was collected.
+        This does not include the country (which belongs in `country`),
+        This does not include the stateProvince (which belongs in `stateProvince`),
+        This does not include the county (which belongs in `county`)
         """
     scoring_method: ClassVar[str] = "FPR"
     # --------------

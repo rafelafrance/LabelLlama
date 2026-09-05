@@ -9,7 +9,7 @@ from llama.llm_fields.llm_field import LlmField
 class VerbatimEventDate(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the collection date as written. Do not use the identification date.
+        Extract the date (or date range) when the specimen was collected or observed
         """
     # --------------
 

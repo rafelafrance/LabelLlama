@@ -11,7 +11,8 @@ from llama.llm_fields.llm_field import LlmField
 class Habitat(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract ecological or environmental habitat descriptions.
+        Extract the habitat, environment, or ecological setting where the specimen was
+        collected. This can be a field, forest, water body, etc.
         """
     scoring_method: ClassVar[str] = "FPR"
     # --------------

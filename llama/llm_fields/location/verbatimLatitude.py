@@ -8,7 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class VerbatimLatitude(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the latitude exactly as written.
+        Extract the latitude at which the specimen was collected
         """
     # --------------
 

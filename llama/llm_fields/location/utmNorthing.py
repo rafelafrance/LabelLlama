@@ -11,8 +11,8 @@ EMPTY_NE: tuple = ("0", "0.0")
 class UtmNorthing(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract only the UTM northing value exactly as written. Do not include the zone
-        or easting value.
+        Extract the northing portion of the Universal Transverse Mercator (UTM)
+        coordinates
         """
     # --------------
 

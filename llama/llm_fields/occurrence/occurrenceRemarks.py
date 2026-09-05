@@ -11,7 +11,8 @@ from llama.llm_fields.llm_field import LlmField
 class OccurrenceRemarks(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract only remaining occurrence notes not captured by another field.
+        Extract any remaining observations, notes, or comments about the specimen
+        occurrence that are not captured by other dedicated fields
         """
     scoring_method: ClassVar[str] = "FPR"
     # --------------

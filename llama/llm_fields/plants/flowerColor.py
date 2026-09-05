@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class FlowerColor(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract flower color terms exactly as written. Do not include fruit, leaf, stem,
-        or other plant-part colors.
+        Extract the color(s) of the flowers of the specimen
         """
     # --------------
 

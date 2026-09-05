@@ -9,8 +9,8 @@ from llama.llm_fields.llm_field import LlmField
 class DateIdentified(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the date associated with the identification, determination, or
-        verification. Do not use the collection date.
+        Extract the date (or date range) when the specimen was identified, verified, or
+        determined
         """
     # --------------
 

@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class LeafMargin(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract leaf-margin descriptions, such as entire, toothed, serrate, crenate,
-        lobed, revolute, or undulate. Do not include overall leaf shape.
+        Extract the description of the specimen's leaf margins (edge shape)
         """
     # --------------
 

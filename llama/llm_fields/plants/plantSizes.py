@@ -8,8 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class PlantSizes(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract measurements of individual plant parts or structures, including units
-        and ranges. Do not include overall plant height, which belongs in plantHeight.
+        Extract dimensions of individual plant parts and structures, excluding the
+        overall plant height (which belongs in `plantHeight`)
         """
     # --------------
 

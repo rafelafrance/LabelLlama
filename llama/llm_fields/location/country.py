@@ -9,7 +9,7 @@ class Country(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the country where the specimen was collected. Return the full, standard
-        English country name.
+        English country name
         """
     # --------------
 

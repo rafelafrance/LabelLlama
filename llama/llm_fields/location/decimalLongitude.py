@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class DecimalLongitude(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract only decimal longitude coordinates already present in the text. Do not
-        convert coordinates.
+        Extract the decimal longitude at which the specimen was collected
         """
     # --------------
 

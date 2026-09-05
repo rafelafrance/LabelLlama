@@ -9,9 +9,8 @@ from llama.llm_fields.llm_field import LlmField
 class OccurrenceID(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the globally unique occurrence identifier when explicitly present, such
-        as a UUID, URI, GUID, or occurrenceID. Do not use a plain catalog number unless
-        it is labeled as the occurrence ID.
+        Extract the catalog number — the unique identifier for the specimen or record
+        within its collection or data set
         """
     # --------------
 

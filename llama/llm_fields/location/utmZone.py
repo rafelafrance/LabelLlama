@@ -9,8 +9,7 @@ from llama.llm_fields.llm_field import LlmField
 class UtmZone(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract only the UTM zone, including any zone letter or hemisphere when printed.
-        Do not include easting or northing values.
+        Extract the zone portion of the Universal Transverse Mercator (UTM) coordinates
         """
     # --------------
 

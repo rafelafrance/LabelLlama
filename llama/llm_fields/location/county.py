@@ -10,7 +10,7 @@ class County(LlmField):
     # --------------
     description: ClassVar[str] = """
         Extract the county, parish, or equivalent second-level administrative division
-        where the specimen was collected.
+        where the specimen was collected
         """
     # --------------
 

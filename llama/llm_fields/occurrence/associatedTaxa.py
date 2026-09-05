@@ -8,9 +8,9 @@ from llama.llm_fields.llm_field import LlmField
 class AssociatedTaxa(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract taxa explicitly recorded as associated with the specimen or collection,
-        such as host plants, substrates, nearby species, or associated organisms. Do not
-        include the primary specimen taxon.
+        Extract the name(s) of other species found with or near the specimen.
+        This field captures taxa associated with the collection but not the primary
+        specimen itself
         """
     # --------------
 

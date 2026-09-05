@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class Abundance(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract statements about how common or abundant the taxon was at the collecting
-        site, such as rare, occasional, frequent, common, dominant, or percent cover.
+        Extract the abundance or frequency of the specimen at the collection site
         """
     # --------------
 

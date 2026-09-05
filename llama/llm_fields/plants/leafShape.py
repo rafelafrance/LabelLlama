@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class LeafShape(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract leaf-shape descriptions, such as linear, lanceolate, ovate, elliptic,
-        oblong, cordate, or palmately divided. Do not include leaf-margin terms.
+        Extract the shape of the specimen's leaf
         """
     # --------------
 

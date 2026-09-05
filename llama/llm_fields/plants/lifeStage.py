@@ -8,8 +8,7 @@ from llama.llm_fields.llm_field import LlmField
 class LifeStage(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract plant developmental or phenological stage terms, such as seedling,
-        juvenile, vegetative, budding, flowering, fruiting, sterile, or senescent.
+        Extract the developmental or phenological stage of the specimen
         """
     # --------------
 

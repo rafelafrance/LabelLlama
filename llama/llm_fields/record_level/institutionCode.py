@@ -8,7 +8,8 @@ from llama.llm_fields.llm_field import LlmField
 class InstitutionCode(LlmField):
     # --------------
     description: ClassVar[str] = """
-        Extract the owning institution code only if explicitly present or unambiguous.
+        Extract the institution code — the acronym, coden, abbreviation, or initialism
+        used by the institution that owns the specimen or data record
         """
     # --------------
 
