@@ -9,7 +9,6 @@ from pathlib import Path
 
 import jinja2
 import pandas as pd
-from tqdm import tqdm
 
 from llama.pylib import image_util, log
 
@@ -81,7 +80,7 @@ def show_pipeline(args: argparse.Namespace) -> None:
     ocr_errors = 0
     missing_clean = 0
     missing_image = 0
-    for number, ocr_row in tqdm(enumerate(rows, 1), total=len(rows)):
+    for number, ocr_row in enumerate(rows, 1):
         clean_row = clean_by_source.get(ocr_row["source"])
         card = build_card(number, ocr_row, clean_row)
         cards.append(card)
@@ -170,14 +169,18 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     debugging_group.add_argument(
         "--limit",
         type=int,
+        default=5,
         metavar="int",
-        help="""Limit the report to this many records.""",
+        help="""Limit the report to this many records. (default: %(default)s)
+            The full report can be very large because every image is embedded.""",
     )
     ns = arg_parser.parse_args(args)
     if not ns.ocr_file.is_file():
         arg_parser.error(f"--ocr-file is not a file: {ns.ocr_file}")
     if not ns.clean_file.is_file():
         arg_parser.error(f"--clean-file is not a file: {ns.clean_file}")
+    if ns.limit < 1:
+        arg_parser.error("--limit must be >= 1")
     return ns
 
 
