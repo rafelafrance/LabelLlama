@@ -36,5 +36,3 @@ class ParserArgs:
     max_tokens: int | None = None
     timeout: int = 300
     threads: int = 4
-    retries: int = 2
-    retry_backoff: float = 1.0
