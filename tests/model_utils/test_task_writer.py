@@ -36,7 +36,7 @@ def test_task_writer_writes_successful_future() -> None:
     )
 
     task_writer = TaskWriter(writer, out_file, statuses, progress_bar)
-    task_writer.write(future, source="image.jpg")
+    task_writer.complete(future, source="image.jpg")
 
     assert progress_bar.count == 1
     assert statuses[ModelStatus.SUCCESS] == 1
@@ -51,7 +51,7 @@ def test_task_writer_converts_future_exception_to_error_row() -> None:
     future.set_exception(RuntimeError("boom"))
 
     task_writer = TaskWriter(writer, out_file, statuses, progress_bar)
-    task_writer.write(future, source="image.jpg")
+    task_writer.complete(future, source="image.jpg")
 
     assert progress_bar.count == 1
     assert statuses[ModelStatus.ERROR] == 1
@@ -74,7 +74,7 @@ def test_task_writer_writes_fallback_error_row_for_extra_fields() -> None:
     )
 
     task_writer = TaskWriter(writer, out_file, statuses, progress_bar)
-    task_writer.write(future, source="image.jpg")
+    task_writer.complete(future, source="image.jpg")
 
     assert progress_bar.count == 1
     assert statuses[ModelStatus.SUCCESS] == 1
