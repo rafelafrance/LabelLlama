@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.model_utils.model_args import DisableThinking, ParserArgs
+from llama.model_utils.model_args import ParserArgs
 from llama.model_utils.model_status import ModelStatus, StatusCounts
 from llama.model_utils.parsed_docs import ParsedDocs
 from llama.model_utils.parser_prompt import ParserPrompt
@@ -111,16 +111,13 @@ def call_model(
             {"role": "user", "content": args.prompt.build_text_msg(text)},
         ],
         "response_format": args.prompt.json_schema,
+        "chat_template_kwargs": {"enable_thinking": False},
+        # "enable_thinking": False,
     }
     if args.temperature is not None:
         payload["temperature"] = args.temperature
     if args.max_tokens is not None:
         payload["max_tokens"] = args.max_tokens
-
-    if args.disable_thinking == DisableThinking.TEMPLATE:
-        payload["chat_template_kwargs"] = {"enable_thinking": False}
-    elif args.disable_thinking == DisableThinking.DISABLE:
-        payload["enable_thinking"] = False
 
     extracted = {}
     try:
@@ -249,12 +246,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         metavar="int",
         help="""How long to wait for the LM to respond in seconds.
             (default: %(default)s) 2 minutes is a life time for parsing label text.""",
-    )
-    model_group.add_argument(
-        "--disable-thinking",
-        type=DisableThinking,
-        default=model_defaults.disable_thinking,
-        help="""If and how to disable thinking.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
