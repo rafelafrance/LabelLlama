@@ -30,7 +30,6 @@ class OcrDocs:
     already_done: set[str] = field(default_factory=set)
     tasks: list[Path | str] = field(default_factory=list)
     limit: int | None = None
-    input_len: int = 0
 
     @classmethod
     def build(
@@ -48,13 +47,16 @@ class OcrDocs:
         )
 
         docs.image_paths = image_util.get_images(image_dir, image_glob)
-        docs.input_len = len(docs.image_paths)
         docs.image_paths = docs.image_paths[:limit]
 
         docs.ocr_records, docs.file_mode = docs._read_ocr_records(ocr_file)
         docs.already_done = docs._get_already_read()
         docs.tasks = docs._get_tasks()
         return docs
+
+    @property
+    def input_len(self) -> int:
+        return len(self.image_paths)
 
     def _read_ocr_records(self, ocr_file: Path | None) -> tuple[list[dict], str]:
         mode = "w"
