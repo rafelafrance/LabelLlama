@@ -43,7 +43,6 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     statuses = StatusCounts()
 
-    args.ocr_file.parent.mkdir(parents=True, exist_ok=True)
     with args.ocr_file.open(docs.file_mode) as output_file:
         writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":

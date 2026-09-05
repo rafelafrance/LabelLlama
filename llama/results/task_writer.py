@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     import tqdm
 
 MIN_TEXT_LEN = 32
+MIN_COLUMNS = len(COLUMNS)
 
 
 @dataclass
@@ -59,19 +60,9 @@ class TaskWriter:
             self.out_file.flush()
 
     def check(self, result: dict, text: str) -> None:
-        """
-        Raise ValueError if the model returned no usable output.
-
-        This only applies to writers with LLM fields beyond the base COLUMNS
-        (i.e., parse jobs, not OCR). When text is given and it is shorter
-        than MIN_TEXT_LEN the check is skipped, since a small input can
-        legitimately yield nothing. When no text is given (e.g., the input
-        was an image) the check always applies.
-        """
-        llm_columns = [c for c in self.writer.fieldnames if c not in COLUMNS]
-        if not llm_columns:
-            return
-        if text and len(text) < MIN_TEXT_LEN:
-            return
-        if all(not bool(result.get(c, "")) for c in llm_columns):
+        if (
+            len(text) >= MIN_TEXT_LEN
+            and len(result) > MIN_COLUMNS
+            and all(not bool(v) for k, v in result.items() if k not in COLUMNS)
+        ):
             raise ValueError("There is no output for this future.")

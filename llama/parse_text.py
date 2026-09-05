@@ -43,7 +43,6 @@ def parse_text(args: argparse.Namespace) -> None:
 
     statuses = StatusCounts()
 
-    args.parsed_file.parent.mkdir(parents=True, exist_ok=True)
     with args.parsed_file.open(docs.file_mode) as output_file:
         writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":
@@ -193,7 +192,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--api-host",
         default="http://localhost:9931/v1",
         metavar="string",
-        help="""URL for the LM model. (default: %(default)s)""",
+        help="""URL for the LM model. (default %(default)s""",
     )
     model_group.add_argument(
         "--threads",
@@ -214,7 +213,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--max-tokens",
         type=int,
         metavar="int",
-        help="""The LM model's response maximum tokens.
+        help="""The OCR model's response maximum tokens.
             I use this to truncate model loops.""",
     )
     model_group.add_argument(

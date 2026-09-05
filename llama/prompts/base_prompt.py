@@ -30,13 +30,13 @@ class BasePrompt:
 
     def _payload_args(self, **kwargs: dict[str, Any]) -> dict:
         payload = {}
-        if kwargs.get("temperature") is not None:
+        if kwargs["temperature"] is not None:
             payload["temperature"] = kwargs["temperature"]
 
-        if kwargs.get("max_tokens") is not None:
+        if kwargs["max_tokens"] is not None:
             payload["max_tokens"] = kwargs["max_tokens"]
 
-        match kwargs.get("thinking", Thinking.USE_SERVER):
+        match kwargs["thinking"]:
             case Thinking.DISABLE_TEMPLATE:
                 payload["chat_template_kwargs"] = {"enable_thinking": False}
             case Thinking.DISABLE_ARG:

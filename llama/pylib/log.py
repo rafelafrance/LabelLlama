@@ -9,7 +9,6 @@ non-technical people.
 """
 
 import logging
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -27,16 +26,6 @@ def setup_logger(file_name: str | Path | None = None) -> None:
     )
     if file_name:
         logging.getLogger().addHandler(logging.FileHandler(file_name))
-
-
-# user:password@ embedded in a URL (e.g. an --api-host pointing at a hosted
-# service that authenticates in the URL).
-_CREDENTIALS = re.compile(r"(://[^:/@]+:)([^/@]+)(@)")
-
-
-def redact(value: object) -> str:
-    """Return the value as a string with any embedded credentials masked."""
-    return _CREDENTIALS.sub(r"\1[redacted]\3", str(value))
 
 
 def module_name() -> str:
@@ -62,7 +51,7 @@ def finished() -> None:
 def log_args(args: Namespace) -> None:
     for key, val in sorted(vars(args).items()):
         if key != "api_key":
-            msg = f"Argument: {key} = {redact(val)}"
+            msg = f"Argument: {key} = {val}"
             logging.info(msg)
 
 

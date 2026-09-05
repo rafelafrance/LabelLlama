@@ -45,7 +45,6 @@ def parse_images(args: argparse.Namespace) -> None:
 
     statuses = StatusCounts()
 
-    args.parsed_file.parent.mkdir(parents=True, exist_ok=True)
     with args.parsed_file.open(docs.file_mode) as output_file:
         writer = csv.DictWriter(output_file, prompt.columns)
         if docs.file_mode == "w":
@@ -70,7 +69,11 @@ def parse_images(args: argparse.Namespace) -> None:
             }
             try:
                 for future in as_completed(futures):
-                    task_writer.write(future, source=futures[future])
+                    task_writer.write(
+                        future,
+                        source=futures[future]["source"],
+                        text=futures[future]["text"],
+                    )
             finally:
                 sessions.close_all()
 

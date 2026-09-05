@@ -23,14 +23,6 @@ class ParserPrompt(BasePrompt):
         self.name = prompt_parser.name
         self.description = prompt_parser.description
 
-        clash = self.column_clash([f.name for f in prompt_parser.llm_fields])
-        if clash:
-            msg = (
-                "LLM field names clash with reserved columns "
-                f"({', '.join(FIRST_COLUMNS)}): {', '.join(clash)}"
-            )
-            raise ValueError(msg)
-
         self.columns = FIRST_COLUMNS + [f.name for f in prompt_parser.llm_fields]
         self.json_schema = self._build_json_schema(prompt_parser)
 
@@ -98,14 +90,3 @@ class ParserPrompt(BasePrompt):
 
     def build_text_msg(self, text: str) -> str:
         return self.text_msg + text
-
-    @staticmethod
-    def column_clash(field_names: list[str]) -> list[str]:
-        """
-        Return LLM field names that clash with the reserved FIRST_COLUMNS.
-
-        A clashing name would let a model value overwrite the row's status,
-        source, elapsed, or text, or duplicate a CSV column.
-        """
-        reserved = set(FIRST_COLUMNS)
-        return [name for name in field_names if name in reserved]
