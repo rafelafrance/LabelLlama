@@ -17,4 +17,4 @@ class Country(LlmField):
 
     def __post_init__(self, text: str) -> None:
         del text
-        self.country = self.title_with_exceptions(self.to_str(self.country))
+        self.country = self.title_with_exceptions(self.country)

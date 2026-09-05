@@ -4,6 +4,8 @@ from typing import ClassVar
 
 from llama.llm_fields.llm_field import LlmField
 
+SOURCE_THRESHOLD = 75.0
+
 
 @dataclass
 class RecordNumber(LlmField):

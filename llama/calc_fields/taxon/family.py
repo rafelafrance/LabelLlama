@@ -25,7 +25,7 @@ class Family(CalcField):
 
     @staticmethod
     def score(expect: Any, actual: Any, record: dict[str, Any]) -> float:
-        genus = str(record.get("scientificName") or "").split()
+        genus = record.get("scientificName", "").split()
         genus = genus[0] if len(genus) > 0 else ""
 
         # OK if expect is empty and the sci name genus is in the family

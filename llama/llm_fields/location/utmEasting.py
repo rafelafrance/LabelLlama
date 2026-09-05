@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -22,7 +21,5 @@ class UtmEasting(LlmField):
     def __post_init__(self, text: str) -> None:
         del text
         self.utmEasting = self.to_str(self.utmEasting)
-        # Drop only a trailing hemisphere marker (e.g. "123456 E"), leaving
-        # the value and any other text untouched.
-        self.utmEasting = re.sub(r"\s*[en]$", "", self.utmEasting, flags=re.IGNORECASE)
+        self.utmEasting = self.utmEasting.lower().replace("e", "")
         self.utmEasting = "" if self.utmEasting in EMPTY_NE else self.utmEasting

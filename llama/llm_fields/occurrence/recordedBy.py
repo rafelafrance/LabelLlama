@@ -21,10 +21,5 @@ class RecordedBy(LlmField):
         self.recordedBy = self.to_str(self.recordedBy)
 
         # Remove the collector label
-        self.recordedBy = re.sub(
-            r"^(collector|coll?)\b[.:,;]?\s+",
-            "",
-            self.recordedBy,
-            flags=re.IGNORECASE,
-        )
+        self.recordedBy = re.sub(r"^(collector|coll?)\b[.:,;]?\s+", "", self.recordedBy)
         self.recordedBy = self.recordedBy.strip()
