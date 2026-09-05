@@ -6,11 +6,13 @@ import json
 import logging
 import os
 import textwrap
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from pathlib import Path
 
+import requests
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
@@ -22,6 +24,8 @@ from llama.model_utils.parser_prompt import ParserPrompt
 from llama.model_utils.task_writer import TaskWriter
 from llama.model_utils.thread_sessions import ThreadSessions
 from llama.pylib import fix_ocr, log
+
+TRANSIENT_HTTP_STATUS = {429, 500, 502, 503, 504}
 
 
 def parse_text(args: argparse.Namespace) -> None:
@@ -52,6 +56,8 @@ def parse_text(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         timeout=args.timeout,
         threads=args.threads,
+        retries=args.retries,
+        retry_backoff=args.retry_backoff,
     )
 
     with args.parsed_file.open(docs.file_mode) as output_file:
@@ -99,11 +105,6 @@ def call_model(
 
     text = fix_ocr.prepare_for_parse(ocr_result["text"])
 
-    headers = {"Content-Type": "application/json"}
-    api_key = os.getenv("LLM_API_KEY")
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
     payload = {
         "model": args.model_id,
         "messages": [
@@ -111,8 +112,6 @@ def call_model(
             {"role": "user", "content": args.prompt.build_text_msg(text)},
         ],
         "response_format": args.prompt.json_schema,
-        "chat_template_kwargs": {"enable_thinking": False},
-        # "enable_thinking": False,
     }
     if args.temperature is not None:
         payload["temperature"] = args.temperature
@@ -121,15 +120,8 @@ def call_model(
 
     extracted = {}
     try:
-        session = sessions.get()
-        response = session.post(
-            f"{args.api_host}/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=args.timeout,
-        )
-        response.raise_for_status()
-        result = response.json()
+        result = post_with_retries(args, payload, sessions.get())
+
         content = result["choices"][0]["message"]["content"] or ""
         extracted = parse_model_json(content)
 
@@ -163,6 +155,60 @@ def parse_model_json(content: str) -> dict:
     if not isinstance(extracted, dict):
         raise TypeError("Model response JSON must be an object")
     return extracted
+
+
+def post_with_retries(
+    args: ParserArgs,
+    payload: dict,
+    session: requests.Session,
+) -> dict:
+    url = f"{args.api_host}/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    api_key = os.getenv("LLM_API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    last_err: Exception | None = None
+    for attempt in range(args.retries + 1):
+        try:
+            response = session.post(
+                url, headers=headers, json=payload, timeout=args.timeout
+            )
+            if response.status_code in TRANSIENT_HTTP_STATUS and attempt < args.retries:
+                sleep_before_retry(args, attempt, response=response)
+                continue
+            response.raise_for_status()
+            return response.json()
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+        ) as err:
+            last_err = err
+            if attempt >= args.retries:
+                raise
+            sleep_before_retry(args, attempt, err=err)
+
+    if last_err:
+        raise last_err
+    raise RuntimeError("Parse request failed without a response")
+
+
+def sleep_before_retry(
+    args: ParserArgs,
+    attempt: int,
+    response: requests.Response | None = None,
+    err: Exception | None = None,
+) -> None:
+    delay = args.retry_backoff * (2**attempt)
+    reason = f"HTTP {response.status_code}" if response is not None else str(err)
+    logging.warning(
+        "Retrying parse request after %s in %.1f seconds (%s/%s)",
+        reason,
+        delay,
+        attempt + 1,
+        args.retries,
+    )
+    time.sleep(delay)
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -247,6 +293,23 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""How long to wait for the LM to respond in seconds.
             (default: %(default)s) 2 minutes is a life time for parsing label text.""",
     )
+    model_group.add_argument(
+        "--retries",
+        type=int,
+        default=model_defaults.retries,
+        metavar="int",
+        help="""Retry transient parse request failures this many times.
+            (default: %(default)s)""",
+    )
+    model_group.add_argument(
+        "--retry-backoff",
+        type=float,
+        default=model_defaults.retry_backoff,
+        metavar="float",
+        help="""Initial seconds to wait before retrying transient parse request
+            failures. The delay doubles after each failed attempt.
+            (default: %(default)s)""",
+    )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(
         "--log-file",
@@ -280,6 +343,10 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         arg_parser.error("--max-tokens must be >= 1")
     if ns.limit is not None and ns.limit < 1:
         arg_parser.error("--limit must be >= 1")
+    if ns.retries < 0:
+        arg_parser.error("--retries must be >= 0")
+    if ns.retry_backoff < 0:
+        arg_parser.error("--retry-backoff must be >= 0")
     return ns
 
 
