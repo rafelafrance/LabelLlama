@@ -62,10 +62,6 @@ I want you to extract the following information.
 - [reproduction](../llama/llm_fields/plants/reproduction.py)
 - [sex](../llama/llm_fields/plants/sex.py)
 
-# Required Fields
-
-- scientificName
-
 # Calculated Fields
 
 - [eventDate](../llama/calc_fields/event/eventDate.py)

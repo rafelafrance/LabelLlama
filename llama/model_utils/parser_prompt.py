@@ -1,5 +1,3 @@
-import json
-import re
 from dataclasses import dataclass, field
 from textwrap import dedent
 from typing import TYPE_CHECKING, ClassVar
@@ -49,28 +47,25 @@ class ParserPrompt:
         return "\n".join(guidance)
 
     def _build_json_schema(self, prompt_parser: PromptFileParser) -> str:
-        obj = {
-            "type": "json_schema",
-            "json_schema": {
-                "name": self.name,
-                "schema": {"type": "object", "properties": {}},
-            },
-        }
-        obj["json_schema"]["schema"]["properties"] = {
-            fld.name: {"type": "string"} for fld in prompt_parser.llm_fields
-        }
-        if prompt_parser.req_fields:
-            obj["json_schema"]["schema"]["required"] = prompt_parser.req_fields
-
-        schema = "\n" + json.dumps(obj, indent=2)
-
-        # Compress vertically so I can read it
-        schema = re.sub(r'\s+("type": "string")\s+', r"\1", schema)
-        match = re.search(r'"required": \[[^\]]+\]', schema)
-        if match:
-            replace = " ".join(match.group(0).split())
-            schema = re.sub(r'"required": \[[^\]]+\]', replace, schema)
-
+        prefix = dedent(f"""
+            {{
+              "type": "json_schema",
+              "json_schema": {{
+                "name": "{self.name}",
+                "schema": {{
+                  "type": "object",
+                  "properties": {{""")
+        llm_fields = [
+            f'\n        "{fld.name}": {{"type": "string"}}'
+            for fld in prompt_parser.llm_fields
+        ]
+        suffix = dedent("""
+                  }
+                }
+              }
+            }
+            """)
+        schema = prefix + ",".join(llm_fields) + suffix
         return schema
 
     def build_text_msg(self, text: str) -> str:

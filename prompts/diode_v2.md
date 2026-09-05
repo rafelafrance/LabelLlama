@@ -47,10 +47,6 @@ I want you to extract the following information.
 - [habitat](../llama/llm_fields/event/habitat.py)
 - [occurrenceRemarks](../llama/llm_fields/occurrence/occurrenceRemarks.py)
 
-# Required Fields
-
-- scientificName
-
 # Calculated Fields
 
 - [eventDate](../llama/calc_fields/event/eventDate.py)
