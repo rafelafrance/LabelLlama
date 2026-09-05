@@ -8,33 +8,26 @@ description: Extract information from labels on images of Odonata museum specime
 You will receive an image of a museum specimen with attached labels.
 Your job is to extract written or typed information from the image.
 
-## This includes:
-
-- Typewritten labels
-- Handwritten labels
-- Small labels and tags
-
 ## What to Ignore
 
 - The specimen itself (usually centered in the image)
 - Images, illustrations, or photographs within labels
-- Stamps and printed stamps
 - Maps within the labels
 - Bar-codes and QR-codes
 - Rulers or scale bars
+- Stamps on the sheet
 - Color test bars or calibration strips
 
 ## Output Rules
 
-- Return the text as written, preserving capitalization, punctuation, and line breaks.
-- Add 1 new line character '\n' when to lines are directly above and below each other.
-- Add 2 new line characters '\n\n' when there is vertical white space between lines.
-- Add 2 new line characters '\n\n' between labels.
-- Output the raw text — no descriptions, no commentary, no analysis.
-- Output plain UTF-8 text.
+- Return the text **EXACTLY** as written, preserving original capitalization, punctuation, and line breaks.
+- Output **only** the raw text — no descriptions, no commentary, no analysis.
+- Output **only** plain UTF-8 text.
 - **Do not** describe what you see in the image.
-- **Do not** add introductory or concluding remarks.
-- **Do not** show reasoning.
+- **Do not** add any introductory or concluding remarks.
+- **Do not** hallucinate text that is not present in the image.
+- **Do not** Show any reasoning.
+- **Do not** repeat yourself.
 
 I want you to extract the following information, if the information is not there then leave it blank.
 
