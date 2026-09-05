@@ -106,9 +106,14 @@ def fix_entities(text: str) -> str:
     return text
 
 
+def _base_clean(text: str) -> str:
+    """The cleaning steps shared by prepare_for_parse and clean_ocr."""
+    return remove_identical_lines(fix_entities(text))
+
+
 def prepare_for_parse(text: str) -> str:
     """Prepare OCR results for running them thru an LLM."""
-    text = remove_identical_lines(fix_entities(text))
+    text = _base_clean(text)
     text = filter_lines(text)
     text = join_lines(text)
     text = text.strip()
@@ -117,7 +122,7 @@ def prepare_for_parse(text: str) -> str:
 
 def clean_ocr(text: str) -> str:
     """Clean OCR results."""
-    text = remove_identical_lines(fix_entities(text))
+    text = _base_clean(text)
     text = text.strip()
     return text
 

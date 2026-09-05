@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     import io
     from concurrent.futures import Future
 
-    import tqdm
+    from tqdm import tqdm
 
 
 @dataclass
@@ -18,7 +18,7 @@ class TaskWriter:
     writer: csv.DictWriter
     out_file: io.StringIO
     statuses: StatusCounts
-    progress_bar: tqdm.tqdm
+    progress_bar: tqdm
 
     def write(self, future: Future[dict], source: Path | str = "") -> None:
         self.progress_bar.update(1)
