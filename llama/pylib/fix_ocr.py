@@ -105,10 +105,12 @@ def prepare_for_parse(text: str) -> str:
     return text
 
 
-def clean_ocr(text: str | list[str]) -> str:
+def clean_ocr(text: str | list[str], *, convert_html: bool = False) -> str:
     """Clean OCR results."""
     if isinstance(text, list):
         text = " ".join(text)
+    if convert_html:
+        text = html_to_md(text)
     text = fix_entities(text)
     text = remove_identical_lines(text)
     text = text.strip()

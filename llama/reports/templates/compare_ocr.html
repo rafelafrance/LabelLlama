@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OCR comparison</title>
+<style>
+{{ css | safe }}
+</style>
+</head>
+<body>
+<table>
+  <thead>
+    <tr class="toolbar">
+      <th colspan="{{ stems | length + 1 }}">
+        <div id="state-buttons">
+          <button id="theme" aria-label="toggle dark theme">🌙</button>
+          <button id="load">Load state</button>
+          <button id="save">Save state</button>
+          <input type="file" id="load-input" accept=".json,application/json" hidden>
+        </div>
+      </th>
+    </tr>
+    <tr>
+      <th class="source">Source ({{ groups | length }} images)</th>
+      {% for stem in stems %}
+      <th class="engine">
+        {{ stem }}
+        <span class="tally">
+          <span class="up" id="up-{{ stem }}">▲ 0</span>
+          <span class="down" id="down-{{ stem }}">▼ 0</span>
+        </span>
+      </th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for group in groups %}
+    <tr>
+      <td class="source">
+        {% if group.image %}
+        <img src="{{ group.image }}" alt="{{ group.source }}" data-full="{{ group.source }}" data-thumb="{{ group.image }}">
+        {% else %}
+        <span class="placeholder">Image unavailable</span>
+        {% endif %}
+        <span class="path" title="{{ group.source }}">{{ group.source }}</span>
+      </td>
+      {% for result in group.results.values() %}
+      <td class="engine">
+        <div class="vote">
+          <button class="vote-btn" data-engine="{{ result.file }}"
+                  data-source="{{ group.source }}" aria-label="up">＋</button>
+          <button class="vote-btn" data-engine="{{ result.file }}"
+                  data-source="{{ group.source }}" aria-label="down">－</button>
+        </div>
+        <pre>{{ result.text }}</pre>
+        <span class="elapsed">{{ result.elapsed }}</span>
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<script>
+const ENGINES = {{ engines | tojson }};
+{{ js | safe }}
+</script>
+</body>
+</html>

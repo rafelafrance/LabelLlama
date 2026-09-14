@@ -63,6 +63,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                     sessions,
                     args.api_host,
                     args.timeout,
+                    convert_html=args.convert_html,
                 ): source
                 for source in docs.tasks
             }
@@ -83,6 +84,8 @@ def call_model(
     sessions: ThreadSessions,
     api_host: str,
     timeout: int,
+    *,
+    convert_html: bool,
 ) -> dict:
     began = datetime.now()
 
@@ -102,7 +105,7 @@ def call_model(
 
         content = result["choices"][0]["message"]["content"] or ""
 
-        text = fix_ocr.clean_ocr(content)
+        text = fix_ocr.clean_ocr(content, convert_html=convert_html)
         status = ModelStatus.SUCCESS
 
     except (
@@ -209,6 +212,11 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Thinking,
         default=Thinking.DISABLE_TEMPLATE,
         help="""How to handle model thinking. (default: %(default)s)""",
+    )
+    model_group.add_argument(
+        "--convert-html",
+        action="store_true",
+        help="""Convert HTML to text. Some models return HTML only.""",
     )
     logging_group = arg_parser.add_argument_group("logging options")
     logging_group.add_argument(

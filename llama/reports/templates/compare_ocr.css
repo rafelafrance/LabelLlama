@@ -1,0 +1,192 @@
+:root {
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #57606a;
+  --btn-bg: #ffffff;
+  --up: #1a7f37;
+  --down: #cf222e;
+  --border: #d0d7de;
+  --header-bg: #f6f8fa;
+  --shadow: rgba(0, 0, 0, .15);
+}
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --fg: #e6edf3;
+  --muted: #8b949e;
+  --btn-bg: #21262d;
+  --up: #3fb950;
+  --down: #f85149;
+  --border: #30363d;
+  --header-bg: #161b22;
+  --shadow: rgba(0, 0, 0, .5);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--fg);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+}
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--header-bg);
+  border-bottom: 2px solid var(--border);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+thead tr.toolbar th {
+  top: 0;
+  height: 43px;
+  border-bottom: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: right;
+}
+thead tr:not(.toolbar) th { top: 43px; }
+thead th.source { width: 260px; }
+thead th.engine .tally {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  margin-top: 4px;
+  font-weight: normal;
+}
+.tally .up { color: var(--up); font-weight: 600; }
+.tally .down { color: var(--down); font-weight: 600; }
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 8px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+td.source img {
+  max-width: 100%;
+  max-height: 260px;
+  display: block;
+  cursor: zoom-in;
+}
+#lightbox {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: min(46vw, 900px);
+  height: min(82vh, 1100px);
+  background: rgba(13, 17, 23, .96);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+  display: none;
+  overflow: hidden;
+}
+#lightbox.open { display: block; }
+#lightbox-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 0 10px;
+  background: rgba(48, 54, 61, .92);
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+  color: #e6edf3;
+  font-size: 12px;
+}
+#lightbox-bar span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#lightbox-close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-left: 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #e6edf3;
+  font-size: 16px;
+  cursor: pointer;
+}
+#lightbox-close:hover { background: rgba(255, 255, 255, .18); }
+#lightbox img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+#lightbox img:active { cursor: grabbing; }
+#lightbox-note {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #e6edf3;
+  font-size: 12px;
+  background: rgba(0, 0, 0, .5);
+  padding: 4px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+.placeholder { color: var(--muted); font-style: italic; }
+.path {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  word-break: break-all;
+}
+td.engine pre {
+  margin: 0 0 4px;
+  white-space: pre-wrap;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.elapsed { font-size: 11px; color: var(--muted); }
+.vote { display: flex; gap: 6px; margin-bottom: 6px; }
+.vote-btn {
+  width: 34px;
+  height: 30px;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--btn-bg);
+  color: var(--fg);
+  cursor: pointer;
+}
+.vote-btn:hover { background: var(--header-bg); }
+.vote-btn.active-up { background: var(--up); color: #fff; border-color: var(--up); }
+.vote-btn.active-down { background: var(--down); color: #fff; border-color: var(--down); }
+#state-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+#save, #load, #theme {
+  padding: 8px 16px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--btn-bg);
+  color: var(--fg);
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--shadow);
+}
+#save:hover, #load:hover, #theme:hover { background: var(--header-bg); }
