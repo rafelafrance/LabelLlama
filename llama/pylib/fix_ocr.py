@@ -1,6 +1,8 @@
 import html
 import re
+from pprint import pp
 
+from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 
 
@@ -119,6 +121,16 @@ def clean_ocr(text: str | list[str], *, convert_html: bool = False) -> str:
 
 def html_to_md(text: str) -> str:
     """Convert HTML to markdown."""
+    # I need to find a less roundabout way to do all of this. Famous last words.
+
+    # Remove image descriptions.
+    soup = BeautifulSoup(text, "lxml")
+    all_delete = soup.find_all(attrs={"data-label": "Image"})
+    for to_delete in all_delete:
+        to_delete.decompose()
+    text = str(soup)
+
+    # Now convert to text
     text = md(
         text,
         strip=["img"],

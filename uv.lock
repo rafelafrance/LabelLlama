@@ -159,6 +159,7 @@ name = "labelllama"
 version = "0.3.0"
 source = { editable = "." }
 dependencies = [
+    { name = "beautifulsoup4" },
     { name = "duckdb" },
     { name = "jinja2" },
     { name = "levenshtein" },
@@ -185,6 +186,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "beautifulsoup4", specifier = ">=4.15.0" },
     { name = "duckdb", specifier = ">=1.5.5" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "levenshtein", specifier = ">=0.27.3" },
