@@ -1,10 +1,10 @@
 #!/bin/bash
 
-uv run llama/clean_text.py \
-  --parsed-file data/diode/diode_imaging/diode_imaging_qwen_2026-06-01a.csv \
-  --clean-file data/diode/diode_imaging/diode_imaging_qwen_2026-06-01a_clean.csv \
+uv run llama/clean_fields.py \
+  --parsed-file data/diode/gold_std/gold_qwen_2026-06-02a.csv \
+  --clean-file data/diode/gold_std/gold_qwen_2026-06-02a_clean.csv \
   --prompt-md prompts/diode_v2.md \
-  --log-file data/diode/diode_imaging/diode_imaging_qwen.log
+  --log-file data/diode/gold_std/gold_std.log
 
 
 # scientificName

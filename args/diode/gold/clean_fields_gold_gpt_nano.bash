@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uv run llama/clean_text.py \
+uv run llama/clean_fields.py \
   --parsed-file data/diode/gold_std/gold_gpt_nano_2026-06-02a.csv \
   --clean-file data/diode/gold_std/gold_gpt_nano_2026-06-02a_clean.csv \
   --prompt-md prompts/diode_v2.md \

@@ -42,7 +42,7 @@ so you can run them in any order or mix and match model runs.
 | OCR               | `llama/ocr_images.py`   | specimen images | CSV with a `text` column holding the transcribed labels     |
 | Parse from text   | `llama/parse_text.py`   | OCR CSV         | CSV with one column per field                               |
 | Parse from images | `llama/parse_images.py` | specimen images | CSV with one column per field (multimodal model, skips OCR) |
-| Clean             | `llama/clean_text.py`   | parsed CSV      | CSV with cleaned field values and calculated fields         |
+| Clean             | `llama/clean_fields.py`   | parsed CSV      | CSV with cleaned field values and calculated fields         |
 
 ### There are 2 workflows
 
@@ -51,10 +51,10 @@ so you can run them in any order or mix and match model runs.
 1. A 3-step workflow (works well locally)
    1. OCR text from images (ocr_images.py)
    2. Parse text (parse_text.py)
-   3. Clean parsed data (clean_text.py)
+   3. Clean parsed data (clean_fields.py)
 2. A 2-step workflow (if you have a larger model)
    1. You can parse data from an image directly (parse_images.py)
-   2. Clean parsed text (clean_text.py)
+   2. Clean parsed text (clean_fields.py)
 
 ### Prompts and fields
 
@@ -152,7 +152,7 @@ uv run llama/parse_text.py \
     --model-id "gpt-5-nano-2025-08-07" \
     --threads 20
 
-uv run llama/clean_text.py \
+uv run llama/clean_fields.py \
     --parsed-file data/my_sheets/parsed.csv \
     --clean-file data/my_sheets/clean.csv \
     --prompt-md prompts/herbarium_v2.md \
