@@ -98,36 +98,36 @@ class LineAlign:
         rows: int,
         trace: npt.NDArray[Trace],
     ) -> list[list[str]]:
-        row = rows
-        col = cols
-        new_line: list[str] = []
+        row, col = rows, cols
+        ri, ci = 0, 0  # consumed so far from aligned / from lines[ln]
+        new_line = []
+        new_aligned = [[] for _ in aligned]
 
-        new_aligned: list[list[str]] = [[] for _ in range(len(aligned))]
+        # Inside a gap run the next move is forced; state tracks that run.
+        state = Dir.NONE
 
-        state: Dir = Dir.NONE
-
-        while not (row == 0 and col == 0):
+        while row or col:
             if state == Dir.NONE:
-                cell: Trace = trace[row, col]
-
-                if cell.dir_ == Dir.NONE:
+                state = trace[row, col].dir_
+                if state == Dir.NONE:
                     break
 
-                if cell.dir_ == Dir.DIAG:
-                    for k in range(len(aligned)):
-                        new_aligned[k].append(aligned[k][rows - row])
-                    new_line.append(lines[ln][cols - col])
-                    row -= 1
-                    col -= 1
-                    continue
-
-            if state == Dir.UP or (
-                state == Dir.NONE and trace[row, col].dir_ == Dir.UP
-            ):
+            if state == Dir.DIAG:
                 for k in range(len(aligned)):
-                    new_aligned[k].append(aligned[k][rows - row])
+                    new_aligned[k].append(aligned[k][ri])
+                new_line.append(lines[ln][ci])
+                row -= 1
+                col -= 1
+                ri += 1
+                ci += 1
+                state = Dir.NONE
+
+            elif state == Dir.UP:
+                for k in range(len(aligned)):
+                    new_aligned[k].append(aligned[k][ri])
                 new_line.append(self.gap_char)
                 row -= 1
+                ri += 1
                 state = (
                     Dir.UP
                     if row > 0
@@ -135,11 +135,12 @@ class LineAlign:
                     else Dir.NONE
                 )
 
-            else:
+            else:  # Dir.LEFT
                 for k in range(len(aligned)):
                     new_aligned[k].append(self.gap_char)
-                new_line.append(lines[ln][cols - col])
+                new_line.append(lines[ln][ci])
                 col -= 1
+                ci += 1
                 state = (
                     Dir.LEFT
                     if col > 0
@@ -153,65 +154,61 @@ class LineAlign:
     def build_matrix(
         self, aligned: list[list[str]], lines: list[str], ln: int
     ) -> tuple[int, int, npt.NDArray[Trace]]:
-        rows: int = len(aligned[0])
-        cols: int = len(lines[ln])
-        rows_p1: int = rows + 1
-        cols_p1: int = cols + 1
+        rows = len(aligned[0])
+        cols = len(lines[ln])
+        rows_p1, cols_p1 = rows + 1, cols + 1
 
-        items: list[Trace] = [Trace() for _ in range(rows_p1 * cols_p1)]
-        trace: npt.NDArray[Trace] = np.array(items, dtype="object")
-        trace = trace.reshape((rows_p1, cols_p1))
+        # trace[row, col] scores the last `row` chars of the aligned sequences
+        # against the last `col` chars of lines[ln].
+        trace = np.array(
+            [[Trace() for _ in range(cols_p1)] for _ in range(rows_p1)],
+            dtype=object,
+        )
 
-        # Fill in first row
-        penalty: float = self.gap
+        # Boundary costs: opening a gap of length n costs gap + (n-1) * skew.
+        # .up/.left on these cells is what trace_back uses to extend gap runs.
         for row in range(1, rows_p1):
-            trace[row, 0] = Trace(val=penalty, up=penalty, left=penalty, dir_=Dir.UP)
-            penalty += self.skew
-
-        # Fill in first column
-        penalty = self.gap
+            cost = self.gap + (row - 1) * self.skew
+            trace[row, 0] = Trace(val=cost, up=cost, left=cost, dir_=Dir.UP)
         for col in range(1, cols_p1):
-            trace[0, col] = Trace(val=penalty, up=penalty, left=penalty, dir_=Dir.LEFT)
-            penalty += self.skew
+            cost = self.gap + (col - 1) * self.skew
+            trace[0, col] = Trace(val=cost, up=cost, left=cost, dir_=Dir.LEFT)
 
-        # Fill in the rest of the matrix
+        line = lines[ln]
         for row in range(1, rows_p1):
             for col in range(1, cols_p1):
-                cell: Trace = trace[row, col]
-                cell_up: Trace = trace[row - 1, col]
-                cell_left: Trace = trace[row, col - 1]
+                up_cell = trace[row - 1, col]
+                left_cell = trace[row, col - 1]
+                cell = trace[row, col]
 
-                cell.up = max(cell_up.up + self.skew, cell_up.val + self.gap)
-                cell.left = max(cell_left.left + self.skew, cell_left.val + self.gap)
+                cell.up = max(up_cell.up + self.skew, up_cell.val + self.gap)
+                cell.left = max(left_cell.left + self.skew, left_cell.val + self.gap)
 
-                diag_val: float = -999_999.0
-                for k in range(len(aligned)):
-                    aligned_char: str = aligned[k][rows - row]
-                    lines_char: str = lines[ln][cols - col]
-
-                    if aligned_char == self.gap_char:
+                # Diagonal: the new character aligns to a whole column, so its
+                # cost is the best substitution over the aligned sequences
+                # (columns that are already gaps for a given sequence cost nothing).
+                ai, li = rows - row, cols - col
+                line_char = line[li]
+                best_sub = float("-inf")
+                for seq in aligned:
+                    other = seq[ai]
+                    if other == self.gap_char:
                         continue
-
-                    if aligned_char > lines_char:
-                        aligned_char, lines_char = lines_char, aligned_char
-
-                    key = aligned_char + lines_char
-
-                    value: float = self.substitutions.get(key)
+                    a, b = sorted((other, line_char))  # matrix stores lex-first order
+                    value = self.substitutions.get(a + b)
                     if value is None:
-                        msg: str = (
-                            f"One of {key} these characters are missing "
-                            "from the substitution matrix."
+                        raise ValueError(
+                            f"Missing substitution for character pair {a + b}"
                         )
-                        raise ValueError(msg)
+                    best_sub = max(best_sub, value)
+                diag = best_sub + trace[row - 1, col - 1].val
 
-                    diag_val = max(diag_val, value)
-
-                diag_val += trace[row - 1, col - 1].val
-                cell.val = max(diag_val, cell.up, cell.left)
-
-                if cell.val == diag_val:
-                    cell.dir_ = Dir.DIAG
-                else:
-                    cell.dir_ = Dir.UP if cell.val == cell.up else Dir.LEFT
+                cell.val = max(diag, cell.up, cell.left)
+                cell.dir_ = (
+                    Dir.DIAG
+                    if cell.val == diag
+                    else Dir.UP
+                    if cell.val == cell.up
+                    else Dir.LEFT
+                )
         return cols, rows, trace
