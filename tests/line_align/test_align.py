@@ -60,9 +60,9 @@ class TestAlign(unittest.TestCase):
         self.assertEqual(
             results,
             [
-                "⋄⋄⋄⋄MOJAVE DESERT⋄, PROVIDENCE MTS.⋄⋄: canyon ⋄above",
-                "E⋄. MOJAVE DESERT , PROVIDENCE MTS . : canyon ⋄above",
-                "E⋄⋄ MOJAVE DESERT ⋄⋄PROVTDENCE MTS. #⋄ canyon ⋄above",
+                "⋄⋄⋄⋄MOJAVE DESERT⋄, PROVIDENCE MTS⋄.⋄: canyon ⋄above",
+                "E. ⋄MOJAVE DESERT , PROVIDENCE MTS . : canyon ⋄above",
+                "E⋄ ⋄MOJAVE DESERT ⋄⋄PROVTDENCE MTS⋄. # canyon ⋄above",
                 "Be ‘MOJAVE DESERT⋄, PROVIDENCE ⋄⋄⋄⋄⋄⋄⋄⋄canyon “above",
             ],
         )
@@ -88,6 +88,8 @@ class TestAlign(unittest.TestCase):
         )
 
     def test_align_15(self) -> None:
+        # "R" over "T" is worth -1.0 in the default matrix, which is worse than
+        # the two extra gaps it takes to leave "O" and "T" under each other.
         line = LineAlign(self.matrix)
         results = line.align(
             [
@@ -99,7 +101,7 @@ class TestAlign(unittest.TestCase):
             results,
             [
                 "North Carolina NORTH CAROLINA Guilford County",
-                "North Carolina ⋄OT⋄⋄ CAROLINA Guilford County",
+                "North Carolina ⋄O⋄T⋄ CAROLINA Guilford County",
             ],
         )
 

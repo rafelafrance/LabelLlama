@@ -17,6 +17,7 @@ dependencies = [
   "levenshtein>=0.27.3",
   "lxml>=6.1.1",
   "markdownify>=1.2.2",
+  "numpy>=2.5.1",
   "odfpy>=1.4.1",
   "pandas>=3.0.3",
   "pillow>=12.3.0",
