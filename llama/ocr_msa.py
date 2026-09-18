@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import glob
+import logging
 import textwrap
 from collections import defaultdict
 from pathlib import Path
@@ -10,7 +12,7 @@ from tqdm import tqdm
 
 from llama.line_align import char_sub_matrix, label_builder
 from llama.line_align.align import LineAlign
-from llama.prompts.prompt import FIRST_COLUMNS
+from llama.prompts.prompt import OCR_REQUIRED
 from llama.pylib import log
 from llama.results.model_status import ModelStatus
 
@@ -18,17 +20,80 @@ from llama.results.model_status import ModelStatus
 def msa_ocr_results(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
+    # Normalize the list of OCR files
+    ocr_files: dict[Path, None] = {}
+    for ocr_glob in args.ocr_file:
+        matches = sorted(glob.glob(str(ocr_glob), recursive=True))  # noqa: PTH207
+
+        if not matches:
+            msg = f"No OCR files match the pattern: {ocr_glob}"
+            logging.error(msg)
+            raise ValueError(msg)
+
+        for match in matches:
+            path = Path(match).resolve()
+            if not path.is_file():
+                logging.warning("Not an OCR file, skipped: %s", path)
+                continue
+            ocr_files[path] = None
+
     # Read in the OCR results
     all_ocr = defaultdict(list)
 
-    for ocr_glob in args.ocr_file:
-        for ocr_file in Path().glob(ocr_glob):
-            df = pd.read_csv(ocr_file)
-            if missing := set(FIRST_COLUMNS) - set(df.columns):
-                raise ValueError(f"{ocr_file} is missing {', '.join(missing)}")
-            for row in df.to_dict("records"):
-                if ModelStatus.is_success(row["status"]):
-                    all_ocr[row["source"]].append(row["text"])
+    no_source: int = 0
+    for ocr_file in ocr_files:
+        if ocr_file == args.consensus_file.resolve():
+            raise ValueError(f"Not using the consensus file as input: {ocr_file}")
+
+        df = pd.read_csv(ocr_file, dtype=str).fillna("")
+        if missing := set(OCR_REQUIRED) - set(df.columns):
+            raise ValueError(f"{ocr_file} is missing {', '.join(missing)}")
+
+        latest: dict[str, str] = {}
+        for row in df.to_dict("records"):
+            if "status" in df.columns and not ModelStatus.is_success(row["status"]):
+                continue
+            source = row.get("source").strip()
+            if not source:
+                no_source += 1
+                logging.warning(f"{ocr_file}: a row has no source, skipped")
+                continue
+            text = row["text"].strip()
+            if text:
+                latest[row["source"].strip()] = text
+
+        for source, text in latest.items():
+            all_ocr[source].append(text)
+
+    if no_source != 0:
+        logging.warning(f"{ocr_file}: a row has no source, skipped")
+
+    if not all_ocr:
+        files = ", ".join(str(p) for p in ocr_files)
+        msg = f"There were no successful OCR rows in: {files}"
+        logging.error(msg)
+        raise ValueError(msg)
+
+    # Make sure we have the correct characters in the substitution matrix
+    chars = set()
+    for group in all_ocr.values():
+        for ocr in group:
+            chars |= set(ocr)
+    missing = char_sub_matrix.missing_chars("".join(sorted(chars)))
+    if char_sub_matrix.GAP_CHAR in missing:
+        f"OCR text contains the gap character {char_sub_matrix.GAP_CHAR!r}, "
+        "which is reserved for the alignment. Find it with: "
+        "grep -l '⋄' <your OCR CSVs>"
+        logging.error(msg)
+        raise ValueError(msg)
+    if missing:
+        missing_str = "".join(missing)
+        msg = (
+            f"Missing characters not in substitution matrix {missing_str}\n"
+            f"Add them with: build_char_sub_matrix.py --chars '{missing_str}'"
+        )
+        logging.error(msg)
+        raise ValueError(msg)
 
     # Align the OCR results and get a consensus record
     consensus = {}
@@ -40,7 +105,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
 
     # Output consensus
     rows = [{"source": k, "text": v} for k, v in consensus.items()]
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows, columns=["source", "text"])
     args.consensus_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.consensus_file, index=False)
 
@@ -117,13 +182,6 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--notes",
         metavar="string",
         help="""Notes for logging. They only appear in the log file.""",
-    )
-    debugging_group = arg_parser.add_argument_group("debugging options")
-    debugging_group.add_argument(
-        "--limit",
-        type=int,
-        metavar="int",
-        help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
     return ns

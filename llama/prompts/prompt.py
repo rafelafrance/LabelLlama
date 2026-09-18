@@ -10,6 +10,7 @@ from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
 if TYPE_CHECKING:
     from pathlib import Path
 
+OCR_REQUIRED = ["source", "text"]
 FIRST_COLUMNS = ["status", "source", "elapsed", "text"]
 
 
