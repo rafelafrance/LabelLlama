@@ -83,8 +83,8 @@ class LineAlign:
         aligned: list[list[str]] = [list(lines[0])]
 
         for ln in range(1, len(lines)):
-            cols, rows, trace = self.build_matrix(aligned, lines, ln)
-            aligned = self.trace_back(aligned, cols, lines, ln, rows, trace)
+            rows, cols, trace = self.build_matrix(aligned, lines, ln)
+            aligned = self.trace_back(aligned, lines, ln, rows, cols, trace=trace)
 
         result: list[str] = ["".join(a) for a in aligned]
         return result
@@ -92,10 +92,11 @@ class LineAlign:
     def trace_back(
         self,
         aligned: list[list[str]],
-        cols: int,
         lines: list[str],
         ln: int,
         rows: int,
+        cols: int,
+        *,
         trace: npt.NDArray[Trace],
     ) -> list[list[str]]:
         row, col = rows, cols
@@ -211,4 +212,4 @@ class LineAlign:
                     if cell.val == cell.up
                     else Dir.LEFT
                 )
-        return cols, rows, trace
+        return rows, cols, trace

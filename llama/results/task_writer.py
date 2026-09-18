@@ -13,8 +13,7 @@ if TYPE_CHECKING:
 
     import tqdm
 
-    from llama.prompts.ocr_prompt import OcrPrompt
-    from llama.prompts.parser_prompt import ParseTextPrompt
+    from llama.prompts.prompt import Prompt
 
 MIN_TEXT_LEN = 32
 
@@ -25,7 +24,7 @@ class TaskWriter:
     out_file: io.StringIO
     statuses: StatusCounts
     progress_bar: tqdm.tqdm
-    prompt: OcrPrompt | ParseTextPrompt
+    prompt: Prompt
 
     def write(
         self,
