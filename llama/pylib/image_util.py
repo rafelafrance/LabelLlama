@@ -1,4 +1,5 @@
 import base64
+import glob
 import io
 import mimetypes
 from pathlib import Path
@@ -33,8 +34,8 @@ IMAGE_ERRORS = (
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
 
 
-def has_image_suffix(path: Path) -> bool:
-    return path.suffix.lower() in IMAGE_SUFFIXES
+def has_image_suffix(path: Path | str) -> bool:
+    return Path(path).suffix.lower() in IMAGE_SUFFIXES
 
 
 def images_only(paths: list[Path]) -> list[Path]:
@@ -47,16 +48,16 @@ def image_dir(dir_: Path) -> list[Path]:
 
 
 def image_glob(glob_: str) -> list[Path]:
-    image_paths = [p for p in Path().glob(glob_) if has_image_suffix(p)]
-    return image_paths
+    return [Path(p) for p in glob.glob(glob_, recursive=True) if has_image_suffix(p)]
 
 
 def get_images(dir_: Path | None = None, glob_: str | None = None) -> list[Path]:
-    image_paths = []
-    image_paths += image_dir(dir_) if dir_ else []
-    image_paths += image_glob(glob_) if glob_ else []
-    image_paths = sorted(set(image_paths))
-    return image_paths
+    unique: dict[Path, Path] = {}  # resolved path -> path as the user spelled it
+    paths = (image_dir(dir_) if dir_ else []) + (image_glob(glob_) if glob_ else [])
+    for path in paths:
+        unique.setdefault(path.resolve(), path)
+    images = sorted(unique.values(), key=str)
+    return images
 
 
 def is_url(value: str) -> bool:

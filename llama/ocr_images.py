@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.prompts.prompt import Prompt, Thinking
+from llama.prompts.prompt import FIRST_COLUMNS, Prompt, Thinking
 from llama.pylib import fix_ocr, image_util, log
 from llama.pylib.thread_sessions import ThreadSessions
 from llama.results.model_status import ModelStatus, StatusCounts
@@ -25,6 +25,17 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     docs = OcrDocs(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
+    if not docs.tasks:
+        if docs.ocr_records:
+            logging.info("Nothing to do: all images are already OCRed")
+            logging.info(f"{docs.skipped} of {docs.image_count} already done")
+        else:
+            logging.warning(
+                "No images found. --image-dir is not recursive; "
+                "try --image-glob 'dir/**/*.jpg'"
+            )
+        return
+
     prompt = Prompt(
         prompt_md=args.prompt_md,
         model_id=args.model_id,
@@ -32,6 +43,12 @@ def ocr_images(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         thinking=args.thinking,
     )
+    if prompt.columns != FIRST_COLUMNS:
+        msg = (
+            f"{args.prompt_md} declares {len(prompt.columns) - len(FIRST_COLUMNS)} "
+            f"fields; ocr_images.py needs a plain OCR prompt (e.g. prompts/ocr_v2.md)"
+        )
+        raise ValueError(msg)
 
     statuses = StatusCounts()
 
@@ -74,7 +91,11 @@ def ocr_images(args: argparse.Namespace) -> None:
             finally:
                 sessions.close_all()
 
-    logging.info(f"There were {statuses.get(ModelStatus.ERROR)} errors")
+    logging.info(
+        f"OCRed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
+        f"{statuses.get(ModelStatus.ERROR)} errored, "
+        f"{len(docs.skipped)} already done"
+    )
     log.job_elapsed(job_began)
 
 
@@ -107,6 +128,9 @@ def call_model(
 
         text = fix_ocr.clean_ocr(content, convert_html=convert_html)
         status = ModelStatus.SUCCESS
+        if not text:
+            text = "The model returned no text"
+            status = ModelStatus.ERROR
 
     except (
         IndexError,
@@ -116,18 +140,18 @@ def call_model(
         TypeError,
         ValueError,
     ) as err:
-        logging.exception(f"OCR error for: {source}")
+        logging.error(f"OCR error for: {source}: {str(err)[:120]}")
         text = str(err)
         status = ModelStatus.ERROR
 
-    result = {
+    rec = {
         "status": status,
         "source": str(source),
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
     }
 
-    return result
+    return rec
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -239,6 +263,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Only OCR this many images.""",
     )
     ns: argparse.Namespace = arg_parser.parse_args(args)
+    ns.api_host = ns.api_host.rstrip("/")
     if not ns.image_dir and not ns.image_glob:
         arg_parser.error("one of --image-dir or --image-glob is required")
     if ns.image_dir and not ns.image_dir.is_dir():
@@ -251,6 +276,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         arg_parser.error(f"--threads must be an integer >= 1: {ns.threads}")
     if ns.timeout < 1:
         arg_parser.error(f"--timeout must be an integer >= 1: {ns.timeout} seconds")
+    if ns.temperature is not None and ns.temperature < 0.0:
+        arg_parser.error(f"--temperature must be a float >= 0.0: {ns.temperature}")
     return ns
 
 

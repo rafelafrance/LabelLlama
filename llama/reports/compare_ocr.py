@@ -68,7 +68,7 @@ def expand_ocr_files(patterns: list[str]) -> list[Path]:
     """Expand each glob pattern to its matching files, in order."""
     ocr_files: list[Path] = []
     for pattern in patterns:
-        matches = sorted(globmod.glob(pattern))  # noqa: PTH207
+        matches = sorted(globmod.glob(pattern))
         if not matches:
             raise ValueError(f"No files match OCR file pattern: {pattern}")
         ocr_files.extend(Path(match) for match in matches)

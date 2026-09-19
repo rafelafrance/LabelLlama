@@ -23,7 +23,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
     # Normalize the list of OCR files
     ocr_files: dict[Path, None] = {}
     for ocr_glob in args.ocr_file:
-        matches = sorted(glob.glob(str(ocr_glob), recursive=True))  # noqa: PTH207
+        matches = sorted(glob.glob(str(ocr_glob), recursive=True))
 
         if not matches:
             msg = f"No OCR files match the pattern: {ocr_glob}"
@@ -53,7 +53,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
         for row in df.to_dict("records"):
             if "status" in df.columns and not ModelStatus.is_success(row["status"]):
                 continue
-            source = row.get("source").strip()
+            source = row.get("source", "").strip()
             if not source:
                 no_source += 1
                 logging.warning(f"{ocr_file}: a row has no source, skipped")
@@ -81,9 +81,11 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             chars |= set(ocr)
     missing = char_sub_matrix.missing_chars("".join(sorted(chars)))
     if char_sub_matrix.GAP_CHAR in missing:
-        f"OCR text contains the gap character {char_sub_matrix.GAP_CHAR!r}, "
-        "which is reserved for the alignment. Find it with: "
-        "grep -l '⋄' <your OCR CSVs>"
+        msg = (
+            f"OCR text contains the gap character {char_sub_matrix.GAP_CHAR!r}, "
+            "which is reserved for the alignment. Find it with: "
+            "grep -l '⋄' <your OCR CSVs>"
+        )
         logging.error(msg)
         raise ValueError(msg)
     if missing:

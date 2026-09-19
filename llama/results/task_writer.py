@@ -36,9 +36,9 @@ class TaskWriter:
         try:
             result = future.result()
             self.check(result, text)
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             name = Path(source).name if source else "unknown"
-            logging.exception(f"Task error for: {name}")
+            logging.error(f"Task error for: {name}")
             result = {
                 "status": ModelStatus.ERROR,
                 "source": str(source),
@@ -51,7 +51,7 @@ class TaskWriter:
             self.writer.writerow(result)
             self.out_file.flush()
         except ValueError as err:
-            logging.exception(f"Parse error for: {Path(result['source']).name}")
+            logging.error(f"Parse error for: {Path(result['source']).name}")
             text = str(err)
             self.writer.writerow(
                 {

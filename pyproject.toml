@@ -84,6 +84,7 @@ ignore = [
   "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
   "PT009",   # Use a regular `assert` instead of unittest-style `assertEqual`
   "PT027",   # Replace `assertRaises` with `pytest.raises`
+  "PTH207",  # Replace `glob` with `Path.glob` or `Path.rglob`
   "RET504",  # Unnecessary assignment to {name} before return statement
   "RUF001",  # String contains ambiguous character
   "S101",    # Use of assert detected
@@ -92,4 +93,5 @@ ignore = [
   "TD002",   # Missing author in TODO
   "TD003",   # Missing issue link on the line following this TODO
   "TRY003",  # Avoid specifying long messages outside the exception class
+  "TRY400",  # Use `logging.exception` instead of `logging.error`
 ]

@@ -61,10 +61,10 @@ def postprocess_fields(args: argparse.Namespace) -> None:
                 }
 
             output_rows.append(out_row)
-        except Exception:
+        except Exception:  # noqa: BLE001
             name = Path(in_row["source"]).name
             failed.append(name)
-            logging.exception(f"Clean error for: {name}")
+            logging.error(f"Clean error for: {name}")
 
     df = pd.DataFrame(output_rows, columns=output_columns)
     args.clean_file.parent.mkdir(parents=True, exist_ok=True)

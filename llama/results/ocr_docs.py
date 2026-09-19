@@ -1,13 +1,11 @@
-from typing import TYPE_CHECKING, ClassVar
+from pathlib import Path
+from typing import ClassVar
 
 import pandas as pd
 
 from llama.prompts.prompt import FIRST_COLUMNS
 from llama.pylib import image_util
 from llama.results.model_status import ModelStatus
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def read_results_csv(path: Path, label: str) -> pd.DataFrame | None:
@@ -43,15 +41,16 @@ class OcrDocs:
 
         self.ocr_records, self.file_mode = self.read_ocr_records(ocr_file)
 
-        already_done = {
-            r.get("source")
+        self.already_done = {
+            str(Path(r["source"]).resolve())
             for r in self.ocr_records
             if r.get("source") and r.get("status", "").lower() == ModelStatus.SUCCESS
         }
 
-        tasks = {p for p in image_paths if str(p) not in already_done}
-        tasks = sorted(tasks, key=str)
-        self.tasks = tasks[:limit]
+        pending = [p for p in image_paths if str(p.resolve()) not in self.already_done]
+        self.image_count = len(image_paths)
+        self.skipped = len(image_paths) - len(pending)
+        self.tasks = sorted(pending, key=str)[:limit]
 
     def read_ocr_records(self, ocr_file: Path | None) -> tuple[list[dict], str]:
         mode = "w"

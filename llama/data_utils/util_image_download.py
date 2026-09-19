@@ -79,7 +79,7 @@ def download(row: dict, image_dir: Path) -> str:
             #     f.write(data)
 
     except image_util.IMAGE_ERRORS:
-        logging.exception(f"Download error: {row['identifier']}")
+        logging.error(f"Download error: {row['identifier']}")
         return "error"
 
     return "download"

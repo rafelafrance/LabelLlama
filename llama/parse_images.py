@@ -113,7 +113,7 @@ def call_model(
         TypeError,
         ValueError,
     ) as err:
-        logging.exception(f"Extract error for: {source}")
+        logging.error(f"Extract error for: {source}")
         text = str(err)
         status = ModelStatus.ERROR
         extracted = {}

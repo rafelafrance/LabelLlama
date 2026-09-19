@@ -120,7 +120,7 @@ def call_model(
         IndexError,
         TypeError,
     ) as err:
-        logging.exception(f"Parse error for: {Path(ocr_result['source']).name}")
+        logging.error(f"Parse error for: {Path(ocr_result['source']).name}")
         text = str(err)
         status = ModelStatus.ERROR
 
