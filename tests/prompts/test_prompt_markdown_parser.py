@@ -105,6 +105,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
             "\n"
             "# LLM Fields\n"
             "- [scientificName](../llama/llm_fields/taxon/scientificName.py)\n"
+            "- [utm](../llama/llm_fields/location/utm.py)\n"
             "\n"
             "# System Message\n"
             "The body.\n"

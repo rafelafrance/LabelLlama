@@ -72,3 +72,10 @@ class PromptMarkdownParser:
                     for ln in section.splitlines()
                     if (name := re.sub(r"^\s*\-\s*", "", ln).strip())
                 ]
+
+        # Required fields must be in the LLM fields
+        llm_fields = {f.name for f in self.llm_fields}
+        if req := set(self.req_fields) - llm_fields:
+            raise ValueError(
+                f"There are required fields not in prompt's LLM fields: {req}"
+            )

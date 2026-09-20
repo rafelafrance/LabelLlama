@@ -71,7 +71,7 @@ class TaskWriter:
         (i.e., parse jobs, not OCR). When text is given and it is shorter
         than MIN_TEXT_LEN the check is skipped, since a small input can
         legitimately yield nothing. When no text is given (e.g., the input
-        was an image) the check always applies.
+        was an image) the check applies.
         """
         if any(
             c not in self.prompt.columns for c in result if c not in REQUIRED_COLUMNS

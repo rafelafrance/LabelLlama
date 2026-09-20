@@ -34,6 +34,7 @@ def ocr_images(args: argparse.Namespace) -> None:
                 "No images found. --image-dir is not recursive; "
                 "try --image-glob 'dir/**/*.jpg'"
             )
+        log.job_elapsed(job_began)
         return
 
     prompt = Prompt(
@@ -94,7 +95,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     logging.info(
         f"OCRed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
         f"{statuses.get(ModelStatus.ERROR)} errored, "
-        f"{len(docs.skipped)} already done"
+        f"{docs.skipped} already done"
     )
     log.job_elapsed(job_began)
 

@@ -28,7 +28,7 @@ from pathlib import Path
 import pandas as pd
 
 from llama.llm_fields.llm_field import LlmField
-from llama.prompts.prompt import FIRST_COLUMNS
+from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.prompts.text_cleaner import TextCleaner
 from llama.pylib import log
 
@@ -102,7 +102,7 @@ def score_against_gold(args: argparse.Namespace) -> None:
     image_paths = image_paths[: args.limit]
 
     # Get common rows in the original order
-    columns = [k for k in columns if k not in FIRST_COLUMNS]
+    columns = [k for k in columns if k not in REQUIRED_COLUMNS]
 
     # Load scoring classes
     llm_field_classes = TextCleaner(args.prompt_md).llm_field_classes

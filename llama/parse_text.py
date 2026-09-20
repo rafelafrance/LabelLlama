@@ -79,9 +79,8 @@ def parse_text(args: argparse.Namespace) -> None:
                 sessions.close_all()
 
     logging.info(
-        f"OCRed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
-        f"{statuses.get(ModelStatus.ERROR)} errored, "
-        f"{len(docs.skipped)} already done"
+        f"Parsed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} record(s), "
+        f"{statuses.get(ModelStatus.ERROR)} errored, {docs.skipped} already done"
     )
     log.job_elapsed(job_began)
 

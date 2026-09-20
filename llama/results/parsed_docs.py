@@ -1,14 +1,14 @@
 import logging
 from typing import TYPE_CHECKING
 
-import pandas as pd
-
 from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.results.model_status import ModelStatus
 from llama.results.ocr_docs import read_results_csv
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    import pandas as pd
 
 
 class ParsedDocs:
@@ -36,14 +36,12 @@ class ParsedDocs:
             rec for rec in ocr_recs if (rec.get("source") or "") not in already_done
         ]
         tasks = sorted(tasks, key=lambda rec: rec.get("source", ""))
+        self.skipped = len(already_done)
         self.tasks = tasks[:limit]
 
     def read_ocr_records(self, ocr_file: Path) -> list[dict]:
-        # Read he OCR CSV
         df = read_results_csv(ocr_file, "OCR results file")
-        try:
-            df = pd.read_csv(ocr_file, dtype=str).fillna("")
-        except pd.errors.EmptyDataError:
+        if df is None:
             return []
 
         # CSV must have required columns
