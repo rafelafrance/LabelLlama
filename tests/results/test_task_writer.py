@@ -5,7 +5,7 @@ from concurrent.futures import Future
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from llama.prompts.prompt import FIRST_COLUMNS
+from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.results.model_status import ModelStatus, StatusCounts
 from llama.results.task_writer import MIN_TEXT_LEN, TaskWriter
 
@@ -69,7 +69,7 @@ def base_result(**overrides: object) -> dict:
 
 class TestTaskWriter(unittest.TestCase):
     def test_write_success_row_01(self) -> None:
-        tw, out = make_task_writer(FIRST_COLUMNS)
+        tw, out = make_task_writer(REQUIRED_COLUMNS)
         tw.write(done_future(base_result()), source="a.txt")
 
         rows = read_rows(out)
@@ -82,7 +82,7 @@ class TestTaskWriter(unittest.TestCase):
         tw.progress_bar.update.assert_called_once_with(1)
 
     def test_write_future_error_row_02(self) -> None:
-        tw, out = make_task_writer(FIRST_COLUMNS)
+        tw, out = make_task_writer(REQUIRED_COLUMNS)
         tw.write(failing_future(RuntimeError("boom")), source="a.txt")
 
         rows = read_rows(out)
@@ -94,7 +94,7 @@ class TestTaskWriter(unittest.TestCase):
 
     def test_future_error_without_source_03(self) -> None:
         # A failing future with no source still produces one row
-        tw, out = make_task_writer(FIRST_COLUMNS)
+        tw, out = make_task_writer(REQUIRED_COLUMNS)
         tw.write(failing_future(RuntimeError("boom")))
 
         rows = read_rows(out)
@@ -104,7 +104,7 @@ class TestTaskWriter(unittest.TestCase):
 
     def test_missing_required_field_is_error_04(self) -> None:
         # Parse writer: a required LLM field left empty is an error row
-        columns = [*FIRST_COLUMNS, "scientificName"]
+        columns = [*REQUIRED_COLUMNS, "scientificName"]
         prompt = make_prompt(columns=columns, req_fields=["scientificName"])
         tw, out = make_task_writer(columns, prompt=prompt)
         tw.write(
@@ -120,8 +120,8 @@ class TestTaskWriter(unittest.TestCase):
 
     def test_hallucinated_column_is_error_05(self) -> None:
         # A result key the prompt does not define is an error row
-        prompt = make_prompt(columns=FIRST_COLUMNS)
-        tw, out = make_task_writer(FIRST_COLUMNS, prompt=prompt)
+        prompt = make_prompt(columns=REQUIRED_COLUMNS)
+        tw, out = make_task_writer(REQUIRED_COLUMNS, prompt=prompt)
         tw.write(
             done_future(base_result(bogusKey="stray value")),
             source="a.txt",
@@ -135,7 +135,7 @@ class TestTaskWriter(unittest.TestCase):
     def test_empty_llm_output_long_text_is_error_06(self) -> None:
         # Parse writer with LLM columns and a long input text:
         # an empty extraction is an error, not a success row
-        columns = [*FIRST_COLUMNS, "scientificName"]
+        columns = [*REQUIRED_COLUMNS, "scientificName"]
         prompt = make_prompt(columns=columns)
         tw, out = make_task_writer(columns, prompt=prompt)
         tw.write(
@@ -151,7 +151,7 @@ class TestTaskWriter(unittest.TestCase):
 
     def test_check_skipped_for_short_text_07(self) -> None:
         # A short input can legitimately yield nothing: keep it a success
-        columns = [*FIRST_COLUMNS, "scientificName"]
+        columns = [*REQUIRED_COLUMNS, "scientificName"]
         prompt = make_prompt(columns=columns)
         tw, out = make_task_writer(columns, prompt=prompt)
         tw.write(
@@ -166,7 +166,7 @@ class TestTaskWriter(unittest.TestCase):
 
     def test_check_applies_at_min_text_len_08(self) -> None:
         # Boundary: text of exactly MIN_TEXT_LEN is long enough
-        columns = [*FIRST_COLUMNS, "scientificName"]
+        columns = [*REQUIRED_COLUMNS, "scientificName"]
         prompt = make_prompt(columns=columns)
         tw, out = make_task_writer(columns, prompt=prompt)
         tw.write(
@@ -181,8 +181,8 @@ class TestTaskWriter(unittest.TestCase):
 
     def test_ocr_style_success_row_09(self) -> None:
         # No LLM columns: the empty-output check is skipped entirely
-        prompt = make_prompt(columns=FIRST_COLUMNS)
-        tw, out = make_task_writer(FIRST_COLUMNS, prompt=prompt)
+        prompt = make_prompt(columns=REQUIRED_COLUMNS)
+        tw, out = make_task_writer(REQUIRED_COLUMNS, prompt=prompt)
         tw.write(
             done_future(base_result(source="a.jpg", text="")),
             source="a.jpg",
@@ -195,7 +195,7 @@ class TestTaskWriter(unittest.TestCase):
     def test_writer_value_error_fallback_row_10(self) -> None:
         # A result key the writer does not know triggers the fallback
         # error row, counted exactly once
-        tw, out = make_task_writer(FIRST_COLUMNS)
+        tw, out = make_task_writer(REQUIRED_COLUMNS)
         tw.write(
             done_future(base_result(hallucinatedKey="stray value")),
             source="a.txt",
@@ -210,7 +210,7 @@ class TestTaskWriter(unittest.TestCase):
     def test_missing_llm_key_written_as_empty_11(self) -> None:
         # A result lacking an LLM column key is written with an empty
         # value, not dropped
-        columns = [*FIRST_COLUMNS, "scientificName"]
+        columns = [*REQUIRED_COLUMNS, "scientificName"]
         prompt = make_prompt(columns=columns)
         tw, out = make_task_writer(columns, prompt=prompt)
         tw.write(

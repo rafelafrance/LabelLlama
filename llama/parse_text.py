@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.prompts.prompt import FIRST_COLUMNS, Prompt, Thinking
+from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
 from llama.pylib import fix_ocr, log
 from llama.pylib.thread_sessions import ThreadSessions
 from llama.results.model_status import ModelStatus, StatusCounts
@@ -32,9 +32,7 @@ def parse_text(args: argparse.Namespace) -> None:
         thinking=args.thinking,
     )
 
-    docs = ParsedDocs(
-        args.parsed_file, args.ocr_file, args.limit, expected_columns=prompt.columns
-    )
+    docs = ParsedDocs(args.parsed_file, args.ocr_file, prompt.columns, args.limit)
 
     statuses = StatusCounts()
 
@@ -80,7 +78,11 @@ def parse_text(args: argparse.Namespace) -> None:
             finally:
                 sessions.close_all()
 
-    logging.info(f"There were {statuses.get(ModelStatus.ERROR)} errors")
+    logging.info(
+        f"OCRed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
+        f"{statuses.get(ModelStatus.ERROR)} errored, "
+        f"{len(docs.skipped)} already done"
+    )
     log.job_elapsed(job_began)
 
 
@@ -129,7 +131,7 @@ def call_model(
         "source": ocr_result["source"],
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
-    } | {k: v for k, v in extracted.items() if k.lower() not in FIRST_COLUMNS}
+    } | {k: v for k, v in extracted.items() if k.lower() not in REQUIRED_COLUMNS}
 
     return result
 
@@ -238,6 +240,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
+    ns.api_host = ns.api_host.removesuffix("/")
     if not ns.ocr_file.is_file():
         arg_parser.error(f"--ocr-file is not a file: {ns.ocr_file}")
     if not ns.prompt_md.is_file():

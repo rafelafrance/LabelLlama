@@ -10,8 +10,7 @@ from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
 if TYPE_CHECKING:
     from pathlib import Path
 
-OCR_REQUIRED = ["source", "text"]
-FIRST_COLUMNS = ["status", "source", "elapsed", "text"]
+REQUIRED_COLUMNS = ["status", "source", "elapsed", "text"]
 
 
 class Thinking(StrEnum):
@@ -38,7 +37,7 @@ class Prompt:
         self.description = prompt_parser.description
         self.req_fields = prompt_parser.req_fields
 
-        self.columns = [*FIRST_COLUMNS]
+        self.columns = [*REQUIRED_COLUMNS]
 
         self.json_schema = ""
 

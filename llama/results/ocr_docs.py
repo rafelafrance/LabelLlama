@@ -3,7 +3,7 @@ from typing import ClassVar
 
 import pandas as pd
 
-from llama.prompts.prompt import FIRST_COLUMNS
+from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.pylib import image_util
 from llama.results.model_status import ModelStatus
 
@@ -27,7 +27,7 @@ def read_results_csv(path: Path, label: str) -> pd.DataFrame | None:
 
 class OcrDocs:
     # -------------- ClassVars ---------------
-    columns: ClassVar[list[str]] = FIRST_COLUMNS
+    columns: ClassVar[list[str]] = REQUIRED_COLUMNS
     # ----------------------------------------
 
     def __init__(
@@ -59,7 +59,7 @@ class OcrDocs:
             df = read_results_csv(ocr_file, "OCR file")
             if df is None:
                 return [], mode
-            missing = set(FIRST_COLUMNS) - set(df.columns)
+            missing = set(REQUIRED_COLUMNS) - set(df.columns)
             if missing:
                 missing_str = ", ".join(sorted(missing))
                 msg = f"OCR file is missing required columns: {missing_str}"

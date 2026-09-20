@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.prompts.prompt import FIRST_COLUMNS, Prompt, Thinking
+from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
 from llama.pylib import fix_ocr, image_util, log
 from llama.pylib.thread_sessions import ThreadSessions
 from llama.results.model_status import ModelStatus, StatusCounts
@@ -43,9 +43,9 @@ def ocr_images(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         thinking=args.thinking,
     )
-    if prompt.columns != FIRST_COLUMNS:
+    if prompt.columns != REQUIRED_COLUMNS:
         msg = (
-            f"{args.prompt_md} declares {len(prompt.columns) - len(FIRST_COLUMNS)} "
+            f"{args.prompt_md} declares {len(prompt.columns) - len(REQUIRED_COLUMNS)} "
             f"fields; ocr_images.py needs a plain OCR prompt (e.g. prompts/ocr_v2.md)"
         )
         raise ValueError(msg)

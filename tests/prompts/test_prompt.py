@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from llama.prompts.prompt import FIRST_COLUMNS, Prompt, Thinking
+from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
 
 PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 DIODE = PROMPTS_DIR / "diode_one_v1.md"
@@ -27,10 +27,10 @@ class TestPrompt(unittest.TestCase):
     def test_columns_02(self) -> None:
         prompt = make_prompt(DIODE)
 
-        self.assertEqual(prompt.columns[: len(FIRST_COLUMNS)], FIRST_COLUMNS)
-        self.assertEqual(len(prompt.columns), len(FIRST_COLUMNS) + 25)
+        self.assertEqual(prompt.columns[: len(REQUIRED_COLUMNS)], REQUIRED_COLUMNS)
+        self.assertEqual(len(prompt.columns), len(REQUIRED_COLUMNS) + 25)
         self.assertEqual(
-            prompt.columns[len(FIRST_COLUMNS) :][:2],
+            prompt.columns[len(REQUIRED_COLUMNS) :][:2],
             ["scientificName", "scientificNameAuthorship"],
         )
 
@@ -61,7 +61,7 @@ class TestPrompt(unittest.TestCase):
         prompt = make_prompt(OCR)
 
         self.assertEqual(prompt.json_schema, "")
-        self.assertEqual(prompt.columns, FIRST_COLUMNS)
+        self.assertEqual(prompt.columns, REQUIRED_COLUMNS)
 
     def test_headers_api_key_06(self) -> None:
         with patch.dict(os.environ, {}, clear=True):

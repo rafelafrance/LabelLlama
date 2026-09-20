@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.prompts.prompt import FIRST_COLUMNS, Prompt, Thinking
+from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
 from llama.pylib import image_util, log
 from llama.pylib.thread_sessions import ThreadSessions
 from llama.results.model_status import ModelStatus, StatusCounts
@@ -123,7 +123,7 @@ def call_model(
         "source": str(source),
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
-    } | {k: v for k, v in extracted.items() if k.lower() not in FIRST_COLUMNS}
+    } | {k: v for k, v in extracted.items() if k.lower() not in REQUIRED_COLUMNS}
 
     return result
 

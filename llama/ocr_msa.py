@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from llama.line_align import char_sub_matrix, label_builder
 from llama.line_align.align import LineAlign
-from llama.prompts.prompt import OCR_REQUIRED
+from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.pylib import log
 from llama.results.model_status import ModelStatus
 
@@ -46,7 +46,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             raise ValueError(f"Not using the consensus file as input: {ocr_file}")
 
         df = pd.read_csv(ocr_file, dtype=str).fillna("")
-        if missing := set(OCR_REQUIRED) - set(df.columns):
+        if missing := set(REQUIRED_COLUMNS) - set(df.columns):
             raise ValueError(f"{ocr_file} is missing {', '.join(missing)}")
 
         latest: dict[str, str] = {}

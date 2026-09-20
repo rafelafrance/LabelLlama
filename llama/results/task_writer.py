@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from llama.prompts.prompt import FIRST_COLUMNS
+from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.results.model_status import ModelStatus, StatusCounts
 
 if TYPE_CHECKING:
@@ -73,14 +73,16 @@ class TaskWriter:
         legitimately yield nothing. When no text is given (e.g., the input
         was an image) the check always applies.
         """
-        if any(c not in self.prompt.columns for c in result if c not in FIRST_COLUMNS):
+        if any(
+            c not in self.prompt.columns for c in result if c not in REQUIRED_COLUMNS
+        ):
             raise ValueError("Hallucinated column")
         if self.prompt.req_fields and not all(
             result.get(req) for req in self.prompt.req_fields
         ):
             raise ValueError("Missing required field.")
 
-        llm_columns = [c for c in self.writer.fieldnames if c not in FIRST_COLUMNS]
+        llm_columns = [c for c in self.writer.fieldnames if c not in REQUIRED_COLUMNS]
         if not llm_columns:
             return
         if text and len(text) < MIN_TEXT_LEN:

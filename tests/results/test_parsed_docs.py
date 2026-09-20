@@ -41,45 +41,41 @@ class TestParsedDocs(unittest.TestCase):
         write_csv(bad_ocr, ["source", "elapsed"], [["a.txt", "1.0"]])
 
         with self.assertRaises(ValueError) as ctx:
-            ParsedDocs(self.parsed_file, bad_ocr)
+            ParsedDocs(self.parsed_file, bad_ocr, COLUMNS)
 
         self.assertIn("text", str(ctx.exception))
 
     def test_new_parsed_file_uses_write_mode_02(self) -> None:
-        # RED: building a set of record dicts raises TypeError, so
-        # ParsedDocs crashes on any non-empty OCR file
-        docs = ParsedDocs(self.parsed_file, self.ocr_file)
+        docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         self.assertEqual(docs.file_mode, "w")
         self.assertEqual(docs.parsed_records, [])
-        self.assertEqual([t["source"] for t in docs.tasks], ["a.txt", "b.txt", "c.txt"])
+        self.assertEqual([t["source"] for t in docs.tasks], ["a.txt", "c.txt"])
 
     def test_tasks_sorted_by_source_03(self) -> None:
         # The OCR file lists b, a, c; tasks come back sorted by source
-        docs = ParsedDocs(self.parsed_file, self.ocr_file)
+        docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         sources = [t["source"] for t in docs.tasks]
-        self.assertEqual(sources, ["a.txt", "b.txt", "c.txt"])
+        self.assertEqual(sources, ["a.txt", "c.txt"])
 
     def test_resume_appends_and_skips_successes_04(self) -> None:
-        # RED: resume filtering compares str(record-dict) against source
-        # strings, which never match, so finished documents are re-parsed
         write_csv(
             self.parsed_file,
             COLUMNS,
             [
                 ["success", "a.txt", "2.0", "parsed a"],
-                ["ERROR", "b.txt", "2.0", "boom"],
+                ["ERROR", "c.txt", "2.0", "boom"],
             ],
         )
 
-        docs = ParsedDocs(self.parsed_file, self.ocr_file, expected_columns=COLUMNS)
+        docs = ParsedDocs(self.parsed_file, self.ocr_file, prompt_columns=COLUMNS)
 
         # Existing results are kept and appended to
         self.assertEqual(docs.file_mode, "a")
-        self.assertEqual(len(docs.parsed_records), 2)
+        self.assertEqual(len(docs.parsed_records), 1)
         # Only successes are skipped; the error is scheduled again
-        self.assertEqual([t["source"] for t in docs.tasks], ["b.txt", "c.txt"])
+        self.assertEqual([t["source"] for t in docs.tasks], ["c.txt"])
 
     def test_column_mismatch_raises_05(self) -> None:
         write_csv(
@@ -92,22 +88,23 @@ class TestParsedDocs(unittest.TestCase):
             ParsedDocs(
                 self.parsed_file,
                 self.ocr_file,
-                expected_columns=["status", "source", "text"],
+                prompt_columns=["other"],
             )
 
         self.assertIn("do not match", str(ctx.exception))
 
-    def test_no_expected_columns_skips_check_06(self) -> None:
-        # Without expected_columns any existing file is resumed as-is
+    def test_no_prompt_columns_exception_06(self) -> None:
+        # Empty prompt columns causes an exception
         write_csv(
             self.parsed_file,
             ["status", "source"],
             [["success", "a.txt"]],
         )
 
-        docs = ParsedDocs(self.parsed_file, self.ocr_file)
+        with self.assertRaises(ValueError) as ctx:
+            ParsedDocs(self.parsed_file, self.ocr_file, [])
 
-        self.assertEqual(docs.file_mode, "a")
+        self.assertEqual("There are no prompt columns", str(ctx.exception))
 
     def test_corrupt_parsed_file_raises_07(self) -> None:
         # Unbalanced quote -> pandas ParserError -> clean ValueError
@@ -116,7 +113,7 @@ class TestParsedDocs(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError) as ctx:
-            ParsedDocs(self.parsed_file, self.ocr_file)
+            ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         self.assertIn("existing parsed file", str(ctx.exception))
 
@@ -124,21 +121,21 @@ class TestParsedDocs(unittest.TestCase):
         # A file with only the header row resumes with no records
         write_csv(self.parsed_file, COLUMNS, [])
 
-        docs = ParsedDocs(self.parsed_file, self.ocr_file, expected_columns=COLUMNS)
+        docs = ParsedDocs(self.parsed_file, self.ocr_file, prompt_columns=COLUMNS)
 
         self.assertEqual(docs.file_mode, "a")
         self.assertEqual(docs.parsed_records, [])
 
     def test_limit_applied_to_tasks_09(self) -> None:
-        docs = ParsedDocs(self.parsed_file, self.ocr_file, limit=2)
+        docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS, limit=1)
 
-        self.assertEqual([t["source"] for t in docs.tasks], ["a.txt", "b.txt"])
+        self.assertEqual([t["source"] for t in docs.tasks], ["a.txt"])
 
     def test_parsed_file_with_no_content_10(self) -> None:
         # A contentless file is treated as empty and started over
         self.parsed_file.write_text("\n", encoding="utf-8")
 
-        docs = ParsedDocs(self.parsed_file, self.ocr_file)
+        docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         self.assertEqual(docs.file_mode, "w")
         self.assertEqual(docs.parsed_records, [])
@@ -150,18 +147,19 @@ class TestParsedDocs(unittest.TestCase):
             [["a.txt", "parsed a"]],
         )
 
-        docs = ParsedDocs(self.parsed_file, self.ocr_file)
+        with self.assertRaises(ValueError) as ctx:
+            ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
-        # No status means not done: the document is scheduled again
-        self.assertEqual(docs.file_mode, "a")
-        self.assertEqual(len(docs.parsed_records), 1)
-        self.assertEqual([t["source"] for t in docs.tasks], ["a.txt", "b.txt", "c.txt"])
+        self.assertIn(
+            "Existing parsed file columns do not match the prompt columns",
+            str(ctx.exception),
+        )
 
     def test_empty_ocr_file_has_no_tasks_12(self) -> None:
         empty_ocr = self.tmp / "empty_ocr.csv"
         empty_ocr.write_bytes(b"")
 
-        docs = ParsedDocs(self.parsed_file, empty_ocr)
+        docs = ParsedDocs(self.parsed_file, empty_ocr, COLUMNS)
 
         self.assertEqual(docs.file_mode, "w")
         self.assertEqual(docs.tasks, [])
