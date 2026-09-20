@@ -5,27 +5,11 @@ import pandas as pd
 
 from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.pylib import image_util
+from llama.results.base_docs import BaseDocs
 from llama.results.model_status import ModelStatus
 
 
-def read_results_csv(path: Path, label: str) -> pd.DataFrame | None:
-    """
-    Read a results CSV into a DataFrame of strings.
-
-    Returns None when the file holds no parseable content (the caller can
-    then safely start the file over). Raises ValueError when the file exists
-    but cannot be read as CSV, so a corrupt file is never silently
-    overwritten.
-    """
-    try:
-        return pd.read_csv(path, dtype=str).fillna("")
-    except pd.errors.EmptyDataError:
-        return None
-    except (pd.errors.ParserError, UnicodeDecodeError) as err:
-        raise ValueError(f"{label} is not a readable CSV file: {path} ({err})") from err
-
-
-class OcrDocs:
+class OcrDocs(BaseDocs):
     # -------------- ClassVars ---------------
     columns: ClassVar[list[str]] = REQUIRED_COLUMNS
     # ----------------------------------------
@@ -41,29 +25,41 @@ class OcrDocs:
 
         self.ocr_records, self.file_mode = self.read_ocr_records(ocr_file)
 
-        self.already_done = {
+        already_done = {
             str(Path(r["source"]).resolve())
             for r in self.ocr_records
-            if r.get("source") and r.get("status", "").lower() == ModelStatus.SUCCESS
+            if ModelStatus.is_success(r.get("status"))
         }
 
-        pending = [p for p in image_paths if str(p.resolve()) not in self.already_done]
-        self.image_count = len(image_paths)
-        self.skipped = len(image_paths) - len(pending)
-        self.tasks = sorted(pending, key=str)[:limit]
+        tasks = [p for p in image_paths if str(p.resolve()) not in already_done]
 
-    def read_ocr_records(self, ocr_file: Path | None) -> tuple[list[dict], str]:
+        self.image_count = len(image_paths)
+        self.skipped = len(tasks)
+        self.tasks = sorted(tasks, key=str)[:limit]
+
+    def read_ocr_docs(
+        self, ocr_file: Path | None, *, successful_only: bool = False
+    ) -> tuple[list[dict], str]:
         mode = "w"
         records = []
-        if ocr_file and ocr_file.exists():
-            df = read_results_csv(ocr_file, "OCR file")
+        if ocr_file and ocr_file.exists() and ocr_file.stat().st_size > 0:
+            df = self.read_results_csv(ocr_file, "OCR file")
             if df is None:
                 return [], mode
+
             missing = set(REQUIRED_COLUMNS) - set(df.columns)
             if missing:
                 missing_str = ", ".join(sorted(missing))
-                msg = f"OCR file is missing required columns: {missing_str}"
-                raise ValueError(msg)
+                raise ValueError(f"OCR file is missing required columns: {missing_str}")
+
+            if successful_only:
+                df = self.successful_rows(df, "OCR")
+
+            df = self.valid_source(df, "OCR")
+            df = df[df["text"].str.strip() != ""]  # CSV records must have text
+            df = df.drop_duplicates(subset="source", keep="last")  # last wins
+
             mode = "a"
             records = df.to_dict("records")
+
         return records, mode

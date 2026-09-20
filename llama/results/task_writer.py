@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from llama.prompts.prompt import REQUIRED_COLUMNS
-from llama.results.model_status import ModelStatus, StatusCounts
+from llama.results.model_status import ModelStatus, StatusCounts, is_success
 
 if TYPE_CHECKING:
     import csv
@@ -35,7 +35,8 @@ class TaskWriter:
         self.progress_bar.update(1)
         try:
             result = future.result()
-            self.check(result, text)
+            if is_success(result.get("status")):
+                self.check(result, text)
         except Exception as err:  # noqa: BLE001
             name = Path(source).name if source else "unknown"
             logging.error(f"Task error for: {name}")
@@ -47,8 +48,8 @@ class TaskWriter:
             }
 
         try:
-            result["status"] = self.statuses.count(result.get("status"))
             self.writer.writerow(result)
+            result["status"] = self.statuses.count(result.get("status"))
             self.out_file.flush()
         except ValueError as err:
             logging.error(f"Parse error for: {Path(result['source']).name}")
@@ -73,10 +74,11 @@ class TaskWriter:
         legitimately yield nothing. When no text is given (e.g., the input
         was an image) the check applies.
         """
-        if any(
-            c not in self.prompt.columns for c in result if c not in REQUIRED_COLUMNS
-        ):
-            raise ValueError("Hallucinated column")
+        # if any(
+        #     c not in self.prompt.columns for c in result if c not in REQUIRED_COLUMNS
+        # ):
+        #     raise ValueError("Hallucinated column")
+
         if self.prompt.req_fields and not all(
             result.get(req) for req in self.prompt.req_fields
         ):

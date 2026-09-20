@@ -52,7 +52,7 @@ def load_latest_success(ocr_file: Path) -> dict[str, OcrResult]:
 
     latest: dict[str, OcrResult] = {}
     for row in df.to_dict("records"):
-        if not ModelStatus.is_success(row.get("status", "")):
+        if not ModelStatus.is_success(row.get("status")):
             continue
         latest[row["source"]] = OcrResult(
             file=ocr_file.stem,

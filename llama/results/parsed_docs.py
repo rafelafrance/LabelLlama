@@ -1,17 +1,11 @@
-import logging
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from llama.prompts.prompt import REQUIRED_COLUMNS
+from llama.results.base_docs import BaseDocs
 from llama.results.model_status import ModelStatus
-from llama.results.ocr_docs import read_results_csv
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    import pandas as pd
 
 
-class ParsedDocs:
+class ParsedDocs(BaseDocs):
     def __init__(
         self,
         parsed_file: Path,
@@ -22,39 +16,25 @@ class ParsedDocs:
         if not prompt_columns:
             raise ValueError("There are no prompt columns")
 
-        ocr_recs = self.read_ocr_records(ocr_file)
+        ocr_recs, _ = self.read_ocr_docs(ocr_file, successful_only=True)
 
         self.parsed_records, self.file_mode = self.read_parsed_records(
             parsed_file, prompt_columns
         )
+
         already_done = {
-            r.get("source")
+            str(Path(r["source"]).resolve())
             for r in self.parsed_records
-            if r.get("source") and r.get("status", "").lower() == ModelStatus.SUCCESS
+            if ModelStatus.is_success(r.get("status"))
         }
+
         tasks = [
             rec for rec in ocr_recs if (rec.get("source") or "") not in already_done
         ]
         tasks = sorted(tasks, key=lambda rec: rec.get("source", ""))
-        self.skipped = len(already_done)
+
+        self.skipped = len(ocr_recs) - len(tasks)
         self.tasks = tasks[:limit]
-
-    def read_ocr_records(self, ocr_file: Path) -> list[dict]:
-        df = read_results_csv(ocr_file, "OCR results file")
-        if df is None:
-            return []
-
-        # CSV must have required columns
-        missing = set(REQUIRED_COLUMNS) - set(df.columns)
-        if missing:
-            missing_str = ", ".join(sorted(missing))
-            raise ValueError(f"OCR file is missing required columns: {missing_str}")
-
-        df = self.successful_rows(df, "OCR")
-        df = self.valid_source(df, "OCR")
-        df = df[df["text"].str.strip() != ""]  # CSV records must have text
-
-        return df.to_dict("records")
 
     def read_parsed_records(
         self,
@@ -65,7 +45,7 @@ class ParsedDocs:
         records = []
 
         if parsed_file and parsed_file.exists() and parsed_file.stat().st_size > 0:
-            df = read_results_csv(parsed_file, "existing parsed file")
+            df = self.read_results_csv(parsed_file, "existing parsed file")
             if df is None:
                 return records, mode
 
@@ -78,26 +58,9 @@ class ParsedDocs:
 
             df = self.successful_rows(df, "parsed")
             df = self.valid_source(df, "parsed")
+            df = df.drop_duplicates(subset="source", keep="last")  # last wins
 
             mode = "a"
             records = df.to_dict("records")
+
         return records, mode
-
-    def successful_rows(self, df: pd.DataFrame, type_: str) -> pd.DataFrame:
-        """Remove rows without a successful status."""
-        keep = df["status"].str.lower() == ModelStatus.SUCCESS
-        dropped = int((~keep).sum())
-        if dropped:
-            logging.warning(f"Skipping {dropped} {type_} row(s) that did not succeed")
-        df = df[keep]
-        return df
-
-    def valid_source(self, df: pd.DataFrame, type_: str) -> pd.DataFrame:
-        """Remove rows with an invalid source."""
-        blank = df["source"].str.strip() == ""
-        if blank.any():
-            logging.warning(
-                f"Ignoring {int(blank.sum())} {type_} row(s) with no source."
-            )
-        df = df[~blank]
-        return df

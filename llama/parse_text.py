@@ -33,6 +33,10 @@ def parse_text(args: argparse.Namespace) -> None:
     )
 
     docs = ParsedDocs(args.parsed_file, args.ocr_file, prompt.columns, args.limit)
+    if not docs.tasks:
+        logging.info(f"Nothing to do: {docs.skipped} record(s) already parsed")
+        log.job_elapsed(job_began)
+        return
 
     statuses = StatusCounts()
 
@@ -60,12 +64,12 @@ def parse_text(args: argparse.Namespace) -> None:
                 executor.submit(
                     call_model,
                     prompt,
-                    ocr_result,
+                    ocr_rec,
                     sessions,
                     args.api_host,
                     args.timeout,
-                ): ocr_result
-                for ocr_result in docs.tasks
+                ): ocr_rec
+                for ocr_rec in docs.tasks
             }
 
             try:
@@ -87,7 +91,7 @@ def parse_text(args: argparse.Namespace) -> None:
 
 def call_model(
     prompt: Prompt,
-    ocr_result: dict,
+    ocr_rec: dict,
     sessions: ThreadSessions,
     api_host: str,
     timeout: int,
@@ -96,7 +100,7 @@ def call_model(
 
     extracted = {}
     try:
-        text = fix_ocr.prepare_for_parse(ocr_result["text"])
+        text = fix_ocr.prepare_for_parse(ocr_rec["text"])
         session = sessions.get()
         response = session.post(
             f"{api_host}/chat/completions",
@@ -121,18 +125,29 @@ def call_model(
         IndexError,
         TypeError,
     ) as err:
-        logging.error(f"Parse error for: {Path(ocr_result['source']).name}")
+        logging.error(
+            f"Parse error for: {Path(ocr_rec['source']).name}: {str(err)[:120]}"
+        )
         text = str(err)
         status = ModelStatus.ERROR
 
     result = {
         "status": status,
-        "source": ocr_result["source"],
+        "source": ocr_rec["source"],
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
-    } | {k: v for k, v in extracted.items() if k.lower() not in REQUIRED_COLUMNS}
+    }
+    # | {k: v for k, v in extracted.items() if k.lower() not in REQUIRED_COLUMNS}
 
-    return result
+    columns = {c.lower(): c for c in prompt.columns}
+    fields = {}
+    for k, v in extracted.items():
+        if (match := columns.get(str(k).lower())) is not None:
+            fields[match] = v
+        else:
+            logging.warning(f"Dropped unexpected field {k!r} for {ocr_rec['source']}")
+
+    return result | fields
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
@@ -148,8 +163,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         required=True,
         metavar="path",
-        help="""Parse label text from this file. We need only 'source' and 'text'
-            columns for valid input, so any CSV file with those columns is fine.""",
+        help=f"""Parse label text from this file. We need valid OCR results CSV with
+            all required columns {", ".join(REQUIRED_COLUMNS)}.""",
     )
     io_group.add_argument(
         "--parsed-file",
@@ -239,7 +254,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         help="""Limit to this many records.""",
     )
     ns = arg_parser.parse_args(args)
-    ns.api_host = ns.api_host.removesuffix("/")
+    ns.api_host = ns.api_host.rstrip("/")
     if not ns.ocr_file.is_file():
         arg_parser.error(f"--ocr-file is not a file: {ns.ocr_file}")
     if not ns.prompt_md.is_file():
@@ -252,6 +267,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         arg_parser.error("--max-tokens must be >= 1")
     if ns.limit is not None and ns.limit < 1:
         arg_parser.error("--limit must be >= 1")
+    if ns.temperature is not None and ns.temperature < 0.0:
+        arg_parser.error(f"--temperature must be a float >= 0.0: {ns.temperature}")
     return ns
 
 
