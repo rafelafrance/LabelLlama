@@ -114,7 +114,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
 
         parser = PromptMarkdownParser(path)
 
-        assert [f.name for f in parser.llm_fields] == ["scientificName"]
+        assert [f.name for f in parser.llm_fields] == ["scientificName", "utm"]
         assert [f.name for f in parser.calc_fields] == ["eventDate"]
         assert parser.req_fields == ["utm"]
         assert parser.system_msg == "The body."

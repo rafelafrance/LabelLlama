@@ -129,7 +129,7 @@ class TestTaskWriter(unittest.TestCase):
 
         rows = read_rows(out)
         self.assertEqual(rows[0]["status"], "ERROR")
-        self.assertIn("Hallucinated column", rows[0]["text"])
+        self.assertIn("bogusKey", rows[0]["text"])
         self.assertEqual(tw.statuses.get(ModelStatus.ERROR), 1)
 
     def test_empty_llm_output_long_text_is_error_06(self) -> None:

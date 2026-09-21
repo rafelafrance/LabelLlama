@@ -35,6 +35,8 @@ class Prompt:
         prompt_parser = PromptMarkdownParser(prompt_md)
         self.name = prompt_parser.name
         self.description = prompt_parser.description
+        self.llm_fields = prompt_parser.llm_fields
+        self.calc_fields = prompt_parser.calc_fields
         self.req_fields = prompt_parser.req_fields
 
         self.columns = [*REQUIRED_COLUMNS]
@@ -43,8 +45,8 @@ class Prompt:
 
         self.system_msg = prompt_parser.system_msg
 
-        if prompt_parser.llm_fields:
-            self.columns += [f.name for f in prompt_parser.llm_fields]
+        if self.llm_fields:
+            self.columns += [f.name for f in self.llm_fields]
 
             self.system_msg += self.build_field_guidance(prompt_parser)
             self.system_msg += dedent("""

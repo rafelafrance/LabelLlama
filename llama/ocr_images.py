@@ -26,7 +26,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     docs = OcrDocs(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
     if not docs.tasks:
-        if docs.ocr_records:
+        if docs.ocr_docs:
             logging.info("Nothing to do: all images are already OCRed")
             logging.info(f"{docs.skipped} of {docs.image_count} already done")
         else:

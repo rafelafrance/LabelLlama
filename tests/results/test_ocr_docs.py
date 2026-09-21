@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from llama.results.ocr_docs import OcrDocs, read_results_csv
+from llama.results.doc_utils import read_results_csv
+from llama.results.ocr_docs import OcrDocs
 
 COLUMNS = ["status", "source", "elapsed", "text"]
 
@@ -73,7 +74,7 @@ class TestOcrDocs(unittest.TestCase):
         docs = OcrDocs(self.tmp, ocr_file=self.tmp / "ocr.csv")
 
         self.assertEqual(docs.file_mode, "w")
-        self.assertEqual(docs.ocr_records, [])
+        self.assertEqual(docs.ocr_docs, [])
         self.assertEqual(docs.tasks, [self.a, self.b])
 
     def test_init_limit_06(self) -> None:
@@ -97,7 +98,7 @@ class TestOcrDocs(unittest.TestCase):
         docs = OcrDocs(self.tmp, ocr_file=ocr_file)
 
         self.assertEqual(docs.file_mode, "w")
-        self.assertEqual(docs.ocr_records, [])
+        self.assertEqual(docs.ocr_docs, [])
         self.assertEqual(docs.tasks, [self.a, self.b])
 
     def test_init_corrupt_ocr_file_raises_09(self) -> None:
@@ -123,7 +124,7 @@ class TestOcrDocs(unittest.TestCase):
 
         # Append mode, records kept, only successes count as done
         self.assertEqual(docs.file_mode, "a")
-        self.assertEqual(len(docs.ocr_records), 2)
+        self.assertEqual(len(docs.ocr_docs), 2)
         # The failed image is scheduled again, the success is not
         self.assertEqual(docs.tasks, [self.b])
 

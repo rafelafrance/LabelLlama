@@ -8,8 +8,8 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
+from llama.prompts.field_cleaner import FieldCleaner
 from llama.prompts.prompt import Prompt
-from llama.prompts.text_cleaner import TextCleaner
 from llama.pylib import log
 from llama.results.model_status import ModelStatus
 
@@ -18,9 +18,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
     df = pd.read_csv(args.parsed_file, dtype=str).fillna("")
+    if df is None:
+        logging.warning(f"{args.parsed_file} is empty; nothing to clean")
+    logging.info(f"Read {len(df)} row(s) from {args.parsed_file}")
 
     prompt = Prompt(prompt_md=args.prompt_md)
-    cleaner = TextCleaner(args.prompt_md)
+    cleaner = FieldCleaner(args.prompt_md)
     cleaner.validate_columns(df.columns, prompt)
 
     llm_columns = cleaner.get_llm_columns(list(df.columns))
@@ -61,10 +64,11 @@ def postprocess_fields(args: argparse.Namespace) -> None:
                 }
 
             output_rows.append(out_row)
-        except Exception:  # noqa: BLE001
+        except Exception as err:  # noqa: BLE001
             name = Path(in_row["source"]).name
             failed.append(name)
-            logging.error(f"Clean error for: {name}")
+            logging.error(f"Clean error for: {name}: {str(err)[:120]}")
+            logging.debug(f"While cleaning {name}", exc_info=True)
 
     df = pd.DataFrame(output_rows, columns=output_columns)
     args.clean_file.parent.mkdir(parents=True, exist_ok=True)
@@ -76,7 +80,12 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         names = ", ".join(failed)
         msg = f"Clean failed for {len(failed)} documents: {names}"
         logging.error(msg)
+        log.job_elapsed(job_began)
         raise SystemExit(1)
+
+    logging.info(
+        f"Cleaned {len(output_rows)}/{len(input_rows)} document(s) -> {args.clean_file}"
+    )
 
     log.job_elapsed(job_began)
 
@@ -135,6 +144,12 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     ns = arg_parser.parse_args(args)
     if not ns.prompt_md.is_file():
         arg_parser.error(f"--prompt-md is not a file: {ns.prompt_md}")
+    if ns.limit is not None and ns.limit < 1:
+        arg_parser.error(f"--limit must be an integer >= 1: {ns.limit}")
+    if ns.parsed_file.resolve() == ns.clean_file.resolve():
+        arg_parser.error("--clean-file must differ from --parsed-file")
+    if not ns.parsed_file.is_file():
+        arg_parser.error(f"--parsed-file is not a file: {ns.parsed_file}")
     return ns
 
 

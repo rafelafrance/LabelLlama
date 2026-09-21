@@ -73,7 +73,7 @@ def show_pipeline(args: argparse.Namespace) -> None:
 
     ocr_df = pd.read_csv(args.ocr_file, dtype=str).fillna("")
     _check_columns(args.ocr_file, ocr_df, {"source", "text"})
-    ocr_records = ocr_df.to_dict("records")
+    ocr_docs = ocr_df.to_dict("records")
     clean_df = pd.read_csv(args.clean_file, dtype=str).fillna("")
     _check_columns(args.clean_file, clean_df, {"source"})
     clean_records = clean_df.to_dict("records")
@@ -81,7 +81,7 @@ def show_pipeline(args: argparse.Namespace) -> None:
     for row in clean_records:
         clean_by_source.setdefault(row["source"], row)
 
-    rows = ocr_records[: args.limit]
+    rows = ocr_docs[: args.limit]
 
     cards = []
     ocr_errors = 0
@@ -105,7 +105,7 @@ def show_pipeline(args: argparse.Namespace) -> None:
         generated=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         ocr_file=str(args.ocr_file),
         clean_file=str(args.clean_file),
-        total_ocr=len(ocr_records),
+        total_ocr=len(ocr_docs),
         shown=len(cards),
         limit=args.limit,
         ocr_errors=ocr_errors,

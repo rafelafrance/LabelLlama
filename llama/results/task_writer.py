@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from llama.prompts.prompt import REQUIRED_COLUMNS
-from llama.results.model_status import ModelStatus, StatusCounts, is_success
+from llama.results.model_status import ModelStatus, StatusCounts
 
 if TYPE_CHECKING:
     import csv
@@ -35,7 +35,7 @@ class TaskWriter:
         self.progress_bar.update(1)
         try:
             result = future.result()
-            if is_success(result.get("status")):
+            if ModelStatus.is_success(result.get("status")):
                 self.check(result, text)
         except Exception as err:  # noqa: BLE001
             name = Path(source).name if source else "unknown"

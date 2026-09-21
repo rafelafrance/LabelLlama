@@ -49,7 +49,7 @@ class TestParsedDocs(unittest.TestCase):
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         self.assertEqual(docs.file_mode, "w")
-        self.assertEqual(docs.parsed_records, [])
+        self.assertEqual(docs.parsed_docs, [])
         self.assertEqual([t["source"] for t in docs.tasks], ["a.txt", "c.txt"])
 
     def test_tasks_sorted_by_source_03(self) -> None:
@@ -73,7 +73,7 @@ class TestParsedDocs(unittest.TestCase):
 
         # Existing results are kept and appended to
         self.assertEqual(docs.file_mode, "a")
-        self.assertEqual(len(docs.parsed_records), 1)
+        self.assertEqual(len(docs.parsed_docs), 1)
         # Only successes are skipped; the error is scheduled again
         self.assertEqual([t["source"] for t in docs.tasks], ["c.txt"])
 
@@ -124,7 +124,7 @@ class TestParsedDocs(unittest.TestCase):
         docs = ParsedDocs(self.parsed_file, self.ocr_file, prompt_columns=COLUMNS)
 
         self.assertEqual(docs.file_mode, "a")
-        self.assertEqual(docs.parsed_records, [])
+        self.assertEqual(docs.parsed_docs, [])
 
     def test_limit_applied_to_tasks_09(self) -> None:
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS, limit=1)
@@ -138,7 +138,7 @@ class TestParsedDocs(unittest.TestCase):
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         self.assertEqual(docs.file_mode, "w")
-        self.assertEqual(docs.parsed_records, [])
+        self.assertEqual(docs.parsed_docs, [])
 
     def test_parsed_file_missing_status_column_11(self) -> None:
         write_csv(

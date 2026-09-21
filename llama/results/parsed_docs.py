@@ -1,11 +1,11 @@
 from pathlib import Path
 
 from llama.prompts.prompt import REQUIRED_COLUMNS
-from llama.results.base_docs import BaseDocs
-from llama.results.model_status import ModelStatus
+from llama.results import doc_utils
+from llama.results.ocr_docs import OcrDocs
 
 
-class ParsedDocs(BaseDocs):
+class ParsedDocs:
     def __init__(
         self,
         parsed_file: Path,
@@ -16,28 +16,26 @@ class ParsedDocs(BaseDocs):
         if not prompt_columns:
             raise ValueError("There are no prompt columns")
 
-        ocr_recs, _ = self.read_ocr_docs(ocr_file, successful_only=True)
+        ocr_docs, _ = OcrDocs.read_ocr_docs(ocr_file, successful_only=True)
 
-        self.parsed_records, self.file_mode = self.read_parsed_records(
+        self.parsed_docs, self.file_mode = self.read_parsed_docs(
             parsed_file, prompt_columns
         )
 
-        already_done = {
-            str(Path(r["source"]).resolve())
-            for r in self.parsed_records
-            if ModelStatus.is_success(r.get("status"))
-        }
+        already_done = {str(Path(r["source"]).resolve()) for r in self.parsed_docs}
 
         tasks = [
-            rec for rec in ocr_recs if (rec.get("source") or "") not in already_done
+            rec
+            for rec in ocr_docs
+            if str(Path(rec.get("source", "")).resolve()) not in already_done
         ]
         tasks = sorted(tasks, key=lambda rec: rec.get("source", ""))
 
-        self.skipped = len(ocr_recs) - len(tasks)
+        self.skipped = len(ocr_docs) - len(tasks)
         self.tasks = tasks[:limit]
 
-    def read_parsed_records(
-        self,
+    @staticmethod
+    def read_parsed_docs(
         parsed_file: Path | None,
         prompt_columns: list[str],
     ) -> tuple[list[dict], str]:
@@ -45,7 +43,7 @@ class ParsedDocs(BaseDocs):
         records = []
 
         if parsed_file and parsed_file.exists() and parsed_file.stat().st_size > 0:
-            df = self.read_results_csv(parsed_file, "existing parsed file")
+            df = doc_utils.read_results_csv(parsed_file, "existing parsed file")
             if df is None:
                 return records, mode
 
@@ -56,8 +54,8 @@ class ParsedDocs(BaseDocs):
                     "Existing parsed file columns do not match the prompt columns"
                 )
 
-            df = self.successful_rows(df, "parsed")
-            df = self.valid_source(df, "parsed")
+            df = doc_utils.successful_rows(df, "parsed")
+            df = doc_utils.valid_source(df, "parsed")
             df = df.drop_duplicates(subset="source", keep="last")  # last wins
 
             mode = "a"
