@@ -24,9 +24,9 @@ class OcrDocs:
         self.ocr_docs, self.file_mode = self.read_ocr_docs(ocr_file)
 
         already_done = {
-            str(Path(r["source"]).resolve())
-            for r in self.ocr_docs
-            if ModelStatus.is_success(r.get("status"))
+            str(Path(doc["source"]).resolve())
+            for doc in self.ocr_docs
+            if ModelStatus.is_success(doc.get("status"))
         }
 
         tasks = [p for p in image_paths if str(p.resolve()) not in already_done]

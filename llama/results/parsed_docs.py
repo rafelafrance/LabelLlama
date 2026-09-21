@@ -25,11 +25,10 @@ class ParsedDocs:
         already_done = {str(Path(r["source"]).resolve()) for r in self.parsed_docs}
 
         tasks = [
-            rec
-            for rec in ocr_docs
-            if str(Path(rec.get("source", "")).resolve()) not in already_done
+            doc
+            for doc in ocr_docs
+            if str(Path(doc.get("source", "")).resolve()) not in already_done
         ]
-        tasks = sorted(tasks, key=lambda rec: rec.get("source", ""))
 
         self.skipped = len(ocr_docs) - len(tasks)
         self.tasks = tasks[:limit]

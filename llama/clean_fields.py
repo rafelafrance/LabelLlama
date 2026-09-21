@@ -11,38 +11,22 @@ from tqdm import tqdm
 from llama.prompts.field_cleaner import FieldCleaner
 from llama.prompts.prompt import Prompt
 from llama.pylib import log
-from llama.results.model_status import ModelStatus
 
 
 def postprocess_fields(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
-    df = pd.read_csv(args.parsed_file, dtype=str).fillna("")
-    if df is None:
-        logging.warning(f"{args.parsed_file} is empty; nothing to clean")
-    logging.info(f"Read {len(df)} row(s) from {args.parsed_file}")
-
     prompt = Prompt(prompt_md=args.prompt_md)
-    cleaner = FieldCleaner(args.prompt_md)
-    cleaner.validate_columns(df.columns, prompt)
-
-    llm_columns = cleaner.get_llm_columns(list(df.columns))
-    calc_columns = cleaner.get_calc_columns()
-    output_columns = cleaner.get_output_columns()
-
-    input_rows = [
-        r for r in df.to_dict("records") if ModelStatus.is_success(r.get("status"))
-    ]
-    input_rows = input_rows[: args.limit]
+    cleaner = FieldCleaner(prompt, args.parsed_file, args.limit)
 
     output_rows = []
     failed: list[str] = []
 
-    for in_row in tqdm(input_rows):
+    for in_row in tqdm(cleaner.parsed_docs):
         try:
             out_row = {"source": in_row["source"], "text": in_row["text"]}
 
-            for column in llm_columns:
+            for column in cleaner.llm_columns:
                 field_action = cleaner.llm_field_classes[column]
 
                 in_data = {k: in_row.get(k) for k in field_action.get_field_names()}
@@ -53,7 +37,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
                 }
                 out_row |= out_data
 
-            for column in calc_columns:
+            for column in cleaner.calc_columns:
                 field_action = cleaner.calc_field_classes[column]
 
                 in_data = {k: out_row.get(k) for k in field_action.get_field_names()}
@@ -70,7 +54,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             logging.error(f"Clean error for: {name}: {str(err)[:120]}")
             logging.debug(f"While cleaning {name}", exc_info=True)
 
-    df = pd.DataFrame(output_rows, columns=output_columns)
+    df = pd.DataFrame(output_rows, columns=cleaner.output_columns)
     args.clean_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.clean_file, index=False)
 
@@ -84,7 +68,8 @@ def postprocess_fields(args: argparse.Namespace) -> None:
         raise SystemExit(1)
 
     logging.info(
-        f"Cleaned {len(output_rows)}/{len(input_rows)} document(s) -> {args.clean_file}"
+        f"Cleaned {len(output_rows)}/{len(cleaner.parsed_docs)} document(s) -> "
+        f"{args.clean_file}"
     )
 
     log.job_elapsed(job_began)

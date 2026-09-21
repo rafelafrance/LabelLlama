@@ -4,12 +4,11 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from llama.prompts.field_cleaner import REQUIRED_COLUMNS, FieldCleaner
+from llama.prompts.field_cleaner import REQUIRED_CLEANER_COLUMNS, FieldCleaner
 from llama.prompts.prompt import Prompt
 
-PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
-DIODE = PROMPTS_DIR / "diode_one_v1.md"
-COLUMNS = ["status", "source", "elapsed", "text"]
+DUMMY = Path(__file__).parent / "dummy_prompt.md"
+COLUMNS = ["status", "source", "elapsed", "text", "scientificName", "verbatimEventDate"]
 
 
 def make_prompt(path: Path, **kwargs: dict) -> Prompt:
@@ -30,14 +29,14 @@ class TestFieldCleaner(unittest.TestCase):
         self.tmp = Path(self._tmp.name)
 
         # Sources are deliberately out of order
-        self.ocr_file = self.tmp / "ocr.csv"
+        self.parsed_file = self.tmp / "parsed.csv"
         write_csv(
-            self.ocr_file,
+            self.parsed_file,
             COLUMNS,
             [
-                ["ERROR", "b.txt", "1.0", "text b"],
-                ["success", "a.txt", "1.0", "text a"],
-                ["success", "c.txt", "1.0", "text c"],
+                ["ERROR", "b.txt", "1.0", "text b", "Canis loopy", "10-10-2010"],
+                ["success", "a.txt", "1.0", "text a", "Canis loopy", "10-10-2010"],
+                ["success", "c.txt", "1.0", "text c", "Canis loopy", "10-10-2010"],
             ],
         )
         self.parsed_file = self.tmp / "parsed.csv"
@@ -46,78 +45,70 @@ class TestFieldCleaner(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_init_field_classes_01(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
 
-        self.assertEqual(len(cleaner.llm_field_classes), 25)
+        self.assertEqual(len(cleaner.llm_field_classes), 2)
         self.assertIn("scientificName", cleaner.llm_field_classes)
-        self.assertEqual(
-            list(cleaner.calc_field_classes),
-            ["eventDate", "country", "locality"],
-        )
+        self.assertEqual(list(cleaner.calc_field_classes), ["eventDate"])
 
     def test_validate_columns_ok_02(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         prompt = SimpleNamespace(
-            columns=["status", "source", "elapsed", "text", "scientificName"]
+            columns=[
+                "status",
+                "source",
+                "elapsed",
+                "text",
+                "scientificName",
+                "verbatimEventDate",
+            ]
         )
 
         # Should not raise when all required and prompt columns are present
-        self.assertIsNone(cleaner.validate_columns(list(prompt.columns), prompt))
+        self.assertIsNone(cleaner.validate_columns(list(prompt.columns)))
 
     def test_validate_columns_missing_required_03(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
-        prompt = SimpleNamespace(columns=[*REQUIRED_COLUMNS, "scientificName"])
+        prompt = SimpleNamespace(columns=[*REQUIRED_CLEANER_COLUMNS, "scientificName"])
 
         with self.assertRaises(ValueError) as ctx:
-            cleaner.validate_columns(["status", "source"], prompt)
+            cleaner.validate_columns(["status", "source"])
 
         msg = str(ctx.exception)
         self.assertIn("required", msg)
         self.assertIn("text", msg)
 
     def test_validate_columns_missing_prompt_columns_04(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         prompt = SimpleNamespace(
             columns=["status", "source", "elapsed", "text", "scientificName"]
         )
 
         with self.assertRaises(ValueError) as ctx:
-            cleaner.validate_columns(["status", "source", "elapsed", "text"], prompt)
+            cleaner.validate_columns(["status", "source", "elapsed", "text"])
 
         msg = str(ctx.exception)
         self.assertIn("prompt columns", msg)
         self.assertIn("scientificName", msg)
 
     def test_get_llm_columns_05(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
 
-        columns = [
-            "status",
-            "source",
-            "catalogNumber",
-            "scientificName",
-            "extra",
-        ]
-        self.assertEqual(
-            cleaner.get_llm_columns(columns),
-            ["catalogNumber", "scientificName"],
-        )
+        self.assertEqual(cleaner.llm_columns, ["scientificName", "verbatimEventDate"])
 
     def test_get_calc_columns_06(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
 
-        self.assertEqual(
-            cleaner.get_calc_columns(), ["eventDate", "country", "locality"]
-        )
+        self.assertEqual(cleaner.calc_columns, ["eventDate"])
 
     def test_get_output_columns_07(self) -> None:
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         columns = cleaner.get_output_columns()
 

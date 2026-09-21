@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 from llama.results.parsed_docs import ParsedDocs
@@ -5,40 +6,45 @@ from llama.results.parsed_docs import ParsedDocs
 if TYPE_CHECKING:
     from pathlib import Path
 
-    import pandas as pd
-
     from llama.prompts.prompt import Prompt
 
-REQUIRED_COLUMNS = {"status", "source", "text"}
+REQUIRED_CLEANER_COLUMNS = {"status", "source", "text"}
 
 
 class FieldCleaner:
-    def __init__(self, prompt: Prompt, parsed_file: Path) -> None:
+    def __init__(
+        self, prompt: Prompt, parsed_file: Path, limit: int | None = None
+    ) -> None:
+        self.columns = prompt.columns
         self.llm_field_classes = {f.name: f.field_class for f in prompt.llm_fields}
         self.calc_field_classes = {f.name: f.field_class for f in prompt.calc_fields}
 
         self.parsed_docs, _ = ParsedDocs.read_parsed_docs(parsed_file, prompt.columns)
 
-    def validate_columns(
-        self, df_columns: list[str] | pd.Index, prompt: Prompt
-    ) -> None:
-        missing_required = REQUIRED_COLUMNS - set(df_columns)
+        if not self.parsed_docs:
+            raise ValueError(f"{parsed_file} is empty; nothing to clean")
+
+        self.parsed_docs = self.parsed_docs[:limit]
+
+        parsed_columns = list(self.parsed_docs[0].keys())
+        self.validate_columns(parsed_columns)
+
+        self.llm_columns = [c for c in self.columns if c in self.llm_field_classes]
+        self.calc_columns = list(self.calc_field_classes)
+        self.output_columns = self.get_output_columns()
+
+        logging.info(f"Read {len(self.parsed_docs)} row(s) from {parsed_file}")
+
+    def validate_columns(self, parsed_columns: list[str]) -> None:
+        missing_required = REQUIRED_CLEANER_COLUMNS - set(parsed_columns)
         if missing_required:
             missing = ", ".join(sorted(missing_required))
             raise ValueError(f"Parsed file is missing required columns: {missing}")
 
-        missing_expected = set(prompt.columns) - set(df_columns)
+        missing_expected = set(self.columns) - set(parsed_columns)
         if missing_expected:
             missing = ", ".join(sorted(missing_expected))
             raise ValueError(f"Parsed file is missing prompt columns: {missing}")
-
-    def get_llm_columns(self, df_columns: list) -> list:
-        llm_columns = [c for c in df_columns if c in self.llm_field_classes]
-        return llm_columns
-
-    def get_calc_columns(self) -> list:
-        calc_columns = list(self.calc_field_classes)
-        return calc_columns
 
     def get_output_columns(self) -> list[str]:
         columns = ["source", "text"]
