@@ -46,15 +46,18 @@ def postprocess_fields(args: argparse.Namespace) -> None:
                 out_row |= {
                     k: getattr(out_field, k) for k in out_field.get_visible_fields()
                 }
-
             output_rows.append(out_row)
-        except Exception as err:  # noqa: BLE001
+
+        except Exception as err:
             name = Path(in_row["source"]).name
             failed.append(name)
             logging.error(f"Clean error for: {name}: {str(err)[:120]}")
             logging.debug(f"While cleaning {name}", exc_info=True)
+            continue
 
     df = pd.DataFrame(output_rows, columns=cleaner.output_columns)
+    df = df.map(lambda v: "" if v is None or pd.isna(v) else str(v))
+
     args.clean_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.clean_file, index=False)
 

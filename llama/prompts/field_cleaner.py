@@ -19,10 +19,12 @@ class FieldCleaner:
         self.llm_field_classes = {f.name: f.field_class for f in prompt.llm_fields}
         self.calc_field_classes = {f.name: f.field_class for f in prompt.calc_fields}
 
-        self.parsed_docs, _ = ParsedDocs.read_parsed_docs(parsed_file, prompt.columns)
+        self.parsed_docs, _ = ParsedDocs.read_parsed_docs(
+            parsed_file, prompt.columns, strict_columns=False
+        )
 
         if not self.parsed_docs:
-            raise ValueError(f"{parsed_file} is empty; nothing to clean")
+            raise ValueError(f"{parsed_file} has no successful docs to clean")
 
         self.parsed_docs = self.parsed_docs[:limit]
 

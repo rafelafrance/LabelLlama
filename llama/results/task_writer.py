@@ -37,9 +37,9 @@ class TaskWriter:
             result = future.result()
             if ModelStatus.is_success(result.get("status")):
                 self.check(result, text)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             name = Path(source).name if source else "unknown"
-            logging.error(f"Task error for: {name}")
+            logging.error(f"Task error for: {name}: {str(err)[:120]}")
             result = {
                 "status": ModelStatus.ERROR,
                 "source": str(source),
@@ -52,7 +52,8 @@ class TaskWriter:
             result["status"] = self.statuses.count(result.get("status"))
             self.out_file.flush()
         except ValueError as err:
-            logging.error(f"Parse error for: {Path(result['source']).name}")
+            name = Path(result["source"]).name
+            logging.error(f"Write error for: {name}: {str(err)[:120]}")
             text = str(err)
             self.writer.writerow(
                 {
@@ -74,11 +75,6 @@ class TaskWriter:
         legitimately yield nothing. When no text is given (e.g., the input
         was an image) the check applies.
         """
-        # if any(
-        #     c not in self.prompt.columns for c in result if c not in REQUIRED_COLUMNS
-        # ):
-        #     raise ValueError("Hallucinated column")
-
         if self.prompt.req_fields and not all(
             result.get(req) for req in self.prompt.req_fields
         ):

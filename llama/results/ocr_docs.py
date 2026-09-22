@@ -32,7 +32,7 @@ class OcrDocs:
         tasks = [p for p in image_paths if str(p.resolve()) not in already_done]
 
         self.image_count = len(image_paths)
-        self.skipped = len(tasks)
+        self.skipped = self.image_count - len(tasks)
         self.tasks = sorted(tasks, key=str)[:limit]
 
     @staticmethod
@@ -49,7 +49,9 @@ class OcrDocs:
             missing = set(REQUIRED_COLUMNS) - set(df.columns)
             if missing:
                 missing_str = ", ".join(sorted(missing))
-                raise ValueError(f"OCR file is missing required columns: {missing_str}")
+                raise ValueError(
+                    f"{ocr_file} is missing required columns: {missing_str}"
+                )
 
             if successful_only:
                 df = doc_utils.successful_rows(df, "OCR")

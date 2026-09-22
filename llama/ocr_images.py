@@ -25,18 +25,6 @@ def ocr_images(args: argparse.Namespace) -> None:
 
     docs = OcrDocs(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
-    if not docs.tasks:
-        if docs.ocr_docs:
-            logging.info("Nothing to do: all images are already OCRed")
-            logging.info(f"{docs.skipped} of {docs.image_count} already done")
-        else:
-            logging.warning(
-                "No images found. --image-dir is not recursive; "
-                "try --image-glob 'dir/**/*.jpg'"
-            )
-        log.job_elapsed(job_began)
-        return
-
     prompt = Prompt(
         prompt_md=args.prompt_md,
         model_id=args.model_id,
@@ -44,12 +32,28 @@ def ocr_images(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         thinking=args.thinking,
     )
-    if prompt.columns != REQUIRED_COLUMNS:
+    if set(prompt.columns) != set(REQUIRED_COLUMNS):
+        extra = sorted(set(prompt.columns) - set(REQUIRED_COLUMNS))
         msg = (
-            f"{args.prompt_md} declares {len(prompt.columns) - len(REQUIRED_COLUMNS)} "
-            f"fields; ocr_images.py needs a plain OCR prompt (e.g. prompts/ocr_v2.md)"
+            f"{args.prompt_md} declares {len(extra)} field(s) "
+            f"(e.g. {', '.join(extra[:5])}); ocr_images.py needs a plain OCR prompt "
+            "(e.g. prompts/ocr_v2.md)"
         )
-        raise ValueError(msg)
+        logging.error(msg)
+        raise SystemExit(1)
+
+    if not docs.tasks:
+        if docs.ocr_docs:
+            logging.info("Nothing to do: all images are already OCRed")
+            logging.info(f"{docs.skipped} of {docs.image_count} already done")
+            log.job_elapsed(job_began)
+            return
+        logging.warning(
+            "No images found. --image-dir is not recursive; "
+            "try --image-glob 'dir/**/*.jpg'"
+        )
+        log.job_elapsed(job_began)
+        raise SystemExit(1)
 
     statuses = StatusCounts()
 
@@ -141,7 +145,7 @@ def call_model(
         TypeError,
         ValueError,
     ) as err:
-        logging.error(f"OCR error for: {source}: {str(err)[:120]}")
+        logging.error(f"OCR error for: {Path(source).name}: {str(err)[:120]}")
         text = str(err)
         status = ModelStatus.ERROR
 
@@ -277,6 +281,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         arg_parser.error(f"--threads must be an integer >= 1: {ns.threads}")
     if ns.timeout < 1:
         arg_parser.error(f"--timeout must be an integer >= 1: {ns.timeout} seconds")
+    if ns.max_tokens is not None and ns.max_tokens < 1:
+        arg_parser.error("--max-tokens must be >= 1")
     if ns.temperature is not None and ns.temperature < 0.0:
         arg_parser.error(f"--temperature must be a float >= 0.0: {ns.temperature}")
     return ns

@@ -31,12 +31,18 @@ def parse_text(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         thinking=args.thinking,
     )
+    prompt.must_have_llm_fields()
 
     docs = ParsedDocs(args.parsed_file, args.ocr_file, prompt.columns, args.limit)
+
     if not docs.tasks:
-        logging.info(f"Nothing to do: {docs.skipped} record(s) already parsed")
+        if docs.skipped:
+            logging.info(f"Nothing to do: {docs.skipped} record(s) already parsed")
+            log.job_elapsed(job_began)
+            return
+        logging.error("No usable OCR rows to parse")
         log.job_elapsed(job_began)
-        return
+        raise SystemExit(1)
 
     statuses = StatusCounts()
 
@@ -136,18 +142,9 @@ def call_model(
         "source": ocr_rec["source"],
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
-    }
-    # | {k: v for k, v in extracted.items() if k.lower() not in REQUIRED_COLUMNS}
+    } | prompt.validated_fields(extracted, ocr_rec["source"])
 
-    columns = {c.lower(): c for c in prompt.columns}
-    fields = {}
-    for k, v in extracted.items():
-        if (match := columns.get(str(k).lower())) is not None:
-            fields[match] = v
-        else:
-            logging.warning(f"Dropped unexpected field {k!r} for {ocr_rec['source']}")
-
-    return result | fields
+    return result
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:

@@ -14,6 +14,7 @@ from llama.line_align import char_sub_matrix, label_builder
 from llama.line_align.align import LineAlign
 from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.pylib import log
+from llama.results.doc_utils import read_results_csv
 from llama.results.model_status import ModelStatus
 
 
@@ -28,7 +29,8 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
         if not matches:
             msg = f"No OCR files match the pattern: {ocr_glob}"
             logging.error(msg)
-            raise ValueError(msg)
+            log.job_elapsed(job_began)
+            raise SystemExit(1)
 
         for match in matches:
             path = Path(match).resolve()
@@ -39,40 +41,50 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
 
     # Read in the OCR results
     all_ocr = defaultdict(list)
+    skipped: list[str] = []
 
-    no_source: int = 0
     for ocr_file in ocr_files:
         if ocr_file == args.consensus_file.resolve():
-            raise ValueError(f"Not using the consensus file as input: {ocr_file}")
+            msg = f"Not using the consensus file as input: {ocr_file}"
+            logging.error(msg)
+            log.job_elapsed(job_began)
+            raise SystemExit(1)
 
-        df = pd.read_csv(ocr_file, dtype=str).fillna("")
+        df = read_results_csv(ocr_file, "OCR file")
+        if df is None:
+            logging.warning(f"Empty OCR file, skipped: {ocr_file}")
+            continue
+
         if missing := set(REQUIRED_COLUMNS) - set(df.columns):
-            raise ValueError(f"{ocr_file} is missing {', '.join(missing)}")
+            logging.warning(
+                f"{ocr_file} is not an OCR file (missing "
+                f"{', '.join(sorted(missing))}), skipped"
+            )
+            skipped.append(str(ocr_file))
+            continue
 
         latest: dict[str, str] = {}
         for row in df.to_dict("records"):
-            if "status" in df.columns and not ModelStatus.is_success(row["status"]):
+            if not ModelStatus.is_success(row["status"]):
                 continue
-            source = row.get("source", "").strip()
-            if not source:
-                no_source += 1
+            if not (source := row.get("source", "").strip()):
                 logging.warning(f"{ocr_file}: a row has no source, skipped")
                 continue
-            text = row["text"].strip()
-            if text:
-                latest[row["source"].strip()] = text
+            if text := row["text"].strip():
+                latest[source] = text
 
         for source, text in latest.items():
             all_ocr[source].append(text)
 
-    if no_source != 0:
-        logging.warning(f"{ocr_file}: a row has no source, skipped")
+    if skipped:
+        logging.warning(f"Skipped {len(skipped)} file(s): {', '.join(skipped)}")
 
     if not all_ocr:
         files = ", ".join(str(p) for p in ocr_files)
         msg = f"There were no successful OCR rows in: {files}"
         logging.error(msg)
-        raise ValueError(msg)
+        log.job_elapsed(job_began)
+        raise SystemExit(1)
 
     # Make sure we have the correct characters in the substitution matrix
     chars = set()
@@ -87,6 +99,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             "grep -l '⋄' <your OCR CSVs>"
         )
         logging.error(msg)
+        raise SystemExit(1)
         raise ValueError(msg)
     if missing:
         missing_str = "".join(missing)
@@ -95,7 +108,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             f"Add them with: build_char_sub_matrix.py --chars '{missing_str}'"
         )
         logging.error(msg)
-        raise ValueError(msg)
+        raise SystemExit(1)
 
     # Align the OCR results and get a consensus record
     consensus = {}

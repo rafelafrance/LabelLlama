@@ -37,6 +37,8 @@ class ParsedDocs:
     def read_parsed_docs(
         parsed_file: Path | None,
         prompt_columns: list[str],
+        *,
+        strict_columns: bool = True,
     ) -> tuple[list[dict], str]:
         mode = "w"
         records = []
@@ -48,10 +50,15 @@ class ParsedDocs:
 
             # Make sure the current prompt and the results CSV overlapping columns
             expected_columns = set(REQUIRED_COLUMNS) | set(prompt_columns)
-            if prompt_columns and expected_columns ^ set(df.columns):
+            extra = ", ".join(sorted(set(df.columns) - expected_columns))
+            missing = ", ".join(sorted(expected_columns - set(df.columns)))
+            if strict_columns and (extra or missing):
                 raise ValueError(
-                    "Existing parsed file columns do not match the prompt columns"
+                    f"{parsed_file} columns do not match the prompt: "
+                    f"extra=[{extra}] missing=[{missing}]"
                 )
+            if not strict_columns and missing:
+                raise ValueError(f"{parsed_file} is missing prompt columns: {missing}")
 
             df = doc_utils.successful_rows(df, "parsed")
             df = doc_utils.valid_source(df, "parsed")

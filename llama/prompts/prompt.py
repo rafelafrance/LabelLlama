@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 from enum import StrEnum
@@ -32,6 +33,7 @@ class Prompt:
         max_tokens: int | None = None,
         thinking: Thinking = Thinking.USE_SERVER,
     ) -> None:
+        self.prompt_md = prompt_md
         prompt_parser = PromptMarkdownParser(prompt_md)
         self.name = prompt_parser.name
         self.description = prompt_parser.description
@@ -60,6 +62,10 @@ class Prompt:
         self._payload: dict = self.payload_template(
             model_id, temperature, max_tokens, thinking
         )
+        self._reserved = {c.lower() for c in REQUIRED_COLUMNS}
+        self._not_reserved = {
+            c.lower(): c for c in self.columns if c.lower() not in self._reserved
+        }
 
     def headers(self) -> dict:
         return self._headers
@@ -168,3 +174,25 @@ class Prompt:
         if not isinstance(extracted, dict):
             raise TypeError("Model response JSON must be an object")
         return extracted
+
+    def validated_fields(self, extracted: dict, source: str) -> dict:
+        fields = {}
+        for key, val in extracted.items():
+            if (name := str(key).lower()) in self._reserved:
+                logging.warning(f"Ignored model-supplied {key!r} for {source}")
+            elif (match := self._not_reserved.get(name)) is not None:
+                if isinstance(val, (dict, list)):
+                    val = json.dumps(val, ensure_ascii=False)
+                fields[match] = val
+            else:
+                logging.warning(f"Dropped unexpected field {key!r} for {source}")
+
+        return fields
+
+    def must_have_llm_fields(self) -> None:
+        if not self.llm_fields:
+            msg = (
+                f"{self.prompt_md} declares no LLM fields; "
+                "there is nothing for a parse job to extract"
+            )
+            raise ValueError(msg)

@@ -14,7 +14,7 @@ def read_results_csv(path: Path, label: str) -> pd.DataFrame | None:
     Read a results CSV into a DataFrame of strings.
 
     Returns None when the file holds no parseable content (the caller can
-    then safely start the file over). Raises ValueError when the file exists
+    then safely start the file over). Raises an error when the file exists
     but cannot be read as CSV, so a corrupt file is never silently
     overwritten.
     """
@@ -28,7 +28,7 @@ def read_results_csv(path: Path, label: str) -> pd.DataFrame | None:
 
 def successful_rows(df: pd.DataFrame, type_: str) -> pd.DataFrame:
     """Remove rows without a successful status."""
-    keep = df["status"].str.lower() == ModelStatus.SUCCESS
+    keep = df["status"].map(ModelStatus.is_success).astype(bool)
     dropped = int((~keep).sum())
     if dropped:
         logging.warning(f"Skipping {dropped} {type_} row(s) that did not succeed")

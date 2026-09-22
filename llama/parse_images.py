@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from requests.exceptions import RequestException
 from tqdm import tqdm
 
-from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
+from llama.prompts.prompt import Prompt, Thinking
 from llama.pylib import image_util, log
 from llama.pylib.thread_sessions import ThreadSessions
 from llama.results.model_status import ModelStatus, StatusCounts
@@ -33,8 +33,20 @@ def extract(args: argparse.Namespace) -> None:
         max_tokens=args.max_tokens,
         thinking=args.thinking,
     )
+    prompt.must_have_llm_fields()
 
     docs = OcrDocs(args.image_dir, args.image_glob, args.parsed_file, args.limit)
+
+    if not docs.tasks:
+        if docs.ocr_docs:
+            logging.info(f"Nothing to do: {docs.skipped} record(s) already parsed")
+            log.job_elapsed(job_began)
+            return
+        logging.warning(
+            "No images found. --image-dir is not recursive; try --image-glob"
+        )
+        log.job_elapsed(job_began)
+        raise SystemExit(1)
 
     statuses = StatusCounts()
 
@@ -70,7 +82,10 @@ def extract(args: argparse.Namespace) -> None:
             finally:
                 sessions.close_all()
 
-    logging.info(f"There were {statuses.get(ModelStatus.ERROR)} errors")
+    logging.info(
+        f"Extracted {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
+        f"{statuses.get(ModelStatus.ERROR)} errored, {docs.skipped} already done"
+    )
     log.job_elapsed(job_began)
 
 
@@ -82,6 +97,8 @@ def call_model(
     timeout: int,
 ) -> dict:
     began = datetime.now()
+
+    extracted = {}
 
     try:
         base64_image, mime_type = image_util.load_image(source)
@@ -103,27 +120,29 @@ def call_model(
 
         status = ModelStatus.SUCCESS
 
+    except JSONDecodeError as err:
+        logging.error(f"Extract error for: {Path(source).name}: {str(err)[:120]}")
+        text = f"{err} :: {content[:200]}"
+        status = ModelStatus.ERROR
     except (
         AttributeError,
         IndexError,
-        JSONDecodeError,
         KeyError,
         OSError,
         RequestException,
         TypeError,
         ValueError,
     ) as err:
-        logging.error(f"Extract error for: {source}")
+        logging.error(f"Extract error for: {Path(source).name}: {str(err)[:120]}")
         text = str(err)
         status = ModelStatus.ERROR
-        extracted = {}
 
     result = {
         "status": status,
         "source": str(source),
         "elapsed": str(log.task_elapsed(began)),
         "text": text,
-    } | {k: v for k, v in extracted.items() if k.lower() not in REQUIRED_COLUMNS}
+    } | prompt.validated_fields(extracted, str(source))
 
     return result
 
@@ -253,6 +272,8 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         arg_parser.error("--max-tokens must be >= 1")
     if ns.limit is not None and ns.limit < 1:
         arg_parser.error("--limit must be >= 1")
+    if ns.temperature is not None and ns.temperature < 0.0:
+        arg_parser.error(f"--temperature must be a float >= 0.0: {ns.temperature}")
     return ns
 
 

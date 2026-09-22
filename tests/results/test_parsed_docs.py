@@ -150,10 +150,7 @@ class TestParsedDocs(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
-        self.assertIn(
-            "Existing parsed file columns do not match the prompt columns",
-            str(ctx.exception),
-        )
+        self.assertIn("columns do not match the prompt", str(ctx.exception))
 
     def test_empty_ocr_file_has_no_tasks_12(self) -> None:
         empty_ocr = self.tmp / "empty_ocr.csv"
