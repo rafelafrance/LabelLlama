@@ -151,6 +151,11 @@ You can run `llama-server` directly from the
 [llama.cpp](https://github.com/ggml-org/llama.cpp) project; the scripts
 in `args/` show the options I use.
 
+### Other servers
+
+There is nothing that I know of to prevent you from running Ollama, lm-studio, unsloth, lemon, or vLLM.
+I don't have any examples of them.
+
 ### Step 3: Extract information
 
 Run the pipeline stages in order, or skip straight to the stage you
