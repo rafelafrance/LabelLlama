@@ -4,15 +4,18 @@ Label Llama uses LLMs to digitize information from labels on images of museum sp
 It OCRs the labels, extracts the text into named Darwin Core fields, cleans the field values,
 and provides reports that compare the results.
 
-The fields follow the[Darwin Core](https://dwc.tdwg.org/) standard, so the output is compatible with natural history data repositories.
+The fields follow the [Darwin Core](https://dwc.tdwg.org/) standard, so the output is compatible with natural history data repositories.
 
 ## What it does
 
 Given an image of a herbarium sheet (or an insect diode):
 
 1. **OCR** — transcribe all of the label text.
+
 2. **Parse** — extract the text into named Darwin Core fields.
+
 3. **Clean** — refine the field values, and calculate field values from the other fields.
+- **Parse images** Steps 1 and 2 can be combined into a single step.
 
 ### Example: from sheet to fields
 
@@ -37,12 +40,23 @@ The clean step produces the final fields and values:
 Each stage is a standalone script. The scripts exchange plain CSV files,
 so you can run them in any order or mix and match model runs.
 
-| Stage             | Script                  | Input           | Output                                                      |
-| ----------------- | ----------------------- | --------------- | ----------------------------------------------------------- |
-| OCR               | `llama/ocr_images.py`   | specimen images | CSV with a `text` column holding the transcribed labels     |
-| Parse from text   | `llama/parse_text.py`   | OCR CSV         | CSV with one column per field                               |
-| Parse from images | `llama/parse_images.py` | specimen images | CSV with one column per field (multimodal model, skips OCR) |
-| Clean             | `llama/clean_fields.py`   | parsed CSV      | CSV with cleaned field values and calculated fields         |
+### The 3 primary scripts
+
+1. **`ocr_images.py`** — Transcribe the labels on each specimen image with a vision
+   model, writing one CSV row of per image. It appends to an existing OCR file, so
+   you can keep adding images.
+2. **`parse_text.py`** — Extract Darwin Core fields from OCRed text. The model is given
+   the text and the fields named in the prompt file, and answers with field values.
+3. **`clean_fields.py`** — Format and validate the extracted fields. It runs the Python
+   class behind each field to tidy the value, throw out anything the model made up, and
+   calculate the derived fields. No model is involved, so it is quick and repeatable.
+
+### 2 extra scripts
+
+1. **`parse_images.py`** — Extract Darwin Core fields straight from the image with a
+   multimodal model, skipping the OCR step. One model call instead of two, which is
+   only worth it if the model is big enough to read and parse text reliably.
+2. **`ocr_msa.py`** — Although, recent models do reasonably well with most handwriting, there are some labels where the writing is sloppy or the text is obscured, etc. In these cases you can OCR same labels with different models. Then you can try to combine the models using a multiple sequence alignment technique into a single consensus sequence of text, which is often better than any single OCR. Quality vs time.
 
 ### There are 2 workflows
 
@@ -56,18 +70,33 @@ so you can run them in any order or mix and match model runs.
    1. You can parse data from an image directly (parse_images.py)
    2. Clean parsed text (clean_fields.py)
 
+In the first workflow you can OCR the same images with several models and let
+`ocr_msa.py` vote on what the labels really say, writing a consensus file of
+`source` and `text` columns.
+
 ### Prompts and fields
 
-The prompt markdown files in `prompts/` declare which fields a run extracts. Each field is a link to a Python class:
+A prompt markdown file holds the system message of a step plus, for the parse steps,
+the list of fields that step extracts. Each field is a link to a Python class:
 
 - `llama/llm_fields/` — _LLM fields_: the class holds the instructions sent to the LLM model and validates its answer.
 - `llama/calc_fields/` — _calculated fields_: deterministic code that derives the value from other fields.
 
-The current prompt files are:
+There are three kinds of prompt file, one per kind of work:
 
-- `ocr_v1.md` and `ocr_v2.md` for OCR,
-- `herbarium_v2.md` for herbarium sheets, and `diode_v2.md` for dragonflies using the 3-step workflow
-- `diode_one_v1.md` for dragonflies using the 2-step workflow
+| Kind              | Example prompts                  | Model input | Used by           |
+| ----------------- | -------------------------------- | ----------- | ----------------- |
+| OCR               | `ocr_v1.md`, `ocr_v2.md`         | image       | `ocr_images.py`   |
+| Fields from text  | `herbarium_v2.md`, `diode_v2.md` | OCRed text  | `parse_text.py`   |
+| Fields from image | `diode_one_v1.md`                | image       | `parse_images.py` |
+
+- **OCR prompts** ask for nothing but a transcription of every label, tag and stamp,
+  handwriting included, ignoring rulers, bar-codes and color bars. They declare no fields.
+- **Field from text prompts** give the model OCRed text and ask for Darwin Core values,
+  forbidding it from answering with anything not in the text. There is one per kind of
+  specimen: herbarium sheets, and dragonflies pinned as diode specimens.
+- **Field from image prompts** ask for the same fields from the image itself, so the
+  model has to read the handwriting as well as interpret it.
 
 `llama/reports/show_prompt.py` prints the full system message that a prompt file produces.
 
@@ -75,19 +104,19 @@ The current prompt files are:
 
 The scripts in `llama/reports/` compare and visualize the output of model runs:
 
-| Script                       | What it does                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------- |
-| `compare_ocr.py`             | Side-by-side comparison of the OCR text from two model runs (stdout).              |
-| `compare_parses.py`          | Side-by-side comparison of parsed fields from several model runs (stdout).         |
-| `compare_output_gold.py`     | Scores parsed output against a gold standard file; writes a CSV report.            |
-| `compare_output_gbif.py`     | Scores cleaned output against GBIF occurrence data; writes an ODS report.          |
-| `compare_output_majority.py` | Picks the winning field value across several model runs; writes an ODS report.     |
-| `show_pipeline.py`           | Single-file HTML report showing each image, its OCRed text, and the parsed fields. |
-| `show_prompt.py`             | Prints the system message that a prompt markdown file produces.                    |
+| Script                       | What it does                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| `compare_ocr.py`             | Lines up the OCRed text of several runs in one HTML page.                         |
+| `compare_parses.py`          | Shows the fields parsed by several runs side by side (stdout).                    |
+| `compare_output_gold.py`     | Scores output against a gold standard, writing a CSV of the disagreements.        |
+| `compare_output_gbif.py`     | Scores output against the GBIF record of the same specimen, writing an ODS sheet. |
+| `compare_output_majority.py` | Picks the winning value of each field across several runs, writing an ODS sheet.  |
+| `show_pipeline.py`           | One shareable HTML page per batch: the image, its OCRed text, its parsed fields.  |
+| `show_prompt.py`             | Prints the system message that a prompt markdown file produces.                   |
 
 ### Data utilities
 
-The scripts in `llama/data_utils/` help build the input data:
+The scripts in `llama/data_utils/` are as hoc scripts to help build input data:
 
 - `util_get_gbif_data.py` — narrows the large GBIF dump TSVs down to the
   images you downloaded.
@@ -95,6 +124,8 @@ The scripts in `llama/data_utils/` help build the input data:
   multimedia TSV.
 - `util_merge_files.py` — combines multiple files (`*.csv`, `*.tsv`, etc.)
   into a single file.
+
+**They may not be useful to you as is.**
 
 ## How to set up LabelLlama
 
@@ -155,16 +186,5 @@ uv run llama/parse_text.py \
 uv run llama/clean_fields.py \
     --parsed-file data/my_sheets/parsed.csv \
     --clean-file data/my_sheets/clean.csv \
-    --prompt-md prompts/herbarium_v2.md \
-    --model-id "gpt-5-nano-2025-08-07"
+    --prompt-md prompts/herbarium_v2.md
 ```
-
-For local models, add `--api-host` pointing at your server, e.g.
-`--api-host http://localhost:1234/v1`.
-
-## The data directory
-
-CSV input and output files live under `data/`, organized per batch.
-The bash scripts in `args/` are the real-world examples: each one is a
-recorded invocation of a script for a specific data batch, and the
-`--log-file` options in them record what was run.
