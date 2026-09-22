@@ -50,7 +50,13 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             log.job_elapsed(job_began)
             raise SystemExit(1)
 
-        df = read_results_csv(ocr_file, "OCR file")
+        try:
+            df = read_results_csv(ocr_file, "OCR file")
+        except ValueError as err:
+            # One damaged file must not lose us the rest of the alignment.
+            logging.warning(f"{err}, skipped")
+            skipped.append(str(ocr_file))
+            continue
         if df is None:
             logging.warning(f"Empty OCR file, skipped: {ocr_file}")
             continue
@@ -67,7 +73,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
         for row in df.to_dict("records"):
             if not ModelStatus.is_success(row["status"]):
                 continue
-            if not (source := row.get("source", "").strip()):
+            if not (source := row["source"].strip()):
                 logging.warning(f"{ocr_file}: a row has no source, skipped")
                 continue
             if text := row["text"].strip():
@@ -99,8 +105,8 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             "grep -l '⋄' <your OCR CSVs>"
         )
         logging.error(msg)
+        log.job_elapsed(job_began)
         raise SystemExit(1)
-        raise ValueError(msg)
     if missing:
         missing_str = "".join(missing)
         msg = (
@@ -108,6 +114,7 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
             f"Add them with: build_char_sub_matrix.py --chars '{missing_str}'"
         )
         logging.error(msg)
+        log.job_elapsed(job_began)
         raise SystemExit(1)
 
     # Align the OCR results and get a consensus record
@@ -204,4 +211,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    msa_ocr_results(ARGS)
+    log.run_job(msa_ocr_results, ARGS)

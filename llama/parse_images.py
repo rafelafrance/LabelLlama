@@ -3,24 +3,24 @@
 """Extract text information from images of museum specimens using a single model."""
 
 import argparse
-import csv
 import logging
 import textwrap
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
-from tqdm import tqdm
 
 from llama.prompts.prompt import Prompt, Thinking
 from llama.pylib import image_util, log
-from llama.pylib.thread_sessions import ThreadSessions
-from llama.results.model_status import ModelStatus, StatusCounts
+from llama.results.job_runner import NO_IMAGES_FOUND, run_jobs
+from llama.results.model_status import ModelStatus
 from llama.results.ocr_docs import OcrDocs
-from llama.results.task_writer import TaskWriter
+
+if TYPE_CHECKING:
+    from llama.pylib.thread_sessions import ThreadSessions
 
 
 def extract(args: argparse.Namespace) -> None:
@@ -37,56 +37,23 @@ def extract(args: argparse.Namespace) -> None:
 
     docs = OcrDocs(args.image_dir, args.image_glob, args.parsed_file, args.limit)
 
-    if not docs.tasks:
-        if docs.ocr_docs:
-            logging.info(f"Nothing to do: {docs.skipped} record(s) already parsed")
-            log.job_elapsed(job_began)
-            return
-        logging.warning(
-            "No images found. --image-dir is not recursive; try --image-glob"
-        )
-        log.job_elapsed(job_began)
-        raise SystemExit(1)
+    def call(source: Path, sessions: ThreadSessions) -> dict:
+        return call_model(prompt, source, sessions, args.api_host, args.timeout)
 
-    statuses = StatusCounts()
-
-    args.parsed_file.parent.mkdir(parents=True, exist_ok=True)
-
-    with args.parsed_file.open(docs.file_mode) as output_file:
-        writer = csv.DictWriter(output_file, prompt.columns)
-        if docs.file_mode == "w":
-            writer.writeheader()
-
-        with (
-            tqdm(total=len(docs.tasks)) as pbar,
-            ThreadPoolExecutor(max_workers=args.threads) as executor,
-        ):
-            sessions = ThreadSessions()
-            task_writer = TaskWriter(
-                writer=writer,
-                out_file=output_file,
-                statuses=statuses,
-                progress_bar=pbar,
-                prompt=prompt,
-            )
-
-            futures = {
-                executor.submit(
-                    call_model, prompt, source, sessions, args.api_host, args.timeout
-                ): source
-                for source in docs.tasks
-            }
-            try:
-                for future in as_completed(futures):
-                    task_writer.write(future, source=futures[future])
-            finally:
-                sessions.close_all()
-
-    logging.info(
-        f"Extracted {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
-        f"{statuses.get(ModelStatus.ERROR)} errored, {docs.skipped} already done"
+    run_jobs(
+        prompt=prompt,
+        out_file=args.parsed_file,
+        file_mode=docs.file_mode,
+        tasks=docs.tasks,
+        skipped=docs.skipped,
+        total=docs.image_count,
+        unit="image(s)",
+        verb="Extracted",
+        nothing_found=NO_IMAGES_FOUND,
+        call=call,
+        threads=args.threads,
+        job_began=job_began,
     )
-    log.job_elapsed(job_began)
 
 
 def call_model(
@@ -99,6 +66,7 @@ def call_model(
     began = datetime.now()
 
     extracted = {}
+    response = None
 
     try:
         base64_image, mime_type = image_util.load_image(source)
@@ -121,8 +89,11 @@ def call_model(
         status = ModelStatus.SUCCESS
 
     except JSONDecodeError as err:
+        # response.json() can fail too, in which case we never saw any content,
+        # so quote the body that actually arrived.
         logging.error(f"Extract error for: {Path(source).name}: {str(err)[:120]}")
-        text = f"{err} :: {content[:200]}"
+        body = response.text[:200] if response is not None else ""
+        text = f"{err} :: {body}" if body else str(err)
         status = ModelStatus.ERROR
     except (
         AttributeError,
@@ -259,7 +230,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     )
     ns = arg_parser.parse_args(args)
     if not ns.image_dir and not ns.image_glob:
-        arg_parser.error("one of --image-dir or --image-glob")
+        arg_parser.error("one of --image-dir or --image-glob is required")
     if ns.image_dir and not ns.image_dir.is_dir():
         arg_parser.error(f"--image-dir is not a directory: {ns.image_dir}")
     if not ns.prompt_md.is_file():
@@ -280,4 +251,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    extract(ARGS)
+    log.run_job(extract, ARGS)

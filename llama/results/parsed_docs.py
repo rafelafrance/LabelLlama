@@ -30,7 +30,8 @@ class ParsedDocs:
             if str(Path(doc.get("source", "")).resolve()) not in already_done
         ]
 
-        self.skipped = len(ocr_docs) - len(tasks)
+        self.ocr_count = len(ocr_docs)
+        self.skipped = self.ocr_count - len(tasks)
         self.tasks = tasks[:limit]
 
     @staticmethod

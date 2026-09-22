@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
 import logging
 import textwrap
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
-from tqdm import tqdm
 
 from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
 from llama.pylib import fix_ocr, log
-from llama.pylib.thread_sessions import ThreadSessions
-from llama.results.model_status import ModelStatus, StatusCounts
+from llama.results.job_runner import run_jobs
+from llama.results.model_status import ModelStatus
 from llama.results.parsed_docs import ParsedDocs
-from llama.results.task_writer import TaskWriter
+
+if TYPE_CHECKING:
+    from llama.pylib.thread_sessions import ThreadSessions
 
 
 def parse_text(args: argparse.Namespace) -> None:
@@ -35,64 +35,25 @@ def parse_text(args: argparse.Namespace) -> None:
 
     docs = ParsedDocs(args.parsed_file, args.ocr_file, prompt.columns, args.limit)
 
-    if not docs.tasks:
-        if docs.skipped:
-            logging.info(f"Nothing to do: {docs.skipped} record(s) already parsed")
-            log.job_elapsed(job_began)
-            return
-        logging.error("No usable OCR rows to parse")
-        log.job_elapsed(job_began)
-        raise SystemExit(1)
+    def call(ocr_rec: dict, sessions: ThreadSessions) -> dict:
+        return call_model(prompt, ocr_rec, sessions, args.api_host, args.timeout)
 
-    statuses = StatusCounts()
-
-    args.parsed_file.parent.mkdir(parents=True, exist_ok=True)
-
-    with args.parsed_file.open(docs.file_mode) as output_file:
-        writer = csv.DictWriter(output_file, prompt.columns)
-        if docs.file_mode == "w":
-            writer.writeheader()
-
-        with (
-            tqdm(total=len(docs.tasks)) as pbar,
-            ThreadPoolExecutor(max_workers=args.threads) as executor,
-        ):
-            sessions = ThreadSessions()
-            task_writer = TaskWriter(
-                writer=writer,
-                out_file=output_file,
-                statuses=statuses,
-                progress_bar=pbar,
-                prompt=prompt,
-            )
-
-            futures = {
-                executor.submit(
-                    call_model,
-                    prompt,
-                    ocr_rec,
-                    sessions,
-                    args.api_host,
-                    args.timeout,
-                ): ocr_rec
-                for ocr_rec in docs.tasks
-            }
-
-            try:
-                for future in as_completed(futures):
-                    task_writer.write(
-                        future,
-                        source=futures[future]["source"],
-                        text=futures[future]["text"],
-                    )
-            finally:
-                sessions.close_all()
-
-    logging.info(
-        f"Parsed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} record(s), "
-        f"{statuses.get(ModelStatus.ERROR)} errored, {docs.skipped} already done"
+    run_jobs(
+        prompt=prompt,
+        out_file=args.parsed_file,
+        file_mode=docs.file_mode,
+        tasks=docs.tasks,
+        skipped=docs.skipped,
+        total=docs.ocr_count,
+        unit="record(s)",
+        verb="Parsed",
+        nothing_found="No usable OCR rows to parse",
+        call=call,
+        threads=args.threads,
+        job_began=job_began,
+        source_of=lambda ocr_rec: ocr_rec["source"],
+        text_of=lambda ocr_rec: ocr_rec["text"],
     )
-    log.job_elapsed(job_began)
 
 
 def call_model(
@@ -272,4 +233,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    parse_text(ARGS)
+    log.run_job(parse_text, ARGS)

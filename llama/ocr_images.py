@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
 import logging
 import textwrap
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
-from tqdm import tqdm
 
 from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
 from llama.pylib import fix_ocr, image_util, log
-from llama.pylib.thread_sessions import ThreadSessions
-from llama.results.model_status import ModelStatus, StatusCounts
+from llama.results.job_runner import NO_IMAGES_FOUND, run_jobs
+from llama.results.model_status import ModelStatus
 from llama.results.ocr_docs import OcrDocs
-from llama.results.task_writer import TaskWriter
+
+if TYPE_CHECKING:
+    from llama.pylib.thread_sessions import ThreadSessions
 
 
 def ocr_images(args: argparse.Namespace) -> None:
@@ -42,66 +42,30 @@ def ocr_images(args: argparse.Namespace) -> None:
         logging.error(msg)
         raise SystemExit(1)
 
-    if not docs.tasks:
-        if docs.ocr_docs:
-            logging.info("Nothing to do: all images are already OCRed")
-            logging.info(f"{docs.skipped} of {docs.image_count} already done")
-            log.job_elapsed(job_began)
-            return
-        logging.warning(
-            "No images found. --image-dir is not recursive; "
-            "try --image-glob 'dir/**/*.jpg'"
+    def call(source: Path, sessions: ThreadSessions) -> dict:
+        return call_model(
+            prompt,
+            source,
+            sessions,
+            args.api_host,
+            args.timeout,
+            convert_html=args.convert_html,
         )
-        log.job_elapsed(job_began)
-        raise SystemExit(1)
 
-    statuses = StatusCounts()
-
-    args.ocr_file.parent.mkdir(parents=True, exist_ok=True)
-
-    with args.ocr_file.open(docs.file_mode) as output_file:
-        writer = csv.DictWriter(output_file, prompt.columns)
-        if docs.file_mode == "w":
-            writer.writeheader()
-
-        with (
-            tqdm(total=len(docs.tasks)) as pbar,
-            ThreadPoolExecutor(max_workers=args.threads) as executor,
-        ):
-            sessions = ThreadSessions()
-            task_writer = TaskWriter(
-                writer=writer,
-                out_file=output_file,
-                statuses=statuses,
-                progress_bar=pbar,
-                prompt=prompt,
-            )
-
-            futures = {
-                executor.submit(
-                    call_model,
-                    prompt,
-                    source,
-                    sessions,
-                    args.api_host,
-                    args.timeout,
-                    convert_html=args.convert_html,
-                ): source
-                for source in docs.tasks
-            }
-
-            try:
-                for future in as_completed(futures):
-                    task_writer.write(future, source=futures[future])
-            finally:
-                sessions.close_all()
-
-    logging.info(
-        f"OCRed {statuses.get(ModelStatus.SUCCESS)}/{len(docs.tasks)} image(s), "
-        f"{statuses.get(ModelStatus.ERROR)} errored, "
-        f"{docs.skipped} already done"
+    run_jobs(
+        prompt=prompt,
+        out_file=args.ocr_file,
+        file_mode=docs.file_mode,
+        tasks=docs.tasks,
+        skipped=docs.skipped,
+        total=docs.image_count,
+        unit="image(s)",
+        verb="OCRed",
+        nothing_found=NO_IMAGES_FOUND,
+        call=call,
+        threads=args.threads,
+        job_began=job_began,
     )
-    log.job_elapsed(job_began)
 
 
 def call_model(
@@ -291,4 +255,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    ocr_images(ARGS)
+    log.run_job(ocr_images, ARGS)
