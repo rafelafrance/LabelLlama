@@ -15,6 +15,7 @@ Given an image of a herbarium sheet (or an insect diode):
 2. **Parse** — extract the text into named Darwin Core fields.
 
 3. **Clean** — refine the field values, and calculate field values from the other fields.
+
 - **Parse images** Steps 1 and 2 can be combined into a single step.
 
 ### Example: from sheet to fields
@@ -56,7 +57,7 @@ so you can run them in any order or mix and match model runs.
 1. **`parse_images.py`** — Extract Darwin Core fields straight from the image with a
    multimodal model, skipping the OCR step. One model call instead of two, which is
    only worth it if the model is big enough to read and parse text reliably.
-2. **`ocr_msa.py`** — Although, recent models do reasonably well with most handwriting, there are some labels where the writing is sloppy or the text is obscured, etc. In these cases you can OCR same labels with different models. Then you can try to combine the models using a multiple sequence alignment technique into a single consensus sequence of text, which is often better than any single OCR. Quality vs time.
+2. **`ocr_msa.py`** — Although, recent models do reasonably well with most handwriting, there are some labels where the writing is sloppy or the text is obscured, etc. In these cases you can OCR same labels with different models. Then you combine the OCR output with a multiple sequence alignment into a single consensus sequence of text, which is often better than any single OCR. Quality vs time.
 
 ### There are 2 workflows
 
@@ -80,7 +81,7 @@ A prompt markdown file holds the system message of a step plus, for the parse st
 the list of fields that step extracts. Each field is a link to a Python class:
 
 - `llama/llm_fields/` — _LLM fields_: the class holds the instructions sent to the LLM model and validates its answer.
-- `llama/calc_fields/` — _calculated fields_: deterministic code that derives the value from other fields.
+- `llama/calc_fields/` — _calculated fields_: deterministic code that derives the value from other fields or an earlier version of itself.
 
 There are three kinds of prompt file, one per kind of work:
 
@@ -116,7 +117,7 @@ The scripts in `llama/reports/` compare and visualize the output of model runs:
 
 ### Data utilities
 
-The scripts in `llama/data_utils/` are as hoc scripts to help build input data:
+The scripts in `llama/data_utils/` are _ad hoc_ scripts to help build input data:
 
 - `util_get_gbif_data.py` — narrows the large GBIF dump TSVs down to the
   images you downloaded.
@@ -125,7 +126,7 @@ The scripts in `llama/data_utils/` are as hoc scripts to help build input data:
 - `util_merge_files.py` — combines multiple files (`*.csv`, `*.tsv`, etc.)
   into a single file.
 
-**They may not be useful to you as is.**
+**They may not be useful to you as-is.**
 
 ## How to set up LabelLlama
 
@@ -143,20 +144,6 @@ uv sync
 ### Step 2: (Optional) Set up a server to run local models
 
 You don't have to run any models locally; hosted models work too.
-
-#### LM Studio
-
-LM Studio is a wrapper and GUI around the `llama.cpp` library.
-The GUI is convenient for downloading and running models locally.
-Note you may run LM Studio headless with `lms daemon`.
-
-You can get the LM Studio GUI and daemon [here](https://lmstudio.ai/).
-
-```bash
-lms daemon up
-lms server start
-lms load my-model
-```
 
 #### llama.cpp
 

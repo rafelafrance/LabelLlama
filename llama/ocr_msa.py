@@ -126,8 +126,11 @@ def msa_ocr_results(args: argparse.Namespace) -> None:
         consensus[source] = label_builder.find_consensus(aligned)
 
     # Output consensus
-    rows = [{"source": k, "text": v} for k, v in consensus.items()]
-    df = pd.DataFrame(rows, columns=["source", "text"])
+    rows = [
+        {"status": ModelStatus.SUCCESS, "source": k, "elapsed": "", "text": v}
+        for k, v in consensus.items()
+    ]
+    df = pd.DataFrame(rows, columns=REQUIRED_COLUMNS)
     args.consensus_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.consensus_file, index=False)
 
