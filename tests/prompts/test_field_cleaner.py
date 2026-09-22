@@ -4,7 +4,14 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from llama.prompts.field_cleaner import REQUIRED_CLEANER_COLUMNS, FieldCleaner
+import numpy as np
+import pandas as pd
+
+from llama.prompts.field_cleaner import (
+    REQUIRED_CLEANER_COLUMNS,
+    FieldCleaner,
+    format_value,
+)
 from llama.prompts.prompt import Prompt
 
 DUMMY = Path(__file__).parent / "dummy_prompt.md"
@@ -119,6 +126,44 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertEqual(len(columns), len(set(columns)))
         self.assertNotIn("status", columns)
         self.assertNotIn("elapsed", columns)
+
+    def test_format_bools_are_spelled_like_gold_08(self) -> None:
+        # gold_std spells booleans TRUE/FALSE, and str() gives True/False
+        self.assertEqual(format_value(value=True), "TRUE")
+        self.assertEqual(format_value(value=False), "FALSE")
+
+    def test_format_whole_floats_have_no_dot_zero_09(self) -> None:
+        # Calc fields hand us floats: 1000 m is "1000", a unit conversion keeps
+        # its decimals
+        self.assertEqual(format_value(1000.0), "1000")
+        self.assertEqual(format_value(-484145.0), "-484145")
+        self.assertEqual(format_value(0.0), "0")
+        self.assertEqual(format_value(914.4), "914.4")
+        self.assertEqual(format_value(37), "37")
+
+    def test_format_float_noise_is_trimmed_10(self) -> None:
+        # 3000 feet is 914.4 metres, not 914.4000000000001
+        self.assertEqual(format_value(914.4000000000001), "914.4")
+        self.assertEqual(format_value(0.1 + 0.2), "0.3")
+        # ... without eating the digits of a real coordinate
+        self.assertEqual(format_value(-71.4123456789), "-71.4123456789")
+
+    def test_format_missing_is_blank_11(self) -> None:
+        self.assertEqual(format_value(None), "")
+        self.assertEqual(format_value(float("nan")), "")
+        self.assertEqual(format_value(pd.NA), "")
+        self.assertEqual(format_value(pd.NaT), "")
+        self.assertEqual(format_value(np.nan), "")
+
+    def test_format_strings_pass_through_12(self) -> None:
+        self.assertEqual(format_value("Iris virginica"), "Iris virginica")
+        self.assertEqual(format_value(""), "")
+        self.assertEqual(format_value("NA"), "NA")
+
+    def test_format_sequence_does_not_raise_13(self) -> None:
+        # pd.isna() of a list is not a scalar, so it must not be tested as one
+        self.assertEqual(format_value(["a", "b"]), "['a', 'b']")
+        self.assertEqual(format_value(np.array([1.0, 2.0])), "[1. 2.]")
 
 
 if __name__ == "__main__":

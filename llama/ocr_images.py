@@ -39,8 +39,7 @@ def ocr_images(args: argparse.Namespace) -> None:
             f"(e.g. {', '.join(extra[:5])}); ocr_images.py needs a plain OCR prompt "
             "(e.g. prompts/ocr_v2.md)"
         )
-        logging.error(msg)
-        raise SystemExit(1)
+        raise ValueError(msg)
 
     def call(source: Path, sessions: ThreadSessions) -> dict:
         return call_model(

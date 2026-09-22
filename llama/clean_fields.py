@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from llama.prompts.field_cleaner import FieldCleaner
+from llama.prompts.field_cleaner import FieldCleaner, format_value
 from llama.prompts.prompt import Prompt
 from llama.pylib import log
 
@@ -56,7 +56,7 @@ def postprocess_fields(args: argparse.Namespace) -> None:
             continue
 
     df = pd.DataFrame(output_rows, columns=cleaner.output_columns)
-    df = df.map(lambda v: "" if v is None or pd.isna(v) else str(v))
+    df = df.map(format_value)
 
     args.clean_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.clean_file, index=False)

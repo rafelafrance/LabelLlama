@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 from llama.results.parsed_docs import ParsedDocs
 
 if TYPE_CHECKING:
@@ -9,6 +11,52 @@ if TYPE_CHECKING:
     from llama.prompts.prompt import Prompt
 
 REQUIRED_CLEANER_COLUMNS = {"status", "source", "text"}
+
+
+def is_missing(value: object) -> bool:
+    """
+    Return True for the values that mean "no value" in a cleaned record.
+
+    None, NaN, NaT and pd.NA. A list or array is not a single value, so
+    pd.isna() would answer for each element instead of the whole thing.
+    """
+    if value is None:
+        return True
+
+    if pd.api.types.is_list_like(value):
+        return False
+
+    return bool(pd.isna(value))
+
+
+def format_value(value: object) -> str:
+    """
+    Render one cleaned value the way the hand made gold files spell it.
+
+    A cleaned CSV carries no types, so spell values the way they are written by
+    hand: blank when missing, TRUE/FALSE for booleans, and no ".0" on whole
+    numbers, which arrive as floats from the calc field classes. 1000.0 is
+    written "1000" and a converted 3000 feet is written "914.4".
+    """
+    if isinstance(value, str):
+        return value
+
+    if isinstance(value, bool):  # before int: bool is an int subclass
+        return "TRUE" if value else "FALSE"
+
+    if is_missing(value):
+        return ""
+
+    if isinstance(value, float):
+        if value.is_integer():
+            return str(int(value))
+        # Unit conversions leave binary noise behind: 3000 feet is not exactly
+        # 914.4 metres, and no label is written 914.4000000000001. Twelve
+        # significant digits hides that noise (it starts at the sixteenth) and
+        # still keeps a tenth of a millimetre at coordinate scale.
+        return f"{value:.12g}"
+
+    return str(value)
 
 
 class FieldCleaner:
