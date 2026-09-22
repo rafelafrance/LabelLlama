@@ -52,6 +52,7 @@ class TestFieldCleaner(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_init_field_classes_01(self) -> None:
+        """LLM and calc field classes come from the prompt."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
 
@@ -60,6 +61,7 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertEqual(list(cleaner.calc_field_classes), ["eventDate"])
 
     def test_validate_columns_ok_02(self) -> None:
+        """Validation passes with required and prompt columns present."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         prompt = SimpleNamespace(
@@ -77,6 +79,7 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertIsNone(cleaner.validate_columns(list(prompt.columns)))
 
     def test_validate_columns_missing_required_03(self) -> None:
+        """Missing required columns are named in the error."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         prompt = SimpleNamespace(columns=[*REQUIRED_CLEANER_COLUMNS, "scientificName"])
@@ -89,6 +92,7 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertIn("text", msg)
 
     def test_validate_columns_missing_prompt_columns_04(self) -> None:
+        """Missing prompt columns are named in the error."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         prompt = SimpleNamespace(
@@ -103,18 +107,21 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertIn("scientificName", msg)
 
     def test_get_llm_columns_05(self) -> None:
+        """The LLM columns are the prompt's LLM fields."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
 
         self.assertEqual(cleaner.llm_columns, ["scientificName", "verbatimEventDate"])
 
     def test_get_calc_columns_06(self) -> None:
+        """The calc columns are the prompt's calc fields."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
 
         self.assertEqual(cleaner.calc_columns, ["eventDate"])
 
     def test_get_output_columns_07(self) -> None:
+        """Output columns drop parse-only columns without duplicates."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
         columns = cleaner.get_output_columns()
@@ -128,13 +135,12 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertNotIn("elapsed", columns)
 
     def test_format_bools_are_spelled_like_gold_08(self) -> None:
-        # gold_std spells booleans TRUE/FALSE, and str() gives True/False
+        """Gold_std spells booleans TRUE/FALSE, and str() gives True/False."""
         self.assertEqual(format_value(value=True), "TRUE")
         self.assertEqual(format_value(value=False), "FALSE")
 
     def test_format_whole_floats_have_no_dot_zero_09(self) -> None:
-        # Calc fields hand us floats: 1000 m is "1000", a unit conversion keeps
-        # its decimals
+        """Whole floats lose .0 while real decimals survive."""
         self.assertEqual(format_value(1000.0), "1000")
         self.assertEqual(format_value(-484145.0), "-484145")
         self.assertEqual(format_value(0.0), "0")
@@ -142,13 +148,14 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertEqual(format_value(37), "37")
 
     def test_format_float_noise_is_trimmed_10(self) -> None:
-        # 3000 feet is 914.4 metres, not 914.4000000000001
+        """3000 feet is 914.4 metres, not 914.4000000000001."""
         self.assertEqual(format_value(914.4000000000001), "914.4")
         self.assertEqual(format_value(0.1 + 0.2), "0.3")
         # ... without eating the digits of a real coordinate
         self.assertEqual(format_value(-71.4123456789), "-71.4123456789")
 
     def test_format_missing_is_blank_11(self) -> None:
+        """A missing value is written as an empty cell."""
         self.assertEqual(format_value(None), "")
         self.assertEqual(format_value(float("nan")), "")
         self.assertEqual(format_value(pd.NA), "")
@@ -156,12 +163,13 @@ class TestFieldCleaner(unittest.TestCase):
         self.assertEqual(format_value(np.nan), "")
 
     def test_format_strings_pass_through_12(self) -> None:
+        """A string is written exactly as it was given."""
         self.assertEqual(format_value("Iris virginica"), "Iris virginica")
         self.assertEqual(format_value(""), "")
         self.assertEqual(format_value("NA"), "NA")
 
     def test_format_sequence_does_not_raise_13(self) -> None:
-        # pd.isna() of a list is not a scalar, so it must not be tested as one
+        """Pd.isna() of a list is not a scalar, so it must not be tested as one."""
         self.assertEqual(format_value(["a", "b"]), "['a', 'b']")
         self.assertEqual(format_value(np.array([1.0, 2.0])), "[1. 2.]")
 

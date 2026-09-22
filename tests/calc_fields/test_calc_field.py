@@ -17,57 +17,57 @@ SampleField = make_sample(alpha="", _hidden="")
 
 class TestCalcField(unittest.TestCase):
     def test_calc_field_01(self) -> None:
-        # CalcField is a dataclass so subclasses can inherit from it
+        """CalcField is a dataclass so subclasses can inherit from it."""
         assert is_dataclass(CalcField)
 
     def test_calc_field_02(self) -> None:
-        # Subclasses construct as (cleaned_rec, **field_values)
+        """Subclasses construct as (cleaned_rec, **field_values)."""
         field = SampleField({"a": 1}, "x")
         assert field.alpha == "x"
 
     def test_calc_field_03(self) -> None:
-        # cleaned_rec is the first init parameter (an InitVar)
+        """Cleaned_rec is the first init parameter (an InitVar)."""
         params = list(inspect.signature(CalcField).parameters)
         assert params[0] == "cleaned_rec"
 
     def test_calc_field_04(self) -> None:
-        # get_field_names returns the (stored) field names of a subclass
+        """Get_field_names returns the (stored) field names of a subclass."""
         assert SampleField.get_field_names() == ["alpha", "_hidden"]
 
     def test_calc_field_05(self) -> None:
-        # get_visible_fields excludes underscore-prefixed names
+        """Get_visible_fields excludes underscore-prefixed names."""
         assert SampleField.get_visible_fields() == ["alpha"]
 
     def test_calc_field_06(self) -> None:
-        # ClassVars (scoring_method) are not reported as fields
+        """ClassVars (scoring_method) are not reported as fields."""
         assert "scoring_method" not in SampleField.get_field_names()
 
     def test_calc_field_07(self) -> None:
-        # Default scoring method
+        """The default scoring method for calc fields is LR."""
         assert CalcField.scoring_method == "LR"
 
     def test_calc_field_08(self) -> None:
-        # score: identical values
+        """Identical values score a perfect one."""
         assert CalcField.score("abc", "abc", {}) == 1.0
 
     def test_calc_field_09(self) -> None:
-        # score: surrounding whitespace is ignored
+        """Score: surrounding whitespace is ignored."""
         assert CalcField.score(" abc ", "abc", {}) == 1.0
 
     def test_calc_field_10(self) -> None:
-        # score: values are stringified before comparison
+        """Score: values are stringified before comparison."""
         assert CalcField.score(1.5, "1.5", {}) == 1.0
 
     def test_calc_field_11(self) -> None:
-        # score: empty expect vs non-empty actual
+        """Score: empty expect vs non-empty actual."""
         assert CalcField.score("", "abc", {}) == 0.0
 
     def test_calc_field_12(self) -> None:
-        # score: similar but different values score in between
+        """Score: similar but different values score in between."""
         assert 0.0 < CalcField.score("abc", "abd", {}) < 1.0
 
     def test_calc_field_13(self) -> None:
-        # InitVar fields (like cleaned_rec) are not part of the field list
+        """InitVar fields (like cleaned_rec) are not part of the field list."""
         assert CalcField.get_field_names() == []
 
 

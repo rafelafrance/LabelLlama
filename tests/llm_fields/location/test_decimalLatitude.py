@@ -5,38 +5,55 @@ from llama.llm_fields.location.decimalLatitude import DecimalLatitude
 
 class TestDecimalLatitude(unittest.TestCase):
     def test_decimal_latitude_01(self) -> None:
-        # A numeric string is parsed to a float
+        """A numeric string becomes a float."""
         assert DecimalLatitude("", "45.5").decimalLatitude == 45.5
 
     def test_decimal_latitude_02(self) -> None:
-        # Negative values are preserved
+        """A negative latitude keeps its sign."""
         assert DecimalLatitude("", "-1.0").decimalLatitude == -1.0
 
     def test_decimal_latitude_03(self) -> None:
-        # An integer string becomes a float
+        """A latitude with no decimal point becomes a whole float."""
         assert DecimalLatitude("", "45").decimalLatitude == 45.0
 
     def test_decimal_latitude_04(self) -> None:
-        # Direction letters are ignored
+        """A northern letter before or after the number is ignored."""
         assert DecimalLatitude("", "N45.5").decimalLatitude == 45.5
         assert DecimalLatitude("", "45.5 N").decimalLatitude == 45.5
 
     def test_decimal_latitude_05(self) -> None:
-        # Unparseable values become an empty string
+        """Text that holds no number becomes an empty string."""
         assert DecimalLatitude("", "none").decimalLatitude == ""
         assert DecimalLatitude("", "").decimalLatitude == ""
         assert DecimalLatitude("", "not a number").decimalLatitude == ""
 
     def test_decimal_latitude_06(self) -> None:
-        # Non-string values are handled
+        """Ints, NaN and one-item lists are converted to a latitude."""
         assert DecimalLatitude("", 45).decimalLatitude == 45.0
         assert DecimalLatitude("", float("nan")).decimalLatitude == ""
         assert DecimalLatitude("", [45.5]).decimalLatitude == 45.5
 
     def test_decimal_latitude_10(self) -> None:
-        # A malformed numeric string with several dots returns a blank string
+        """A number with more than one decimal point is not a latitude."""
         assert DecimalLatitude("", "45.6.7").decimalLatitude == ""
 
     def test_decimal_latitude_11(self) -> None:
-        # It handles the European use of commas for the decimal point
+        """A decimal comma is read as a decimal point."""
         assert DecimalLatitude("", "45,5").decimalLatitude == 45.5
+
+    def test_decimal_latitude_12(self) -> None:
+        """A southern letter before or after the number negates it."""
+        assert DecimalLatitude("", "S45.5").decimalLatitude == -45.5
+        assert DecimalLatitude("", "45.5 S").decimalLatitude == -45.5
+        assert DecimalLatitude("", "s 45.5").decimalLatitude == -45.5
+        assert DecimalLatitude("", "-45.5 S").decimalLatitude == -45.5
+        assert DecimalLatitude("", "45,5 S").decimalLatitude == -45.5
+
+    def test_decimal_latitude_13(self) -> None:
+        """A latitude beyond the poles is cleared, the poles are kept."""
+        assert DecimalLatitude("", "90").decimalLatitude == 90.0
+        assert DecimalLatitude("", "-90").decimalLatitude == -90.0
+        assert DecimalLatitude("", "95").decimalLatitude == ""
+        assert DecimalLatitude("", "-95").decimalLatitude == ""
+        assert DecimalLatitude("", "90.1").decimalLatitude == ""
+        assert DecimalLatitude("", "S95").decimalLatitude == ""

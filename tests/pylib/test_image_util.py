@@ -25,6 +25,7 @@ class TestImageUtil(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_has_image_suffix_01(self) -> None:
+        """Image suffixes match case-insensitively."""
         assert image_util.has_image_suffix(Path("a.png"))
         assert image_util.has_image_suffix(Path("a.JPG"))
         assert image_util.has_image_suffix(Path("a.tiff"))
@@ -32,6 +33,7 @@ class TestImageUtil(unittest.TestCase):
         assert not image_util.has_image_suffix(Path("a.webp"))
 
     def test_images_only_02(self) -> None:
+        """Only paths with an image suffix survive the filter."""
         paths = [Path("a.png"), Path("b.txt"), Path("c.jpg"), Path("d")]
 
         assert image_util.images_only(paths) == [
@@ -40,6 +42,7 @@ class TestImageUtil(unittest.TestCase):
         ]
 
     def test_image_dir_03(self) -> None:
+        """image_dir lists top-level images, not subdirectories."""
         with tempfile.TemporaryDirectory() as tmp:
             dir_ = Path(tmp)
             (dir_ / "a.png").write_bytes(b"png")
@@ -54,7 +57,7 @@ class TestImageUtil(unittest.TestCase):
         assert sorted(found) == sorted([dir_ / "a.png", dir_ / "b.JPG"])
 
     def test_get_images_dedupes_and_sorts_04(self) -> None:
-        # image_glob is CWD-relative, so run from inside the temp dir
+        """Image_glob is CWD-relative, so run from inside the temp dir."""
         old_cwd = Path.cwd()
         with tempfile.TemporaryDirectory() as tmp:
             os.chdir(tmp)
@@ -71,24 +74,27 @@ class TestImageUtil(unittest.TestCase):
         assert images == [Path("a.jpg"), Path("b.png")]
 
     def test_is_url_05(self) -> None:
+        """Only http and https URLs count as URLs."""
         assert image_util.is_url("https://example.com/a.png")
         assert image_util.is_url("HTTP://EXAMPLE.COM/a.png")
         assert not image_util.is_url("ftp://example.com/a.png")
         assert not image_util.is_url("/local/path/a.png")
 
     def test_load_image_local_path_06(self) -> None:
+        """A local image is returned as base64 with its mime type."""
         base64_image, mime_type = image_util.load_image(self.png)
 
         assert mime_type == "image/png"
         assert base64.b64decode(base64_image) == self.png_bytes
 
     def test_load_image_local_str_path_07(self) -> None:
-        # Handel strings as paths
+        """A path handed over as a string loads identically."""
         base64_image, mime_type = image_util.load_image(str(self.png))
 
         assert (base64_image, mime_type) == image_util.load_image(self.png)
 
     def test_load_image_unknown_mime_08(self) -> None:
+        """An unrecognized suffix is reported as octet-stream."""
         bin_file = self.tmp / "sample.bin"
         bin_file.write_bytes(self.png_bytes)
 
@@ -98,6 +104,7 @@ class TestImageUtil(unittest.TestCase):
         assert base64.b64decode(base64_image) == self.png_bytes
 
     def test_downscale_small_image_unchanged_11(self) -> None:
+        """An image under the limit is sent unchanged."""
         small = self.tmp / "small.png"
         buf = io.BytesIO()
         Image.new("RGB", (10, 10), "red").save(buf, format="PNG")
@@ -109,6 +116,7 @@ class TestImageUtil(unittest.TestCase):
         assert base64.b64decode(base64_image) == small.read_bytes()
 
     def test_downscale_large_image_12(self) -> None:
+        """A large image is resized and re-encoded as jpeg."""
         big = self.tmp / "big.png"
         Image.new("RGB", (3000, 2000), "blue").save(big, format="PNG")
 
@@ -120,7 +128,7 @@ class TestImageUtil(unittest.TestCase):
         assert img.size == (1200, 800)
 
     def test_downscale_rgba_converted_to_jpeg_13(self) -> None:
-        # JPEG has no alpha channel; RGBA input must be converted
+        """JPEG has no alpha channel; RGBA input must be converted."""
         rgba = self.tmp / "rgba.png"
         Image.new("RGBA", (2000, 1000), (255, 0, 0, 128)).save(rgba, format="PNG")
 

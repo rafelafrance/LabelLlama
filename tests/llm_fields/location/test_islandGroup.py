@@ -5,16 +5,16 @@ from llama.llm_fields.location.islandGroup import IslandGroup
 
 class TestIslandGroup(unittest.TestCase):
     def test_island_group_01(self) -> None:
-        # Value present in the text is kept (case-insensitive)
+        """An island group named anywhere in the text is kept, whatever its case."""
         assert (
             IslandGroup("in the Hawaiian Islands", "Hawaiian Islands").islandGroup
             == "Hawaiian Islands"
         )
 
     def test_island_group_02(self) -> None:
-        # Value not present in the text is a hallucination and becomes empty
+        """An island group the text never mentions is dropped as a hallucination."""
         assert IslandGroup("on the mainland", "Hawaiian Islands").islandGroup == ""
 
     def test_island_group_03(self) -> None:
-        # Empty text: everything is a hallucination
+        """With no text, every value is a hallucination."""
         assert IslandGroup("", "Hawaiian Islands").islandGroup == ""

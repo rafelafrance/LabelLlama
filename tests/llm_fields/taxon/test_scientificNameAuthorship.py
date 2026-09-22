@@ -5,20 +5,20 @@ from llama.llm_fields.taxon.scientificNameAuthorship import ScientificNameAuthor
 
 class TestScientificNameAuthorship(unittest.TestCase):
     def test_scientific_name_authorship_01(self) -> None:
-        # A plain authorship passes through unchanged
+        """A plain authorship passes through unchanged."""
         assert (
             ScientificNameAuthorship("", "Miller").scientificNameAuthorship == "Miller"
         )
 
     def test_scientific_name_authorship_02(self) -> None:
-        # Surrounding whitespace is stripped; internal content is preserved
+        """Surrounding whitespace is stripped; internal content is preserved."""
         assert (
             ScientificNameAuthorship("", "  Smith, 1753  ").scientificNameAuthorship
             == "Smith, 1753"
         )
 
     def test_scientific_name_authorship_03(self) -> None:
-        # Surrounding brackets are removed
+        """Surrounding brackets are removed."""
         assert (
             ScientificNameAuthorship("", "(Smith)").scientificNameAuthorship == "Smith"
         )
@@ -28,12 +28,12 @@ class TestScientificNameAuthorship(unittest.TestCase):
         )
 
     def test_scientific_name_authorship_04(self) -> None:
-        # Internal balanced authorship parentheses are preserved
+        """Internal balanced authorship parentheses are preserved."""
         assert (
             ScientificNameAuthorship("", "Smith (1753).").scientificNameAuthorship
             == "Smith (1753)"
         )
 
     def test_scientific_name_authorship_05(self) -> None:
-        # Empty input stays empty
+        """Empty input stays empty."""
         assert ScientificNameAuthorship("", "").scientificNameAuthorship == ""

@@ -5,15 +5,18 @@ from llama.line_align.levenshtein import Distance, levenshtein_all
 
 class TestDistanceAll(unittest.TestCase):
     def test_distance_all_01(self) -> None:
+        """A pair reports its distance and both indices."""
         self.assertEqual(levenshtein_all(["aa", "bb"]), [Distance(2, 0, 1)])
 
     def test_distance_all_02(self) -> None:
+        """Every pair is returned, ordered by distance then indices."""
         self.assertEqual(
             levenshtein_all(["aa", "bb", "ab"]),
             [Distance(1, 0, 2), Distance(1, 1, 2), Distance(2, 0, 1)],
         )
 
     def test_distance_all_03(self) -> None:
+        """Label copies rank closest pairs before distant ones."""
         self.assertEqual(
             levenshtein_all(
                 [

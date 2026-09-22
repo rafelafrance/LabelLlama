@@ -9,6 +9,7 @@ from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
 
 class TestFieldAction(unittest.TestCase):
     def test_llm_field_01(self) -> None:
+        """A prompted field is an LLM action on the text."""
         fa = FieldAction("../llama/llm_fields/taxon/scientificName.py")
 
         self.assertEqual(fa.name, "scientificName")
@@ -18,6 +19,7 @@ class TestFieldAction(unittest.TestCase):
         self.assertIn("scientificName", fa.columns)
 
     def test_calc_field_02(self) -> None:
+        """An absent field is a CALC action computed from the record."""
         fa = FieldAction("../llama/calc_fields/event/eventDate.py")
 
         self.assertEqual(fa.name, "eventDate")
@@ -25,7 +27,7 @@ class TestFieldAction(unittest.TestCase):
         self.assertIn("eventDate", fa.columns)
 
     def test_links_from_real_prompt_03(self) -> None:
-        # Every LLM field link in a shipped prompt must import cleanly
+        """Every LLM field link in a shipped prompt must import cleanly."""
         prompt_path = (
             Path(__file__).resolve().parents[2] / "prompts" / "diode_one_v1.md"
         )

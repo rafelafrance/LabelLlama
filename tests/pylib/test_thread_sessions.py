@@ -7,6 +7,7 @@ from llama.pylib.thread_sessions import ThreadSessions
 
 class TestThreadSessions(unittest.TestCase):
     def test_get_returns_same_session_per_thread_01(self) -> None:
+        """A thread reuses one session for every get."""
         sessions = ThreadSessions()
 
         first = sessions.get()
@@ -15,6 +16,7 @@ class TestThreadSessions(unittest.TestCase):
         assert first is second
 
     def test_different_threads_get_different_sessions_02(self) -> None:
+        """Each thread gets a session of its own."""
         sessions = ThreadSessions()
         results: list = []
 
@@ -32,6 +34,7 @@ class TestThreadSessions(unittest.TestCase):
         assert sessions.get() not in results
 
     def test_sessions_list_tracks_unique_sessions_03(self) -> None:
+        """The tracker holds one entry per thread."""
         sessions = ThreadSessions()
 
         for _ in range(5):
@@ -41,8 +44,7 @@ class TestThreadSessions(unittest.TestCase):
         assert sessions.sessions[0] is sessions.get()
 
     def test_concurrent_get_is_thread_safe_04(self) -> None:
-        # Many threads grabbing sessions at once must not create
-        # duplicates or lose sessions
+        """Threads racing to get sessions neither share nor lose one."""
         n_threads = 8
         sessions = ThreadSessions()
         seen: list[list] = []
@@ -65,6 +67,7 @@ class TestThreadSessions(unittest.TestCase):
         assert len(sessions.sessions) == n_threads
 
     def test_close_all_closes_and_clears_05(self) -> None:
+        """close_all closes every session and empties the tracker."""
         with patch("llama.pylib.thread_sessions.requests.Session") as mock:
             sessions = ThreadSessions()
             session_a = sessions.get()
@@ -77,6 +80,7 @@ class TestThreadSessions(unittest.TestCase):
         assert sessions.sessions == []
 
     def test_close_all_is_idempotent_06(self) -> None:
+        """Closing an already empty tracker is harmless."""
         with patch("llama.pylib.thread_sessions.requests.Session"):
             sessions = ThreadSessions()
             sessions.get()

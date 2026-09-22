@@ -21,6 +21,7 @@ def write_prompt(text: str) -> Path:
 
 class TestPromptMarkdownParser(unittest.TestCase):
     def test_front_yaml_extraction_01(self) -> None:
+        """Front matter is split from the body and parsed."""
         text = (
             "---\n"
             "name: ocr\n"
@@ -40,6 +41,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
         }
 
     def test_front_yaml_missing_raises_02(self) -> None:
+        """A file without front matter raises ValueError naming the file."""
         with self.assertRaises(ValueError) as ctx:
             get_front_yaml("no front matter here", Path("x.md"))
 
@@ -47,10 +49,12 @@ class TestPromptMarkdownParser(unittest.TestCase):
         assert "x.md" in str(ctx.exception)
 
     def test_front_yaml_unclosed_raises_03(self) -> None:
+        """Unclosed front matter raises ValueError."""
         with self.assertRaises(ValueError):
             get_front_yaml("---\nname: ocr\n", Path("x.md"))
 
     def test_ocr_v2_sections_04(self) -> None:
+        """An OCR prompt keeps "##" sub-headings and has no field sections."""
         parser = PromptMarkdownParser(PROMPTS_DIR / "ocr_v2.md")
 
         assert parser.name == "ocr_v2"
@@ -65,6 +69,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
         assert parser.req_fields == []
 
     def test_diode_one_v1_field_sections_05(self) -> None:
+        """Field headings become LLM fields, calc fields and required names."""
         parser = PromptMarkdownParser(PROMPTS_DIR / "diode_one_v1.md")
 
         llm_names = [f.name for f in parser.llm_fields]
@@ -80,6 +85,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
         assert parser.req_fields == ["scientificName"]
 
     def test_minimal_prompt_defaults_06(self) -> None:
+        """Missing sections default to empty text and no fields."""
         path = write_prompt(
             "---\nname: t\ndescription: d\n---\n# System Message\nThe body.\n"
         )
@@ -94,7 +100,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
         assert parser.req_fields == []
 
     def test_sections_are_order_independent_07(self) -> None:
-        # Required/Calculated before LLM Fields must parse the same way
+        """Required/Calculated before LLM Fields must parse the same way."""
         path = write_prompt(
             "---\nname: t\ndescription: d\n---\n"
             "# Required Fields\n"
@@ -120,6 +126,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
         assert parser.system_msg == "The body."
 
     def test_headings_are_case_insensitive_08(self) -> None:
+        """Section headings match regardless of case."""
         path = write_prompt(
             "---\nname: t\ndescription: d\n---\n# system message\nThe body.\n"
         )

@@ -37,6 +37,7 @@ class TestParsedDocs(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_ocr_file_missing_column_raises_01(self) -> None:
+        """An OCR file without the required columns raises ValueError."""
         bad_ocr = self.tmp / "bad_ocr.csv"
         write_csv(bad_ocr, ["source", "elapsed"], [["a.txt", "1.0"]])
 
@@ -46,6 +47,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertIn("text", str(ctx.exception))
 
     def test_new_parsed_file_uses_write_mode_02(self) -> None:
+        """A parsed file that does not exist yet opens in write mode."""
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         self.assertEqual(docs.file_mode, "w")
@@ -53,13 +55,14 @@ class TestParsedDocs(unittest.TestCase):
         self.assertEqual([t["source"] for t in docs.tasks], ["a.txt", "c.txt"])
 
     def test_tasks_sorted_by_source_03(self) -> None:
-        # The OCR file lists b, a, c; tasks come back sorted by source
+        """The OCR file lists b, a, c; tasks come back sorted by source."""
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
 
         sources = [t["source"] for t in docs.tasks]
         self.assertEqual(sources, ["a.txt", "c.txt"])
 
     def test_resume_appends_and_skips_successes_04(self) -> None:
+        """Records with a successful row are dropped from the tasks."""
         write_csv(
             self.parsed_file,
             COLUMNS,
@@ -78,6 +81,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertEqual([t["source"] for t in docs.tasks], ["c.txt"])
 
     def test_column_mismatch_raises_05(self) -> None:
+        """A parsed file with other columns raises ValueError."""
         write_csv(
             self.parsed_file,
             COLUMNS,
@@ -94,7 +98,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertIn("do not match", str(ctx.exception))
 
     def test_no_prompt_columns_exception_06(self) -> None:
-        # Empty prompt columns causes an exception
+        """Empty prompt columns causes an exception."""
         write_csv(
             self.parsed_file,
             ["status", "source"],
@@ -107,7 +111,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertEqual("There are no prompt columns", str(ctx.exception))
 
     def test_corrupt_parsed_file_raises_07(self) -> None:
-        # Unbalanced quote -> pandas ParserError -> clean ValueError
+        """Unbalanced quote -> pandas ParserError -> clean ValueError."""
         self.parsed_file.write_text(
             'status,source\n"unterminated,2\n', encoding="utf-8"
         )
@@ -118,7 +122,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertIn("existing parsed file", str(ctx.exception))
 
     def test_header_only_parsed_file_08(self) -> None:
-        # A file with only the header row resumes with no records
+        """A file with only the header row resumes with no records."""
         write_csv(self.parsed_file, COLUMNS, [])
 
         docs = ParsedDocs(self.parsed_file, self.ocr_file, prompt_columns=COLUMNS)
@@ -127,12 +131,13 @@ class TestParsedDocs(unittest.TestCase):
         self.assertEqual(docs.parsed_docs, [])
 
     def test_limit_applied_to_tasks_09(self) -> None:
+        """Only the first N tasks are kept when a limit is set."""
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS, limit=1)
 
         self.assertEqual([t["source"] for t in docs.tasks], ["a.txt"])
 
     def test_parsed_file_with_no_content_10(self) -> None:
-        # A contentless file is treated as empty and started over
+        """A contentless file is treated as empty and started over."""
         self.parsed_file.write_text("\n", encoding="utf-8")
 
         docs = ParsedDocs(self.parsed_file, self.ocr_file, COLUMNS)
@@ -141,6 +146,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertEqual(docs.parsed_docs, [])
 
     def test_parsed_file_missing_status_column_11(self) -> None:
+        """A parsed file without a status column raises ValueError."""
         write_csv(
             self.parsed_file,
             ["source", "text"],
@@ -153,6 +159,7 @@ class TestParsedDocs(unittest.TestCase):
         self.assertIn("columns do not match the prompt", str(ctx.exception))
 
     def test_empty_ocr_file_has_no_tasks_12(self) -> None:
+        """An empty OCR file gives no tasks and nothing to resume."""
         empty_ocr = self.tmp / "empty_ocr.csv"
         empty_ocr.write_bytes(b"")
 

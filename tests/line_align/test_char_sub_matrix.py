@@ -80,33 +80,32 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # ------------------------------------------------------------------- max_iou
     def test_max_iou_01(self) -> None:
-        # One pixel is the whole of the other, wherever it is.
+        """One pixel is the whole of the other, wherever it is."""
         pix1 = self._pixels([(1, 1)])
         pix2 = self._pixels([(0, 0)])
         self.assertEqual(char_sub_matrix.max_iou(pix1, pix2), 1.0)
 
     def test_max_iou_02(self) -> None:
-        # A shape is identical to itself however far it has been slid.
+        """A shape is identical to itself however far it has been slid."""
         pix1 = self._pixels([(1, 1), (1, 2)])
         pix2 = self._pixels([(0, 0), (0, 1)])
         self.assertEqual(char_sub_matrix.max_iou(pix1, pix2), 1.0)
 
     def test_max_iou_03(self) -> None:
-        # A bar standing up against a bar lying down shares one pixel of five.
+        """A bar standing up against a bar lying down shares one pixel of five."""
         pix1 = self._pixels([(0, 1), (1, 1), (2, 1)])
         pix2 = self._pixels([(0, 0), (0, 1), (0, 2)])
         self.assertEqual(char_sub_matrix.max_iou(pix1, pix2), 0.2)
 
     def test_max_iou_04(self) -> None:
-        # The best translation of two masks that share no shape is the overlap of
-        # one of them, their union is bigger than either.
+        """Unrelated shapes overlap only by the smaller area."""
         one = self._pixels([(0, 0), (0, 1)], width=5)
         two = self._pixels([(3, 3), (4, 3), (4, 4)], width=5)
         self.assertEqual(char_sub_matrix.max_overlap(one, two), 2)
         self.assertEqual(char_sub_matrix.max_iou(one, two), 2 / 3)
 
     def test_max_iou_05(self) -> None:
-        # Whitespace: two blanks match perfectly, a blank never matches ink.
+        """Whitespace: two blanks match perfectly, a blank never matches ink."""
         ink = self._pixels([(1, 1), (1, 2)])
         self.assertEqual(char_sub_matrix.max_iou(self._blank(), self._blank()), 1.0)
         self.assertEqual(char_sub_matrix.max_iou(self._blank(), ink), 0.0)
@@ -114,13 +113,13 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertEqual(char_sub_matrix.max_overlap(self._blank(), ink), 0)
 
     def test_max_iou_06(self) -> None:
-        # Two marks 35 apart. Sliding one off the edge must not wrap it around to
-        # the other side and let it overlap a second time, which is what np.roll does.
+        """Sliding a mask off the edge must not wrap it around."""
         a = self._pixels([(0, 3), (0, 38)], width=40)
         b = self._pixels([(0, 30), (0, 35)], width=40)
         self.assertEqual(char_sub_matrix.max_iou(a, b), 1 / 3)
 
     def test_max_iou_07(self) -> None:
+        """Random masks match the brute-force reference score."""
         rng = np.random.default_rng(7)
         for _ in range(15):
             a = rng.random((6, 7)) < 0.35
@@ -132,7 +131,7 @@ class TestCharSubMatrix(unittest.TestCase):
             )
 
     def test_max_iou_08(self) -> None:
-        # The same shape, placed anywhere in the canvas, is a perfect match.
+        """The same shape, placed anywhere in the canvas, is a perfect match."""
         rng = np.random.default_rng(11)
         for _ in range(10):
             shape = rng.random((4, 4)) < 0.5
@@ -145,6 +144,7 @@ class TestCharSubMatrix(unittest.TestCase):
             self.assertAlmostEqual(char_sub_matrix.max_iou(here, there), 1.0, places=12)
 
     def test_max_iou_09(self) -> None:
+        """The score is the same whichever mask comes first."""
         rng = np.random.default_rng(23)
         for _ in range(10):
             a = rng.random((5, 5)) < 0.4
@@ -156,6 +156,7 @@ class TestCharSubMatrix(unittest.TestCase):
             )
 
     def test_max_iou_10(self) -> None:
+        """Masks of different shapes raise ValueError."""
         with self.assertRaisesRegex(ValueError, "same shape"):
             char_sub_matrix.max_iou(self._blank(), self._blank(7))
         with self.assertRaisesRegex(ValueError, "same shape"):
@@ -163,6 +164,7 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # ------------------------------------------------------------------ rendering
     def test_render_11(self) -> None:
+        """Whitespace renders as an empty canvas."""
         for char in " \t\n":
             mask = char_sub_matrix.render(char, self.fonts[0])
             self.assertEqual(mask.shape, (char_sub_matrix.DEFAULT_CANVAS,) * 2)
@@ -170,23 +172,24 @@ class TestCharSubMatrix(unittest.TestCase):
             self.assertEqual(char_sub_matrix.max_iou(mask, mask), 1.0)
 
     def test_render_12(self) -> None:
-        # The ink is cropped to its bounding box, so it reaches the edge of the
-        # canvas, and it is centered rather than rolled around.
+        """Ink is cropped to its box and centered on the canvas."""
         mask = char_sub_matrix.render("H", self.fonts[0], canvas=60)
         rows, cols = np.nonzero(mask)
         self.assertLessEqual(abs(int(rows.min()) - int(60 - 1 - rows.max())), 1)
         self.assertLessEqual(abs(int(cols.min()) - int(60 - 1 - cols.max())), 1)
 
     def test_render_13(self) -> None:
+        """A canvas too small for the glyph raises ValueError."""
         with self.assertRaisesRegex(ValueError, "too large"):
             char_sub_matrix.render("W", self.fonts[0], canvas=8)
 
     def test_render_14(self) -> None:
-        # Masks come out of a cache, so callers must not be able to spoil it.
+        """Masks come out of a cache, so callers must not be able to spoil it."""
         char_sub_matrix.render("o", self.fonts[0])[:] = False
         self.assertTrue(char_sub_matrix.render("o", self.fonts[0]).any())
 
     def test_render_15(self) -> None:
+        """Only a single character can be rendered or checked."""
         for not_a_char in ("", "ab", "\u00e9\u00e9"):
             with self.assertRaisesRegex(ValueError, "single character"):
                 char_sub_matrix.render(not_a_char, self.fonts[0])
@@ -194,6 +197,7 @@ class TestCharSubMatrix(unittest.TestCase):
             char_sub_matrix.is_blank("ab")
 
     def test_render_16(self) -> None:
+        """A wide glyph holds more ink than a narrow one."""
         wide = int(char_sub_matrix.render("W", self.fonts[0]).sum())
         narrow = int(char_sub_matrix.render("i", self.fonts[0]).sum())
         self.assertGreater(wide, narrow)
@@ -207,15 +211,17 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # ------------------------------------------------------------------ has_glyph
     def test_has_glyph_17(self) -> None:
+        """Letters, digits and punctuation have glyphs."""
         for char in "Aa0.-–Çµ":
             self.assertTrue(char_sub_matrix.has_glyph(char, self.fonts[0]), char)
 
     def test_has_glyph_18(self) -> None:
+        """Whitespace has no glyph of its own."""
         for char in " \t\n":
             self.assertFalse(char_sub_matrix.has_glyph(char, self.fonts[0]), char)
 
     def test_has_glyph_19(self) -> None:
-        # A private use code point: no font has it, so it comes out as .notdef.
+        """A private use code point: no font has it, so it comes out as .notdef."""
         self.assertFalse(char_sub_matrix.has_glyph("\uf8ff", self.fonts[0]))
         self.assertFalse(
             char_sub_matrix.has_glyph(char_sub_matrix.NOTDEF_PROBE, self.fonts[0])
@@ -223,10 +229,12 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # --------------------------------------------------------------------- get_sub
     def test_get_sub_20(self) -> None:
+        """A perfect score earns the identical-character value."""
         self.assertEqual(char_sub_matrix.get_sub(1.0), char_sub_matrix.IDENTICAL_SUB)
         self.assertEqual(char_sub_matrix.get_sub(0.99999), 1.0)
 
     def test_get_sub_21(self) -> None:
+        """Scores step down at each bucket boundary."""
         strong, medium, weak = char_sub_matrix.DEFAULT_BUCKETS
         self.assertEqual(char_sub_matrix.get_sub(strong[0]), 1.0)
         self.assertEqual(char_sub_matrix.get_sub(strong[0] - 0.001), 0.0)
@@ -238,6 +246,7 @@ class TestCharSubMatrix(unittest.TestCase):
         )
 
     def test_get_sub_22(self) -> None:
+        """Buckets, floor and identical value can be overridden."""
         buckets = ((0.5, -5.0), (0.1, -9.0))
         self.assertEqual(char_sub_matrix.get_sub(0.6, buckets=buckets), -5.0)
         self.assertEqual(char_sub_matrix.get_sub(0.3, buckets=buckets), -9.0)
@@ -249,12 +258,13 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # ------------------------------------------------------------------- add_chars
     def test_add_chars_23(self) -> None:
+        """A build measures every pair for every font."""
         self.assertEqual(char_sub_matrix.list_chars(db=self.db), sorted("ab\n "))
         self.assertEqual(char_sub_matrix.list_char_sets(db=self.db), ["default"])
         self.assertEqual(len(self._rows()), 2 * 6)  # two fonts, four characters
 
     def test_add_chars_24(self) -> None:
-        # Every pair of the set has a ratio, including a character against itself.
+        """Every pair of the set has a ratio, including a character against itself."""
         chars = char_sub_matrix.list_chars(db=self.db)
         ratios = char_sub_matrix.get_ratios(db=self.db)
         wanted = {(c1, c2) for i, c1 in enumerate(chars) for c2 in chars[i:]}
@@ -263,7 +273,7 @@ class TestCharSubMatrix(unittest.TestCase):
             self.assertEqual(ratios[(char, char)], 1.0)
 
     def test_add_chars_25(self) -> None:
-        # A pair is stored once, with the lexically first character first.
+        """A pair is stored once, with the lexically first character first."""
         stored = {(c1, c2) for _, c1, c2 in self._rows()}
         self.assertTrue(stored)
         for char1, char2 in stored:
@@ -275,7 +285,7 @@ class TestCharSubMatrix(unittest.TestCase):
         )
 
     def test_add_chars_26(self) -> None:
-        # Whitespace is scored by rule, not by pixels.
+        """Whitespace is scored by rule, not by pixels."""
         ratios = char_sub_matrix.get_ratios(db=self.db)
         self.assertEqual(ratios[("\n", " ")], 1.0)
         self.assertEqual(ratios[(" ", "a")], 0.0)
@@ -285,7 +295,7 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertEqual(subs[" a"], char_sub_matrix.FLOOR_SUB)
 
     def test_add_chars_27(self) -> None:
-        # A new character costs the pairs it is in, and nothing that is measured.
+        """A new character costs the pairs it is in, and nothing that is measured."""
         measured = self._measured("abc")
         self.assertEqual(
             measured, 2 * 4
@@ -294,7 +304,7 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertEqual(self._measured("abc"), 0)  # nothing left to do
 
     def test_add_chars_28(self) -> None:
-        # A new font costs the pairs of every character once, and nothing else.
+        """A new font costs the pairs of every character once, and nothing else."""
         fresh = Path(self.tmp.name) / "fresh.sqlite"
         self._build("abcd", db=fresh, fonts=self.fonts[:1])
         self.assertEqual(self._measured("abcd", db=fresh, fonts=self.fonts[:2]), 6)
@@ -303,23 +313,25 @@ class TestCharSubMatrix(unittest.TestCase):
         )
 
     def test_add_chars_29(self) -> None:
+        """A second build adds its character to the matrix."""
         self._build("x")
         self.assertEqual(char_sub_matrix.list_chars(db=self.db), sorted("ab\n x"))
 
     def test_add_chars_30(self) -> None:
-        # No font can draw a private use character, so it never joins the set.
+        """No font can draw a private use character, so it never joins the set."""
         with self.assertLogs(level=logging.WARNING):
             self._build("a\uf8ff")
         self.assertEqual(char_sub_matrix.list_chars(db=self.db), sorted("ab\n "))
 
     def test_add_chars_31(self) -> None:
+        """The gap character may not be measured."""
         with self.assertRaisesRegex(ValueError, "gap character"):
             char_sub_matrix.add_chars(
                 f"a{char_sub_matrix.GAP_CHAR}", db=self.db, progress=False
             )
 
     def test_add_chars_32(self) -> None:
-        # Ratios of two settings cannot be averaged together.
+        """Ratios of two settings cannot be averaged together."""
         with self.assertRaisesRegex(
             char_sub_matrix.CharSubMatrixError, "other rendering"
         ):
@@ -328,7 +340,7 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertEqual(char_sub_matrix.list_chars(db=self.db), sorted("abc\n "))
 
     def test_add_chars_33(self) -> None:
-        # A second character set lives alongside the first.
+        """A second character set lives alongside the first."""
         char_sub_matrix.add_chars(
             "qr", "symbols", fonts=self.fonts, db=self.db, progress=False
         )
@@ -341,6 +353,7 @@ class TestCharSubMatrix(unittest.TestCase):
         )
 
     def test_add_chars_34(self) -> None:
+        """Deleting a set reports the rows removed and clears it."""
         expected = len(self._rows()) + len(char_sub_matrix.list_chars(db=self.db))
         self.assertEqual(
             char_sub_matrix.delete_char_set("default", db=self.db), expected
@@ -349,6 +362,7 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertEqual(char_sub_matrix.delete_char_set("default", db=self.db), 0)
 
     def test_add_chars_35(self) -> None:
+        """A rebuild replaces the set with its new characters."""
         self._build("q", char_set="symbols")
         rebuilt = char_sub_matrix.rebuild(
             "qr", "symbols", fonts=self.fonts, db=self.db, progress=False
@@ -360,6 +374,7 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # --------------------------------------------------------------- missing_chars
     def test_missing_chars_36(self) -> None:
+        """Only characters absent from the set are reported."""
         self.assertEqual(char_sub_matrix.missing_chars("a b\n", db=self.db), [])
         self.assertEqual(
             char_sub_matrix.missing_chars("aXyé", db=self.db), ["X", "y", "é"]
@@ -367,9 +382,11 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertEqual(char_sub_matrix.missing_chars("aaz", db=self.db), ["z"])
 
     def test_missing_chars_37(self) -> None:
+        """An unknown character set makes everything missing."""
         self.assertEqual(char_sub_matrix.missing_chars("a", "nope", db=self.db), ["a"])
 
     def test_missing_chars_38(self) -> None:
+        """A missing database or set raises CharSubMatrixError."""
         with self.assertRaisesRegex(
             char_sub_matrix.CharSubMatrixError, "substitution matrix"
         ):
@@ -387,6 +404,7 @@ class TestCharSubMatrix(unittest.TestCase):
 
     # ----------------------------------------------------------- the shipped matrix
     def test_shipped_matrix_39(self) -> None:
+        """The shipped matrix stores each pair once, lexically."""
         subs = char_sub_matrix.get()
         chars = char_sub_matrix.list_chars()
         self.assertEqual(len(chars), len(char_sub_matrix.CHARS))
@@ -395,12 +413,13 @@ class TestCharSubMatrix(unittest.TestCase):
         self.assertNotIn("ba", subs)
 
     def test_shipped_matrix_40(self) -> None:
-        # The characters that used to make a run fail are all in there now.
+        """The characters that used to make a run fail are all in there now."""
         chars = set(char_sub_matrix.list_chars())
         for char in "–µÅÇ±²·…éø\nt \t":
             self.assertIn(char, chars, repr(char))
 
     def test_shipped_matrix_41(self) -> None:
+        """Lookalike glyphs score high, unlike shapes score low."""
         ratios = char_sub_matrix.get_ratios()
         self.assertGreater(ratios[("O", "Q")], 0.65)  # lookalikes score high
         self.assertGreater(ratios[("e", "é")], 0.65)

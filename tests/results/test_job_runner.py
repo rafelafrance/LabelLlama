@@ -82,6 +82,7 @@ class TestRunJobs(unittest.TestCase):
         return out_file
 
     def test_header_and_one_row_per_task_01(self) -> None:
+        """Every task is written as its own row."""
         out_file = self.run_driver(["a.jpg", "b.jpg"], ok_call)
 
         rows = read_rows(out_file)
@@ -90,11 +91,13 @@ class TestRunJobs(unittest.TestCase):
         self.assertEqual({row["status"] for row in rows}, {"success"})
 
     def test_already_done_is_not_an_error_02(self) -> None:
+        """A resume with nothing left to do exits 0 and writes no file."""
         out_file = self.run_driver([], never_call, skipped=5, total=5)
 
         self.assertFalse(out_file.exists())
 
     def test_nothing_found_exits_nonzero_03(self) -> None:
+        """With no tasks at all the job exits 1 and writes no file."""
         with self.assertRaises(SystemExit) as ctx:
             self.run_driver([], never_call)
 
@@ -102,6 +105,7 @@ class TestRunJobs(unittest.TestCase):
         self.assertFalse((self.tmp / "out.csv").exists())
 
     def test_call_exception_becomes_one_error_row_04(self) -> None:
+        """An exception in call() becomes one ERROR row and the run continues."""
         with self.assertLogs(level="INFO") as logs:
             out_file = self.run_driver(["a.jpg"], fail_call)
 
@@ -115,6 +119,8 @@ class TestRunJobs(unittest.TestCase):
         )
 
     def test_dict_tasks_use_source_of_and_text_of_05(self) -> None:
+        """Dict tasks are labelled by source_of and text_of."""
+
         def record_call(ocr_rec: dict, _sessions: Any) -> dict:
             msg = ocr_rec["text"]
             raise RuntimeError(msg)
@@ -133,6 +139,7 @@ class TestRunJobs(unittest.TestCase):
         self.assertIn("Marsh with iris leaves", rows[0]["text"])
 
     def test_append_mode_does_not_rewrite_header_06(self) -> None:
+        """Append mode adds rows without repeating the header."""
         self.run_driver(["a.jpg"], ok_call)
         out_file = self.tmp / "out.csv"
         self.run_driver(["b.jpg"], ok_call, file_mode="a", skipped=1, total=2)
@@ -142,10 +149,12 @@ class TestRunJobs(unittest.TestCase):
         self.assertEqual(len(read_rows(out_file)), 2)
 
     def test_keyboard_interrupt_is_not_swallowed_07(self) -> None:
+        """Ctrl-C in a worker is re-raised, not counted as an error row."""
         with self.assertRaises(KeyboardInterrupt):
             self.run_driver(["a.jpg", "b.jpg"], interrupt_call, threads=1)
 
     def test_keyboard_interrupt_cancels_queued_work_08(self) -> None:
+        """Ctrl-C cancels the futures still queued behind it."""
         started: list[str] = []
 
         def slow_call(task: str, _sessions: Any) -> dict:
