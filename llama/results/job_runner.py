@@ -21,12 +21,6 @@ from llama.pylib.thread_sessions import ThreadSessions
 from llama.results.model_status import ModelStatus, StatusCounts
 from llama.results.task_writer import TaskWriter
 
-# The image jobs share this: --image-dir is a single directory on purpose, so a
-# tree of labels silently yields nothing.
-NO_IMAGES_FOUND = (
-    "No images found. --image-dir is not recursive; try --image-glob 'dir/**/*.jpg'"
-)
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from datetime import datetime
@@ -34,6 +28,12 @@ if TYPE_CHECKING:
     from typing import Any
 
     from llama.prompts.prompt import Prompt
+
+# The image jobs share this: --image-dir is a single directory on purpose, so a
+# tree of labels silently yields nothing.
+NO_IMAGES_FOUND = (
+    "No images found. --image-dir is not recursive; try --image-glob 'dir/**/*.jpg'"
+)
 
 
 def run_jobs(

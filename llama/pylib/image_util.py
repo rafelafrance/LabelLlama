@@ -31,7 +31,7 @@ IMAGE_ERRORS = (
     requests.exceptions.ReadTimeout,
 )
 
-IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".gif")
 
 
 def has_image_suffix(path: Path | str) -> bool:
