@@ -95,7 +95,7 @@ def attach_images(groups: list[SourceGroup]) -> None:
     """Fill in base-64 thumbnails for each group's source image."""
     for group in tqdm(groups, desc="Embedding images"):
         try:
-            base64_image, mime_type = image_util.downscale(group.source)
+            base64_image, mime_type = image_util.downscale_url_image(group.source)
         except image_util.IMAGE_ERRORS:
             logging.warning(f"Image unavailable: {group.source}")
             continue

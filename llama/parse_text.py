@@ -233,4 +233,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     load_dotenv()
     ARGS = parse_args()
-    log.run_job(parse_text, ARGS)
+    parse_text(ARGS)

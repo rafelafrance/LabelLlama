@@ -27,7 +27,7 @@ def load_template() -> jinja2.Template:
 def image_html(source: str) -> tuple[str, bool]:
     """Return (html for the embedded image, ok) for one record."""
     try:
-        base64_image, mime_type = image_util.downscale(source)
+        base64_image, mime_type = image_util.downscale_url_image(source)
     except image_util.IMAGE_ERRORS:
         logging.warning(f"Image unavailable: {source}")
         return '<p class="placeholder">Image unavailable</p>', False

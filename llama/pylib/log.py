@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from argparse import Namespace
-    from collections.abc import Callable
 
 
 def setup_logger(file_name: str | Path | None = None) -> None:
@@ -56,17 +55,11 @@ def log_args(args: Namespace) -> None:
             logging.info(msg)
 
 
-_job_began: datetime | None = None
-
-
 def job_began(
     file_name: str | Path | None = None, *, args: Namespace | None
 ) -> datetime:
-    global _job_began
-
     started(file_name, args=args)
-    _job_began = datetime.now()
-    return _job_began
+    return datetime.now()
 
 
 def job_elapsed(job_began: datetime) -> None:
@@ -74,25 +67,6 @@ def job_elapsed(job_began: datetime) -> None:
     msg = f"Job elapsed {elapsed}"
     logging.info(msg)
     finished()
-
-
-def run_job(run: Callable[[Namespace], None], args: Namespace) -> None:
-    """
-    Run a script job function, exiting cleanly on expected errors.
-
-    A bad prompt, an unreadable results file or columns that do not match the
-    prompt all raise ValueError from the prompt and results modules. Those are
-    user errors, not bugs, so report one line plus the job trailer instead of a
-    stack trace, and exit non-zero. Anything else keeps its traceback.
-    """
-    try:
-        run(args)
-    except ValueError as err:
-        logging.error(str(err))
-        logging.debug("Job failed", exc_info=True)
-        if _job_began is not None:
-            job_elapsed(_job_began)
-        raise SystemExit(1) from err
 
 
 def task_began(name: str = "") -> datetime:

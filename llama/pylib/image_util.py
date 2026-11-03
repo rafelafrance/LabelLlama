@@ -19,6 +19,7 @@ IMAGE_ERRORS = (
     ConnectionError,
     EOFError,
     FileNotFoundError,
+    IOError,
     Image.DecompressionBombError,
     Image.UnidentifiedImageError,
     IndexError,
@@ -74,10 +75,8 @@ def load_image(source: Path | str) -> tuple[str, str]:
     return base64_image, mime_type
 
 
-def downscale(
-    source: Path | str,
-    max_dim: int = 1200,
-    quality: int = 85,
+def downscale_url_image(
+    source: Path | str, max_dim: int = 1200, quality: int = 85
 ) -> tuple[str, str]:
     """
     Return (base64_image, mime_type) for a downscaled copy of the image.

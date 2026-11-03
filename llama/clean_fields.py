@@ -143,4 +143,4 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     ARGS = parse_args()
-    log.run_job(postprocess_fields, ARGS)
+    postprocess_fields(ARGS)

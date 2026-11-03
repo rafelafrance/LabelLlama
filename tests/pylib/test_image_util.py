@@ -110,7 +110,7 @@ class TestImageUtil(unittest.TestCase):
         Image.new("RGB", (10, 10), "red").save(buf, format="PNG")
         small.write_bytes(buf.getvalue())
 
-        base64_image, mime_type = image_util.downscale(small)
+        base64_image, mime_type = image_util.downscale_url_image(small)
 
         assert mime_type == "image/png"
         assert base64.b64decode(base64_image) == small.read_bytes()
@@ -120,7 +120,7 @@ class TestImageUtil(unittest.TestCase):
         big = self.tmp / "big.png"
         Image.new("RGB", (3000, 2000), "blue").save(big, format="PNG")
 
-        base64_image, mime_type = image_util.downscale(big)
+        base64_image, mime_type = image_util.downscale_url_image(big)
 
         assert mime_type == "image/jpeg"
         img = Image.open(io.BytesIO(base64.b64decode(base64_image)))
@@ -132,7 +132,7 @@ class TestImageUtil(unittest.TestCase):
         rgba = self.tmp / "rgba.png"
         Image.new("RGBA", (2000, 1000), (255, 0, 0, 128)).save(rgba, format="PNG")
 
-        base64_image, mime_type = image_util.downscale(rgba)
+        base64_image, mime_type = image_util.downscale_url_image(rgba)
 
         assert mime_type == "image/jpeg"
         img = Image.open(io.BytesIO(base64.b64decode(base64_image)))
