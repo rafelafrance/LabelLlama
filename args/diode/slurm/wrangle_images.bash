@@ -20,7 +20,7 @@ module load conda
 cd /blue/guralnick/rafe.lafrance/LabelLlama
 
 uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/diode/wrangle_images.py \
-    --zip-glob '/blue/guralnick/share/diode/fsca_01/*.zip' / \
+    --zip-glob '/blue/guralnick/share/diode/fsca_01/*.zip' \
     --image-regex  '_card.jpg' \
     --root-dir '/blue/guralnick/share/diode/fsca_01'
 
