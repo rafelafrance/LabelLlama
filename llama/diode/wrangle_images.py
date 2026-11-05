@@ -41,7 +41,8 @@ def wrangle(args: argparse.Namespace) -> None:
             # Remove images already downloaded
             dirs = set()
             for path in tqdm(target_paths):
-                image_path = args.root_dir / path
+                as_path = Path(path)
+                image_path = args.root_dir / as_path.parent.stem / as_path.name
 
                 # Skip already written images
                 if image_path.exists() and image_path.stat().st_size > TOO_DAMN_SMALL:
