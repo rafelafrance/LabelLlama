@@ -31,51 +31,57 @@ def wrangle(args: argparse.Namespace) -> None:
     for zip_path in zips:
         logging.info(f"Extracting from {zip_path}")
 
+        # Read all of the file names in the zip file and keep target images
         with zipfile.ZipFile(zip_path) as zippy:
             target_paths = [i.filename for i in zippy.infolist()]
             target_paths = [
                 p for p in target_paths if image_re.search(p) and has_image_suffix(p)
             ]
-            for path in tqdm(target_paths):
-                out_file = args.root_dir / path
-                if out_file.exists():
-                    logging.info(f"Image {out_file} already exists")
-                    continue
 
-                out_file.parent.mkdir(parents=True, exist_ok=True)
+        # Remove images already downloaded
+        dirs = set()
+        for path in tqdm(target_paths):
+            image_path = args.root_dir / path
 
-                data = zippy.read(path, "rb")
-                with Image.open(io.BytesIO(data)) as image:
-                    try:
-                        width, height = image.size
-                        resize = False
+            # Skip already written images
+            if image_path.exists() and image_path.stat().st_size > TOO_DAMN_SMALL:
+                continue
 
-                        if width * height < TOO_DAMN_SMALL:
-                            raise ValueError
+            data = zippy.read(path, "rb")
+            with Image.open(io.BytesIO(data)) as image:
+                try:
+                    width, height = image.size
 
-                        if image.mode != "RGB":
-                            image.convert("RGB")
+                    if width * height < TOO_DAMN_SMALL:
+                        raise ValueError
 
-                        if width < height and args.max_dim < height:
+                    if image.mode != "RGB":
+                        image.convert("RGB")
+
+                    # Resize image
+                    if args.max_dim < height or args.max_dim < width:
+                        if width < height:
                             width = int(width * (args.max_dim / height))
                             height = args.max_dim
-                            resize = True
-
-                        elif args.max_dim < width:
+                        else:
                             height = int(height * (args.max_dim / width))
                             width = args.max_dim
-                            resize = True
 
-                        if resize:
-                            image = image.resize(
-                                (width, height), resample=Image.Resampling.LANCZOS
-                            )
+                        image = image.resize(
+                            (width, height), resample=Image.Resampling.LANCZOS
+                        )
 
-                        image.save(out_file)
+                    # Add the parent directory for the image
+                    dir_ = image_path.parent
+                    if dir_ not in dirs:
+                        dir_.mkdir(parents=True, exist_ok=True)
+                        dirs.add(dir_)
 
-                    except IMAGE_ERRORS as err:
-                        logging.error(f"Error {path}: {str(err)[:120]}")
-                        continue
+                    image.save(image_path)
+
+                except IMAGE_ERRORS as err:
+                    logging.error(f"Error {path}: {str(err)[:120]}")
+                    continue
 
     log.job_elapsed(job_began)
 
@@ -92,7 +98,7 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         "--zip-glob",
         metavar="GLOB",
         help="""A glob of all of the zip files containing images. You will need to quote
-            this argument. Example '/home/my-name/share/diode/fsca_2611'""",
+            this argument. Example '/home/my-name/share/diode/fsca_2611.zip'""",
     )
     arg_parser.add_argument(
         "--image-regex",
