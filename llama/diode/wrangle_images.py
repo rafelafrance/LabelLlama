@@ -38,50 +38,50 @@ def wrangle(args: argparse.Namespace) -> None:
                 p for p in target_paths if image_re.search(p) and has_image_suffix(p)
             ]
 
-        # Remove images already downloaded
-        dirs = set()
-        for path in tqdm(target_paths):
-            image_path = args.root_dir / path
+            # Remove images already downloaded
+            dirs = set()
+            for path in tqdm(target_paths):
+                image_path = args.root_dir / path
 
-            # Skip already written images
-            if image_path.exists() and image_path.stat().st_size > TOO_DAMN_SMALL:
-                continue
-
-            data = zippy.read(path, "rb")
-            with Image.open(io.BytesIO(data)) as image:
-                try:
-                    width, height = image.size
-
-                    if width * height < TOO_DAMN_SMALL:
-                        raise ValueError
-
-                    if image.mode != "RGB":
-                        image.convert("RGB")
-
-                    # Resize image
-                    if args.max_dim < height or args.max_dim < width:
-                        if width < height:
-                            width = int(width * (args.max_dim / height))
-                            height = args.max_dim
-                        else:
-                            height = int(height * (args.max_dim / width))
-                            width = args.max_dim
-
-                        image = image.resize(
-                            (width, height), resample=Image.Resampling.LANCZOS
-                        )
-
-                    # Add the parent directory for the image
-                    dir_ = image_path.parent
-                    if dir_ not in dirs:
-                        dir_.mkdir(parents=True, exist_ok=True)
-                        dirs.add(dir_)
-
-                    image.save(image_path)
-
-                except IMAGE_ERRORS as err:
-                    logging.error(f"Error {path}: {str(err)[:120]}")
+                # Skip already written images
+                if image_path.exists() and image_path.stat().st_size > TOO_DAMN_SMALL:
                     continue
+
+                data = zippy.read(path, "rb")
+                with Image.open(io.BytesIO(data)) as image:
+                    try:
+                        width, height = image.size
+
+                        if width * height < TOO_DAMN_SMALL:
+                            raise ValueError
+
+                        if image.mode != "RGB":
+                            image.convert("RGB")
+
+                        # Resize image
+                        if args.max_dim < height or args.max_dim < width:
+                            if width < height:
+                                width = int(width * (args.max_dim / height))
+                                height = args.max_dim
+                            else:
+                                height = int(height * (args.max_dim / width))
+                                width = args.max_dim
+
+                            image = image.resize(
+                                (width, height), resample=Image.Resampling.LANCZOS
+                            )
+
+                        # Add the parent directory for the image
+                        dir_ = image_path.parent
+                        if dir_ not in dirs:
+                            dir_.mkdir(parents=True, exist_ok=True)
+                            dirs.add(dir_)
+
+                        image.save(image_path)
+
+                    except IMAGE_ERRORS as err:
+                        logging.error(f"Error {path}: {str(err)[:120]}")
+                        continue
 
     log.job_elapsed(job_began)
 
