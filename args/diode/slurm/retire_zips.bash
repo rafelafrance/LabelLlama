@@ -17,6 +17,7 @@ hostname
 pwd
 
 target="fsca_01"
-mv -v /blue/guralnick/share/"$target"/*.zip /orange/guralnick/rafe.lafrance/diode_zips/"$target"/
+mkdir /orange/guralnick/rafe.lafrance/diode_zips/"$target"
+mv -v /blue/guralnick/share/diode/"$target"/*.zip /orange/guralnick/rafe.lafrance/diode_zips/"$target"/
 
 date
