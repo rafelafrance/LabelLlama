@@ -40,8 +40,9 @@ output/
 data/
 
 # Temp files
-temp/
 junk*
+temp/
+logs/
 
 # Experiments
 pilot/
