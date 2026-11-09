@@ -25,9 +25,9 @@ def wrangle(args: argparse.Namespace) -> None:
 
     image_re = re.compile(args.image_regex, flags=re.IGNORECASE)
 
-    zips = [
-        Path(p) for p in glob(args.zip_glob, recursive=True) if Path(p).suffix in ZIPS
-    ]
+    zips = sorted(
+        [Path(p) for p in glob(args.zip_glob, recursive=True) if Path(p).suffix in ZIPS]
+    )
     for zip_path in zips:
         logging.info(f"Extracting from {zip_path}")
 
@@ -42,7 +42,9 @@ def wrangle(args: argparse.Namespace) -> None:
             dirs = set()
             for path in tqdm(target_paths):
                 as_path = Path(path)
-                image_path = args.root_dir / as_path.parent.stem / as_path.name
+                image_path = (
+                    args.root_dir / "_".join(zip_path.name.split()) / as_path.name
+                )
 
                 # Skip already written images
                 if image_path.exists() and image_path.stat().st_size > TOO_DAMN_SMALL:
