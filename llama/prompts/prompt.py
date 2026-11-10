@@ -29,39 +29,40 @@ class Prompt:
 
     def __init__(
         self,
-        prompt_type: str,
         prompt_md: Path,
+        *,
+        prompt_type: str,
         model_id: str = "",
         temperature: float | None = None,
         max_tokens: int | None = None,
         thinking: Thinking = Thinking.USE_SERVER,
     ) -> None:
         self.prompt_md = prompt_md
-        prompt_parser = PromptMarkdownParser(prompt_md)
-        self.name = prompt_parser.name
-        self.description = prompt_parser.description
-        self.llm_fields = prompt_parser.llm_fields
-        self.calc_fields = prompt_parser.calc_fields
-        self.req_fields = prompt_parser.req_fields
+        prompt_data = PromptMarkdownParser(prompt_md)
+        self.name = prompt_data.name
+        self.description = prompt_data.description
+        self.llm_fields = prompt_data.llm_fields
+        self.calc_fields = prompt_data.calc_fields
+        self.req_fields = prompt_data.req_fields
 
-        if prompt_parser.prompt_type != prompt_type:
+        if prompt_data.prompt_type != prompt_type:
             raise ValueError(f"The prompt_type must be {prompt_type}")
 
         self.columns = [*REQUIRED_COLUMNS]
 
         self.json_schema = ""
 
-        self.system_msg = prompt_parser.system_msg
+        self.system_msg = prompt_data.system_msg
 
         if self.llm_fields:
             self.columns += [f.name for f in self.llm_fields]
 
-            self.system_msg += self.build_field_guidance(prompt_parser)
+            self.system_msg += self.build_field_guidance(prompt_data)
             self.system_msg += dedent("""
                 \nStructure the output as JSON using this JSON schema.
                 """)
 
-            self.json_schema = self.build_json_schema(prompt_parser)
+            self.json_schema = self.build_json_schema(prompt_data)
             self.system_msg += self.json_schema
 
         self._headers: dict = self.header_template()
@@ -141,15 +142,15 @@ class Prompt:
 
         return payload
 
-    def build_field_guidance(self, prompt_parser: PromptMarkdownParser) -> str:
+    def build_field_guidance(self, prompt_data: PromptMarkdownParser) -> str:
         guidance = ["\n\n# Field Guidance\n"]
-        for fld in prompt_parser.llm_fields:
+        for fld in prompt_data.llm_fields:
             desc = " ".join(fld.field_class.description.split())
             guidance.append(f"- `{fld.name}`: {desc}")
         guidance.append("")
         return "\n".join(guidance)
 
-    def build_json_schema(self, prompt_parser: PromptMarkdownParser) -> str:
+    def build_json_schema(self, prompt_data: PromptMarkdownParser) -> str:
         obj = {
             "type": "json_schema",
             "json_schema": {
@@ -158,10 +159,10 @@ class Prompt:
             },
         }
         obj["json_schema"]["schema"]["properties"] = {
-            fld.name: {"type": "string"} for fld in prompt_parser.llm_fields
+            fld.name: {"type": "string"} for fld in prompt_data.llm_fields
         }
-        if prompt_parser.req_fields:
-            obj["json_schema"]["schema"]["required"] = prompt_parser.req_fields
+        if prompt_data.req_fields:
+            obj["json_schema"]["schema"]["required"] = prompt_data.req_fields
 
         schema = "\n" + json.dumps(obj, indent=2)
 
