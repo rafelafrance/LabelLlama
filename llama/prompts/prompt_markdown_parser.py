@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Literal
 
 import yaml
 
@@ -33,6 +34,7 @@ class PromptMarkdownParser:
         front = get_front_yaml(text, prompt_md)
         self.name: str = front["name"]
         self.description: str = front["description"]
+        self.prompt_type: str = front.get("prompt_type", "")
         self.system_msg: str = ""
         self.llm_fields: list[FieldAction] = []
         self.calc_fields: list[FieldAction] = []

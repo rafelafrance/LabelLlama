@@ -4,7 +4,7 @@ import os
 import re
 from enum import StrEnum
 from textwrap import dedent
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
 
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 REQUIRED_COLUMNS = ["status", "source", "elapsed", "text"]
+
+PROMPT_TYPES = Literal["ocr", "parse_image", "parse_text"]
 
 
 class Thinking(StrEnum):
@@ -27,6 +29,7 @@ class Prompt:
 
     def __init__(
         self,
+        prompt_type: str,
         prompt_md: Path,
         model_id: str = "",
         temperature: float | None = None,
@@ -40,6 +43,9 @@ class Prompt:
         self.llm_fields = prompt_parser.llm_fields
         self.calc_fields = prompt_parser.calc_fields
         self.req_fields = prompt_parser.req_fields
+
+        if prompt_parser.prompt_type != prompt_type:
+            raise ValueError(f"The prompt_type must be {prompt_type}")
 
         self.columns = [*REQUIRED_COLUMNS]
 

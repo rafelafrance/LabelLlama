@@ -1,6 +1,7 @@
 ---
 name: dummy_prompt
 description: Extract information from labels on images of Odonata museum specimens.
+prompt_type: dummy
 ---
 
 # System Message

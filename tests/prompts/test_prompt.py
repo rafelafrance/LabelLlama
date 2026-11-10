@@ -11,15 +11,15 @@ DIODE = PROMPTS_DIR / "diode_one_v1.md"
 OCR = PROMPTS_DIR / "ocr_v2.md"
 
 
-def make_prompt(path: Path, **kwargs: dict) -> Prompt:
+def make_prompt(path: Path, prompt_type: str, **kwargs: dict) -> Prompt:
     kwargs.setdefault("model_id", "test-model")
-    return Prompt(prompt_md=path, **kwargs)
+    return Prompt(prompt_md=path, prompt_type=prompt_type, **kwargs)
 
 
 class TestPrompt(unittest.TestCase):
     def test_init_from_markdown_01(self) -> None:
         """A prompt file supplies its name, description and required fields."""
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DIODE, prompt_type="parse_image")
 
         self.assertEqual(prompt.name, "diode_one_v1")
         self.assertTrue(prompt.description.startswith("Extract information"))
@@ -27,7 +27,7 @@ class TestPrompt(unittest.TestCase):
 
     def test_columns_02(self) -> None:
         """The column list is the required columns then the prompt fields."""
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DIODE, prompt_type="parse_image")
 
         self.assertEqual(prompt.columns[: len(REQUIRED_COLUMNS)], REQUIRED_COLUMNS)
         self.assertEqual(len(prompt.columns), len(REQUIRED_COLUMNS) + 25)
@@ -38,7 +38,7 @@ class TestPrompt(unittest.TestCase):
 
     def test_system_msg_has_field_guidance_03(self) -> None:
         """The system message adds field guidance to the text."""
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DIODE, prompt_type="parse_image")
 
         self.assertIn("# Field Guidance", prompt.system_msg)
         self.assertIn("`scientificName`", prompt.system_msg)
@@ -47,7 +47,7 @@ class TestPrompt(unittest.TestCase):
 
     def test_json_schema_required_inside_schema_04(self) -> None:
         """The JSON schema carries the field properties and required list."""
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DIODE, prompt_type="parse_image")
 
         schema = json.loads(prompt.json_schema)
         self.assertEqual(schema["type"], "json_schema")
@@ -62,7 +62,7 @@ class TestPrompt(unittest.TestCase):
 
     def test_json_schema_empty_without_llm_fields_05(self) -> None:
         """With no LLM fields the JSON schema is an empty string."""
-        prompt = make_prompt(OCR)
+        prompt = make_prompt(OCR, prompt_type="ocr")
 
         self.assertEqual(prompt.json_schema, "")
         self.assertEqual(prompt.columns, REQUIRED_COLUMNS)
@@ -70,12 +70,12 @@ class TestPrompt(unittest.TestCase):
     def test_headers_api_key_06(self) -> None:
         """The authorization header appears only with an API key."""
         with patch.dict(os.environ, {}, clear=True):
-            prompt = make_prompt(OCR)
+            prompt = make_prompt(OCR, prompt_type="ocr")
 
         self.assertEqual(prompt.headers(), {"Content-Type": "application/json"})
 
         with patch.dict(os.environ, {"LLM_API_KEY": "sekrit"}):
-            prompt = make_prompt(OCR)
+            prompt = make_prompt(OCR, prompt_type="ocr")
 
         self.assertEqual(
             prompt.headers(),
@@ -87,7 +87,7 @@ class TestPrompt(unittest.TestCase):
 
     def test_payload_template_base_07(self) -> None:
         """The payload defaults to a user message and json_object."""
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DIODE, prompt_type="parse_image")
         payload = prompt.text_payload("hello")
 
         self.assertEqual(payload["model"], "test-model")
@@ -103,17 +103,19 @@ class TestPrompt(unittest.TestCase):
 
     def test_payload_optional_kwargs_08(self) -> None:
         """Optional arguments are added only when they are set."""
-        payload = make_prompt(OCR, temperature=0.2, max_tokens=100).text_payload("x")
+        payload = make_prompt(
+            OCR, prompt_type="ocr", temperature=0.2, max_tokens=100
+        ).text_payload("x")
         self.assertEqual(payload["temperature"], 0.2)
         self.assertEqual(payload["max_tokens"], 100)
 
-        payload = make_prompt(OCR).text_payload("x")
+        payload = make_prompt(OCR, prompt_type="ocr").text_payload("x")
         self.assertNotIn("temperature", payload)
         self.assertNotIn("max_tokens", payload)
 
     def test_image_payload_09(self) -> None:
         """An image prompt sends base64 image content."""
-        prompt = make_prompt(DIODE)
+        prompt = make_prompt(DIODE, prompt_type="parse_image")
         payload = prompt.image_payload("image/png", "abc123")
 
         last = payload["messages"][-1]
@@ -128,23 +130,23 @@ class TestPrompt(unittest.TestCase):
 
     def test_thinking_variants_10(self) -> None:
         """Only a low thinking level reaches the payload."""
-        prompt = make_prompt(OCR, thinking=Thinking.DISABLE_TEMPLATE)
+        prompt = make_prompt(OCR, prompt_type="ocr", thinking=Thinking.DISABLE_TEMPLATE)
         self.assertEqual(
             prompt.text_payload("x")["chat_template_kwargs"],
             {"enable_thinking": False},
         )
 
-        prompt = make_prompt(OCR, thinking=Thinking.DISABLE_ARG)
+        prompt = make_prompt(OCR, prompt_type="ocr", thinking=Thinking.DISABLE_ARG)
         self.assertFalse(prompt.text_payload("x")["enable_thinking"])
 
-        payload = make_prompt(OCR).text_payload("x")
+        payload = make_prompt(OCR, prompt_type="ocr").text_payload("x")
         self.assertNotIn("chat_template_kwargs", payload)
         self.assertNotIn("enable_thinking", payload)
 
     def test_thinking_invalid_raises_11(self) -> None:
         """An unknown thinking level raises ValueError."""
         with self.assertRaises(TypeError):
-            make_prompt(OCR, thinking="bogus")
+            make_prompt(OCR, prompt_type="ocr", thinking="bogus")
 
 
 if __name__ == "__main__":

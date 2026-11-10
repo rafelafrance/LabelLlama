@@ -1,6 +1,7 @@
 ---
 name: herbarium_v2
 description: Extract information from text on images of herbaium sheets.
+prompt_type: parse_text
 ---
 
 # System Message

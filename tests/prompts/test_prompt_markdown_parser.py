@@ -26,7 +26,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
             "---\n"
             "name: ocr\n"
             "description: OCR labels.\n"
-            "extra: 1\n"
+            "prompt_type: dummy\n"
             "---\n"
             "# System Message\n"
             "body\n"
@@ -37,7 +37,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
         assert front == {
             "name": "ocr",
             "description": "OCR labels.",
-            "extra": 1,
+            "prompt_type": "dummy",
         }
 
     def test_front_yaml_missing_raises_02(self) -> None:
@@ -87,7 +87,8 @@ class TestPromptMarkdownParser(unittest.TestCase):
     def test_minimal_prompt_defaults_06(self) -> None:
         """Missing sections default to empty text and no fields."""
         path = write_prompt(
-            "---\nname: t\ndescription: d\n---\n# System Message\nThe body.\n"
+            "---\nname: t\ndescription: d\nprompt_type: dummy\n---\n"
+            "# System Message\nThe body.\n"
         )
         self.addCleanup(path.unlink, missing_ok=True)
 
@@ -102,7 +103,7 @@ class TestPromptMarkdownParser(unittest.TestCase):
     def test_sections_are_order_independent_07(self) -> None:
         """Required/Calculated before LLM Fields must parse the same way."""
         path = write_prompt(
-            "---\nname: t\ndescription: d\n---\n"
+            "---\nname: t\ndescription: d\nprompt_type: dummy\n---\n"
             "# Required Fields\n"
             "- utm\n"
             "\n"
@@ -128,11 +129,13 @@ class TestPromptMarkdownParser(unittest.TestCase):
     def test_headings_are_case_insensitive_08(self) -> None:
         """Section headings match regardless of case."""
         path = write_prompt(
-            "---\nname: t\ndescription: d\n---\n# system message\nThe body.\n"
+            "---\nname: t\ndescription: d\nprompt_type: dummy\n---\n"
+            "# system message\nThe body.\n"
         )
         self.addCleanup(path.unlink, missing_ok=True)
 
-        assert PromptMarkdownParser(path).system_msg == "The body."
+        parser = PromptMarkdownParser(path)
+        assert parser.system_msg == "The body."
 
 
 if __name__ == "__main__":

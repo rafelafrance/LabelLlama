@@ -1,6 +1,7 @@
 ---
 name: ocr_v2
 description: OCR labels on images of museum specimens.
+prompt_type: ocr
 ---
 
 # System Message

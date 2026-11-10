@@ -20,7 +20,7 @@ COLUMNS = ["status", "source", "elapsed", "text", "scientificName", "verbatimEve
 
 def make_prompt(path: Path, **kwargs: dict) -> Prompt:
     kwargs.setdefault("model_id", "test-model")
-    return Prompt(prompt_md=path, **kwargs)
+    return Prompt(prompt_md=path, prompt_type="dummy", **kwargs)
 
 
 def write_csv(path: Path, header: list[str], rows: list[list]) -> None:

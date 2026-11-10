@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 
-from llama.prompts.prompt import REQUIRED_COLUMNS, Prompt, Thinking
+from llama.prompts.prompt import Prompt, Thinking
 from llama.pylib import fix_ocr, image_util, log
 from llama.results.job_runner import NO_IMAGES_FOUND, run_jobs
 from llama.results.model_status import ModelStatus
@@ -26,20 +26,13 @@ def ocr_images(args: argparse.Namespace) -> None:
     docs = OcrDocs(args.image_dir, args.image_glob, args.ocr_file, args.limit)
 
     prompt = Prompt(
+        prompt_type="ocr",
         prompt_md=args.prompt_md,
         model_id=args.model_id,
         temperature=args.temperature,
         max_tokens=args.max_tokens,
         thinking=args.thinking,
     )
-    if set(prompt.columns) != set(REQUIRED_COLUMNS):
-        extra = sorted(set(prompt.columns) - set(REQUIRED_COLUMNS))
-        msg = (
-            f"{args.prompt_md} declares {len(extra)} field(s) "
-            f"(e.g. {', '.join(extra[:5])}); ocr_images.py needs a plain OCR prompt "
-            "(e.g. prompts/ocr_v2.md)"
-        )
-        raise ValueError(msg)
 
     def call(source: Path, sessions: ThreadSessions) -> dict:
         return call_model(

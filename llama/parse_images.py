@@ -27,6 +27,7 @@ def extract(args: argparse.Namespace) -> None:
     job_began = log.job_began(args.log_file, args=args)
 
     prompt = Prompt(
+        prompt_type="parse_image",
         prompt_md=args.prompt_md,
         model_id=args.model_id,
         temperature=args.temperature,

@@ -1,6 +1,7 @@
 ---
 name: diode_one_v1
 description: Extract information from labels on images of Odonata museum specimens.
+prompt_type: parse_image
 ---
 
 # System Message
