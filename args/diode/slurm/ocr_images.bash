@@ -23,18 +23,20 @@ module load conda cuda
 cd /blue/guralnick/rafe.lafrance/LabelLlama
 
 source /home/rafe.lafrance/hf
-source /blue/guralnick/rafe.lafrance/LabelLlama/bin/activate
+source /blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin/activate
 
 # export PATH=/blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin:$PATH
 
-uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
+uv run blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --image-glob '/blue/guralnick/share/diode/fsca_01/**/*' \
     --ocr-file /blue/guralnick/rafe.lafrance/LabelLlama/data/diode/ocr_images_fsca_01.csv \
     --prompt-md prompts/ocr_v2.md \
-    --model-id Qwen/Qwen3.6-35B-A3B \
+    --model-id Qwen/Qwen3.5-4B \
     --max-tokens 2048 \
     --threads 4 \
     --notes "Try OCR with an HF pipeline." \
     --limit 2
 
 date
+
+    # --model-id Qwen/Qwen3.6-35B-A3B \

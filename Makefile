@@ -9,7 +9,6 @@ nvidia:
 	source .venv/bin/activate
 	uv sync
 	uv add torch torchvision
-	uv add torchcodec
 	uv add transformers
 	uv add accelerate
 	uv add flash-linear-attention
@@ -20,7 +19,6 @@ rocm:
 	source .venv/bin/activate
 	uv sync
 	uv pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm7.14
-	uv pip install torchcodec
 	uv pip install transformers
 	uv pip install accelerate
 	uv pip install flash-linear-attention

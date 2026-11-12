@@ -29,7 +29,6 @@ def ocr_images(args: argparse.Namespace) -> None:
         enable_thinking=False,
     )
 
-    print()
     messages = [
         [
             {"role": "system", "content": prompt_data.system_msg},
