@@ -25,6 +25,8 @@ cd /blue/guralnick/rafe.lafrance/LabelLlama
 source /home/rafe.lafrance/hf
 source /blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin/activate
 
+export TRITON_DEFAULT_FP_FUSION=1
+
 # export PATH=/blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin:$PATH
 
 uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
