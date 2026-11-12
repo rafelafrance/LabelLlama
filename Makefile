@@ -1,4 +1,4 @@
-.PHONY: test clean
+.PHONY: test clean nvidia rocm hipergator hipergator_once
 .ONESHELL:
 
 test:
@@ -26,6 +26,15 @@ rocm:
 	uv pip install flash-linear-attention
 	export CAUSAL_CONV1D_SKIP_CUDA_BUILD=TRUE
 	uv pip install causal-conv1d
+
+hipergator:
+	uv venv
+	source .venv/bin/activate
+	uv add torch torchvision transformers accelerate flash-linear-attention causal-conv1d
+
+hipergator_once:
+	mv ~/.cache /blue/guralnick/rafe.lafrance/.cache
+	ln -s /blue/guralnick/rafe.lafrance/.cache ~/.cache
 
 clean:
 	rm -rf .venv

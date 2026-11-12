@@ -11,7 +11,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16gb
 #SBATCH --time=4-00:00:00
-#SBATCH --partition=gpu
+#SBATCH --partition=hpg-rtx6000
 #SBATCH --gres=gpu:1
 
 date
@@ -29,15 +29,12 @@ source /blue/guralnick/rafe.lafrance/LabelLlama/bin/activate
 
 uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --image-glob '/blue/guralnick/share/diode/fsca_01/**/*' \
-    --ocr-file /blue/guralnick/rafe.lafrance/data/diode/ocr_images_fsca_01.csv \
+    --ocr-file /blue/guralnick/rafe.lafrance/LabelLlama/data/diode/ocr_images_fsca_01.csv \
     --prompt-md prompts/ocr_v2.md \
     --model-id Qwen/Qwen3.6-35B-A3B \
-    --temperature 0.1 \
     --max-tokens 2048 \
     --threads 4 \
-    --timeout 180 \
     --notes "Try OCR with an HF pipeline." \
-    --log-file /ocr_imaging.log \
     --limit 2
 
 date
