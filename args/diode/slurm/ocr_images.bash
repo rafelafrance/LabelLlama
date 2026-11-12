@@ -34,7 +34,6 @@ uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --model-id Qwen/Qwen3.5-4B \
     --max-tokens 2048 \
     --threads 4 \
-    --notes "Try OCR with an HF pipeline." \
     --limit 100
 
 date
