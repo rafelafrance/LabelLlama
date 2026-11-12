@@ -27,7 +27,7 @@ source /blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin/activate
 
 # export PATH=/blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin:$PATH
 
-uv run blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
+uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --image-glob '/blue/guralnick/share/diode/fsca_01/**/*' \
     --ocr-file /blue/guralnick/rafe.lafrance/LabelLlama/data/diode/ocr_images_fsca_01.csv \
     --prompt-md prompts/ocr_v2.md \
