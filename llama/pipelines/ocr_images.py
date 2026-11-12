@@ -53,7 +53,8 @@ def ocr_images(args: argparse.Namespace) -> None:
                     case "assistant":
                         text = msg.get("content", "").strip()
                     case "user":
-                        source = msg.get("content", {}).get("url", "")
+                        if isinstance(msg, list) and len(msg) > 0:
+                            source = msg[0].get("content", {}).get("url", "")
             status = ModelStatus.SUCCESS if text else ModelStatus.ERROR
             writer.writerow({"status": status, "source": source, "text": text})
             out_file.flush()
