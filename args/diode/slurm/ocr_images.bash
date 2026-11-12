@@ -23,6 +23,7 @@ module load conda cuda
 cd /blue/guralnick/rafe.lafrance/LabelLlama
 
 source /home/rafe.lafrance/hf
+source /blue/guralnick/rafe.lafrance/LabelLlama/bin/activate
 
 # export PATH=/blue/guralnick/rafe.lafrance/LabelLlama/.venv/bin:$PATH
 
@@ -36,6 +37,7 @@ uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --threads 4 \
     --timeout 180 \
     --notes "Try OCR with an HF pipeline." \
-    --log-file /ocr_imaging.log
+    --log-file /ocr_imaging.log \
+    --limit 2
 
 date

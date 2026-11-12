@@ -3,13 +3,12 @@
 import argparse
 import textwrap
 from pathlib import Path
-from pprint import pp
 
 from accelerate import Accelerator
 from transformers import pipeline
 
 from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
-from llama.pylib import image_util, log
+from llama.pylib import log
 from llama.results.ocr_docs import OcrDocs
 
 
@@ -25,35 +24,32 @@ def ocr_images(args: argparse.Namespace) -> None:
         model=args.model_id,
         device=Accelerator().device,
         max_new_tokens=args.max_tokens,
-        # num_workers=args.threads,
-        # batch_size=args.batch_size,
+        num_workers=args.threads,
+        batch_size=args.batch_size,
         enable_thinking=False,
     )
 
-    for result in pipe(get_messages(docs.tasks, prompt_data.system_msg)):
-        content = result[0]["generated_text"] or ""
-        print(content)
+    print()
+    messages = [
+        [
+            {"role": "system", "content": prompt_data.system_msg},
+            {"role": "user", "content": [{"type": "image", "url": str(p)}]},
+        ]
+        for p in docs.tasks
+    ]
+    for result in pipe(messages):
+        messages = result[0].get("generated_text", "")
+        if messages:
+            output = next(
+                m.get("content", "")
+                for m in messages
+                if m.get("role", "").lower() == "assistant"
+            )
+            print("=" * 80)
+            print(output)
+            print()
 
     log.job_elapsed(job_began)
-
-
-def get_messages(tasks: list[Path], system_msg: str) -> list[dict]:
-    for path in tasks:
-        base64_image, mime_type = image_util.load_image(path)
-        yield [
-            {"role": "system", "content": system_msg},
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{mime_type};base64,{base64_image}",
-                        },
-                    },
-                ],
-            },
-        ]
 
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
