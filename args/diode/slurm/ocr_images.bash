@@ -35,7 +35,7 @@ uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --max-tokens 2048 \
     --threads 4 \
     --notes "Try OCR with an HF pipeline." \
-    --limit 2
+    --limit 100
 
 date
 

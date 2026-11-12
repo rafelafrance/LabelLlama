@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 REQUIRED_COLUMNS = ["status", "source", "elapsed", "text"]
+REQUIRED_PIPELINE = ["status", "source", "text"]
 
 PROMPT_TYPES = Literal["ocr", "parse_image", "parse_text"]
 

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import textwrap
 from pathlib import Path
 
 from accelerate import Accelerator
 from transformers import pipeline
 
+from llama.prompts.prompt import REQUIRED_PIPELINE
 from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
 from llama.pylib import log
+from llama.results.model_status import ModelStatus
 from llama.results.ocr_docs import OcrDocs
 
 
@@ -36,17 +39,24 @@ def ocr_images(args: argparse.Namespace) -> None:
         ]
         for p in docs.tasks
     ]
-    for result in pipe(messages):
-        messages = result[0].get("generated_text", "")
-        if messages:
-            output = next(
-                m.get("content", "")
-                for m in messages
-                if m.get("role", "").lower() == "assistant"
-            )
-            print("=" * 80)
-            print(output)
-            print()
+
+    with args.ocr_file.open(docs.file_mode) as out_file:
+        writer = csv.DictWriter(out_file, REQUIRED_PIPELINE)
+        if docs.file_mode == "w":
+            writer.writeheader()
+
+        for result in pipe(messages):
+            messages = result[0].get("generated_text", "")
+            text, source = "", ""
+            for msg in messages:
+                match msg.get("role", "").lower():
+                    case "assistant":
+                        text = msg.get("content", "").strip()
+                    case "user":
+                        source = msg.get("url", "")
+            status = ModelStatus.SUCCESS if text else ModelStatus.ERROR
+            writer.writerow({"status": status, "source": source, "text": text})
+            out_file.flush()
 
     log.job_elapsed(job_began)
 
