@@ -41,6 +41,9 @@ def ocr_images(args: argparse.Namespace) -> None:
         for p in docs.tasks
     ]
 
+    logging.info(f"Processing {len(messages)} labels")
+
+    success, error = 0, 0
     with args.ocr_file.open(docs.file_mode) as out_file:
         writer = csv.DictWriter(out_file, REQUIRED_COLUMNS)
         if docs.file_mode == "w":
@@ -62,10 +65,13 @@ def ocr_images(args: argparse.Namespace) -> None:
                     status = ModelStatus.SUCCESS if text else ModelStatus.ERROR
                     writer.writerow({"status": status, "source": source, "text": text})
                     out_file.flush()
+                    success += 1
                 except Exception as err:
                     logging.error(f"Error for: {msg[0]['content']}: {str(err)[:120]}")
+                    error += 1
                     continue
 
+    logging.info(f"OCRed {success} labels with {error} errors")
     log.job_elapsed(job_began)
 
 
