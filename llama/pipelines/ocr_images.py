@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import logging
 import textwrap
 from pathlib import Path
 
@@ -45,20 +46,25 @@ def ocr_images(args: argparse.Namespace) -> None:
         if docs.file_mode == "w":
             writer.writeheader()
 
-        for result in pipe(messages):
-            messages = result[0].get("generated_text", "")
-            text, source = "", ""
             for msg in messages:
-                match msg.get("role", "").lower():
-                    case "assistant":
-                        text = msg.get("content", "").strip()
-                    case "user":
-                        content = msg.get("content", [])
-                        if isinstance(content, list) and len(content) > 0:
-                            source = content[0].get("url", "")
-            status = ModelStatus.SUCCESS if text else ModelStatus.ERROR
-            writer.writerow({"status": status, "source": source, "text": text})
-            out_file.flush()
+                try:
+                    result = pipe(msg)
+                    messages = result[0].get("generated_text", "")
+                    text, source = "", ""
+                    for msg in messages:
+                        match msg.get("role", "").lower():
+                            case "assistant":
+                                text = msg.get("content", "").strip()
+                            case "user":
+                                content = msg.get("content", [])
+                                if isinstance(content, list) and len(content) > 0:
+                                    source = content[0].get("url", "")
+                    status = ModelStatus.SUCCESS if text else ModelStatus.ERROR
+                    writer.writerow({"status": status, "source": source, "text": text})
+                    out_file.flush()
+                except Exception as err:
+                    logging.error(f"Error for: {msg[0]['content']}: {str(err)[:120]}")
+                    continue
 
     log.job_elapsed(job_began)
 
