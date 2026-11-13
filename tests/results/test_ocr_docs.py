@@ -6,7 +6,7 @@ from pathlib import Path
 from llama.results.doc_utils import read_results_csv
 from llama.results.ocr_docs import OcrDocs
 
-COLUMNS = ["status", "source", "elapsed", "text"]
+COLUMNS = ["status", "source", "text"]
 
 
 def write_csv(path: Path, header: list[str], rows: list[list]) -> None:
@@ -35,16 +35,14 @@ class TestOcrDocs(unittest.TestCase):
         write_csv(
             path,
             COLUMNS,
-            [["success", "a.png", "1.0", "hello"], ["ERROR", "b.png", "", ""]],
+            [["success", "a.png", "hello"], ["ERROR", "b.png", ""]],
         )
 
         df = read_results_csv(path, "OCR file")
 
         self.assertIsNotNone(df)
         # Missing cells become "", everything stays a string
-        self.assertEqual(df.iloc[1]["elapsed"], "")
         self.assertEqual(df.iloc[0]["text"], "hello")
-        self.assertIsInstance(df.iloc[0]["elapsed"], str)
 
     def test_read_results_csv_empty_file_returns_none_02(self) -> None:
         """An empty file returns None so callers start fresh."""
@@ -124,8 +122,8 @@ class TestOcrDocs(unittest.TestCase):
             ocr_file,
             COLUMNS,
             [
-                ["success", str(self.a), "1.0", "ok"],
-                ["ERROR", str(self.b), "0.5", "boom"],
+                ["success", str(self.a), "ok"],
+                ["ERROR", str(self.b), "boom"],
             ],
         )
 

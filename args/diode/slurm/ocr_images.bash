@@ -35,8 +35,7 @@ uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --prompt-md prompts/ocr_v2.md \
     --model-id Qwen/Qwen3.5-4B \
     --max-tokens 2048 \
-    --threads 4 \
-    --limit 100
+    --threads 4
 
 date
 

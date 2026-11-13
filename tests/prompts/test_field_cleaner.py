@@ -15,7 +15,7 @@ from llama.prompts.field_cleaner import (
 from llama.prompts.prompt import Prompt
 
 DUMMY = Path(__file__).parent / "dummy_prompt.md"
-COLUMNS = ["status", "source", "elapsed", "text", "scientificName", "verbatimEventDate"]
+COLUMNS = ["status", "source", "text", "scientificName", "verbatimEventDate"]
 
 
 def make_prompt(path: Path, **kwargs: dict) -> Prompt:
@@ -41,9 +41,9 @@ class TestFieldCleaner(unittest.TestCase):
             self.parsed_file,
             COLUMNS,
             [
-                ["ERROR", "b.txt", "1.0", "text b", "Canis loopy", "10-10-2010"],
-                ["success", "a.txt", "1.0", "text a", "Canis loopy", "10-10-2010"],
-                ["success", "c.txt", "1.0", "text c", "Canis loopy", "10-10-2010"],
+                ["ERROR", "b.txt", "text b", "Canis loopy", "10-10-2010"],
+                ["success", "a.txt", "text a", "Canis loopy", "10-10-2010"],
+                ["success", "c.txt", "text c", "Canis loopy", "10-10-2010"],
             ],
         )
         self.parsed_file = self.tmp / "parsed.csv"
@@ -68,7 +68,6 @@ class TestFieldCleaner(unittest.TestCase):
             columns=[
                 "status",
                 "source",
-                "elapsed",
                 "text",
                 "scientificName",
                 "verbatimEventDate",
@@ -95,12 +94,10 @@ class TestFieldCleaner(unittest.TestCase):
         """Missing prompt columns are named in the error."""
         prompt = make_prompt(DUMMY)
         cleaner = FieldCleaner(prompt, self.parsed_file)
-        prompt = SimpleNamespace(
-            columns=["status", "source", "elapsed", "text", "scientificName"]
-        )
+        prompt = SimpleNamespace(columns=["status", "source", "text", "scientificName"])
 
         with self.assertRaises(ValueError) as ctx:
-            cleaner.validate_columns(["status", "source", "elapsed", "text"])
+            cleaner.validate_columns(["status", "source", "text"])
 
         msg = str(ctx.exception)
         self.assertIn("prompt columns", msg)
@@ -132,7 +129,6 @@ class TestFieldCleaner(unittest.TestCase):
         # No duplicates, and no parse-only columns leak in
         self.assertEqual(len(columns), len(set(columns)))
         self.assertNotIn("status", columns)
-        self.assertNotIn("elapsed", columns)
 
     def test_format_bools_are_spelled_like_gold_08(self) -> None:
         """Gold_std spells booleans TRUE/FALSE, and str() gives True/False."""

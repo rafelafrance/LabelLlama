@@ -115,7 +115,6 @@ def call_model(
     result = {
         "status": status,
         "source": ocr_rec["source"],
-        "elapsed": str(log.task_elapsed(began)),
         "text": text,
     } | prompt.validated_fields(extracted, ocr_rec["source"])
 

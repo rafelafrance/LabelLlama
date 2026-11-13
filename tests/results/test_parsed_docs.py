@@ -5,7 +5,7 @@ from pathlib import Path
 
 from llama.results.parsed_docs import ParsedDocs
 
-COLUMNS = ["status", "source", "elapsed", "text"]
+COLUMNS = ["status", "source", "text"]
 
 
 def write_csv(path: Path, header: list[str], rows: list[list]) -> None:
@@ -26,9 +26,9 @@ class TestParsedDocs(unittest.TestCase):
             self.ocr_file,
             COLUMNS,
             [
-                ["ERROR", "b.txt", "1.0", "text b"],
-                ["success", "a.txt", "1.0", "text a"],
-                ["success", "c.txt", "1.0", "text c"],
+                ["ERROR", "b.txt", "text b"],
+                ["success", "a.txt", "text a"],
+                ["success", "c.txt", "text c"],
             ],
         )
         self.parsed_file = self.tmp / "parsed.csv"
@@ -39,7 +39,7 @@ class TestParsedDocs(unittest.TestCase):
     def test_ocr_file_missing_column_raises_01(self) -> None:
         """An OCR file without the required columns raises ValueError."""
         bad_ocr = self.tmp / "bad_ocr.csv"
-        write_csv(bad_ocr, ["source", "elapsed"], [["a.txt", "1.0"]])
+        write_csv(bad_ocr, ["source"], [["a.txt"]])
 
         with self.assertRaises(ValueError) as ctx:
             ParsedDocs(self.parsed_file, bad_ocr, COLUMNS)
@@ -67,8 +67,8 @@ class TestParsedDocs(unittest.TestCase):
             self.parsed_file,
             COLUMNS,
             [
-                ["success", "a.txt", "2.0", "parsed a"],
-                ["ERROR", "c.txt", "2.0", "boom"],
+                ["success", "a.txt", "parsed a"],
+                ["ERROR", "c.txt", "boom"],
             ],
         )
 
@@ -85,7 +85,7 @@ class TestParsedDocs(unittest.TestCase):
         write_csv(
             self.parsed_file,
             COLUMNS,
-            [["success", "a.txt", "2.0", "parsed a"]],
+            [["success", "a.txt", "parsed a"]],
         )
 
         with self.assertRaises(ValueError) as ctx:

@@ -8,7 +8,7 @@ from pathlib import Path
 from accelerate import Accelerator
 from transformers import pipeline
 
-from llama.prompts.prompt import REQUIRED_PIPELINE
+from llama.prompts.prompt import REQUIRED_COLUMNS
 from llama.prompts.prompt_markdown_parser import PromptMarkdownParser
 from llama.pylib import log
 from llama.results.model_status import ModelStatus
@@ -41,7 +41,7 @@ def ocr_images(args: argparse.Namespace) -> None:
     ]
 
     with args.ocr_file.open(docs.file_mode) as out_file:
-        writer = csv.DictWriter(out_file, REQUIRED_PIPELINE)
+        writer = csv.DictWriter(out_file, REQUIRED_COLUMNS)
         if docs.file_mode == "w":
             writer.writeheader()
 

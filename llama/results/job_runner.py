@@ -83,7 +83,6 @@ def future_result(
         return {
             "status": ModelStatus.ERROR,
             "source": str(source),
-            "elapsed": "",
             "text": str(err),
         }
     return result
@@ -112,7 +111,6 @@ def write_row(
             {
                 "status": statuses.count(ModelStatus.ERROR),
                 "source": result.get("source", str(source)),
-                "elapsed": result.get("elapsed", ""),
                 "text": str(err),
             }
         )

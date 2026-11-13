@@ -26,7 +26,6 @@ class OcrResult:
     file: str
     source: str
     status: str
-    elapsed: str
     text: str
 
 
@@ -58,7 +57,6 @@ def load_latest_success(ocr_file: Path) -> dict[str, OcrResult]:
             file=ocr_file.stem,
             source=row["source"],
             status=row.get("status", ""),
-            elapsed=row.get("elapsed", ""),
             text=row["text"],
         )
     return latest

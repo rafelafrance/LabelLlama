@@ -108,7 +108,6 @@ def call_model(
     rec = {
         "status": status,
         "source": str(source),
-        "elapsed": str(log.task_elapsed(began)),
         "text": text,
     }
 

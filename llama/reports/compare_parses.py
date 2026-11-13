@@ -27,7 +27,7 @@ def compare(args: argparse.Namespace) -> None:
         if not parse:
             continue
         for k in parse[0]:
-            if k not in ("status", "elapsed", "source") and k not in columns:
+            if k not in ("status", "source") and k not in columns:
                 columns.append(k)
         for row in parse:
             all_parses[row["source"]].append(row)

@@ -37,7 +37,6 @@ def ok_call(task: Any, _sessions: Any) -> dict:
     return {
         "status": "success",
         "source": str(task),
-        "elapsed": "0:01",
         "text": "Marsh",
     }
 
@@ -82,7 +81,6 @@ def base_result(**overrides: object) -> dict:
     result = {
         "status": ModelStatus.SUCCESS,
         "source": "a.txt",
-        "elapsed": "1.0",
         "text": "hello",
     }
     result.update(overrides)
@@ -315,7 +313,6 @@ class TestWriteRow(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["status"], "success")
         self.assertEqual(rows[0]["source"], "a.txt")
-        self.assertEqual(rows[0]["elapsed"], "1.0")
         self.assertEqual(rows[0]["text"], "hello")
         self.assertEqual(statuses.get(ModelStatus.SUCCESS), 1)
 

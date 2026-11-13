@@ -46,7 +46,6 @@ from llama.pylib import log
 FIRST_COLUMNS = [
     "status",
     "source",
-    "elapsed",
     "text",
     "row_group",
     "row_type",

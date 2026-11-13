@@ -53,7 +53,7 @@ def build_card(number: int, ocr_row: dict, clean_row: dict | None) -> dict:
         fields = [
             (k, v)
             for k, v in clean_row.items()
-            if k not in ("text", "source", "status", "elapsed")
+            if k not in ("text", "source", "status")
         ]
 
     return {

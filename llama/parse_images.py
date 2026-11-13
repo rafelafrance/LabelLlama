@@ -112,7 +112,6 @@ def call_model(
     result = {
         "status": status,
         "source": str(source),
-        "elapsed": str(log.task_elapsed(began)),
         "text": text,
     } | prompt.validated_fields(extracted, str(source))
 
