@@ -31,11 +31,12 @@ export TRITON_DEFAULT_FP_FUSION=1
 
 uv run /blue/guralnick/rafe.lafrance/LabelLlama/llama/pipelines/ocr_images.py \
     --image-glob '/blue/guralnick/share/diode/fsca_01/**/*' \
-    --ocr-file /blue/guralnick/rafe.lafrance/LabelLlama/data/diode/ocr_images_fsca_01.csv \
+    --ocr-file /blue/guralnick/rafe.lafrance/LabelLlama/data/diode/ocr_images_fsca_01a.csv \
     --prompt-md prompts/ocr_v2.md \
     --model-id Qwen/Qwen3.5-4B \
     --max-tokens 2048 \
-    --threads 4
+    --threads 4 \
+    --limit 10
 
 date
 
