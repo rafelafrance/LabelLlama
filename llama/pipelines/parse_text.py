@@ -3,7 +3,6 @@
 import argparse
 import logging
 import textwrap
-from datetime import datetime
 from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -77,7 +76,6 @@ def call_model(
     api_host: str,
     timeout: int,
 ) -> dict:
-    began = datetime.now()
 
     extracted = {}
     try:

@@ -3,7 +3,6 @@
 import argparse
 import logging
 import textwrap
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -69,8 +68,6 @@ def call_model(
     *,
     convert_html: bool,
 ) -> dict:
-    began = datetime.now()
-
     try:
         base64_image, mime_type = image_util.load_image(source)
 
